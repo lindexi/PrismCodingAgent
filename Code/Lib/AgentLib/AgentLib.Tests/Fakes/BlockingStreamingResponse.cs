@@ -21,8 +21,8 @@ internal sealed class BlockingStreamingResponse
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         _startedTaskCompletionSource.TrySetResult();
-        Task completedTask = await Task.WhenAny(_releaseTaskCompletionSource.Task, Task.Delay(Timeout.Infinite, cancellationToken)).ConfigureAwait(false);
-        await completedTask.ConfigureAwait(false);
+        await _releaseTaskCompletionSource.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         yield break;
     }
 }

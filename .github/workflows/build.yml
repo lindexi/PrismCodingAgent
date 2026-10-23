@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   build:
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
@@ -29,4 +30,13 @@ jobs:
         run: dotnet build -c Release PrismCodingAgent.slnx
 
       - name: Test
-        run: dotnet test -c Release --no-build PrismCodingAgent.slnx
+        timeout-minutes: 20
+        run: dotnet test -c Release --no-build PrismCodingAgent.slnx --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults
+          if-no-files-found: ignore

@@ -584,6 +584,7 @@ public class CopilotChatManager : NotifyBase
                     isFirst = false;
                 }
 
+                currentChatCancellationToken.ThrowIfCancellationRequested();
                 await ChatLogger.LogMessageAsync(currentSession.SessionId, assistantChatMessage);
                 return new SendMessageRunState(IsSuccess: true, WasCanceled: false);
             }
