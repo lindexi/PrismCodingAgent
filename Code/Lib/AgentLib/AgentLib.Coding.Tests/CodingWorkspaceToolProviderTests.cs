@@ -1,3 +1,4 @@
+using AgentLib.Model;
 using AgentLib.Tools;
 
 using Microsoft.Extensions.AI;
@@ -103,9 +104,86 @@ public sealed class CodingWorkspaceCacheTests
         CodingRunWorkspaceContext first = cache.CreateRunContext([]);
         CodingRunWorkspaceContext second = cache.CreateRunContext([]);
 
+        Assert.AreSame(cache.Tools, first.Tools);
+        Assert.AreSame(cache.ToolRegistrationRegistry, first.ToolRegistrationRegistry);
         Assert.AreSame(first.Tools, second.Tools);
         Assert.AreSame(first.ToolRegistrationRegistry, second.ToolRegistrationRegistry);
         Assert.AreEqual(Path.GetFullPath(workspacePath), first.WorkspacePath);
+    }
+
+    [TestMethod(DisplayName = "附加工具更新后各轮应保留独立工具和展示规则快照")]
+    public async Task CreateRunContextWithAdditionalToolsShouldKeepIndependentSnapshots()
+    {
+        string workspacePath = CreateTestDirectory();
+        ToolRegistration cachedRegistration = new(AIFunctionFactory.Create(() => "cached", "cached_tool"));
+        await using var cache = new CodingWorkspaceCache(workspacePath, [cachedRegistration]);
+        ToolRegistration firstRegistration = new(
+            AIFunctionFactory.Create(() => "first", "dynamic_tool"),
+            _ => new ToolCallPresentation("first", null));
+        ToolRegistration secondRegistration = new(
+            AIFunctionFactory.Create(() => "second", "dynamic_tool"),
+            _ => new ToolCallPresentation("second", null));
+        ToolRegistration[] additionalRegistrations = [firstRegistration];
+
+        CodingRunWorkspaceContext first = cache.CreateRunContext(additionalRegistrations);
+        additionalRegistrations[0] = secondRegistration;
+        CodingRunWorkspaceContext second = cache.CreateRunContext(additionalRegistrations);
+        CodingRunWorkspaceContext withoutAdditionalTools = cache.CreateRunContext([]);
+        var call = new FunctionCallContent("call", "dynamic_tool");
+
+        Assert.AreSame(firstRegistration.Tool, first.Tools.Single(tool => tool.Name == "dynamic_tool"));
+        Assert.AreSame(secondRegistration.Tool, second.Tools.Single(tool => tool.Name == "dynamic_tool"));
+        Assert.AreSame(firstRegistration, first.ToolRegistrations.Single(registration => registration.Tool.Name == "dynamic_tool"));
+        Assert.AreEqual("first", first.ToolRegistrationRegistry.CreatePresentation(call)?.PrimaryText);
+        Assert.AreEqual("second", second.ToolRegistrationRegistry.CreatePresentation(call)?.PrimaryText);
+        Assert.AreSame(cachedRegistration.Tool, first.Tools.Single(tool => tool.Name == "cached_tool"));
+        Assert.AreSame(cachedRegistration.Tool, second.Tools.Single(tool => tool.Name == "cached_tool"));
+        Assert.AreSame(cache.Tools, withoutAdditionalTools.Tools);
+        Assert.AreSame(cache.ToolRegistrationRegistry, withoutAdditionalTools.ToolRegistrationRegistry);
+        Assert.IsNull(withoutAdditionalTools.ToolRegistrationRegistry.CreatePresentation(call));
+        CollectionAssert.DoesNotContain(cache.Tools.Select(tool => tool.Name).ToArray(), "dynamic_tool");
+    }
+
+    [TestMethod(DisplayName = "派生上下文添加工具不应修改缓存的基础上下文")]
+    public async Task WithToolShouldNotModifyCachedContext()
+    {
+        string workspacePath = CreateTestDirectory();
+        ToolRegistration cachedRegistration = new(AIFunctionFactory.Create(() => "cached", "cached_tool"));
+        await using var cache = new CodingWorkspaceCache(workspacePath, [cachedRegistration]);
+        ToolRegistration childRegistration = new(AIFunctionFactory.Create(() => "child", "child_tool"));
+        CodingRunWorkspaceContext original = cache.CreateRunContext([]);
+
+        CodingRunWorkspaceContext child = original.WithTool(childRegistration);
+        CodingRunWorkspaceContext next = cache.CreateRunContext([]);
+        var call = new FunctionCallContent("call", "child_tool");
+
+        Assert.AreSame(childRegistration.Tool, child.Tools.Single(tool => tool.Name == "child_tool"));
+        Assert.IsNotNull(child.ToolRegistrationRegistry.CreatePresentation(call));
+        Assert.IsNull(original.ToolRegistrationRegistry.CreatePresentation(call));
+        Assert.AreSame(original.Tools, next.Tools);
+        CollectionAssert.DoesNotContain(next.Tools.Select(tool => tool.Name).ToArray(), "child_tool");
+    }
+
+    [TestMethod(DisplayName = "dotnet run 开关变化不应污染已有上下文或基础缓存")]
+    public async Task CreateRunContextWhenDotNetRunIsToggledShouldKeepIndependentSnapshots()
+    {
+        string workspacePath = CreateTestDirectory();
+        string invalidLanguageServerPath = CreateInvalidLanguageServerFile(workspacePath);
+        await using CodingWorkspaceCache cache = CodingWorkspaceCache.Create(workspacePath, invalidLanguageServerPath);
+
+        CodingRunWorkspaceContext before = cache.CreateRunContext([]);
+        CodingRunWorkspaceContext enabled = cache.CreateRunContext([], enableDotNetRun: true);
+        CodingRunWorkspaceContext after = cache.CreateRunContext([]);
+        var call = new FunctionCallContent("call", "RunDotNetRun");
+
+        CollectionAssert.Contains(enabled.Tools.Select(tool => tool.Name).ToArray(), "RunDotNetRun");
+        CollectionAssert.DoesNotContain(before.Tools.Select(tool => tool.Name).ToArray(), "RunDotNetRun");
+        CollectionAssert.DoesNotContain(after.Tools.Select(tool => tool.Name).ToArray(), "RunDotNetRun");
+        Assert.IsNotNull(enabled.ToolRegistrationRegistry.CreatePresentation(call));
+        Assert.IsNull(before.ToolRegistrationRegistry.CreatePresentation(call));
+        Assert.IsNull(after.ToolRegistrationRegistry.CreatePresentation(call));
+        Assert.AreSame(before.Tools, after.Tools);
+        Assert.AreSame(before.ToolRegistrationRegistry, after.ToolRegistrationRegistry);
     }
 
     [TestMethod(DisplayName = "工作区缓存应保留 CLI 工具的跨运行状态")]

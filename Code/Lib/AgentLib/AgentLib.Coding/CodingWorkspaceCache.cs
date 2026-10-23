@@ -16,6 +16,7 @@ internal sealed class CodingWorkspaceCache : IAsyncDisposable
         "TestResults",
     ];
 
+    private readonly CodingRunWorkspaceContext _runContext;
     private IAsyncDisposable? _ownedResource;
 
     internal CodingWorkspaceCache
@@ -33,8 +34,9 @@ internal sealed class CodingWorkspaceCache : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(toolRegistrations);
         WorkspacePath = Path.GetFullPath(workspacePath);
         ToolRegistrations = Array.AsReadOnly(toolRegistrations.ToArray());
-        Tools = Array.AsReadOnly(ToolRegistrations.Select(static registration => registration.Tool).ToArray());
-        ToolRegistrationRegistry = new ToolRegistrationRegistry(ToolRegistrations);
+        _runContext = new CodingRunWorkspaceContext(WorkspacePath, ToolRegistrations);
+        Tools = _runContext.Tools;
+        ToolRegistrationRegistry = _runContext.ToolRegistrationRegistry;
         _ownedResource = ownedResource;
     }
 
@@ -66,7 +68,7 @@ internal sealed class CodingWorkspaceCache : IAsyncDisposable
             : [];
         if (additionalToolRegistrations.Count == 0 && optionalRegistrations.Length == 0)
         {
-            return new CodingRunWorkspaceContext(WorkspacePath, ToolRegistrations);
+            return _runContext;
         }
 
         ToolRegistration[] registrations =
