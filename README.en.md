@@ -31,7 +31,7 @@ A build you compile yourself beats any package someone else put together.
 Run this from the repository root:
 
 ```sh
-dotnet run --project CodingAgent/Code/App/PrismCodingAgent.AvaloniaShell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
+dotnet run --project Code/App/PrismCodingAgent.AvaloniaShell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
 ```
 
 On first launch, enter a service address and API key and pick a model; then create a work task, point it at a code directory, and hand over the goal.
@@ -48,26 +48,24 @@ To get the most out of PrismCodingAgent, work in this rhythm:
 ## Development
 
 ```sh
-dotnet build CodingAgent/PrismCodingAgent.slnx
+dotnet build PrismCodingAgent.slnx
 ```
 
 Set `PrismCodingAgent.AvaloniaShell` as the startup project in your IDE and press F5 to run with debugging.
 
 ```text
-SemanticKernelSamples/
-├─ ChatRoom/
-└─ CodingAgent/
-   ├─ PrismCodingAgent.slnx
-   ├─ Directory.Build.props
-   ├─ Code/
-   │  ├─ App/PrismCodingAgent.AvaloniaShell/
-   │  ├─ Test/PrismCodingAgent.AvaloniaShell.Tests/
-   │  └─ Lib/
-   │     ├─ AgentLib/
-   │     ├─ DeepSeekSDK/
-   │     ├─ Microsoft.Agents.AI.Extensions/
-   │     └─ Microsoft.Agents.AI.Reasoning/
-   └─ Docs/
+PrismCodingAgent/
+├─ PrismCodingAgent.slnx
+├─ Directory.Build.props
+├─ Code/
+│  ├─ App/PrismCodingAgent.AvaloniaShell/
+│  ├─ Test/PrismCodingAgent.AvaloniaShell.Tests/
+│  └─ Lib/
+│     ├─ AgentLib/
+│     ├─ DeepSeekSDK/
+│     ├─ Microsoft.Agents.AI.Extensions/
+│     └─ Microsoft.Agents.AI.Reasoning/
+└─ Docs/
 ```
 
 Found a problem or have an idea? Open an issue, or send a pull request.

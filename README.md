@@ -33,7 +33,7 @@ dotnet tool update -g roslyn-language-server
 在仓库根目录执行：
 
 ```sh
-dotnet run --project CodingAgent/Code/App/PrismCodingAgent.AvaloniaShell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
+dotnet run --project Code/App/PrismCodingAgent.AvaloniaShell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
 ```
 
 首次启动填写服务地址与 API 密钥、选择一个模型；进入主界面后新建工作任务、指定代码目录，就可以把目标交给它了。
@@ -50,26 +50,24 @@ dotnet run --project CodingAgent/Code/App/PrismCodingAgent.AvaloniaShell/PrismCo
 ## 开发
 
 ```sh
-dotnet build CodingAgent/PrismCodingAgent.slnx
+dotnet build PrismCodingAgent.slnx
 ```
 
 在 IDE 里把 `PrismCodingAgent.AvaloniaShell` 设为启动项目，按 F5 就能带调试运行。
 
 ```text
-SemanticKernelSamples/
-├─ ChatRoom/
-└─ CodingAgent/
-   ├─ PrismCodingAgent.slnx
-   ├─ Directory.Build.props
-   ├─ Code/
-   │  ├─ App/PrismCodingAgent.AvaloniaShell/
-   │  ├─ Test/PrismCodingAgent.AvaloniaShell.Tests/
-   │  └─ Lib/
-   │     ├─ AgentLib/
-   │     ├─ DeepSeekSDK/
-   │     ├─ Microsoft.Agents.AI.Extensions/
-   │     └─ Microsoft.Agents.AI.Reasoning/
-   └─ Docs/
+PrismCodingAgent/
+├─ PrismCodingAgent.slnx
+├─ Directory.Build.props
+├─ Code/
+│  ├─ App/PrismCodingAgent.AvaloniaShell/
+│  ├─ Test/PrismCodingAgent.AvaloniaShell.Tests/
+│  └─ Lib/
+│     ├─ AgentLib/
+│     ├─ DeepSeekSDK/
+│     ├─ Microsoft.Agents.AI.Extensions/
+│     └─ Microsoft.Agents.AI.Reasoning/
+└─ Docs/
 ```
 
 遇到问题或者有想法，欢迎提 Issue，也欢迎直接 PR。
