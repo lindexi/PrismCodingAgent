@@ -17,10 +17,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             6.0.x
@@ -33,10 +33,3 @@ jobs:
         timeout-minutes: 20
         run: dotnet test -c Release --framework net10.0 --no-build PrismCodingAgent.slnx --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.os }}
-          path: TestResults
-          if-no-files-found: ignore
