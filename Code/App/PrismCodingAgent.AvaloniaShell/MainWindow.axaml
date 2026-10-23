@@ -23,5 +23,32 @@
             <Binding Path="ApplicationTitle" Source="{x:Static localizations:Lang.Current}" />
         </MultiBinding>
     </Window.Title>
-    <views2:MainView />
+    <Grid>
+        <views2:MainView x:Name="MainContent" />
+        <Border x:Name="ExitOverlay" IsVisible="False" Background="#66000000"
+                KeyboardNavigation.TabNavigation="Cycle">
+            <Border Width="460" Padding="24" CornerRadius="8"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="16">
+                    <TextBlock FontSize="20" FontWeight="SemiBold"
+                               Text="{Binding ExitConfirmationTitle, Source={x:Static localizations:Lang.Current}}" />
+                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
+                               Text="{Binding ExitConfirmationDescription, Source={x:Static localizations:Lang.Current}}" />
+                    <TextBlock x:Name="ExitProgress" IsVisible="False" TextWrapping="Wrap"
+                               Text="{Binding ExitCleanupProgress, Source={x:Static localizations:Lang.Current}}" />
+                    <TextBlock x:Name="ExitError" IsVisible="False" TextWrapping="Wrap"
+                               Foreground="{DynamicResource ErrorBrush}"
+                               Text="{Binding ExitCleanupFailed, Source={x:Static localizations:Lang.Current}}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+                        <Button x:Name="CancelExitButton" Click="OnCancelExit" IsDefault="False"
+                                Content="{Binding ExitCancelText, Source={x:Static localizations:Lang.Current}}" />
+                        <Button x:Name="ConfirmExitButton" Classes="Danger Primary" Click="OnConfirmExit" IsDefault="False"
+                                Content="{Binding ExitConfirmText, Source={x:Static localizations:Lang.Current}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
 </Window>

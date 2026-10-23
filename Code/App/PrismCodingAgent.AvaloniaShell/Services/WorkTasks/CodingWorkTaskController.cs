@@ -58,6 +58,7 @@ internal sealed class CodingWorkTaskController
     private CancellationTokenSource? _activeOperationCancellationTokenSource;
     private volatile bool _isLoopIterationEnabled;
     private CodingWorkTaskOperationState _operationState;
+    private TaskCompletionSource? _operationCompletion;
 
     public CodingWorkTaskController
     (
@@ -375,6 +376,12 @@ internal sealed class CodingWorkTaskController
             await runResult.CompletionTask;
             await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "运行", "运行正常完成。");
         }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            runException = exception;
+            await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "运行", "运行已取消。");
+            throw;
+        }
         catch (Exception exception)
         {
             runException = exception;
@@ -620,11 +627,33 @@ internal sealed class CodingWorkTaskController
         } : state);
     }
 
+    /// <summary>请求停止并等待操作的 finally 和持久化收尾完成。</summary>
+    public async Task StopAndWaitAsync()
+    {
+        Task completion = _operationCompletion?.Task ?? Task.CompletedTask;
+        StopActiveRun();
+        await completion.ConfigureAwait(false);
+    }
+
     private void UpdateOperationState(CodingWorkTaskOperationState state)
     {
         if (_operationState == state) return;
+        if (_operationState == CodingWorkTaskOperationState.Idle)
+        {
+            _operationCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
         _operationState = state;
-        OnStateChanged();
+        try
+        {
+            OnStateChanged();
+        }
+        finally
+        {
+            if (state == CodingWorkTaskOperationState.Idle)
+            {
+                _operationCompletion?.TrySetResult();
+            }
+        }
     }
 
     private void OnStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);

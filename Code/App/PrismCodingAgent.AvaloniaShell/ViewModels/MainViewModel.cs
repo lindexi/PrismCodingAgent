@@ -30,6 +30,10 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
     private bool _isHistoryOpen;
     private bool _isArchiveOpen;
     private bool _isDisposed;
+    private Task? _disposeTask;
+    private bool _settingsDisposed;
+    private Task? _createWorkTask;
+    private readonly HashSet<WorkTaskItemViewModel> _disposedTasks = [];
     private string _workTaskSearchText = string.Empty;
 
     /// <summary>创建未连接模型的设计期界面。</summary>
@@ -414,7 +418,13 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         }
     }
 
-    private async Task CreateWorkTaskAsync()
+    private Task CreateWorkTaskAsync()
+    {
+        if (_isDisposed) return Task.CompletedTask;
+        return _createWorkTask = CreateWorkTaskCoreAsync();
+    }
+
+    private async Task CreateWorkTaskCoreAsync()
     {
         if (_createRuntimeAsync is null) return;
         ErrorMessage = null;
@@ -816,27 +826,53 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             or Win32Exception or JsonException;
 
     /// <inheritdoc />
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (_isDisposed) return;
+        if (_disposeTask is null || _disposeTask.IsFaulted)
+        {
+            _disposeTask = DisposeCoreAsync();
+        }
+        return new ValueTask(_disposeTask);
+    }
+
+    private async Task DisposeCoreAsync()
+    {
         _isDisposed = true;
-        if (_settingsViewModel is not null)
+        if (_createWorkTask is not null)
+        {
+            await _createWorkTask.ConfigureAwait(true);
+        }
+        if (_settingsViewModel is not null && !_settingsDisposed)
         {
             _settingsViewModel.SettingsSaved -= OnSettingsSaved;
             _settingsViewModel.Dispose();
+            _settingsDisposed = true;
         }
 
-        foreach (WorkTaskItemViewModel task in WorkTasks)
+        WorkTaskItemViewModel[] tasks = WorkTasks.Where(task => !_disposedTasks.Contains(task)).ToArray();
+        Task[] cleanup = tasks.Select(DisposeOwnedTaskAsync).ToArray();
+        Task allCleanup = Task.WhenAll(cleanup);
+        try
         {
-            Unsubscribe(task);
-            task.Chat.Dispose();
-            task.Sessions.Dispose();
-            if (task.Runtime is not null)
-            {
-                await task.Runtime.DisposeAsync().ConfigureAwait(true);
-            }
+            await allCleanup.ConfigureAwait(true);
         }
-
+        catch
+        {
+            // WhenAll waits for every runtime, including those after a failed cleanup.
+            throw allCleanup.Exception ?? throw new InvalidOperationException();
+        }
         _saveGate.Dispose();
+    }
+
+    private async Task DisposeOwnedTaskAsync(WorkTaskItemViewModel task)
+    {
+        if (task.Runtime is not null)
+        {
+            await task.Runtime.DisposeAsync().ConfigureAwait(true);
+        }
+        Unsubscribe(task);
+        task.Chat.Dispose();
+        task.Sessions.Dispose();
+        _disposedTasks.Add(task);
     }
 }

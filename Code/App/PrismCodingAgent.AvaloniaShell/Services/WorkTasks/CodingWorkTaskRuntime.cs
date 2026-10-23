@@ -74,23 +74,14 @@ internal sealed class CodingWorkTaskRuntime : IAsyncDisposable
         public System.Collections.Generic.IReadOnlyList<ILanguageModel> GetSupportedModels() => models;
     }
 
-    public async ValueTask DisposeAsync()
+    private Task? _disposeTask;
+
+    public ValueTask DisposeAsync()
+        => new(_disposeTask ??= DisposeCoreAsync());
+
+    private async Task DisposeCoreAsync()
     {
-        Guid sessionId = ChatManager.SelectedSession.SessionId;
-        await ChatLogger.LogDiagnosticAsync
-        (
-            sessionId,
-            "运行时释放",
-            $"开始释放工作任务运行时。活动运行={Controller.IsRunActive}；循环活动={Controller.IsLoopActive}；正在收尾={Controller.IsFinalizing}。"
-        ).ConfigureAwait(false);
-        Controller.StopActiveRun();
-        await ChatLogger.LogDiagnosticAsync
-        (
-            sessionId,
-            "运行时释放",
-            "已请求取消活动运行，开始释放 CodingAgent。"
-        ).ConfigureAwait(false);
+        await Controller.StopAndWaitAsync().ConfigureAwait(false);
         await CodingAgent.DisposeAsync().ConfigureAwait(false);
-        await ChatLogger.LogDiagnosticAsync(sessionId, "运行时释放", "工作任务运行时释放完成。").ConfigureAwait(false);
     }
 }
