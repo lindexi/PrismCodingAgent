@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="Lib/TxtChunking.csproj" />
-  <Project Path="TxtChunking.UnitTests/TxtChunking.UnitTests.csproj" />
-</Solution>

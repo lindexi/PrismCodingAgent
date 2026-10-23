@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="Demo/OpenSpeechDemo/OpenSpeechDemo.csproj" />
-  <Project Path="Docs/Docs.csproj" />
-  <Project Path="VolcEngineSdk/VolcEngineSdk.csproj" />
-</Solution>
