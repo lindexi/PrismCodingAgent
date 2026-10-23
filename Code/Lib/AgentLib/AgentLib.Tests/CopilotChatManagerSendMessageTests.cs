@@ -366,36 +366,51 @@ public class CopilotChatManagerSendMessageTests
     public async Task SendMessage_WhenSubAgentDoesNotReturnOutput_RetriesWithToolRequiredPrompt()
     {
         var primaryChatClient = new FakeChatClient();
-        primaryChatClient.OnGetStreamingResponseAsync = (_, options, cancellationToken) =>
-            CreateToolInvocationAsyncEnumerable(options, "sub-agent-call-1", "InvokeSubAgent", new Dictionary<string, object?>
-            {
-                ["prompt"] = "请处理子任务",
-                ["systemPrompt"] = null,
-                ["subAgentType"] = "Flash"
-            }, cancellationToken,
-            CopilotChatManagerTestContext.AssistantText("主智能体收到子结果"));
+        FunctionResultContent? subAgentResult = null;
+        primaryChatClient.OnGetStreamingResponseAsync = (messages, _, cancellationToken) =>
+        {
+            subAgentResult = messages.SelectMany(message => message.Contents)
+                .OfType<FunctionResultContent>()
+                .FirstOrDefault(result => result.CallId == "sub-agent-call-1");
+            return subAgentResult is null
+                ? CreateStreamingUpdatesAsync(cancellationToken,
+                    CopilotChatManagerTestContext.AssistantFunctionCall("sub-agent-call-1", "InvokeSubAgent", new Dictionary<string, object?>
+                    {
+                        ["prompt"] = "请处理子任务",
+                        ["systemPrompt"] = null,
+                        ["subAgentType"] = "Flash"
+                    }))
+                : CreateStreamingUpdatesAsync(cancellationToken,
+                    CopilotChatManagerTestContext.AssistantText("主智能体收到子结果"));
+        };
 
         var flashChatClient = new FakeChatClient();
         int flashCallCount = 0;
         IReadOnlyList<ChatMessage>? retryMessages = null;
-        flashChatClient.OnGetStreamingResponseAsync = (messages, options, cancellationToken) =>
+        FunctionResultContent? returnOutputResult = null;
+        flashChatClient.OnGetStreamingResponseAsync = (messages, _, cancellationToken) =>
         {
+            // 工具执行后的框架续轮不计入子智能体的首次运行和重试次数。
+            returnOutputResult = messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>()
+                .FirstOrDefault(result => result.CallId == "return-output-call-1");
+            if (returnOutputResult is not null)
+            {
+                return CreateStreamingUpdatesAsync(cancellationToken);
+            }
+
             flashCallCount++;
             if (flashCallCount == 1)
             {
-                return CreateToolInvocationAsyncEnumerable(
-                    options,
-                    "workspace-tool-call-1",
-                    CopilotChatManagerTestContext.GetWorkspaceToolName(nameof(WorkspaceToolProvider.ListDirectory)),
-                    null,
-                    cancellationToken);
+                return CreateStreamingUpdatesAsync(cancellationToken,
+                    CopilotChatManagerTestContext.AssistantText("子任务已处理，但未调用返回工具"));
             }
 
             retryMessages = messages.ToArray();
-            return CreateToolInvocationAsyncEnumerable(options, "return-output-call-1", "ReturnOutputToParent", new Dictionary<string, object?>
-            {
-                ["output"] = "子智能体工具返回结果"
-            }, cancellationToken);
+            return CreateStreamingUpdatesAsync(cancellationToken,
+                CopilotChatManagerTestContext.AssistantFunctionCall("return-output-call-1", "ReturnOutputToParent", new Dictionary<string, object?>
+                {
+                    ["output"] = "子智能体工具返回结果"
+                }));
         };
 
         var context = CopilotChatManagerTestContext.Create(primaryChatClient, flashChatClient);
@@ -413,6 +428,12 @@ public class CopilotChatManagerSendMessageTests
         Assert.AreEqual(ChatRole.User, retryPrompt.Role);
         Assert.IsTrue(retryPrompt.Text.Contains("必须调用工具", StringComparison.Ordinal));
         Assert.IsTrue(retryPrompt.Text.Contains("ReturnOutputToParent", StringComparison.Ordinal));
+        Assert.IsNotNull(subAgentResult, "框架应将子智能体工具执行结果返回主智能体");
+        Assert.IsNull(subAgentResult.Exception);
+        Assert.IsNotNull(returnOutputResult, "ReturnOutputToParent 应由框架实际执行并产生工具结果");
+        Assert.IsNull(returnOutputResult.Exception);
+        Assert.AreEqual("已将结果返回给上一级智能体。", returnOutputResult.Result?.ToString());
+        Assert.AreEqual("主智能体收到子结果", context.ChatManager.ChatMessages[^1].Content);
     }
 
     private static async IAsyncEnumerable<ChatResponseUpdate> CreateStreamingUpdatesAsync(
