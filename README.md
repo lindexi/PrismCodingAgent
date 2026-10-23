@@ -1,5 +1,7 @@
 # PrismCodingAgent
 
+[![Build](https://github.com/lindexi/PrismCodingAgent/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/lindexi/PrismCodingAgent/actions/workflows/build.yml)
+
 [English](README.en.md) | 简体中文
 
 专攻大项目的 CodingAgent 编程助手。产品决策上刻意克制：不堆功能，只保留被实践验证有效的做法。可以许愿式编程——说清目标后交给它自主推进；也可以和它结对，你压着节奏一起干。

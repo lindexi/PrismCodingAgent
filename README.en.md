@@ -1,5 +1,7 @@
 # PrismCodingAgent
 
+[![Build](https://github.com/lindexi/PrismCodingAgent/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/lindexi/PrismCodingAgent/actions/workflows/build.yml)
+
 English | [简体中文](README.md)
 
 An agentic coding assistant built for large projects. The product is deliberately restrained: no feature pile-up, only practices that have proven effective. Use it wishing-style — state the goal and let it drive; or pair with it, keeping your hands on the wheel.
