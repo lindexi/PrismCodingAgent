@@ -224,7 +224,7 @@ public sealed class ShellControlStyleTests
             var textPresenter = output.GetVisualDescendants().OfType<TextPresenter>().Single();
             var innerScroll = output.GetVisualDescendants().OfType<ScrollViewer>().Single();
             Console.WriteLine($"Output={output.Bounds.Width}, text={textPresenter.Bounds.Width}, layout={textPresenter.TextLayout.Width}, inner viewport={innerScroll.Viewport.Width}, extent={innerScroll.Extent.Width}, horizontal={innerScroll.HorizontalScrollBarVisibility}");
-            Assert.IsTrue(textPresenter.TextLayout.Width <= innerScroll.Viewport.Width + 0.5,
+            Assert.IsLessThanOrEqualTo(innerScroll.Viewport.Width + 0.5, textPresenter.TextLayout.Width,
                 $"Text layout={textPresenter.TextLayout.Width}, inner viewport={innerScroll.Viewport.Width}");
             Assert.IsTrue(origin.X >= 32 && origin.X + items.Bounds.Width <= presenter.Bounds.Width - 16 + 0.5
                 && outputOrigin.X + output.Bounds.Width <= presenter.Bounds.Width - 16 + 0.5

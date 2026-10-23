@@ -26,7 +26,7 @@ public sealed class ModelCatalogViewModelTests
         Assert.HasCount(1, provider.Models);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("coding-model", "Display name")]
     [DataRow(" coding-model ", "Display name")]
     [DataRow(null, "coding-model")]
@@ -42,7 +42,7 @@ public sealed class ModelCatalogViewModelTests
         CollectionAssert.AreEqual(new[] { "other-model" }, model.Models.ToArray());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public async Task AddingModelShouldRemoveItFromCatalog(bool manually)
@@ -102,7 +102,7 @@ public sealed class ModelCatalogViewModelTests
         }));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow("   ")]
     public async Task MissingEndpointShouldShowRequiredMessage(string endpoint)
@@ -112,7 +112,7 @@ public sealed class ModelCatalogViewModelTests
         Assert.AreEqual(PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.SetupEndpointRequired, model.Status);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("not-an-address")]
     [DataRow("file:///tmp/models")]
     public async Task InvalidEndpointShouldShowSpecificMessage(string endpoint)
@@ -128,7 +128,7 @@ public sealed class ModelCatalogViewModelTests
             => result;
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("file:///tmp/models")]
     [DataRow("")]
     public void InvalidEndpointShouldBeRejected(string endpoint)

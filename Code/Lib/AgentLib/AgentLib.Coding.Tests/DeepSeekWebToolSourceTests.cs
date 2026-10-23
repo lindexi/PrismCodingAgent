@@ -8,7 +8,7 @@ namespace AgentLib.Coding.Tests;
 [TestClass]
 public sealed class DeepSeekWebToolSourceTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false, null)]
     [DataRow(false, "")]
     [DataRow(false, " \t\r\n")]
@@ -24,7 +24,7 @@ public sealed class DeepSeekWebToolSourceTests
             functions.Select(function => function.Name).ToArray());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false, null, "Search", "query")]
     [DataRow(false, "", "Search", "query")]
     [DataRow(false, " \t\r\n", "Search", "query")]
@@ -49,7 +49,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.AreEqual("尚未配置 DeepSeek API Key，网页搜索和网页拉取工具不可用。请提醒用户前往设置填写 DeepSeek API Key，或配置 DeepSeek 官方模型服务的 API Key，或者是不调用 Search 和 Fetch 工具。", Assert.IsInstanceOfType<JsonElement>(result).GetString());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false, null, "Search", "query")]
     [DataRow(false, null, "Fetch", "url")]
     [DataRow(true, null, "Search", "query")]
@@ -73,7 +73,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.AreEqual(cancellation.Token, exception.CancellationToken);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false, "Search", "query", "query,count,needContent,originalQuestion,localization")]
     [DataRow(false, "Fetch", "url", "url")]
     [DataRow(true, "Search", "query", "query,count,needContent,originalQuestion,localization")]
@@ -110,7 +110,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.AreEqual(TimeSpan.FromSeconds(17), httpClient.Timeout);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "query", "{\"results\":[]}")]
     [DataRow("Fetch", "url", "{\"title\":\"Offline\",\"content\":\"Body\"}")]
     public async Task InvokeAsyncShouldUseInjectedHttpClientAsync(string toolName, string parameterName, string response)
@@ -136,7 +136,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.AreEqual(response, content);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(typeof(DeepSeekSearchRequest))]
     [DataRow(typeof(DeepSeekFetchRequest))]
     [DataRow(typeof(DeepSeekSearchResponse))]
@@ -147,7 +147,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize("{}", type));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("site_name")]
     [DataRow("site_icon")]
     [DataRow("date")]
@@ -164,7 +164,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<DeepSeekSearchResult>(JsonSerializer.Serialize(fields)));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "query", "{\"results\":[]}")]
     [DataRow("Fetch", "url", "{\"title\":\"Offline\",\"content\":\"Body\"}")]
     public async Task UpdatingConfigurationShouldRefreshExistingFunctionAsync(string name, string parameter, string response)
@@ -211,7 +211,7 @@ public sealed class DeepSeekWebToolSourceTests
         StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(await function.InvokeAsync(arguments)).GetString(), "尚未配置");
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "query")]
     [DataRow("Fetch", "url")]
     public async Task HttpFailureShouldReturnContextWithoutThrowingAsync(string operation, string parameter)
@@ -236,7 +236,7 @@ public sealed class DeepSeekWebToolSourceTests
         Assert.IsFalse(result.Contains("Authorization", StringComparison.Ordinal));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "Search Query=offline-target; Count=10; NeedContent=False; Localization=; OriginalQuestion=")]
     [DataRow("Fetch", "Fetch Url=https://example.invalid/offline-target")]
     public async Task SdkHttpFailureShouldPreserveStatusAndContextAsync(string operation, string context)
@@ -256,7 +256,7 @@ public sealed class DeepSeekWebToolSourceTests
             exception.Message);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(null)]
     [DataRow("")]
     [DataRow(" \t\r\n")]
@@ -297,7 +297,7 @@ public sealed class DeepSeekWebToolSourceTests
         StringAssert.Contains(exception.Message, "OriginalQuestion=original question");
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search")]
     [DataRow("Fetch")]
     public async Task SdkTransportFailureShouldPreserveExceptionChainAsync(string operation)
@@ -335,7 +335,7 @@ public sealed class DeepSeekWebToolSourceTests
             exception.Message);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "query", "transport")]
     [DataRow("Fetch", "url", "transport")]
     [DataRow("Search", "query", "json")]
@@ -367,7 +367,7 @@ public sealed class DeepSeekWebToolSourceTests
         });
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "query")]
     [DataRow("Fetch", "url")]
     public async Task CancellationDuringRequestShouldPropagateAsync(string operation, string parameter)
@@ -389,7 +389,7 @@ public sealed class DeepSeekWebToolSourceTests
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await pending);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search", "query")]
     [DataRow("Fetch", "url")]
     public async Task ProgrammingErrorsShouldNotBecomeToolResultsAsync(string operation, string parameter)
@@ -401,7 +401,7 @@ public sealed class DeepSeekWebToolSourceTests
             new AIFunctionArguments { [parameter] = "offline-target" }));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Search")]
     [DataRow("Fetch")]
     public async Task SdkSuccessBodyHttpFailureShouldPreserveContextAndExceptionAsync(string operation)

@@ -12,7 +12,7 @@ public sealed class CodingChatStartupOptionsTests
         Assert.AreEqual(CodingChatRoomPaths.CreateForCurrentUser().RootDirectory, options.Paths.RootDirectory);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("--debug-onboarding")]
     [DataRow("--DEBUG-ONBOARDING")]
     public void DebugArgumentShouldEnableOnboarding(string argument)

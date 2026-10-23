@@ -77,8 +77,8 @@ public sealed class ChatRoomSessionTests
         var after = DateTimeOffset.Now;
 
         // Assert
-        Assert.IsTrue(session.CreatedAt >= before);
-        Assert.IsTrue(session.CreatedAt <= after);
+        Assert.IsGreaterThanOrEqualTo(before, session.CreatedAt);
+        Assert.IsLessThanOrEqualTo(after, session.CreatedAt);
     }
 
     [TestMethod]

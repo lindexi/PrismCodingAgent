@@ -112,7 +112,7 @@ public sealed class ResponsesApiControlTests
 
         viewModel.IsResponsesApiEnabled = true;
 
-        Assert.AreEqual(true, toggle.IsChecked);
+        Assert.IsTrue(toggle.IsChecked);
     }
 
     [TestMethod]

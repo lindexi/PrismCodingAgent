@@ -8,7 +8,7 @@ namespace AgentLib.Tests.Model;
 [TestClass]
 public sealed class CopilotChatToolProcessTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void WhenCallStreamsAgainThenSameToolAndDetailsAreRetained(bool nested)

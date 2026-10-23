@@ -185,7 +185,7 @@ public sealed class ResponsesWorkflowLiveTests
                 System.Runtime.InteropServices.Marshal.Copy(row, 0, buffer.Address + y * buffer.RowBytes, row.Length);
         }
         using var stream = new MemoryStream();
-        bitmap.Save(stream);
+        bitmap.Save(stream, Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
         return stream.ToArray();
     }
 

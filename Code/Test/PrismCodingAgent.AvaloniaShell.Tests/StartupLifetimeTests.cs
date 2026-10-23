@@ -8,7 +8,7 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [AvaloniaTestClass]
 public sealed class StartupLifetimeTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false, "Task")]
     [DataRow(false, "Chat")]
     [DataRow(false, "Message")]
@@ -53,7 +53,7 @@ public sealed class StartupLifetimeTests
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public async Task WhenStartupFailsThenOwnedChatMessagesAreCleared(bool hasMainViewModel)

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Headless;
 
@@ -13,7 +14,10 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
     public override TestMethodAttribute GetTestMethodAttribute(TestMethodAttribute testMethodAttribute)
         => new UiTestMethodAttribute(testMethodAttribute);
 
-    private sealed class UiTestMethodAttribute(TestMethodAttribute inner) : TestMethodAttribute
+    private sealed class UiTestMethodAttribute(
+        TestMethodAttribute inner,
+        [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = -1) : TestMethodAttribute(callerFilePath, callerLineNumber)
     {
         public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
             // Headless completes dispatch inline. MSTest must not run assembly cleanup on

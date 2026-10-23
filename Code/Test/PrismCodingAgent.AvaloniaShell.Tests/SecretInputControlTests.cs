@@ -4,6 +4,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AgentLib.Coding.Sandboxes;
@@ -114,7 +115,7 @@ public sealed class SecretInputControlTests
                 ?? throw new InvalidOperationException("Headless frame unavailable.");
             string screenshotDirectory = System.IO.Path.Join(AppContext.BaseDirectory, "SecretInputScreenshots");
             System.IO.Directory.CreateDirectory(screenshotDirectory);
-            bitmap.Save(System.IO.Path.Join(screenshotDirectory, $"checked-rounded-{rounded}-focused-{focused}.png"));
+            bitmap.Save(System.IO.Path.Join(screenshotDirectory, $"checked-rounded-{rounded}-focused-{focused}.png"), PngBitmapEncoderOptions.Default);
             var border = input.GetVisualDescendants().OfType<Border>().Single(item => item.Name == "PART_BorderElement");
             var right = button.TranslatePoint(new Point(button.Bounds.Width, 0), border)!.Value.X;
             var surface = input.GetVisualDescendants().OfType<Border>().Single(item => item.Parent is Panel && item != border);

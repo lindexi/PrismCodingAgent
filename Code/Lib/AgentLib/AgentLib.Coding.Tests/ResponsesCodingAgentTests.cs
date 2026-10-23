@@ -119,7 +119,7 @@ public sealed class ResponsesCodingAgentTests
             new CodingChatRunOptions(automaticCompression, false, null));
         await run.CompletionTask;
 
-        Assert.AreEqual(expectedCompactions, handler.CompactRequests.Count);
+        Assert.HasCount(expectedCompactions, handler.CompactRequests);
         using var request = JsonDocument.Parse(expectedCompactions == 1 ? handler.CompactRequests.Single() : handler.Requests[1]);
         Assert.AreEqual("5", request.RootElement.GetProperty("input").EnumerateArray()
             .Single(item => item.GetProperty("type").GetString() == "function_call_output")
