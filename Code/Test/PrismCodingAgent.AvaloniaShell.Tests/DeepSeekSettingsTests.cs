@@ -2,12 +2,13 @@ using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.Services.Settings;
 using PrismCodingAgent.AvaloniaShell.ViewModels;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
-[TestClass]
+[AvaloniaTestClass]
 public sealed class DeepSeekSettingsTests
 {
     public TestContext TestContext { get; set; } = null!;
@@ -19,7 +20,7 @@ public sealed class DeepSeekSettingsTests
     public async Task WhenLoadingSettingsThenOnlyOfficialServiceCanFillMissingKey(string? savedKey, string endpoint, string? expected)
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration(endpoint), new CodingChatShellSettings { DeepSeekApiKey = savedKey });
+        await service.SaveAsync(Configuration(endpoint), new CodingChatShellSettings { DeepSeekApiKey = savedKey, LanguageTag = Lang.Current.IetfLanguageTag });
         var viewModel = new SettingsViewModel(service, static () => { });
 
         await viewModel.LoadAsync();
@@ -34,7 +35,7 @@ public sealed class DeepSeekSettingsTests
     public async Task WhenSavingKeyThenNewViewModelLoadsPersistedResolvedKey(string? input, string expected)
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new CodingChatShellSettings());
+        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         var viewModel = new SettingsViewModel(service, static () => { });
         await viewModel.LoadAsync();
         viewModel.DeepSeekApiKey = input;
@@ -52,6 +53,7 @@ public sealed class DeepSeekSettingsTests
         var service = CreateService();
         var viewModel = new SettingsViewModel(service, static () => { });
         await viewModel.LoadAsync();
+        viewModel.LanguageTag = Lang.Current.IetfLanguageTag;
         viewModel.DeepSeekApiKey = "persisted-key";
 
         await ((SimpleAsyncCommand)viewModel.SaveCommand).ExecuteAsync();
@@ -75,7 +77,7 @@ public sealed class DeepSeekSettingsTests
     public async Task WhenSavingAutomaticKeyThenProviderChangesStillUpdateIt()
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new CodingChatShellSettings());
+        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         using var settings = new SettingsViewModel(service, static () => { });
         await settings.LoadAsync();
         await ((SimpleAsyncCommand)settings.SaveCommand).ExecuteAsync();

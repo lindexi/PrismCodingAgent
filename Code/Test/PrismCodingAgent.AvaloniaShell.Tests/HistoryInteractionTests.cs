@@ -1,13 +1,14 @@
 using AgentLib;
 using AgentLib.Logging;
 using AgentLib.Model;
+using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.Services.Sessions;
 using PrismCodingAgent.AvaloniaShell.ViewModels;
 using CodingChatApplicationTestFactory = global::PrismCodingAgent.AvaloniaShell.Tests.CodingWorkTaskControllerTestFactory;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
-[TestClass]
+[AvaloniaTestClass]
 public sealed class HistoryInteractionTests
 {
     [TestMethod]
@@ -21,8 +22,7 @@ public sealed class HistoryInteractionTests
             MessageCount = 4,
         });
 
-        string expected = string.Create(System.Globalization.CultureInfo.CurrentCulture,
-            $"4 条消息 | {item.StartedTime:yyyy-MM-dd HH:mm:ss}");
+        string expected = Lang.Current.SessionSubtitle.ToString(4, "2026-09-30 15:10:42");
         Assert.AreEqual(expected, item.Subtitle);
     }
 

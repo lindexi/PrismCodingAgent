@@ -7,6 +7,7 @@ using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.AvaloniaShell.Abilities;
 using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.Services.Settings;
 using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
 using PrismCodingAgent.AvaloniaShell.ViewModels;
@@ -41,6 +42,7 @@ public sealed class DeepSeekRuntimeUpdateTests
             StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
         }
 
+        settings.LanguageTag = Lang.Current.IetfLanguageTag;
         settings.DeepSeekApiKey = "saved-test-key";
         await ((SimpleAsyncCommand)settings.SaveCommand).ExecuteAsync();
 
@@ -67,14 +69,14 @@ public sealed class DeepSeekRuntimeUpdateTests
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
         StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
 
-        await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings { DeepSeekApiKey = "saved-test-key" });
+        await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings { DeepSeekApiKey = "saved-test-key", LanguageTag = Lang.Current.IetfLanguageTag });
         Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
             OpenAIConfigurationList = [new OpenAIProtocolLanguageModelConfiguration("https://api.deepseek.com/v1", "saved-test-key")],
-        }, new CodingChatShellSettings());
+        }, new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
-        await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings());
+        await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
     }
 
