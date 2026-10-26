@@ -1,47 +1,62 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:localizations="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:localizations="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations"
+             xmlns:arc="https://github.com/AIDotNet/TKCode.Arc"
              xmlns:views="using:PrismCodingAgent.AvaloniaShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.AvaloniaShell.ViewModels"
              xmlns:views11="clr-namespace:PrismCodingAgent.AvaloniaShell.Views"
              x:Class="PrismCodingAgent.AvaloniaShell.Views.ArchivedWorkTasksView"
              x:DataType="vm:MainViewModel">
     <Grid RowDefinitions="Auto,*" Margin="16,0,16,16">
-        <TextBlock Text="{Binding ArchivedWorkTasksTitleText, Source={x:Static localizations:Lang.Current}}" Classes="Title" Margin="0,0,0,12" />
+        <TextBlock Text="{Binding ArchivedWorkTasksTitleText, Source={x:Static localizations:Lang.Current}}"
+                   Classes="PageTitle" Margin="0,0,0,12" />
         <Grid Grid.Row="1">
-            <TextBlock Text="{Binding EmptyArchivedWorkTasksText, Source={x:Static localizations:Lang.Current}}" Classes="Subtitle"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       IsVisible="{Binding IsArchiveEmpty}" />
+            <arc:EmptyState IsVisible="{Binding IsArchiveEmpty}"
+                            Title="{Binding EmptyArchivedWorkTasksText, Source={x:Static localizations:Lang.Current}}"
+                            Icon="{x:Static arc:ArcIcons.Archive}" />
             <ListBox ItemsSource="{Binding ArchivedWorkTasks}" Background="Transparent"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.Styles>
                     <Style Selector="ListBoxItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
                     </Style>
                 </ListBox.Styles>
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:ArchivedWorkTaskItemViewModel">
-                        <Border Classes="Card" Padding="16" Margin="0,4">
+                        <Border Padding="16" Margin="0,4"
+                                Background="{arc:ArcDesignTokenResource Surface}"
+                                BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}"
+                                BorderThickness="1"
+                                CornerRadius="{arc:ArcDesignTokenResource RadiusPanel}">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="{Binding DisplayName}" FontWeight="Bold"
-                                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}"
+                                               Foreground="{arc:ArcDesignTokenResource Foreground}" />
                                     <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="{Binding WorkDirectoryText, Source={x:Static localizations:Lang.Current}}" Foreground="#62738D" />
-                                        <TextBlock Text="{Binding WorkspacePath}" Foreground="#62738D"
+                                        <TextBlock Text="{Binding WorkDirectoryText, Source={x:Static localizations:Lang.Current}}"
+                                                   Classes="Caption" />
+                                        <TextBlock Text="{Binding WorkspacePath}" Classes="Caption"
                                                    TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding WorkspacePath}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="{Binding ModelText, Source={x:Static localizations:Lang.Current}}" FontSize="12" Foreground="#62738D" />
-                                        <TextBlock Text="{Binding ModelReference}" FontSize="12" Foreground="#62738D" />
+                                        <TextBlock Text="{Binding ModelText, Source={x:Static localizations:Lang.Current}}"
+                                                   Classes="Caption" />
+                                        <TextBlock Text="{Binding ModelReference}" Classes="Caption" />
                                     </StackPanel>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <Button Content="{Binding RestoreWorkTaskText, Source={x:Static localizations:Lang.Current}}"
-                                            Command="{Binding $parent[views11:ArchivedWorkTasksView].((vm:MainViewModel)DataContext).RestoreWorkTaskCommand}"
-                                            CommandParameter="{Binding}" />
-                                    <Button Classes="QuietDanger" Content="{Binding DeleteSessionText, Source={x:Static localizations:Lang.Current}}"
-                                            Command="{Binding $parent[views11:ArchivedWorkTasksView].((vm:MainViewModel)DataContext).DeleteArchivedWorkTaskCommand}"
-                                            CommandParameter="{Binding}" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <arc:Button Variant="Secondary" Size="Small"
+                                                Content="{Binding RestoreWorkTaskText, Source={x:Static localizations:Lang.Current}}"
+                                                Command="{Binding $parent[views11:ArchivedWorkTasksView].((vm:MainViewModel)DataContext).RestoreWorkTaskCommand}"
+                                                CommandParameter="{Binding}" />
+                                    <arc:Button Variant="Ghost" Size="Small"
+                                                Content="{Binding DeleteSessionText, Source={x:Static localizations:Lang.Current}}"
+                                                Foreground="{arc:ArcDesignTokenResource Danger}"
+                                                Command="{Binding $parent[views11:ArchivedWorkTasksView].((vm:MainViewModel)DataContext).DeleteArchivedWorkTaskCommand}"
+                                                CommandParameter="{Binding}" />
                                 </StackPanel>
                             </Grid>
                         </Border>

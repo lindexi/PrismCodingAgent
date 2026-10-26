@@ -1,20 +1,20 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:PrismCodingAgent.AvaloniaShell.Converters"
-             x:Class="PrismCodingAgent.AvaloniaShell.App"
-             RequestedThemeVariant="Light">
+             x:Class="PrismCodingAgent.AvaloniaShell.App">
 
     <Application.Resources>
         <converters:WorkspaceTitleConverter x:Key="WorkspaceTitleConverter" />
         <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
         <converters:WindowTransparencyBackgroundConverter x:Key="WindowTransparencyBackgroundConverter" />
+        <converters:ToolCallProjection x:Key="ToolCallProjection" />
+        <converters:BoolToButtonVariantConverter x:Key="BoolToButtonVariant" />
     </Application.Resources>
 
     <Application.Styles>
+        <!-- FluentTheme 只作为 Avalonia 基础控件的兜底：Arc 控件自带 AtomUI / Arc 主题。 -->
         <FluentTheme />
-        <StyleInclude Source="avares://PrismCodingAgent/Styles/Colors.axaml" />
         <StyleInclude Source="avares://PrismCodingAgent/Styles/Controls.axaml" />
         <StyleInclude Source="avares://PrismCodingAgent/Styles/MessageBubble.axaml" />
-        <StyleInclude Source="avares://PrismCodingAgent/Styles/Settings.axaml" />
     </Application.Styles>
 </Application>

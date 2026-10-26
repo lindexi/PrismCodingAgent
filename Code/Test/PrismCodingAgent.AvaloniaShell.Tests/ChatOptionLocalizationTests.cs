@@ -1,10 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using PrismCodingAgent.AvaloniaShell.Abilities;
 using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.ViewModels;
 using PrismCodingAgent.AvaloniaShell.Views;
+using ArcSelect = TKCode.Arc.Select;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -140,16 +140,16 @@ public sealed class ChatOptionLocalizationTests
         try
         {
             Dispatcher.UIThread.RunJobs();
-            var reasoning = view.FindControl<ComboBox>("ReasoningEffortSelector")!;
-            var ability = view.FindControl<ComboBox>("AbilitySelector")!;
-            var reasoningText = reasoning.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == "默认");
-            var abilityText = ability.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == "编程");
+            var reasoning = view.FindControl<ArcSelect>("ReasoningEffortSelector")!;
+            var ability = view.FindControl<ArcSelect>("AbilitySelector")!;
+            Assert.AreEqual("默认", reasoning.SelectedText);
+            Assert.AreEqual("编程", ability.SelectedText);
 
             Lang.SetCurrent("en");
             Dispatcher.UIThread.RunJobs();
 
-            Assert.AreEqual("Default", reasoningText.Text);
-            Assert.AreEqual("Coding", abilityText.Text);
+            Assert.AreEqual("Default", reasoning.SelectedText);
+            Assert.AreEqual("Coding", ability.SelectedText);
         }
         finally
         {

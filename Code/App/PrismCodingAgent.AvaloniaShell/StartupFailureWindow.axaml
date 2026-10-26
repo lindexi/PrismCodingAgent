@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:localizations="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations"
+        xmlns:arc="https://github.com/AIDotNet/TKCode.Arc"
         xmlns:vm="clr-namespace:PrismCodingAgent.AvaloniaShell.ViewModels"
         x:Class="PrismCodingAgent.AvaloniaShell.StartupFailureWindow"
         x:DataType="vm:StartupFailureViewModel"
@@ -10,38 +11,36 @@
         Height="520"
         MinWidth="560"
         MinHeight="360"
+        Background="{arc:ArcDesignTokenResource Background}"
         WindowStartupLocation="CenterScreen">
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20" RowSpacing="12">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="24" RowSpacing="14">
         <TextBlock Grid.Row="0"
                    Text="{Binding StartupFailureTitle, Source={x:Static localizations:Lang.Current}}"
                    FontSize="22"
                    FontWeight="Bold"
-                   Foreground="{StaticResource ErrorBrush}" />
+                   Foreground="{arc:ArcDesignTokenResource Danger}" />
 
         <StackPanel Grid.Row="1" Spacing="4">
-            <TextBlock Text="{Binding ConfigurationFile, Source={x:Static localizations:Lang.Current}}" Classes="Subtitle" />
-            <TextBlock Text="{Binding ConfigurationFilePath}"
-                       TextWrapping="Wrap"
-                       FontFamily="Consolas" />
-            <TextBlock Text="{Binding ErrorMessage}"
-                       Margin="0,8,0,0"
-                       TextWrapping="Wrap"
-                       Foreground="{StaticResource ErrorBrush}" />
+            <TextBlock Text="{Binding ConfigurationFile, Source={x:Static localizations:Lang.Current}}"
+                       Classes="Caption" />
+            <TextBlock Text="{Binding ConfigurationFilePath}" TextWrapping="Wrap" Classes="Mono" />
+            <TextBlock Text="{Binding ErrorMessage}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Foreground="{arc:ArcDesignTokenResource Danger}" />
         </StackPanel>
 
-        <TextBox Grid.Row="2"
-                 Text="{Binding ErrorDetails}"
-                 IsReadOnly="True"
-                 AcceptsReturn="True"
-                 TextWrapping="NoWrap"
-                 FontFamily="Consolas"
-                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        <Border Grid.Row="2"
+                Background="{arc:ArcDesignTokenResource Surface}"
+                BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}" BorderThickness="1"
+                CornerRadius="{arc:ArcDesignTokenResource RadiusPanel}">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <SelectableTextBlock Text="{Binding ErrorDetails}" TextWrapping="NoWrap"
+                                     Classes="Mono" Padding="12"
+                                     Foreground="{arc:ArcDesignTokenResource TextSecondary}" />
+            </ScrollViewer>
+        </Border>
 
-        <Button Grid.Row="3"
-                Classes="Danger"
-                Content="{Binding ExitText, Source={x:Static localizations:Lang.Current}}"
-                Command="{Binding ExitCommand}"
-                HorizontalAlignment="Right" />
+        <arc:Button Grid.Row="3" Variant="Danger" HorizontalAlignment="Right"
+                    Content="{Binding ExitText, Source={x:Static localizations:Lang.Current}}"
+                    Command="{Binding ExitCommand}" />
     </Grid>
 </Window>
