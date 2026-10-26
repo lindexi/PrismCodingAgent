@@ -55,7 +55,7 @@
         </DataTemplate>
     </UserControl.DataTemplates>
 
-    <Grid RowDefinitions="Auto,*,Auto" Background="{arc:ArcDesignTokenResource Background}">
+    <Grid RowDefinitions="Auto,*,Auto" Background="Transparent">
 
         <Border Grid.Row="0" Margin="24,14,24,6" Padding="14,12"
                 Background="{arc:ArcDesignTokenResource Surface}"
@@ -126,7 +126,7 @@
 
         <ScrollViewer x:Name="MessagesScrollViewer" IsVisible="{Binding !ShowWelcome}"
                       Grid.Row="1"
-                      Background="{arc:ArcDesignTokenResource Background}"
+                      Background="Transparent"
                       Padding="0"
                       AllowAutoHide="False"
                       HorizontalScrollBarVisibility="Disabled"

@@ -5,7 +5,8 @@
              xmlns:views="using:PrismCodingAgent.AvaloniaShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.AvaloniaShell.ViewModels"
              x:Class="PrismCodingAgent.AvaloniaShell.Views.MainView" x:DataType="vm:MainViewModel">
-    <Grid ColumnDefinitions="292,*" Background="Transparent">
+    <!-- 侧栏与工作区之间的空隙共用同一层灰色，让侧栏与空隙连成一片，形成沉浸式侧栏。 -->
+    <Grid ColumnDefinitions="292,*" Background="{arc:ArcDesignTokenResource SurfaceMuted}">
 
         <Border Grid.ColumnSpan="2" Margin="20,10" Padding="14,10" VerticalAlignment="Top" ZIndex="10"
                 IsVisible="{Binding HasErrorMessage}"
@@ -16,13 +17,15 @@
                        Foreground="{arc:ArcDesignTokenResource Warning}" />
         </Border>
 
-        <Border Background="{arc:ArcDesignTokenResource Surface}"
-                BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}" BorderThickness="0,0,1,0">
+        <Border Background="Transparent">
             <Grid Margin="14,24,14,16" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="12">
                 <Grid ColumnDefinitions="40,*" ColumnSpacing="10" Margin="4,0">
                     <Border Background="{arc:ArcDesignTokenResource AccentSubtle}"
                             CornerRadius="{arc:ArcDesignTokenResource RadiusControl}" Width="40" Height="40">
-                        <Image Width="26" Height="26" Source="avares://PrismCodingAgent/Assets/Icons/CodingChatRoom_48x48.png" />
+                        <arc:ArcGlyph Size="24" StrokeThickness="2"
+                                      Data="{StaticResource AppLogoGeometry}"
+                                      Foreground="{arc:ArcDesignTokenResource Accent}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
                         <TextBlock Text="CodingChatRoom" FontSize="16" FontWeight="Bold"
@@ -196,10 +199,10 @@
             </Grid>
         </Border>
 
-        <Border Grid.Column="1" Margin="0,8,8,8"
+        <Border Grid.Column="1" Margin="8"
                 CornerRadius="{arc:ArcDesignTokenResource RadiusSurface}"
-                Background="{arc:ArcDesignTokenResource Background}"
-                BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}" BorderThickness="1"
+                Background="{arc:ArcDesignTokenResource Surface}"
+                BoxShadow="{arc:ArcDesignTokenResource ShadowResting}"
                 ClipToBounds="True">
             <Grid>
                 <Panel IsVisible="{Binding IsChatOpen}">

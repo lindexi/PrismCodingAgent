@@ -7,7 +7,7 @@
              xmlns:views2="clr-namespace:PrismCodingAgent.AvaloniaShell.Views"
              x:Class="PrismCodingAgent.AvaloniaShell.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
-    <Grid RowDefinitions="Auto,*,Auto" Background="{arc:ArcDesignTokenResource Background}">
+    <Grid RowDefinitions="Auto,*,Auto" Background="Transparent">
 
         <Border Grid.Row="0" Padding="32,22,32,16"
                 Background="{arc:ArcDesignTokenResource Background}"

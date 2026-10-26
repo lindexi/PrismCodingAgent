@@ -4,11 +4,16 @@
              x:Class="PrismCodingAgent.AvaloniaShell.App">
 
     <Application.Resources>
-        <converters:WorkspaceTitleConverter x:Key="WorkspaceTitleConverter" />
-        <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
-        <converters:WindowTransparencyBackgroundConverter x:Key="WindowTransparencyBackgroundConverter" />
-        <converters:ToolCallProjection x:Key="ToolCallProjection" />
-        <converters:BoolToButtonVariantConverter x:Key="BoolToButtonVariant" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://PrismCodingAgent/Styles/Branding.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <converters:WorkspaceTitleConverter x:Key="WorkspaceTitleConverter" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:WindowTransparencyBackgroundConverter x:Key="WindowTransparencyBackgroundConverter" />
+            <converters:ToolCallProjection x:Key="ToolCallProjection" />
+            <converters:BoolToButtonVariantConverter x:Key="BoolToButtonVariant" />
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>

@@ -36,6 +36,8 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets\Icons\CodingChatRoom.ico" />
     <AvaloniaResource Include="Assets\Icons\CodingChatRoom_48x48.png" />
+    <AvaloniaResource Include="Assets\Icons\coding-chat.svg" />
+    <AvaloniaResource Include="Styles\Branding.axaml" />
     <AvaloniaResource Include="Styles\Controls.axaml" />
     <AvaloniaResource Include="Styles\MessageBubble.axaml" />
   </ItemGroup>

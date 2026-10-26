@@ -1,0 +1,10 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        应用标识的矢量几何。与 Assets/Icons/coding-chat.svg 使用同一份路径数据：
+        左下角带尖端的对话气泡，内部是代码三角括号 <>。
+        Avalonia 12 没有内置 SVG 渲染（Avalonia.Svg.Skia 目前只支持 Avalonia 11），
+        所以这里以几何资源配合 arc:ArcGlyph 做等价矢量绘制，任意 DPI 下都清晰。
+    -->
+    <StreamGeometry x:Key="AppLogoGeometry">M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z M10 7.5 7.5 10.5 10 13.5 M14 7.5 16.5 10.5 14 13.5</StreamGeometry>
+</ResourceDictionary>
