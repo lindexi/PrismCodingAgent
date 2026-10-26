@@ -18,7 +18,7 @@ public sealed class TaskTitleVisualTests
             window.Show();
             window.UpdateLayout();
             var title = window.GetVisualDescendants().OfType<TextBlock>().Single(item => item.Text == model.ActiveWorkTask.DisplayName);
-            var menu = window.GetVisualDescendants().OfType<Button>().Single(item => item.Classes.Contains("Icon") && item.Flyout is MenuFlyout);
+            var menu = window.GetVisualDescendants().OfType<TKCode.Arc.DropdownMenu>().First();
             var titlePosition = title.TranslatePoint(default, window) ?? throw new InvalidOperationException("Title position unavailable.");
             var menuPosition = menu.TranslatePoint(default, window) ?? throw new InvalidOperationException("Menu position unavailable.");
             Assert.AreEqual(titlePosition.Y + title.Bounds.Height / 2, menuPosition.Y + menu.Bounds.Height / 2, 1);

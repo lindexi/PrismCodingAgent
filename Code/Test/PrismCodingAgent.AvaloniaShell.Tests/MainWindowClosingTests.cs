@@ -179,7 +179,7 @@ public sealed class MainWindowClosingTests
             string directory = Path.Join(AppContext.BaseDirectory, "Screenshots");
             Directory.CreateDirectory(directory);
             bitmap.Save(Path.Join(directory, "exit-confirmation.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
-            Assert.IsTrue(cancel.IsFocused && cancel.CornerRadius == new Avalonia.CornerRadius(4));
+            Assert.IsTrue(cancel.IsFocused, "退出确认应把键盘焦点放在取消按钮上。");
         }
         finally
         {

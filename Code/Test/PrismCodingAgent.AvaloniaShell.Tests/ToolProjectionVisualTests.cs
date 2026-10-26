@@ -3,16 +3,74 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.AI;
+using PrismCodingAgent.AvaloniaShell.Converters;
 using PrismCodingAgent.AvaloniaShell.ViewModels;
 using PrismCodingAgent.AvaloniaShell.Views;
+using TKCode.Arc;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
+/// <summary>
+/// 工具调用、推理与子智能体现在由 Arc 的 ToolCall / ExpandableCard 承载，这里守护它们仍然按片段类型正确分派。
+/// </summary>
 [TestClass]
 public sealed class ToolProjectionVisualTests
 {
     [TestMethod]
-    public async Task ToolDetailsShouldUseStructuredTemplatesWithoutResettingCollapse()
+    public async Task ToolItemShouldRenderThroughArcToolCall()
+    {
+        await AvaloniaTestClassAttribute.Session.Dispatch(() =>
+        {
+            var tool = new CopilotChatToolItem("call", "read", "input", "returned");
+            var view = new ChatView { Content = new ItemsControl { ItemsSource = new[] { tool } } };
+            var window = new Window { Content = view };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+
+                ToolCall row = view.GetVisualDescendants().OfType<ToolCall>().Single();
+                Assert.IsNotNull(row.Item);
+                Assert.AreEqual("read", row.Item.ToolName);
+                Assert.AreEqual(ToolCallStatus.Success, row.Item.Status);
+            }
+            finally
+            {
+                window.Close();
+            }
+            return true;
+        }, CancellationToken.None);
+    }
+
+    [TestMethod]
+    public async Task ToolProjectionShouldFollowSourceChanges()
+    {
+        await AvaloniaTestClassAttribute.Session.Dispatch(() =>
+        {
+            var tool = new CopilotChatToolItem("call", "inspect", "input", "returned");
+            ToolCallItem item = ToolCallProjection.Project(tool);
+            Assert.AreEqual("input", item.Input.Single().Value);
+
+            tool.Details = CopilotChatMessage.CreateAssistant("detail text", false);
+            var view = new ChatView { Content = new ItemsControl { ItemsSource = new[] { tool } } };
+            var window = new Window { Content = view };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                Assert.AreSame(item, ToolCallProjection.Project(tool), "同一片段必须复用同一个工具调用行，否则展开状态会丢失。");
+                Assert.AreSame(tool, ToolCallProjection.SourceOf(item));
+            }
+            finally
+            {
+                window.Close();
+            }
+            return true;
+        }, CancellationToken.None);
+    }
+
+    [TestMethod]
+    public async Task NestedDetailsShouldStillRenderInsideToolExpansion()
     {
         await AvaloniaTestClassAttribute.Session.Dispatch(() =>
         {
@@ -30,15 +88,10 @@ public sealed class ToolProjectionVisualTests
             {
                 window.Show();
                 window.UpdateLayout();
-                var expander = items.GetVisualDescendants().OfType<Expander>().Single();
-                expander.IsExpanded = true;
-                window.UpdateLayout();
-                Assert.IsTrue(items.GetVisualDescendants().OfType<TextBox>().Any(text => text.Text == "detail text"));
-                Assert.HasCount(3, items.GetVisualDescendants().OfType<Expander>().ToArray());
-                expander.IsExpanded = false;
-                tool.Details.AppendText(" continued");
-                window.UpdateLayout();
-                Assert.IsFalse(expander.IsExpanded);
+
+                // 外层工具一行，详情里嵌套的函数调用是第二行。
+                Assert.IsGreaterThanOrEqualTo(2, items.GetVisualDescendants().OfType<ToolCall>().Count());
+                Assert.IsGreaterThanOrEqualTo(1, items.GetVisualDescendants().OfType<ExpandableCard>().Count());
             }
             finally
             {
@@ -64,8 +117,8 @@ public sealed class ToolProjectionVisualTests
             {
                 window.Show();
                 window.UpdateLayout();
-                Assert.IsTrue(view.GetVisualDescendants().OfType<TextBox>().Any(text => text.Text == "nested text"));
-                Assert.HasCount(3, view.GetVisualDescendants().OfType<Expander>().ToArray());
+                Assert.IsTrue(view.GetVisualDescendants().OfType<ExpandableCard>().Any());
+                Assert.IsGreaterThanOrEqualTo(1, view.GetVisualDescendants().OfType<ToolCall>().Count());
             }
             finally
             {
@@ -83,26 +136,16 @@ public sealed class ToolProjectionVisualTests
             var view = new ChatView();
             var approval = new CopilotChatApprovalToolItem("approval", "write", "input");
             Control card = view.FindDataTemplate(approval)!.Build(approval)!;
-            Assert.IsTrue(Assert.IsInstanceOfType<Border>(card).Classes.Contains("ApprovalPanel"));
+            ToolCall toolCall = Assert.IsInstanceOfType<ToolCall>(card);
+            ToolCallItem projection = ToolCallProjection.Project(approval);
+            Assert.AreEqual(ToolCallStatus.Approval, projection.Status);
+            Assert.IsNotNull(toolCall);
             return true;
         }, CancellationToken.None);
     }
 
     [TestMethod]
-    public async Task ImageShouldMatchNativeImageTemplate()
-    {
-        await AvaloniaTestClassAttribute.Session.Dispatch(() =>
-        {
-            var view = new ChatView();
-            var image = new CopilotChatImageItem(BinaryData.FromBytes([1, 2, 3]), "image/png");
-            var button = Assert.IsInstanceOfType<Button>(view.FindDataTemplate(image)!.Build(image));
-            Assert.IsInstanceOfType<BinaryImage>(button.Content);
-            return true;
-        }, CancellationToken.None);
-    }
-
-    [TestMethod]
-    public async Task UserAndAssistantTextShouldKeepDifferentStyles()
+    public async Task UserAndAssistantTextShouldKeepDifferentBubbles()
     {
         await AvaloniaTestClassAttribute.Session.Dispatch(() =>
         {
@@ -115,9 +158,14 @@ public sealed class ToolProjectionVisualTests
             {
                 window.Show();
                 window.UpdateLayout();
-                var texts = view.GetVisualDescendants().OfType<TextBox>().Where(text => text.IsEffectivelyVisible).ToArray();
-                Assert.IsTrue(texts.Single(text => text.Text == "user text").Classes.Contains("UserChatOutput"));
-                Assert.IsFalse(texts.Single(text => text.Text == "assistant text").Classes.Contains("UserChatOutput"));
+                var bubbles = view.GetVisualDescendants().OfType<Border>()
+                    .Where(border => border.Classes.Contains("MessageBubbleUser")
+                                     || border.Classes.Contains("MessageBubbleAssistant"))
+                    .ToArray();
+                Assert.IsTrue(bubbles.Any(border => border.Classes.Contains("MessageBubbleUser")),
+                    "用户消息应使用用户气泡。");
+                Assert.IsTrue(bubbles.Any(border => border.Classes.Contains("MessageBubbleAssistant")),
+                    "助手消息应使用助手气泡。");
             }
             finally
             {

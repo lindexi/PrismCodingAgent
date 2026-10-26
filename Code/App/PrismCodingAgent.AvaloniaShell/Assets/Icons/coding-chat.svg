@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PrismCodingAgent / CodingChatRoom 应用标识。
+  造型：左下角带尖端的对话气泡，内部为代码三角括号 <>。
+  尺寸：24x24 视图框，描边绘制，颜色由 currentColor 决定，便于跟随主题。
+  应用内的矢量渲染与 Styles/Branding.axaml 中的 AppLogoGeometry 使用同一份路径数据。
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 24 24"
+     width="24"
+     height="24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     role="img"
+     aria-label="CodingChatRoom">
+
+  <title>CodingChatRoom</title>
+
+  <!-- 气泡本体：左下角是尖端的对话气泡 -->
+  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+
+  <!-- 代码三角括号 < -->
+  <path d="M10 7.5 7.5 10.5 10 13.5"/>
+
+  <!-- 代码三角括号 > -->
+  <path d="M14 7.5 16.5 10.5 14 13.5"/>
+</svg>

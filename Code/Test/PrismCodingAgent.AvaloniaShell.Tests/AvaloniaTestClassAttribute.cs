@@ -1,6 +1,10 @@
 using System.Runtime.CompilerServices;
+using AtomUI;
+using AtomUI.Desktop.Controls;
 using Avalonia;
 using Avalonia.Headless;
+using TKCode.Arc;
+using TKCode.Arc.Fonts;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -33,6 +37,13 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
         public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>()
             .UseSkia()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
-            .WithInterFont();
+            .WithInterFont()
+            .WithArcFonts()
+            .UseAtomUI(builder =>
+            {
+                builder.UseDesktopControls();
+                builder.UseArc();
+                builder.UseArcSpecial();
+            });
     }
 }

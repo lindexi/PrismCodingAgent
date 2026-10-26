@@ -1,284 +1,246 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:localizations="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations"
+             xmlns:arc="https://github.com/AIDotNet/TKCode.Arc"
              xmlns:views="using:PrismCodingAgent.AvaloniaShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.AvaloniaShell.ViewModels"
              xmlns:views2="clr-namespace:PrismCodingAgent.AvaloniaShell.Views"
              x:Class="PrismCodingAgent.AvaloniaShell.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
-    <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource SettingsBackgroundBrush}">
-        <Border Grid.Row="0" Classes="SettingsHeader" Padding="32,24,32,16">
+    <Grid RowDefinitions="Auto,*,Auto" Background="Transparent">
+
+        <Border Grid.Row="0" Padding="32,22,32,16"
+                Background="{arc:ArcDesignTokenResource Background}"
+                BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}"
+                BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="20" HorizontalAlignment="Stretch">
-                <Button Classes="SettingsBack"
-                        Content="{Binding BackArrowText, Source={x:Static localizations:Lang.Current}}"
-                        ToolTip.Tip="{Binding BackToChatText, Source={x:Static localizations:Lang.Current}}"
-                        Command="{Binding BackCommand}"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center" />
-                <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsPageTitle" />
-                    <TextBlock Text="{Binding SettingsSubtitle, Source={x:Static localizations:Lang.Current}}" Classes="Subtitle" />
+                <arc:Button Variant="Ghost" VerticalAlignment="Center" HorizontalAlignment="Left"
+                            ToolTip.Tip="{Binding BackToChatText, Source={x:Static localizations:Lang.Current}}"
+                            Command="{Binding BackCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.ArrowLeft}" />
+                        <TextBlock Text="{Binding BackArrowText, Source={x:Static localizations:Lang.Current}}" />
+                    </StackPanel>
+                </arc:Button>
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static localizations:Lang.Current}}"
+                               Classes="PageTitle" />
+                    <TextBlock Text="{Binding SettingsSubtitle, Source={x:Static localizations:Lang.Current}}"
+                               Classes="Caption" />
                 </StackPanel>
-                <Button Grid.Column="2"
-                        Classes="Primary accent SaveSettings"
-                        Content="{Binding SaveChangesText, Source={x:Static localizations:Lang.Current}}"
-                        Command="{Binding SaveCommand}"
-                        IsEnabled="{Binding !IsBusy}"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center" />
+                <arc:Button Grid.Column="2" Variant="Primary" VerticalAlignment="Center"
+                            Content="{Binding SaveChangesText, Source={x:Static localizations:Lang.Current}}"
+                            Command="{Binding SaveCommand}" IsEnabled="{Binding !IsBusy}" />
             </Grid>
         </Border>
 
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="32,8,32,32" MaxWidth="1120"
-                        Spacing="8"
-                        HorizontalAlignment="Stretch">
-                <Border Classes="SettingsCard" Padding="24">
+            <StackPanel Margin="32,16,32,32" MaxWidth="1080" Spacing="16" HorizontalAlignment="Stretch">
+
+                <Border Classes="RaisedSurface" Padding="24">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="{Binding LanguageText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <ComboBox x:Name="LanguageSelector" ItemsSource="{Binding LanguageTags}" SelectedItem="{Binding LanguageTag, Mode=TwoWay}" />
-                        <TextBlock Text="{Binding LanguageHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding LanguageText, Source={x:Static localizations:Lang.Current}}"
+                                   Classes="SectionTitle" />
+                        <arc:Select x:Name="LanguageSelector" Width="240" HorizontalAlignment="Left"
+                                    ItemsSource="{Binding LanguageTags}"
+                                    SelectedItem="{Binding LanguageTag, Mode=TwoWay}" />
+                        <TextBlock Text="{Binding LanguageHint, Source={x:Static localizations:Lang.Current}}"
+                                   Classes="Hint" />
                     </StackPanel>
-                </Border>
-                <Border Classes="SettingsCard" Padding="24">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="{Binding DeepSeekApiKeyText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <views:SecretInput x:Name="DeepSeekApiKeyInput" Text="{Binding DeepSeekApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Text="{Binding DeepSeekApiKeyHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
-                    </StackPanel>
-                </Border>
-                <Border Classes="SettingsIntro" Padding="18" IsVisible="False">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-                        <Border Classes="IntroIcon">
-                            <TextBlock Text="⚙"
-                                       FontSize="20"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding WorkspaceConfiguration, Source={x:Static localizations:Lang.Current}}" Classes="Eyebrow" />
-                            <TextBlock Text="{Binding WorkspaceConfigurationDescription, Source={x:Static localizations:Lang.Current}}"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Foreground="#22313F" />
-                            <TextBlock Text="{Binding WorkspaceConfigurationHint, Source={x:Static localizations:Lang.Current}}"
-                                       Classes="SettingsHint"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Border Grid.Column="2" Classes="SectionTag" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ReloadRequired, Source={x:Static localizations:Lang.Current}}"
-                                       FontSize="11"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource PrimaryDarkBrush}" />
-                        </Border>
-                    </Grid>
                 </Border>
 
-                <Border Classes="SettingsCard" Padding="24">
-                    <StackPanel Spacing="20">
+                <Border Classes="RaisedSurface" Padding="24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{Binding DeepSeekApiKeyText, Source={x:Static localizations:Lang.Current}}"
+                                   Classes="SectionTitle" />
+                        <views:SecretInput x:Name="DeepSeekApiKeyInput"
+                                           Text="{Binding DeepSeekApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="{Binding DeepSeekApiKeyHint, Source={x:Static localizations:Lang.Current}}"
+                                   Classes="Hint" />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="RaisedSurface" Padding="24">
+                    <StackPanel Spacing="18">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-                            <Border Classes="SectionIcon SandboxIcon">
-                                <TextBlock Text="&gt;_"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource SandboxAccentBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                            <Border Width="38" Height="38"
+                                    CornerRadius="{arc:ArcDesignTokenResource RadiusControl}"
+                                    Background="{arc:ArcDesignTokenResource SuccessSubtle}"
+                                    VerticalAlignment="Top">
+                                <arc:ArcGlyph Size="18" Data="{x:Static arc:ArcIcons.Terminal}"
+                                              Foreground="{arc:ArcDesignTokenResource Success}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
-                                <TextBlock Text="{Binding SandboxTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                                <TextBlock Text="{Binding SandboxTitle, Source={x:Static localizations:Lang.Current}}"
+                                           Classes="SectionTitle" />
                                 <TextBlock Text="{Binding SandboxDescription, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="Subtitle"
-                                           TextWrapping="Wrap" />
+                                           Classes="Caption" TextWrapping="Wrap" />
                             </StackPanel>
-                            <ToggleSwitch Grid.Column="2"
-                                          IsChecked="{Binding IsWindowsSandboxEnabled}"
-                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
-                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}"
-                                          VerticalAlignment="Center" />
+                            <arc:Switch Grid.Column="2" VerticalAlignment="Center"
+                                        Content="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                        IsChecked="{Binding IsWindowsSandboxEnabled}" />
                         </Grid>
 
-                        <Border Classes="SandboxNotice" Padding="14">
+                        <Border Padding="14" CornerRadius="{arc:ArcDesignTokenResource RadiusControl}"
+                                Background="{arc:ArcDesignTokenResource SuccessSubtle}"
+                                BorderBrush="{arc:ArcDesignTokenResource Success}" BorderThickness="1">
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                <TextBlock Text="✓"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource SandboxAccentBrush}" />
-                                <TextBlock Grid.Column="1"
+                                <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.CircleCheck}"
+                                              Foreground="{arc:ArcDesignTokenResource Success}" />
+                                <TextBlock Grid.Column="1" TextWrapping="Wrap"
                                            Text="{Binding SandboxTrustHint, Source={x:Static localizations:Lang.Current}}"
-                                           TextWrapping="Wrap"
-                                           Foreground="{StaticResource SandboxTextBrush}" />
+                                           Foreground="{arc:ArcDesignTokenResource Success}" />
                             </Grid>
                         </Border>
 
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="16" IsEnabled="{Binding IsWindowsSandboxEnabled}">
                             <StackPanel Spacing="6">
-                                <TextBlock Text="{Binding SandboxToolPath, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
-                                <TextBox Classes="Rounded SettingsInput"
-                                         Text="{Binding WindowsSandboxToolPath}"
-                                         PlaceholderText="C:\Tools\WinRemoteShell.exe" />
+                                <TextBlock Text="{Binding SandboxToolPath, Source={x:Static localizations:Lang.Current}}"
+                                           Classes="FieldLabel" />
+                                <arc:Input Size="Small" Text="{Binding WindowsSandboxToolPath}"
+                                           Placeholder="C:\Tools\WinRemoteShell.exe" />
                                 <TextBlock Text="{Binding SandboxToolHint, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="SettingsHint"
-                                           TextWrapping="Wrap" />
+                                           Classes="Hint" />
                             </StackPanel>
-
                             <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Text="{Binding SandboxAddress, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
-                                <TextBox Classes="Rounded SettingsInput"
-                                         Text="{Binding WindowsSandboxServerAddress}"
-                                         PlaceholderText="127.0.0.1:12399"
-                                         LostFocus="OnWindowsSandboxServerAddressLostFocus" />
+                                <TextBlock Text="{Binding SandboxAddress, Source={x:Static localizations:Lang.Current}}"
+                                           Classes="FieldLabel" />
+                                <arc:Input Size="Small" Text="{Binding WindowsSandboxServerAddress}"
+                                           Placeholder="127.0.0.1:12399"
+                                           LostFocus="OnWindowsSandboxServerAddressLostFocus" />
                                 <TextBlock Text="{Binding SandboxAddressHint, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="SettingsHint"
-                                           TextWrapping="Wrap" />
-                                <Grid ColumnDefinitions="Auto,*"
-                                      ColumnSpacing="8"
+                                           Classes="Hint" />
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8"
                                       IsVisible="{Binding HasSandboxConnectionStatusMessage}">
-                                    <ProgressBar Width="72"
-                                                 IsIndeterminate="True"
+                                    <ProgressBar Width="72" IsIndeterminate="True"
                                                  IsVisible="{Binding IsSandboxConnectionTestRunning}"
                                                  VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1"
+                                    <TextBlock Grid.Column="1" TextWrapping="Wrap"
                                                Text="{Binding SandboxConnectionStatusMessage}"
-                                               Foreground="{StaticResource SandboxTextBrush}"
-                                               IsVisible="{Binding !IsSandboxConnectionStatusError}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Grid.Column="1"
+                                               Foreground="{arc:ArcDesignTokenResource Success}"
+                                               IsVisible="{Binding !IsSandboxConnectionStatusError}" />
+                                    <TextBlock Grid.Column="1" TextWrapping="Wrap"
                                                Text="{Binding SandboxConnectionStatusMessage}"
-                                               Foreground="{StaticResource DangerBrush}"
-                                               IsVisible="{Binding IsSandboxConnectionStatusError}"
-                                               TextWrapping="Wrap" />
+                                               Foreground="{arc:ArcDesignTokenResource Danger}"
+                                               IsVisible="{Binding IsSandboxConnectionStatusError}" />
                                 </Grid>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <Border Classes="SettingsCard" Padding="24">
-                    <StackPanel Spacing="20">
+                <Border Classes="RaisedSurface" Padding="24">
+                    <StackPanel Spacing="18">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-                            <Border Classes="SectionIcon">
-                                <TextBlock Text="NET"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource PrimaryDarkBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                            <Border Width="38" Height="38"
+                                    CornerRadius="{arc:ArcDesignTokenResource RadiusControl}"
+                                    Background="{arc:ArcDesignTokenResource AccentSubtle}"
+                                    VerticalAlignment="Top">
+                                <arc:ArcGlyph Size="18" Data="{x:Static arc:ArcIcons.Cpu}"
+                                              Foreground="{arc:ArcDesignTokenResource Accent}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
                                 <TextBlock Text="{Binding NetworkProxySettingsTitle, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="SettingsSectionTitle" />
+                                           Classes="SectionTitle" />
                                 <TextBlock Text="{Binding NetworkProxySettingsDescription, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="Subtitle"
-                                           TextWrapping="Wrap" />
+                                           Classes="Caption" TextWrapping="Wrap" />
                             </StackPanel>
-                            <ToggleSwitch Grid.Column="2"
-                                          IsChecked="{Binding IsNetworkProxyEnabled}"
-                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
-                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}"
-                                          VerticalAlignment="Center" />
+                            <arc:Switch Grid.Column="2" VerticalAlignment="Center"
+                                        Content="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                        IsChecked="{Binding IsNetworkProxyEnabled}" />
                         </Grid>
 
                         <StackPanel Spacing="14" IsEnabled="{Binding IsNetworkProxyEnabled}">
                             <StackPanel Spacing="6">
-                                <TextBlock Text="{Binding NetworkProxyAddressLabel, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
-                                <TextBox Classes="Rounded SettingsInput"
-                                         Text="{Binding NetworkProxyAddress}"
-                                         PlaceholderText="{Binding NetworkProxyAddressPlaceholder, Source={x:Static localizations:Lang.Current}}" />
+                                <TextBlock Text="{Binding NetworkProxyAddressLabel, Source={x:Static localizations:Lang.Current}}"
+                                           Classes="FieldLabel" />
+                                <arc:Input Size="Small" Text="{Binding NetworkProxyAddress}"
+                                           Placeholder="{Binding NetworkProxyAddressPlaceholder, Source={x:Static localizations:Lang.Current}}" />
                                 <TextBlock Text="{Binding NetworkProxyAddressHint, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="SettingsHint"
-                                           TextWrapping="Wrap" />
+                                           Classes="Hint" />
                             </StackPanel>
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                <CheckBox IsChecked="{Binding BypassProxyOnLocal}"
-                                          Content="{Binding BypassProxyOnLocalText, Source={x:Static localizations:Lang.Current}}" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding BypassProxyOnLocalHint, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="SettingsHint"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center" />
+                                <arc:Checkbox Content="{Binding BypassProxyOnLocalText, Source={x:Static localizations:Lang.Current}}"
+                                              IsChecked="{Binding BypassProxyOnLocal}" />
+                                <TextBlock Grid.Column="1" Classes="Hint" VerticalAlignment="Center"
+                                           Text="{Binding BypassProxyOnLocalHint, Source={x:Static localizations:Lang.Current}}" />
                             </Grid>
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <Border Classes="SettingsCard" Padding="24">
-                    <StackPanel Spacing="16">
+                <Border Classes="RaisedSurface" Padding="24">
+                    <StackPanel Spacing="14">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-                            <Border Classes="SectionIcon">
-                                <TextBlock Text="LSP"
-                                           FontSize="10"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource PrimaryDarkBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                            <Border Width="38" Height="38"
+                                    CornerRadius="{arc:ArcDesignTokenResource RadiusControl}"
+                                    Background="{arc:ArcDesignTokenResource AccentSubtle}"
+                                    VerticalAlignment="Top">
+                                <arc:ArcGlyph Size="18" Data="{x:Static arc:ArcIcons.SquareCode}"
+                                              Foreground="{arc:ArcDesignTokenResource Accent}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
                                 <TextBlock Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="SettingsSectionTitle" />
+                                           Classes="SectionTitle" />
                                 <TextBlock Text="{Binding LanguageServerSettingsDescription, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="Subtitle"
-                                           TextWrapping="Wrap" />
+                                           Classes="Caption" TextWrapping="Wrap" />
                             </StackPanel>
-                            <StackPanel Grid.Column="2"
-                                        Orientation="Horizontal"
-                                        Spacing="8"
-                                        VerticalAlignment="Center">
-                                <Button Classes="Primary accent"
-                                        Content="{Binding InstallOrUpdateLanguageServerText, Source={x:Static localizations:Lang.Current}}"
-                                        Click="OnInstallOrUpdateLanguageServerClick" />
-                                <Button Content="{Binding CopyLanguageServerInstallCommandText, Source={x:Static localizations:Lang.Current}}"
-                                        ToolTip.Tip="{Binding CopyLanguageServerInstallCommandToolTip, Source={x:Static localizations:Lang.Current}}"
-                                        Click="OnCopyLanguageServerInstallCommandClick" />
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <arc:Button Variant="Primary" Size="Small"
+                                            Content="{Binding InstallOrUpdateLanguageServerText, Source={x:Static localizations:Lang.Current}}"
+                                            Click="OnInstallOrUpdateLanguageServerClick" />
+                                <arc:Button Variant="Secondary" Size="Small"
+                                            Content="{Binding CopyLanguageServerInstallCommandText, Source={x:Static localizations:Lang.Current}}"
+                                            ToolTip.Tip="{Binding CopyLanguageServerInstallCommandToolTip, Source={x:Static localizations:Lang.Current}}"
+                                            Click="OnCopyLanguageServerInstallCommandClick" />
                             </StackPanel>
                         </Grid>
-
                         <TextBlock Text="{Binding LanguageServerInstallHint, Source={x:Static localizations:Lang.Current}}"
-                                   Classes="SettingsHint"
-                                   TextWrapping="Wrap" />
+                                   Classes="Hint" />
                     </StackPanel>
                 </Border>
 
-                <Border Classes="SettingsCard" Padding="24">
-                    <StackPanel Spacing="20">
+                <Border Classes="RaisedSurface" Padding="24">
+                    <StackPanel Spacing="16">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-                            <Border Classes="SectionIcon">
-                                <TextBlock Text="MD"
-                                           FontSize="11"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource PrimaryDarkBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                            <Border Width="38" Height="38"
+                                    CornerRadius="{arc:ArcDesignTokenResource RadiusControl}"
+                                    Background="{arc:ArcDesignTokenResource AccentSubtle}"
+                                    VerticalAlignment="Top">
+                                <arc:ArcGlyph Size="18" Data="{x:Static arc:ArcIcons.SquareDashedText}"
+                                              Foreground="{arc:ArcDesignTokenResource Accent}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
-                                <TextBlock Text="{Binding InstructionsTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                                <TextBlock Text="{Binding InstructionsTitle, Source={x:Static localizations:Lang.Current}}"
+                                           Classes="SectionTitle" />
                                 <TextBlock Text="{Binding InstructionsDescription, Source={x:Static localizations:Lang.Current}}"
-                                           Classes="Subtitle"
-                                           TextWrapping="Wrap" />
+                                           Classes="Caption" TextWrapping="Wrap" />
                             </StackPanel>
-                            <ToggleSwitch Grid.Column="2"
-                                          IsChecked="{Binding IsCopilotInstructionsEnabled}"
-                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
-                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}"
-                                          VerticalAlignment="Center" />
+                            <arc:Switch Grid.Column="2" VerticalAlignment="Center"
+                                        Content="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                        IsChecked="{Binding IsCopilotInstructionsEnabled}" />
                         </Grid>
-
                         <StackPanel Spacing="6" IsEnabled="{Binding IsCopilotInstructionsEnabled}">
-                            <TextBlock Text="{Binding InstructionsPath, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
-                            <TextBox Classes="Rounded SettingsInput"
-                                     Text="{Binding CopilotInstructionsPath}"
-                                     PlaceholderText="{Binding InstructionsPlaceholder, Source={x:Static localizations:Lang.Current}}" />
+                            <TextBlock Text="{Binding InstructionsPath, Source={x:Static localizations:Lang.Current}}"
+                                       Classes="FieldLabel" />
+                            <arc:Input Size="Small" Text="{Binding CopilotInstructionsPath}"
+                                       Placeholder="{Binding InstructionsPlaceholder, Source={x:Static localizations:Lang.Current}}" />
                             <TextBlock Text="{Binding InstructionsHint, Source={x:Static localizations:Lang.Current}}"
-                                       Classes="SettingsHint"
-                                       TextWrapping="Wrap" />
+                                       Classes="Hint" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <Border Classes="SettingsCard" Padding="24">
+                <Border Classes="RaisedSurface" Padding="24">
                     <StackPanel Spacing="16">
-                        <TextBlock Text="{Binding ModelConfigurationTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <TextBox Text="{Binding PrimaryModel}" PlaceholderText="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" Classes="Rounded SettingsInput" />
+                        <TextBlock Text="{Binding ModelConfigurationTitle, Source={x:Static localizations:Lang.Current}}"
+                                   Classes="SectionTitle" />
+                        <arc:Input Size="Small" Text="{Binding PrimaryModel}"
+                                   Placeholder="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" />
                         <views2:ModelSettingsView />
                     </StackPanel>
                 </Border>
@@ -286,18 +248,14 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Row="2"
-                Classes="StatusBar"
-                Padding="28,12"
-                IsVisible="{Binding HasStatusMessage}">
+        <Border Grid.Row="2" Padding="32,12"
+                IsVisible="{Binding HasStatusMessage}"
+                Background="{arc:ArcDesignTokenResource Surface}"
+                BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}" BorderThickness="0,1,0,0">
             <Grid ColumnDefinitions="*,Auto" MaxWidth="1040" HorizontalAlignment="Center">
-                <TextBlock Text="{Binding StatusMessage}"
-                           TextWrapping="Wrap"
-                           VerticalAlignment="Center" />
-                <ProgressBar Grid.Column="1"
-                             Width="100"
-                             IsIndeterminate="True"
-                             IsVisible="{Binding IsBusy}" />
+                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" VerticalAlignment="Center"
+                           Foreground="{arc:ArcDesignTokenResource TextSecondary}" />
+                <ProgressBar Grid.Column="1" Width="100" IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
             </Grid>
         </Border>
     </Grid>

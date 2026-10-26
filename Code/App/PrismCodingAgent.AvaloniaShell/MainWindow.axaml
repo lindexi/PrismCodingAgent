@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:localizations="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:arc="https://github.com/AIDotNet/TKCode.Arc"
         xmlns:views="using:PrismCodingAgent.AvaloniaShell.Views"
         xmlns:vm="clr-namespace:PrismCodingAgent.AvaloniaShell.ViewModels"
         xmlns:views2="clr-namespace:PrismCodingAgent.AvaloniaShell.Views"
@@ -13,7 +14,7 @@
         MinWidth="1280"
         MinHeight="720"
         TransparencyLevelHint="Mica, None"
-        TransparencyBackgroundFallback="White"
+        TransparencyBackgroundFallback="{arc:ArcDesignTokenResource Background}"
         Background="{Binding ActualTransparencyLevel, RelativeSource={RelativeSource Self}, Converter={StaticResource WindowTransparencyBackgroundConverter}}">
     <Window.Title>
         <MultiBinding Converter="{StaticResource WorkspaceTitleConverter}">
@@ -25,27 +26,33 @@
     </Window.Title>
     <Grid>
         <views2:MainView x:Name="MainContent" />
-        <Border x:Name="ExitOverlay" IsVisible="False" Background="#66000000"
+        <Border x:Name="ExitOverlay" IsVisible="False"
+                Background="{arc:ArcDesignTokenResource Scrim}"
                 KeyboardNavigation.TabNavigation="Cycle">
-            <Border Width="460" Padding="24" CornerRadius="8"
+            <Border Width="480" Padding="28"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Background="{DynamicResource SurfaceBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                <StackPanel Spacing="16">
+                    Background="{arc:ArcDesignTokenResource SurfaceRaised}"
+                    BorderBrush="{arc:ArcDesignTokenResource BorderSubtle}" BorderThickness="1"
+                    CornerRadius="{arc:ArcDesignTokenResource RadiusSurface}"
+                    BoxShadow="{arc:ArcDesignTokenResource ShadowFloating}">
+                <StackPanel Spacing="18">
                     <TextBlock FontSize="20" FontWeight="SemiBold"
+                               Foreground="{arc:ArcDesignTokenResource Foreground}"
                                Text="{Binding ExitConfirmationTitle, Source={x:Static localizations:Lang.Current}}" />
-                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{arc:ArcDesignTokenResource TextSecondary}"
                                Text="{Binding ExitConfirmationDescription, Source={x:Static localizations:Lang.Current}}" />
                     <TextBlock x:Name="ExitProgress" IsVisible="False" TextWrapping="Wrap"
+                               Foreground="{arc:ArcDesignTokenResource TextSecondary}"
                                Text="{Binding ExitCleanupProgress, Source={x:Static localizations:Lang.Current}}" />
                     <TextBlock x:Name="ExitError" IsVisible="False" TextWrapping="Wrap"
-                               Foreground="{DynamicResource ErrorBrush}"
+                               Foreground="{arc:ArcDesignTokenResource Danger}"
                                Text="{Binding ExitCleanupFailed, Source={x:Static localizations:Lang.Current}}" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
-                        <Button x:Name="CancelExitButton" Click="OnCancelExit" IsDefault="False"
-                                Content="{Binding ExitCancelText, Source={x:Static localizations:Lang.Current}}" />
-                        <Button x:Name="ConfirmExitButton" Classes="Danger Primary" Click="OnConfirmExit" IsDefault="False"
-                                Content="{Binding ExitConfirmText, Source={x:Static localizations:Lang.Current}}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                        <arc:Button x:Name="CancelExitButton" Variant="Secondary" Click="OnCancelExit"
+                                    Content="{Binding ExitCancelText, Source={x:Static localizations:Lang.Current}}" />
+                        <arc:Button x:Name="ConfirmExitButton" Variant="Danger" Click="OnConfirmExit"
+                                    Content="{Binding ExitConfirmText, Source={x:Static localizations:Lang.Current}}" />
                     </StackPanel>
                 </StackPanel>
             </Border>

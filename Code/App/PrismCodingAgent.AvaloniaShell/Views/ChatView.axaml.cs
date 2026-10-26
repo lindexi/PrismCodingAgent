@@ -5,14 +5,18 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using AgentLib.Model;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using PrismCodingAgent.AvaloniaShell.Converters;
 using PrismCodingAgent.AvaloniaShell.Services.Shell;
 using PrismCodingAgent.AvaloniaShell.ViewModels;
+using ArcSelect = TKCode.Arc.Select;
+using ToolCallActionEventArgs = TKCode.Arc.ToolCallActionEventArgs;
 
 namespace PrismCodingAgent.AvaloniaShell.Views;
 
@@ -39,6 +43,47 @@ public partial class ChatView : UserControl
         MessageInputTextBox.AddHandler(KeyDownEvent, MessageInputTextBox_OnKeyDown, RoutingStrategies.Tunnel);
         MessagesScrollViewer.ScrollChanged += OnMessagesScrollChanged;
         DataContextChanged += OnDataContextChanged;
+        AbilitySelector.PropertyChanged += OnAbilitySelectorPropertyChanged;
+    }
+
+    /// <summary>
+    /// 切换界面语言后，Arc 的 Select 需要重新解析选中项文本，否则触发器会保留上一个语言的显示名。
+    /// </summary>
+    private void RefreshSelectTexts()
+    {
+        var binding = new Avalonia.Data.Binding(nameof(LanguageModelOptionViewModel.DisplayName));
+        foreach (ArcSelect select in new[] { ModelSelector, ReasoningEffortSelector, AbilitySelector })
+        {
+            if (select.DisplayMemberBinding is not null)
+            {
+                select.DisplayMemberBinding = binding;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        Localizations.Lang.Current.PropertyChanged += OnLanguagePropertyChanged;
+    }
+
+    /// <inheritdoc />
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        Localizations.Lang.Current.PropertyChanged -= OnLanguagePropertyChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnLanguagePropertyChanged(object? sender, PropertyChangedEventArgs e) => RefreshSelectTexts();
+
+    private void OnAbilitySelectorPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        // Arc 的 Select 没有 DropDownOpened 事件，改为在展开时刷新能力列表。
+        if (e.Property == ArcSelect.IsOpenProperty && AbilitySelector.IsOpen)
+        {
+            AbilitySelector_OnDropDownOpened(sender, EventArgs.Empty);
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -144,18 +189,20 @@ public partial class ChatView : UserControl
         }
     }
 
-    private void ApproveToolButton_OnClick(object? sender, RoutedEventArgs e)
+    private void OnToolCallApproveRequested(object? sender, ToolCallActionEventArgs e)
     {
-        if (sender is Button { CommandParameter: CopilotChatApprovalToolItem approvalToolItem }
+        e.Handled = true;
+        if (ToolCallProjection.SourceOf(e.Item) is CopilotChatApprovalToolItem approvalToolItem
             && DataContext is ChatViewModel viewModel)
         {
             viewModel.ApproveTool(approvalToolItem);
         }
     }
 
-    private void RejectToolButton_OnClick(object? sender, RoutedEventArgs e)
+    private void OnToolCallDenyRequested(object? sender, ToolCallActionEventArgs e)
     {
-        if (sender is Button { CommandParameter: CopilotChatApprovalToolItem approvalToolItem }
+        e.Handled = true;
+        if (ToolCallProjection.SourceOf(e.Item) is CopilotChatApprovalToolItem approvalToolItem
             && DataContext is ChatViewModel viewModel)
         {
             viewModel.RejectTool(approvalToolItem);

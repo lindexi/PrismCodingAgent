@@ -12,10 +12,13 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetCampus.SourceLocalizations" Version="0.1.1-alpha.6" />
-    <PackageReference Include="Avalonia" Version="12.1.0" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
+    <PackageReference Include="TKCode.Arc" Version="0.3.0-preview.5" />
+    <PackageReference Include="TKCode.Arc.Fonts" Version="0.3.0-preview.5" />
+    <PackageReference Include="TKCode.Arc.Special" Version="0.3.0-preview.5" />
     <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
@@ -33,9 +36,9 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets\Icons\CodingChatRoom.ico" />
     <AvaloniaResource Include="Assets\Icons\CodingChatRoom_48x48.png" />
-    <AvaloniaResource Include="Styles\Colors.axaml" />
+    <AvaloniaResource Include="Assets\Icons\coding-chat.svg" />
+    <AvaloniaResource Include="Styles\Branding.axaml" />
     <AvaloniaResource Include="Styles\Controls.axaml" />
     <AvaloniaResource Include="Styles\MessageBubble.axaml" />
-    <AvaloniaResource Include="Styles\Settings.axaml" />
   </ItemGroup>
 </Project>
