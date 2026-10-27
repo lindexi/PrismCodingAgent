@@ -354,6 +354,7 @@
                                 <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
                                 <Button Content="{Binding RetryChatText, Source={x:Static localizations:Lang.Current}}"
                                         Command="{Binding RetryCommand}"
+                                        CommandParameter="{Binding Notice}"
                                         IsVisible="{Binding HasContinuation}"
                                         HorizontalAlignment="Left" />
                               </StackPanel>

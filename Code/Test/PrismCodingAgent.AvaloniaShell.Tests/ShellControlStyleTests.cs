@@ -283,8 +283,9 @@ public sealed class ShellControlStyleTests
     public void NoticeTemplateShouldShowRetryOnlyForAssociatedFailure(bool hasContinuation)
     {
         using var chat = new ChatViewModel();
+        var command = new SimpleAsyncCommand<AgentLib.Model.CopilotChatNotice>(_ => Task.CompletedTask);
         var notice = new NoticeItemViewModel(new AgentLib.Model.CopilotChatNotice("failure"),
-            () => hasContinuation, () => hasContinuation, () => Task.CompletedTask);
+            command, hasContinuation);
         chat.Messages.Add(notice);
         var view = new ChatView { DataContext = chat };
         var window = new Window { Width = 980, Height = 620, Content = view };
@@ -295,6 +296,7 @@ public sealed class ShellControlStyleTests
             Button retry = view.GetVisualDescendants().OfType<Button>()
                 .Single(button => ReferenceEquals(button.Command, notice.RetryCommand));
             Assert.AreEqual(hasContinuation, retry.IsVisible);
+            Assert.AreSame(notice.Notice, retry.CommandParameter);
         }
         finally { window.Close(); }
     }

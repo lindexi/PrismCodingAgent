@@ -107,10 +107,10 @@ public sealed class CodingChatContinuationTests
         viewModel.InputText = "unsent draft";
         Assert.IsTrue(notice.HasContinuation);
         Assert.IsNotNull(notice.RetryCommand);
-        Assert.IsTrue(notice.RetryCommand.CanExecute(null));
+        Assert.IsTrue(notice.RetryCommand.CanExecute(notice.Notice));
 
-        Task retry = notice.RetryCommand.ExecuteAsync();
-        Assert.IsFalse(notice.RetryCommand.CanExecute(null));
+        Task retry = ((SimpleAsyncCommand<CopilotChatNotice>)notice.RetryCommand).ExecuteAsync(notice.Notice);
+        Assert.IsFalse(notice.RetryCommand.CanExecute(notice.Notice));
         Assert.IsFalse(controller.CanContinueChat(notice.Notice));
         continueCompletion.SetResult();
         await retry;
@@ -122,10 +122,11 @@ public sealed class CodingChatContinuationTests
         var latestNotice = (NoticeItemViewModel)viewModel.Messages.Last();
         Assert.AreEqual(failContinuation, latestNotice.HasContinuation);
         Assert.IsNotNull(latestNotice.RetryCommand);
-        Assert.AreEqual(failContinuation, latestNotice.RetryCommand.CanExecute(null));
+        Assert.AreEqual(failContinuation, latestNotice.RetryCommand.CanExecute(latestNotice.Notice));
         Assert.AreEqual("unsent draft", viewModel.InputText);
         Assert.IsFalse(notice.HasContinuation);
-        Assert.IsFalse(notice.RetryCommand.CanExecute(null));
+        Assert.IsFalse(notice.RetryCommand.CanExecute(notice.Notice));
+        Assert.AreSame(notice.RetryCommand, latestNotice.RetryCommand);
         Assert.AreEqual(2, requests);
         Assert.AreEqual("AB", store.LastSavedAssistantContent);
         Assert.IsFalse(manager.IsChatting);

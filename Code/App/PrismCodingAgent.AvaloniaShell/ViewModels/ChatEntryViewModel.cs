@@ -1,5 +1,5 @@
 using System;
-using System.Threading.Tasks;
+using System.Windows.Input;
 using AgentLib.Model;
 
 namespace PrismCodingAgent.AvaloniaShell.ViewModels;
@@ -19,25 +19,26 @@ public sealed class NoticeItemViewModel : ChatEntryViewModel
     /// <summary>创建通知投影。</summary>
     public NoticeItemViewModel(CopilotChatNotice notice) => Notice = notice;
 
-    internal NoticeItemViewModel(CopilotChatNotice notice, Func<bool> hasContinuation,
-        Func<bool> canContinue, Func<Task> continueAsync) : this(notice)
+    internal NoticeItemViewModel(CopilotChatNotice notice, ICommand retryCommand, bool hasContinuation)
+        : this(notice)
     {
+        RetryCommand = retryCommand;
         _hasContinuation = hasContinuation;
-        RetryCommand = new SimpleAsyncCommand(continueAsync, canContinue);
     }
 
-    private readonly Func<bool>? _hasContinuation;
+    private bool _hasContinuation;
 
-    /// <summary>在原会话和助手消息上继续失败的 Chat 运行。</summary>
-    public SimpleAsyncCommand? RetryCommand { get; }
+    /// <summary>所属聊天视图共享的重试命令，以底层通知作为参数。</summary>
+    public ICommand? RetryCommand { get; }
 
     /// <summary>此通知是否关联当前可继续的运行。</summary>
-    public bool HasContinuation => _hasContinuation?.Invoke() == true;
+    public bool HasContinuation => _hasContinuation;
 
-    internal void RefreshContinuation()
+    internal void UpdateContinuation(bool hasContinuation)
     {
+        if (_hasContinuation == hasContinuation) return;
+        _hasContinuation = hasContinuation;
         OnPropertyChanged(nameof(HasContinuation));
-        RetryCommand?.RaiseCanExecuteChanged();
     }
     /// <summary>底层通知。</summary>
     public CopilotChatNotice Notice { get; }

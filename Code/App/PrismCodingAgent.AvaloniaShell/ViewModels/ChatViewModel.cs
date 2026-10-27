@@ -41,6 +41,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private bool _isDotNetRunEnabled;
     private bool _isResponsesApiEnabled;
     private bool _isDisposed;
+    private SimpleAsyncCommand<CopilotChatNotice>? _retryChatCommand;
+
+    private SimpleAsyncCommand<CopilotChatNotice> RetryChatCommand => _retryChatCommand ??= new(
+        ContinueChatAsync,
+        notice => notice is not null && _workTaskController?.CanContinueChat(notice) == true);
 
     /// <summary>
     /// 初始化尚未接入模型发送的聊天视图骨架。
@@ -601,8 +606,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         RaiseCommandCanExecuteChanged();
         foreach (NoticeItemViewModel notice in Messages.OfType<NoticeItemViewModel>())
         {
-            notice.RefreshContinuation();
+            notice.UpdateContinuation(_workTaskController?.HasChatContinuation(notice.Notice) == true);
         }
+        _retryChatCommand?.RaiseCanExecuteChanged();
     }
 
     private async Task StopLanguageServerAsync()
@@ -960,17 +966,15 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private ChatEntryViewModel CreateEntryViewModel(CopilotChatEntry entry) => entry switch
     {
         CopilotChatMessage message => new MessageItemViewModel(message),
-        CopilotChatNotice notice when _workTaskController is { } controller => new NoticeItemViewModel(notice,
-            () => controller.HasChatContinuation(notice),
-            () => controller.CanContinueChat(notice),
-            () => ContinueChatAsync(notice)),
+        CopilotChatNotice notice when _workTaskController is { } controller => new NoticeItemViewModel(
+            notice, RetryChatCommand, controller.HasChatContinuation(notice)),
         CopilotChatNotice notice => new NoticeItemViewModel(notice),
         _ => throw new ArgumentException(nameof(entry)),
     };
 
-    private async Task ContinueChatAsync(CopilotChatNotice notice)
+    private async Task ContinueChatAsync(CopilotChatNotice? notice)
     {
-        if (_workTaskController is null) return;
+        if (_workTaskController is null || notice is null) return;
         _runStatusText = Localizations.Lang.Current.Running;
         OnPropertyChanged(nameof(StatusText));
         try
