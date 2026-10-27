@@ -23,7 +23,7 @@ public sealed class FileCopilotChatSessionStore
     /// <summary>
     /// 当前会话历史格式版本。
     /// </summary>
-    public const int CurrentFormatVersion = 3;
+    public const int CurrentFormatVersion = 4;
 
     private static readonly Encoding Utf8EncodingWithoutBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -63,7 +63,7 @@ public sealed class FileCopilotChatSessionStore
                 session.StartedTime,
                 session.Title,
                 CurrentFormatVersion,
-                session.ChatMessages,
+                session.Entries,
                 agentSessionState));
             CopilotChatHistoryXmlCodec.AppendResponsesSession(document.Root!, session.ExistingResponsesSession);
             document.Root!.SetAttributeValue("WorkspacePath", session.WorkspacePath);
@@ -243,6 +243,13 @@ public sealed class FileCopilotChatSessionStore
             {
                 messageCount++;
             }
+        }
+
+        if (formatVersion < 4)
+        {
+            // 旧格式的预设系统文本会迁移成通知，摘要必须与加载后的消息投影一致。
+            CopilotChatSessionPersistenceData data = await LoadFileAsync(filePath, cancellationToken).ConfigureAwait(false);
+            messageCount = data.Entries.OfType<CopilotChatMessage>().Count();
         }
 
         return new CopilotChatSessionSummary

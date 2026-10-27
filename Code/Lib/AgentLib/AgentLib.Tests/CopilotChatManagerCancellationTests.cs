@@ -26,8 +26,7 @@ public class CopilotChatManagerCancellationTests
         await sendTask;
 
         Assert.IsFalse(context.ChatManager.IsChatting);
-        Assert.AreEqual("已取消", context.ChatManager.ChatMessages[^1].Content);
-        Assert.IsTrue(context.ChatManager.ChatMessages[^1].IsPresetInfo);
+        Assert.AreEqual(1, context.ChatManager.SelectedSession.Entries.OfType<AgentLib.Model.CopilotChatNotice>().Count());
     }
 
     [TestMethod]
@@ -55,8 +54,8 @@ public class CopilotChatManagerCancellationTests
         await sendTask;
 
         Assert.IsFalse(context.ChatManager.IsChatting);
-        Assert.AreEqual("已取消", context.ChatManager.ChatMessages[^1].Content);
-        Assert.IsTrue(context.ChatManager.ChatMessages[^1].IsPresetInfo);
+        Assert.AreEqual(AgentLib.Model.CopilotChatNoticeLevel.Information,
+            context.ChatManager.SelectedSession.Entries.OfType<AgentLib.Model.CopilotChatNotice>().Single().Level);
     }
 
     [TestMethod]
@@ -85,8 +84,7 @@ public class CopilotChatManagerCancellationTests
         await sendTask;
 
         Assert.IsFalse(context.ChatManager.IsChatting);
-        Assert.AreEqual("已取消", context.ChatManager.ChatMessages[^1].Content);
-        Assert.IsTrue(context.ChatManager.ChatMessages[^1].IsPresetInfo);
+        Assert.AreEqual(1, context.ChatManager.SelectedSession.Entries.OfType<AgentLib.Model.CopilotChatNotice>().Count());
     }
 
     [TestMethod]
@@ -105,8 +103,8 @@ public class CopilotChatManagerCancellationTests
         await sendTask;
 
         Assert.IsFalse(context.ChatManager.IsChatting);
-        Assert.AreEqual("已取消", context.ChatManager.ChatMessages[^1].Content);
-        Assert.IsTrue(context.ChatManager.ChatMessages[^1].IsPresetInfo);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(
+            context.ChatManager.SelectedSession.Entries.OfType<AgentLib.Model.CopilotChatNotice>().Single().Content));
     }
 
     [TestMethod]

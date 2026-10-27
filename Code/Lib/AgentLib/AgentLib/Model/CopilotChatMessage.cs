@@ -16,7 +16,7 @@ namespace AgentLib.Model;
 /// 表示 Copilot 聊天中的一条消息，支持文本、图片、音频等多模态内容，
 /// 以及工具调用、子代理调用和审批等交互。
 /// </summary>
-public sealed class CopilotChatMessage : NotifyBase, ICopilotChatOutput
+public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
 {
     /// <summary>
     /// 此消息的 Responses 信息，首次访问时创建；访问不会修改消息内容。
@@ -52,7 +52,7 @@ public sealed class CopilotChatMessage : NotifyBase, ICopilotChatOutput
         AppendContents(contents);
 
         CreatedTime = DateTimeOffset.Now;
-        TimeText = CreatedTime.ToString("HH:mm");
+
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public sealed class CopilotChatMessage : NotifyBase, ICopilotChatOutput
     {
         Role = role;
         CreatedTime = createdTime;
-        TimeText = timeText;
+
         IsPresetInfo = isPresetInfo;
         MessageItems.CollectionChanged += MessageItems_CollectionChanged;
     }
@@ -403,16 +403,6 @@ public sealed class CopilotChatMessage : NotifyBase, ICopilotChatOutput
             return builder.ToString();
         }
     }
-
-    /// <summary>
-    /// 消息创建时间。
-    /// </summary>
-    public DateTimeOffset CreatedTime { get; }
-
-    /// <summary>
-    /// 消息创建时间的显示文本（HH:mm 格式）。
-    /// </summary>
-    public string TimeText { get; }
 
     /// <summary>
     /// 创建当前消息的深拷贝，包含所有 MessageItems 的递归深拷贝。

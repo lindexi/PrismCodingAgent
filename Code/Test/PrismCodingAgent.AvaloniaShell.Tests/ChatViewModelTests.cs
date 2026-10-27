@@ -208,7 +208,7 @@ public sealed class ChatViewModelTests
         viewModel.StopLanguageServerCommand.Execute(null);
         await WaitUntilAsync(() => viewModel.StatusText == "当前没有正在运行的 LSP 服务");
 
-        Assert.IsTrue(viewModel.Messages[^1].IsSystemMessage);
+        Assert.IsInstanceOfType<NoticeItemViewModel>(viewModel.Messages[^1]);
     }
 
     [TestMethod(DisplayName = "输入有效消息时发送命令应运行并清空输入")]
@@ -401,10 +401,8 @@ public sealed class ChatViewModelTests
         viewModel.SendCommand.Execute(null);
         await WaitUntilAsync(() => viewModel.Messages[^1].Content == "运行失败：模型失败");
 
-        MessageItemViewModel failureMessage = viewModel.Messages[^1];
-        Assert.AreEqual(
-            (true, true, "运行失败：模型失败"),
-            (failureMessage.IsSystemMessage, failureMessage.Message.IsPresetInfo, failureMessage.Content));
+        var failureMessage = (NoticeItemViewModel)viewModel.Messages[^1];
+        Assert.AreEqual(CopilotChatNoticeLevel.Error, failureMessage.Notice.Level);
     }
 
     [TestMethod(DisplayName = "活动运行时停止命令应可用并触发取消")]
@@ -429,7 +427,7 @@ public sealed class ChatViewModelTests
         await WaitUntilAsync(() => viewModel.Messages[^1].Content == Lang.Current.RunStopped);
 
         Assert.IsTrue(runner.CancellationToken.IsCancellationRequested);
-        Assert.IsTrue(viewModel.Messages[^1].IsSystemMessage);
+        Assert.AreEqual(CopilotChatNoticeLevel.Information, ((NoticeItemViewModel)viewModel.Messages[^1]).Notice.Level);
     }
 
     [TestMethod(DisplayName = "后台创建代理会话时应由完整应用操作刷新命令状态")]
@@ -497,10 +495,10 @@ public sealed class ChatViewModelTests
 
         Assert.IsTrue(viewModel.IsCompressing);
         Assert.AreEqual("总结对话", viewModel.Messages[^2].Content);
-        Assert.IsTrue(viewModel.Messages[^2].IsUserMessage);
+        Assert.IsTrue(((MessageItemViewModel)viewModel.Messages[^2]).IsUserMessage);
         Assert.AreEqual("压缩中...", viewModel.Messages[^1].Content);
-        Assert.IsTrue(viewModel.Messages[^1].IsAssistantMessage);
-        MessageItemViewModel compressionMessage = viewModel.Messages[^1];
+        Assert.IsTrue(((MessageItemViewModel)viewModel.Messages[^1]).IsAssistantMessage);
+        var compressionMessage = (MessageItemViewModel)viewModel.Messages[^1];
         Assert.IsFalse(viewModel.Messages.Any(message => message.Content.Contains(summaryText, StringComparison.Ordinal)));
 
         releaseCompression.TrySetResult();
@@ -510,7 +508,7 @@ public sealed class ChatViewModelTests
         Assert.IsTrue(agentSession.TryGetInMemoryChatHistory(out List<ChatMessage>? compressedMessages));
         Assert.IsTrue(compressedMessages.Any(message => message.Text.Contains(summaryText, StringComparison.Ordinal)));
         Assert.AreEqual(summaryText, compressionMessage.Content);
-        Assert.IsTrue(viewModel.Messages[^1].IsSystemMessage);
+        Assert.IsInstanceOfType<NoticeItemViewModel>(viewModel.Messages[^1]);
     }
 
     [TestMethod(DisplayName = "应用工作路径命令应提交输入并刷新状态")]
@@ -566,10 +564,7 @@ public sealed class ChatViewModelTests
         viewModel.ApplyWorkspaceCommand.Execute(null);
         await WaitUntilAsync(() => viewModel.Messages[^1].Content.StartsWith("工作路径切换失败：", StringComparison.Ordinal));
 
-        MessageItemViewModel failureMessage = viewModel.Messages[^1];
-        Assert.AreEqual(
-            (true, true),
-            (failureMessage.IsSystemMessage, failureMessage.Message.IsPresetInfo));
+        Assert.IsInstanceOfType<NoticeItemViewModel>(viewModel.Messages[^1]);
     }
 
     private static string CreateTestDirectory()

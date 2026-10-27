@@ -345,6 +345,8 @@ internal sealed class CodingWorkTaskController
         }
     }
 
+    internal Task SaveSessionAsync(CopilotChatSession session) => _sessionStore.SaveSessionAsync(session, CancellationToken.None);
+
     private async Task RunSingleMessageAsync
     (
         ICodingChatRunner chatRunner,
@@ -379,15 +381,18 @@ internal sealed class CodingWorkTaskController
         catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
         {
             runException = exception;
-            await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "运行", "运行已取消。");
+            await session.AddEntryAsync(new CopilotChatNotice(Localizations.Lang.Current.RunStopped));
+            await LogOperationFailureAsync(session, "运行", "运行已取消。", exception);
             throw;
         }
         catch (Exception exception)
         {
             runException = exception;
-            await _chatManager.ChatLogger.LogDiagnosticAsync
+            await session.AddEntryAsync(new CopilotChatNotice(
+                Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message), CopilotChatNoticeLevel.Error));
+            await LogOperationFailureAsync
             (
-                session.SessionId,
+                session,
                 "运行",
                 $"运行异常结束。异常类型={exception.GetType().FullName}；运行令牌取消={cancellationToken.IsCancellationRequested}；活动取消源存在={_activeOperationCancellationTokenSource is not null}；活动取消源已取消={_activeOperationCancellationTokenSource?.IsCancellationRequested == true}；状态={_operationState}。",
                 exception
@@ -406,13 +411,8 @@ internal sealed class CodingWorkTaskController
             }
             catch (Exception saveException) when (runException is not null)
             {
-                await _chatManager.ChatLogger.LogDiagnosticAsync
-                (
-                    session.SessionId,
-                    "会话保存",
-                    "运行已经异常结束，随后保存会话时再次失败。将继续传播原始运行异常。",
-                    saveException
-                );
+                runException.Data["SessionSaveException"] = saveException;
+                System.Diagnostics.Trace.TraceError($"{saveException}");
             }
 
         }
@@ -531,12 +531,56 @@ internal sealed class CodingWorkTaskController
     {
         CopilotChatSession session = _chatManager.SelectedSession;
         AdvanceOperationState(CodingWorkTaskOperationState.Compressing);
-        cancellationToken.ThrowIfCancellationRequested();
-        if (!await runner.TryCompactConversationAsync(session, compressionRequest, cancellationToken)) return false;
-        AdvanceOperationState(CodingWorkTaskOperationState.Finalizing);
-        await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
-        AddOrUpdateSummary(session, insertAtTop: true);
-        return true;
+        Exception? operationException = null;
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!await runner.TryCompactConversationAsync(session, compressionRequest, cancellationToken)) return false;
+            await session.AddEntryAsync(new CopilotChatNotice(Localizations.Lang.Current.Compacted));
+            return true;
+        }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            operationException = exception;
+            await session.AddEntryAsync(new CopilotChatNotice(Localizations.Lang.Current.CompactCancelled));
+            throw;
+        }
+        catch (Exception exception)
+        {
+            operationException = exception;
+            await session.AddEntryAsync(new CopilotChatNotice(
+                Localizations.Lang.Format(Localizations.Lang.Current.CompactFailed, exception.Message), CopilotChatNoticeLevel.Error));
+            await LogOperationFailureAsync(session, "压缩", "压缩失败", exception);
+            throw;
+        }
+        finally
+        {
+            AdvanceOperationState(CodingWorkTaskOperationState.Finalizing);
+            try
+            {
+                await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
+                AddOrUpdateSummary(session, insertAtTop: true);
+            }
+            catch (Exception saveException) when (operationException is not null)
+            {
+                operationException.Data["SessionSaveException"] = saveException;
+                System.Diagnostics.Trace.TraceError($"{saveException}");
+            }
+        }
+    }
+
+    private async Task LogOperationFailureAsync(CopilotChatSession session, string category,
+        string message, Exception operationException)
+    {
+        try
+        {
+            await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, category, message, operationException);
+        }
+        catch (Exception logException)
+        {
+            operationException.Data["DiagnosticLogException"] = logException;
+            System.Diagnostics.Trace.TraceError($"{logException}");
+        }
     }
 
     public async Task StopActiveRunByUserAsync()

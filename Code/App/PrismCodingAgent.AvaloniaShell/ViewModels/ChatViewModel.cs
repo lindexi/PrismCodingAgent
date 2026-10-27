@@ -125,7 +125,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取是否仅有预设欢迎信息，尚无实际对话。
     /// </summary>
-    public bool ShowWelcome => Messages.All(item => item.Message.IsPresetInfo);
+    public bool ShowWelcome => Messages.OfType<MessageItemViewModel>().All(item => item.Message.IsPresetInfo);
 
     /// <summary>获取当前会话标题。</summary>
     public string CurrentSessionTitle => _subscribedSession?.Title ?? Localizations.Lang.Current.ChatTitle;
@@ -215,7 +215,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取消息投影集合。
     /// </summary>
-    public ObservableCollection<MessageItemViewModel> Messages { get; } = [];
+    public ObservableCollection<ChatEntryViewModel> Messages { get; } = [];
 
     /// <summary>
     /// 获取待随下一条消息发送的图片附件。
@@ -477,10 +477,13 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         PendingImages.Remove(attachment);
     }
 
-    internal Task AddSystemNoticeAsync(string content)
+    internal CopilotChatSession? NoticeSession => _subscribedSession;
+
+    internal Task AddSystemNoticeAsync(CopilotChatSession? session, string content,
+        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Error)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(content);
-        return AddSystemMessageAsync(_subscribedSession, content);
+        return AddSystemMessageAsync(session, content, level);
     }
 
     /// <summary>
@@ -605,23 +608,25 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        CopilotChatSession? session = _subscribedSession;
+        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Information;
         try
         {
             bool stopped = await _workTaskController.StopLanguageServerAsync().ConfigureAwait(true);
             _runStatusText = stopped
                 ? Localizations.Lang.Current.LspStopped
                 : Localizations.Lang.Current.LspNotRunning;
-            await AddSystemMessageAsync(_subscribedSession, StatusText).ConfigureAwait(true);
         }
         catch (Exception exception)
         {
+            level = CopilotChatNoticeLevel.Error;
             _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.LspStopFailed, exception.Message);
-            await AddSystemMessageAsync(_subscribedSession, StatusText).ConfigureAwait(true);
         }
         finally
         {
             OnPropertyChanged(nameof(StatusText));
         }
+        await AddSystemMessageAsync(session, StatusText, level).ConfigureAwait(true);
     }
 
     private Task CompressConversationAsync() => CompressConversationAsync(null);
@@ -647,17 +652,14 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                 return;
             }
             _runStatusText = Localizations.Lang.Current.Compacted;
-            await AddSystemMessageAsync(session, StatusText).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
             _runStatusText = Localizations.Lang.Current.CompactCancelled;
-            await AddSystemMessageAsync(session, StatusText).ConfigureAwait(true);
         }
         catch (Exception exception)
         {
             _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.CompactFailed, exception.Message);
-            await AddSystemMessageAsync(session, StatusText).ConfigureAwait(true);
         }
         finally
         {
@@ -736,12 +738,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException)
         {
             _runStatusText = Localizations.Lang.Current.RunStopped;
-            await AddSystemMessageAsync(session, StatusText).ConfigureAwait(true);
         }
         catch (Exception exception)
         {
             _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message);
-            await AddSystemMessageAsync(session, StatusText).ConfigureAwait(true);
         }
         finally
         {
@@ -880,10 +880,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         ClearMessages();
         _subscribedSession = session;
         _subscribedSession.PropertyChanged += OnSessionPropertyChanged;
-        _subscribedSession.ChatMessages.CollectionChanged += OnChatMessagesCollectionChanged;
-        foreach (CopilotChatMessage message in _subscribedSession.ChatMessages)
+        _subscribedSession.Entries.CollectionChanged += OnChatMessagesCollectionChanged;
+        foreach (CopilotChatEntry entry in _subscribedSession.Entries)
         {
-            Messages.Add(new MessageItemViewModel(message));
+            Messages.Add(CreateEntryViewModel(entry));
         }
 
         OnPropertyChanged(nameof(ShowWelcome));
@@ -899,7 +899,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
 
         _subscribedSession.PropertyChanged -= OnSessionPropertyChanged;
-        _subscribedSession.ChatMessages.CollectionChanged -= OnChatMessagesCollectionChanged;
+        _subscribedSession.Entries.CollectionChanged -= OnChatMessagesCollectionChanged;
         _subscribedSession = null;
     }
 
@@ -916,9 +916,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems is not null)
         {
             int insertionIndex = e.NewStartingIndex >= 0 ? e.NewStartingIndex : Messages.Count;
-            foreach (CopilotChatMessage message in e.NewItems)
+            foreach (CopilotChatEntry entry in e.NewItems)
             {
-                Messages.Insert(insertionIndex++, new MessageItemViewModel(message));
+                Messages.Insert(insertionIndex++, CreateEntryViewModel(entry));
             }
 
             OnPropertyChanged(nameof(ShowWelcome));
@@ -937,15 +937,15 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        foreach (CopilotChatMessage message in _subscribedSession.ChatMessages)
+        foreach (CopilotChatEntry entry in _subscribedSession.Entries)
         {
-            Messages.Add(new MessageItemViewModel(message));
+            Messages.Add(CreateEntryViewModel(entry));
         }
     }
 
     private void ClearMessages()
     {
-        foreach (MessageItemViewModel message in Messages)
+        foreach (ChatEntryViewModel message in Messages)
         {
             message.Dispose();
         }
@@ -953,17 +953,18 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         Messages.Clear();
     }
 
-    private static Task AddSystemMessageAsync(CopilotChatSession? session, string content)
+    private static ChatEntryViewModel CreateEntryViewModel(CopilotChatEntry entry) => entry switch
     {
-        if (session is null)
-        {
-            return Task.CompletedTask;
-        }
+        CopilotChatMessage message => new MessageItemViewModel(message),
+        CopilotChatNotice notice => new NoticeItemViewModel(notice),
+        _ => throw new ArgumentException(nameof(entry)),
+    };
 
-        var message = new CopilotChatMessage(ChatRole.System, content)
-        {
-            IsPresetInfo = true,
-        };
-        return session.AddMessageAsync(message);
+    private async Task AddSystemMessageAsync(CopilotChatSession? session, string content,
+        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Information)
+    {
+        if (session is null) return;
+        await session.AddEntryAsync(new CopilotChatNotice(content, level));
+        if (_workTaskController is not null) await _workTaskController.SaveSessionAsync(session);
     }
 }

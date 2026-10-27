@@ -61,9 +61,9 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
             session.SetTitle(persistenceData.Title);
         }
 
-        foreach (CopilotChatMessage message in persistenceData.Messages)
+        foreach (CopilotChatEntry entry in persistenceData.Entries)
         {
-            await session.AddMessageAsync(message).ConfigureAwait(false);
+            await session.AddEntryAsync(entry).ConfigureAwait(false);
         }
 
         if (persistenceData.AgentSessionState is JsonElement agentSessionState)

@@ -99,7 +99,7 @@ public sealed class CopilotChatToolProcessTests
         parent.AppendFunctionResult(new FunctionResultContent("call", "returned"));
         var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(Guid.NewGuid(), DateTimeOffset.Now,
             "history", 2, [parent], null));
-        CopilotChatMessage restored = CopilotChatHistoryXmlCodec.ReadPersistenceData(document).Messages.Single();
+        CopilotChatMessage restored = CopilotChatHistoryXmlCodec.ReadPersistenceData(document).Entries.OfType<CopilotChatMessage>().Single();
         CopilotChatToolItem restoredItem = restored.MessageItems.OfType<CopilotChatToolItem>().Single();
         restored.AppendFunctionCall(new FunctionCallContent("call", "read", new Dictionary<string, object?>()));
         Assert.AreEqual((1, "detail", "reasoning", "inspection", "returned"),
@@ -123,7 +123,7 @@ public sealed class CopilotChatToolProcessTests
         parent.CreateToolItem(new FunctionCallContent("call", "read", new Dictionary<string, object?>()));
         var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(Guid.NewGuid(), DateTimeOffset.Now,
             "history", 2, [parent], null));
-        Assert.IsNull(CopilotChatHistoryXmlCodec.ReadPersistenceData(document).Messages.Single()
+        Assert.IsNull(CopilotChatHistoryXmlCodec.ReadPersistenceData(document).Entries.OfType<CopilotChatMessage>().Single()
             .MessageItems.OfType<CopilotChatToolItem>().Single().Details);
     }
 }

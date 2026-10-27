@@ -57,11 +57,9 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
                 session.SetAgentSession(runContext.AgentSession
                     ?? throw new InvalidOperationException("编程代理未创建模型会话。"));
                 cancellationToken.ThrowIfCancellationRequested();
-                await session.AddMessageAsync(userMessage).ConfigureAwait(false);
-                await chatManager.ChatLogger.LogMessageAsync(session.SessionId, userMessage).ConfigureAwait(false);
-                await session.AddMessageAsync(assistantMessage).ConfigureAwait(false);
                 return new ChatRoomRoleExecutionResult(runResult.AssistantChatMessage,
-                    CompleteAsync(runResult.CompletionTask, chatting, cancellationToken));
+                    CompleteAsync(runResult.CompletionTask, chatting, cancellationToken,
+                        chatManager, session, userMessage, assistantMessage));
             }
             catch
             {
@@ -120,11 +118,18 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
     (
         Task<string?> completionTask,
         IDisposable chatting,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        CopilotChatManager chatManager,
+        CopilotChatSession session,
+        CopilotChatMessage userMessage,
+        CopilotChatMessage assistantMessage
     )
     {
         try
         {
+            await session.AddMessageAsync(userMessage).ConfigureAwait(false);
+            await chatManager.ChatLogger.LogMessageAsync(session.SessionId, userMessage).ConfigureAwait(false);
+            await session.AddMessageAsync(assistantMessage).ConfigureAwait(false);
             string? content = await completionTask.ConfigureAwait(false);
             return new ChatRoomRoleExecutionCompletion(content, WasCanceled: false);
         }

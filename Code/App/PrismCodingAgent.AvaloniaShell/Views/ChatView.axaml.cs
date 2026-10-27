@@ -170,6 +170,7 @@ public partial class ChatView : UserControl
             return;
         }
 
+        CopilotChatSession? session = viewModel.NoticeSession;
         IReadOnlyList<IStorageFile> files;
         try
         {
@@ -183,11 +184,13 @@ public partial class ChatView : UserControl
         catch (Exception exception)
         {
             Trace.TraceError($"打开图片选择器失败：{exception}");
-            await viewModel.AddSystemNoticeAsync(Localizations.Lang.Format(Localizations.Lang.Current.ImagePickerFailed, exception.Message));
+            await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Localizations.Lang.Current.ImagePickerFailed, exception.Message));
             return;
         }
         foreach (IStorageFile file in files)
         {
+            string? notice = null;
+            var level = CopilotChatNoticeLevel.Error;
             try
             {
                 await using Stream stream = await file.OpenReadAsync();
@@ -198,7 +201,8 @@ public partial class ChatView : UserControl
                 using var bitmap = new Bitmap(validationStream);
                 if (!viewModel.TryAddImageAttachment(file.Name, data))
                 {
-                    await viewModel.AddSystemNoticeAsync(Localizations.Lang.Format(Localizations.Lang.Current.ImageUnsupported, file.Name));
+                    notice = Localizations.Lang.Format(Localizations.Lang.Current.ImageUnsupported, file.Name);
+                    level = CopilotChatNoticeLevel.Warning;
                 }
             }
             catch (Exception exception) when (exception is IOException
@@ -206,7 +210,12 @@ public partial class ChatView : UserControl
                                               or InvalidOperationException
                                               or ArgumentException)
             {
-                await viewModel.AddSystemNoticeAsync(Localizations.Lang.Format(Localizations.Lang.Current.ImageAttachFailed, file.Name, exception.Message));
+                notice = Localizations.Lang.Format(Localizations.Lang.Current.ImageAttachFailed, file.Name, exception.Message);
+            }
+
+            if (notice is not null)
+            {
+                await viewModel.AddSystemNoticeAsync(session, notice, level);
             }
         }
     }
@@ -268,6 +277,7 @@ public partial class ChatView : UserControl
             return false;
         }
 
+        CopilotChatSession? session = viewModel.NoticeSession;
         IAsyncDataTransfer? dataTransfer = await clipboard.TryGetDataAsync();
         if (dataTransfer is null)
         {
@@ -291,7 +301,7 @@ public partial class ChatView : UserControl
                                           or InvalidOperationException
                                           or ArgumentException)
         {
-            await viewModel.AddSystemNoticeAsync(Localizations.Lang.Format(Localizations.Lang.Current.ImagePasteFailed, exception.Message));
+            await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Localizations.Lang.Current.ImagePasteFailed, exception.Message));
             return true;
         }
     }

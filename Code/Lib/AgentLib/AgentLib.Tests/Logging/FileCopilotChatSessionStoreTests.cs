@@ -26,6 +26,28 @@ public sealed class FileCopilotChatSessionStoreTests
     }
 
     [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    [DataRow(3)]
+    public async Task LegacySummaryShouldExcludeMigratedNotices(int version)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Console.WriteLine(directory);
+        Directory.CreateDirectory(directory);
+        Guid sessionId = Guid.NewGuid();
+        XElement root = CopilotChatHistoryXmlCodec.CreateRootElement(sessionId, DateTimeOffset.Now,
+            "title", version,
+            [new CopilotChatMessage(ChatRole.User, "question"),
+                new CopilotChatMessage(ChatRole.System, "legacy notice") { IsPresetInfo = true }], null);
+        await File.WriteAllTextAsync(Path.Combine(directory, $"history_{sessionId:N}.xml"), root.ToString());
+        var store = new FileCopilotChatSessionStore(directory);
+
+        CopilotChatSessionSummary summary = (await store.ListSessionsAsync()).Single();
+
+        Assert.AreEqual(1, summary.MessageCount);
+    }
+
+    [TestMethod]
     public async Task SaveAndLoadShouldPreserveWorkTaskMetadata()
     {
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -123,13 +145,14 @@ public sealed class FileCopilotChatSessionStoreTests
         Assert.AreEqual(sessionId, persistenceData.SessionId);
         Assert.AreEqual(startedTime, persistenceData.StartedTime);
         Assert.AreEqual("历史会话标题", persistenceData.Title);
-        Assert.HasCount(2, persistenceData.Messages);
+        CopilotChatMessage[] messages = persistenceData.Entries.OfType<CopilotChatMessage>().ToArray();
+        Assert.HasCount(2, messages);
         Assert.AreEqual(stateDocument.RootElement.GetRawText(), persistenceData.AgentSessionState?.GetRawText());
-        Assert.HasCount(3, persistenceData.Messages[0].MessageItems);
-        Assert.HasCount(5, persistenceData.Messages[1].MessageItems);
-        Assert.AreEqual(100L, persistenceData.Messages[1].TotalUsageDetails?.TotalTokenCount);
+        Assert.HasCount(3, messages[0].MessageItems);
+        Assert.HasCount(5, messages[1].MessageItems);
+        Assert.AreEqual(100L, messages[1].TotalUsageDetails?.TotalTokenCount);
         Assert.AreEqual(CopilotToolApprovalState.Rejected,
-            persistenceData.Messages[1].MessageItems.OfType<CopilotChatApprovalToolItem>().Single().ApprovalState);
+            messages[1].MessageItems.OfType<CopilotChatApprovalToolItem>().Single().ApprovalState);
     }
 
     [TestMethod(DisplayName = "历史列表应按最近时间返回摘要并跳过损坏文件")]
@@ -220,7 +243,7 @@ public sealed class FileCopilotChatSessionStoreTests
 
         Assert.HasCount(1, Directory.GetFiles(temporaryDirectory.SessionPath, "*.xml", SearchOption.AllDirectories));
         CopilotChatSessionPersistenceData persistenceData = await store.LoadSessionAsync(session.SessionId);
-        Assert.HasCount(2, persistenceData.Messages);
+        Assert.HasCount(2, persistenceData.Entries.OfType<CopilotChatMessage>().ToArray());
     }
 
     [TestMethod(DisplayName = "未来版本历史应被明确拒绝")]
@@ -288,7 +311,7 @@ public sealed class FileCopilotChatSessionStoreTests
         await store.SaveSessionAsync(session, agentSessionState: null);
         CopilotChatSessionPersistenceData persistenceData = await store.LoadSessionAsync(session.SessionId);
 
-        Assert.AreEqual(value, persistenceData.Messages.Single().Content);
+        Assert.AreEqual(value, persistenceData.Entries.OfType<CopilotChatMessage>().Single().Content);
     }
 
     [TestMethod(DisplayName = "保存 XML 时应替换非法字符并保留合法代理对")]

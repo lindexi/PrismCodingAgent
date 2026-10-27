@@ -9,7 +9,7 @@ namespace PrismCodingAgent.AvaloniaShell.ViewModels;
 /// <summary>
 /// 将一条 <see cref="CopilotChatMessage"/> 投影为聊天界面可绑定的消息项。
 /// </summary>
-public sealed class MessageItemViewModel : ViewModelBase, IDisposable
+public sealed class MessageItemViewModel : ChatEntryViewModel
 {
     private readonly CopilotChatMessage _message;
     private bool _isDisposed;
@@ -39,7 +39,7 @@ public sealed class MessageItemViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取公开正文。
     /// </summary>
-    public string Content => _message.Content;
+    public override string Content => _message.Content;
 
     /// <summary>
     /// 获取包含思考、工具与子代理片段的完整内容。
@@ -104,7 +104,7 @@ public sealed class MessageItemViewModel : ViewModelBase, IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose()
+    public override void Dispose()
     {
         if (_isDisposed)
         {

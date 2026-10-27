@@ -38,6 +38,7 @@ public sealed class CopilotChatSession : NotifyBase
     /// <param name="startedTime">会话开始时间。</param>
     public CopilotChatSession(Guid sessionId, DateTimeOffset startedTime)
     {
+        ChatMessages = new CopilotChatMessageProjection(Entries);
         SessionId = sessionId;
         StartedTime = startedTime;
     }
@@ -70,7 +71,32 @@ public sealed class CopilotChatSession : NotifyBase
     /// <summary>
     /// 会话中的聊天消息列表。
     /// </summary>
-    public ObservableCollection<CopilotChatMessage> ChatMessages { get; } = [];
+    public CopilotChatMessageProjection ChatMessages { get; }
+
+    /// <summary>会话的完整有序时间线。</summary>
+    public ObservableCollection<CopilotChatEntry> Entries { get; } = [];
+
+    /// <summary>在会话所属线程追加条目；通知不会影响标题。</summary>
+    public async Task AddEntryAsync(CopilotChatEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        if (_mainThreadDispatcher is not null && !_mainThreadDispatcher.CheckAccess())
+        {
+            await _mainThreadDispatcher.InvokeAsync(() =>
+            {
+                AddEntryCore(entry);
+                return Task.CompletedTask;
+            });
+            return;
+        }
+        AddEntryCore(entry);
+    }
+
+    private void AddEntryCore(CopilotChatEntry entry)
+    {
+        Entries.Add(entry);
+        if (entry is CopilotChatMessage message) TryUpdateTitle(message);
+    }
 
     /// <summary>
     /// 获取持续维护的 Responses 原生会话；仅存储初始化时允许提供恢复实例。
@@ -164,7 +190,7 @@ public sealed class CopilotChatSession : NotifyBase
     {
         ArgumentNullException.ThrowIfNull(chatMessage);
 
-        ChatMessages.Add(chatMessage);
+        Entries.Add(chatMessage);
         TryUpdateTitle(chatMessage);
     }
 

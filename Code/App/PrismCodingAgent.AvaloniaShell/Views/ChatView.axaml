@@ -6,6 +6,8 @@
              x:Class="PrismCodingAgent.AvaloniaShell.Views.ChatView"
              x:DataType="vm:ChatViewModel">
     <UserControl.DataTemplates>
+      <views:ChatMessageItemTemplateSelector>
+        <views:ChatMessageItemTemplateSelector.TextItemTemplate>
         <DataTemplate DataType="model:CopilotChatTextItem" x:DataType="model:CopilotChatTextItem">
             <TextBox Classes="ChatOutput"
                      Margin="0,0,0,8"
@@ -13,7 +15,8 @@
                      Foreground="{StaticResource TextPrimaryBrush}"
                      IsVisible="{Binding HasText}" />
         </DataTemplate>
-
+        </views:ChatMessageItemTemplateSelector.TextItemTemplate>
+        <views:ChatMessageItemTemplateSelector.ImageItemTemplate>
         <DataTemplate DataType="model:CopilotChatImageItem" x:DataType="model:CopilotChatImageItem">
             <Button Margin="0,0,0,8"
                     Padding="0"
@@ -29,7 +32,8 @@
                                    Data="{Binding Data}" />
             </Button>
         </DataTemplate>
-
+        </views:ChatMessageItemTemplateSelector.ImageItemTemplate>
+        <views:ChatMessageItemTemplateSelector.ReasoningItemTemplate>
         <DataTemplate DataType="model:CopilotChatReasoningItem" x:DataType="model:CopilotChatReasoningItem">
             <Expander Classes="ReasoningExpander"
                       Margin="0,0,0,8"
@@ -48,7 +52,8 @@
                 </Border>
             </Expander>
         </DataTemplate>
-
+        </views:ChatMessageItemTemplateSelector.ReasoningItemTemplate>
+        <views:ChatMessageItemTemplateSelector.ApprovalToolItemTemplate>
         <DataTemplate DataType="model:CopilotChatApprovalToolItem" x:DataType="model:CopilotChatApprovalToolItem">
             <Border Classes="ApprovalPanel" Margin="0,0,0,8">
                 <StackPanel Spacing="6">
@@ -87,7 +92,8 @@
                 </StackPanel>
             </Border>
         </DataTemplate>
-
+        </views:ChatMessageItemTemplateSelector.ApprovalToolItemTemplate>
+        <views:ChatMessageItemTemplateSelector.ToolItemTemplate>
         <DataTemplate DataType="model:CopilotChatToolItem" x:DataType="model:CopilotChatToolItem">
             <Expander Margin="0,0,0,8">
                 <Expander.Header>
@@ -124,7 +130,8 @@
                 </Border>
             </Expander>
         </DataTemplate>
-
+        </views:ChatMessageItemTemplateSelector.ToolItemTemplate>
+        <views:ChatMessageItemTemplateSelector.SubAgentItemTemplate>
         <DataTemplate DataType="model:CopilotChatSubAgentItem" x:DataType="model:CopilotChatSubAgentItem">
             <Expander Margin="0,0,0,8" IsExpanded="True">
                 <Expander.Header>
@@ -146,8 +153,8 @@
                 </Border>
             </Expander>
         </DataTemplate>
-
-
+        </views:ChatMessageItemTemplateSelector.SubAgentItemTemplate>
+      </views:ChatMessageItemTemplateSelector>
     </UserControl.DataTemplates>
 
     <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource BackgroundBrush}">
@@ -245,11 +252,10 @@
                       VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="MessagesItemsControl" Margin="32,0,16,0" HorizontalAlignment="Stretch" ItemsSource="{Binding Messages}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:MessageItemViewModel">
-                        <Grid Margin="0,0,0,24">
-                            <StackPanel HorizontalAlignment="Stretch"
-                                        Spacing="10"
-                                        IsVisible="{Binding IsAssistantMessage}">
+                    <views:ChatEntryTemplateSelector>
+                        <views:ChatEntryTemplateSelector.AssistantMessageTemplate>
+                          <DataTemplate x:DataType="vm:MessageItemViewModel">
+                            <StackPanel Margin="0,0,0,24" HorizontalAlignment="Stretch" Spacing="10">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <Border Width="28" Height="28" CornerRadius="8" Background="#E6EDFC"><PathIcon Width="16" Height="16" Foreground="#4969B8" Data="M8,3 L8,1 L10,1 L10,3 L14,3 L14,1 L16,1 L16,3 L20,3 L20,7 L23,7 L23,9 L20,9 L20,15 L23,15 L23,17 L20,17 L20,21 L4,21 L4,17 L1,17 L1,15 L4,15 L4,9 L1,9 L1,7 L4,7 L4,3 Z M6,5 L6,19 L18,19 L18,5 Z M8,9 L10,9 L10,12 L8,12 Z M14,9 L16,9 L16,12 L14,12 Z M8,15 L16,15 L16,17 L8,17 Z" /></Border>
                                     <TextBlock Text="{Binding Author}" Classes="AuthorName" VerticalAlignment="Center" />
@@ -278,10 +284,11 @@
                                 </Border>
                             </StackPanel>
 
-                            <StackPanel HorizontalAlignment="Right"
-                                        MaxWidth="720"
-                                        Spacing="2"
-                                        IsVisible="{Binding IsUserMessage}">
+                          </DataTemplate>
+                        </views:ChatEntryTemplateSelector.AssistantMessageTemplate>
+                        <views:ChatEntryTemplateSelector.UserMessageTemplate>
+                          <DataTemplate x:DataType="vm:MessageItemViewModel">
+                            <StackPanel Margin="0,0,0,24" HorizontalAlignment="Right" MaxWidth="720" Spacing="2">
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Right"
                                             Spacing="8">
@@ -312,10 +319,11 @@
                                 </Border>
                             </StackPanel>
 
-                            <Border Classes="MessageBubbleSystem"
-                                    HorizontalAlignment="Center"
-                                    MaxWidth="520"
-                                    IsVisible="{Binding IsSystemMessage}">
+                          </DataTemplate>
+                        </views:ChatEntryTemplateSelector.UserMessageTemplate>
+                        <views:ChatEntryTemplateSelector.SystemMessageTemplate>
+                          <DataTemplate x:DataType="vm:MessageItemViewModel">
+                            <Border Margin="0,0,0,24" Classes="MessageBubbleSystem" HorizontalAlignment="Center" MaxWidth="520">
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="{Binding CopyBody, Source={x:Static localizations:Lang.Current}}"
@@ -331,8 +339,24 @@
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            TextWrapping="Wrap" />
                             </Border>
-                        </Grid>
-                    </DataTemplate>
+                          </DataTemplate>
+                        </views:ChatEntryTemplateSelector.SystemMessageTemplate>
+                        <views:ChatEntryTemplateSelector.NoticeTemplate>
+                          <DataTemplate x:DataType="vm:NoticeItemViewModel">
+                            <Border Margin="0,0,0,24" Padding="12,8" CornerRadius="6" Background="#EEF2F7"
+                                    Classes.warning="{Binding IsWarning}" Classes.error="{Binding IsError}">
+                              <Border.Styles>
+                                <Style Selector="Border.warning"><Setter Property="Background" Value="#FFF3D6" /></Style>
+                                <Style Selector="Border.error"><Setter Property="Background" Value="#FCE6E6" /></Style>
+                              </Border.Styles>
+                              <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding TimeText}" Classes="Timestamp" />
+                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
+                              </StackPanel>
+                            </Border>
+                          </DataTemplate>
+                        </views:ChatEntryTemplateSelector.NoticeTemplate>
+                    </views:ChatEntryTemplateSelector>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>

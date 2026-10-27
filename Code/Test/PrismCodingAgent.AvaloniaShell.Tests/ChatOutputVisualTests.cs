@@ -17,6 +17,15 @@ public sealed class ChatOutputVisualTests
     public static Task CleanupAvalonia() => AvaloniaTestClassAttribute.Session.DisposeAsync().AsTask();
 
     [TestMethod]
+    public void ChatViewShouldRegisterOriginalMessageItemSelector()
+    {
+        var view = new ChatView();
+
+        Assert.IsInstanceOfType<global::PrismCodingAgent.AvaloniaShell.Views.ChatMessageItemTemplateSelector>(
+            view.DataTemplates.Single());
+    }
+
+    [TestMethod]
     public void FocusedChatOutputShouldNotRenderBlueOuterBorder()
     {
         var textBox = new TextBox

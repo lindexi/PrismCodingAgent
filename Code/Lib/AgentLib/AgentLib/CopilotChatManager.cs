@@ -67,7 +67,7 @@ public class CopilotChatManager : NotifyBase
     /// <summary>
     /// 当前选中会话的聊天消息列表。
     /// </summary>
-    public ObservableCollection<CopilotChatMessage> ChatMessages => SelectedSession.ChatMessages;
+    public CopilotChatMessageProjection ChatMessages => SelectedSession.ChatMessages;
 
     /// <summary>
     /// 聊天日志记录器。
@@ -295,7 +295,7 @@ public class CopilotChatManager : NotifyBase
         ArgumentNullException.ThrowIfNull(fromMessage);
 
         CopilotChatSession currentSession = SelectedSession;
-        int index = currentSession.ChatMessages.IndexOf(fromMessage);
+        int index = currentSession.Entries.IndexOf(fromMessage);
         if (index < 0)
         {
             throw new InvalidOperationException("在当前的会话中找不到所选的聊天消息。");
@@ -307,7 +307,10 @@ public class CopilotChatManager : NotifyBase
         };
         for (int i = 0; i <= index; i++)
         {
-            newSession.AddMessage(currentSession.ChatMessages[i].Clone());
+            CopilotChatEntry entry = currentSession.Entries[i];
+            if (entry is CopilotChatMessage message) newSession.AddMessage(message.Clone());
+            else if (entry is CopilotChatNotice notice)
+                newSession.Entries.Add(new CopilotChatNotice(notice.Content, notice.Level, notice.CreatedTime));
         }
 
         ChatSessions.Insert(0, newSession);
@@ -591,15 +594,13 @@ public class CopilotChatManager : NotifyBase
             catch (OperationCanceledException) when (currentChatCancellationToken.IsCancellationRequested)
             {
                 WasLastChatCanceled = true;
-                CopilotChatMessage canceledMessage = CopilotChatMessage.CreateAssistant("已取消", isPresetInfo: true);
-                await AppendMessageAsync(currentSession, canceledMessage);
+                await currentSession.AddEntryAsync(new CopilotChatNotice("已取消"));
                 return new SendMessageRunState(IsSuccess: false, WasCanceled: true);
             }
             catch (Exception exception)
             {
-                CopilotChatMessage exceptionMessage = CopilotChatMessage.CreateAssistant
-                    (exception.ToString(), isPresetInfo: true);
-                await AppendMessageAsync(currentSession, exceptionMessage);
+                await ChatLogger.LogDiagnosticAsync(currentSession.SessionId, "运行", "发送失败", exception);
+                await currentSession.AddEntryAsync(new CopilotChatNotice(exception.Message, CopilotChatNoticeLevel.Error));
                 return new SendMessageRunState(IsSuccess: false, WasCanceled: false);
             }
             finally

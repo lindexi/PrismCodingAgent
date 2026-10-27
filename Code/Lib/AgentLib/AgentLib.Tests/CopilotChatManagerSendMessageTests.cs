@@ -327,11 +327,11 @@ public class CopilotChatManagerSendMessageTests
             toolMode: ChatToolMode.RequireAny);
 
         Assert.IsFalse(context.ChatManager.IsChatting, "聊天状态应恢复");
-        CopilotChatMessage lastMessage = context.ChatManager.ChatMessages[^1];
+        CopilotChatNotice lastMessage = context.ChatManager.SelectedSession.Entries.OfType<CopilotChatNotice>().Single();
         Assert.IsTrue(lastMessage.Content.Contains("工具执行失败", StringComparison.Ordinal)
                       || lastMessage.Content.Contains("InvalidOperationException", StringComparison.Ordinal),
             $"最后一条消息应包含错误信息，实际内容: {lastMessage.Content}");
-        Assert.IsTrue(lastMessage.IsPresetInfo, "错误消息应标记为预设信息");
+        Assert.AreEqual(CopilotChatNoticeLevel.Error, lastMessage.Level);
     }
 
     [TestMethod]

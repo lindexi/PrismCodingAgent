@@ -22,7 +22,7 @@ public sealed class CopilotResponsesSessionTests
     public void DisplayMessagesShouldNotPopulateNativeHistory()
     {
         var session = new CopilotChatSession();
-        session.ChatMessages.Add(CopilotChatMessage.CreateUser("display only"));
+        session.Entries.Add(CopilotChatMessage.CreateUser("display only"));
 
         Assert.HasCount(0, session.ResponsesSession.Items);
     }

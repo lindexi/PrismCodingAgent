@@ -46,10 +46,8 @@ public sealed record CopilotChatSessionPersistenceData
     /// </summary>
     public string? WorkTaskName { get; init; }
 
-    /// <summary>
-    /// 获取持久化的公开聊天消息。
-    /// </summary>
-    public required IReadOnlyList<CopilotChatMessage> Messages { get; init; }
+    /// <summary>按存储顺序恢复的完整时间线。</summary>
+    public IReadOnlyList<CopilotChatEntry> Entries { get; init; } = Array.Empty<CopilotChatEntry>();
 
     /// <summary>
     /// 获取序列化的代理会话状态；尚未创建代理状态时为 <see langword="null"/>。

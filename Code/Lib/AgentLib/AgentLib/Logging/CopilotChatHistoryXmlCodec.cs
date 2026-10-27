@@ -21,7 +21,7 @@ internal static class CopilotChatHistoryXmlCodec
         DateTimeOffset startedTime,
         string title,
         int formatVersion,
-        IEnumerable<CopilotChatMessage> messages,
+        IEnumerable<CopilotChatEntry> messages,
         JsonElement? agentSessionState)
     {
         var rootElement = new XElement("CopilotChatSessionHistory",
@@ -31,7 +31,7 @@ internal static class CopilotChatHistoryXmlCodec
             new XAttribute("CreatedTime", startedTime.ToString("o")),
             new XAttribute("Title", title));
         AppendAgentSessionStateElement(rootElement, agentSessionState);
-        rootElement.Add(new XElement("Messages", messages.Select(CreateMessageElement)));
+        rootElement.Add(new XElement("Messages", messages.Select(CreateEntryElement)));
         return rootElement;
     }
 
@@ -49,6 +49,37 @@ internal static class CopilotChatHistoryXmlCodec
 
         rootElement.Element("AgentSessionState")?.Remove();
         AppendAgentSessionStateElement(rootElement, agentSessionState);
+    }
+
+    private static XElement CreateEntryElement(CopilotChatEntry entry) => entry switch
+    {
+        CopilotChatMessage message => CreateMessageElement(message),
+        CopilotChatNotice notice => new XElement("Notice",
+            new XAttribute("CreatedTime", notice.CreatedTime.ToString("o")),
+            new XAttribute("Level", notice.Level), new XElement("Content", notice.Content)),
+        _ => throw new InvalidDataException("Unknown timeline entry."),
+    };
+
+    private static CopilotChatEntry ReadEntry(XElement element, int version)
+    {
+        if (element.Name == "Notice")
+        {
+            if (!Enum.TryParse(element.Attribute("Level")?.Value, out CopilotChatNoticeLevel level)
+                || !Enum.IsDefined(typeof(CopilotChatNoticeLevel), level)
+                || !DateTimeOffset.TryParse(element.Attribute("CreatedTime")?.Value, CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind, out DateTimeOffset createdTime)
+                || element.Element("Content") is not { } content)
+            {
+                throw new InvalidDataException("Invalid notice data.");
+            }
+            return new CopilotChatNotice(content.Value, level, createdTime);
+        }
+        if (element.Name != "Message") throw new InvalidDataException("Unknown timeline entry.");
+        CopilotChatMessage message = ReadMessage(element);
+        if (version < 4 && message.Role == ChatRole.System && message.IsPresetInfo
+            && message.MessageItems.All(item => item is CopilotChatTextItem))
+            return new CopilotChatNotice(message.Content, createdTime: message.CreatedTime);
+        return message;
     }
 
     public static XElement CreateMessageElement(CopilotChatMessage chatMessage)
@@ -72,7 +103,7 @@ internal static class CopilotChatHistoryXmlCodec
         int formatVersion = ParseOptionalInt(rootElement.Attribute("FormatVersion")?.Value) ?? 1;
         XElement messagesElement = rootElement.Element("Messages")
                                    ?? throw new InvalidDataException("聊天历史文件缺少 Messages 节点。");
-        List<CopilotChatMessage> messages = messagesElement.Elements("Message").Select(ReadMessage).ToList();
+        List<CopilotChatEntry> entries = messagesElement.Elements().Select(element => ReadEntry(element, formatVersion)).ToList();
         JsonElement? agentSessionState = ReadAgentSessionState(rootElement);
         return new CopilotChatSessionPersistenceData
         {
@@ -85,7 +116,7 @@ internal static class CopilotChatHistoryXmlCodec
                 ? workTaskId
                 : null,
             WorkTaskName = rootElement.Attribute("WorkTaskName")?.Value,
-            Messages = messages,
+            Entries = entries,
             AgentSessionState = agentSessionState,
             ResponsesSession = ReadResponsesSession(rootElement),
         };

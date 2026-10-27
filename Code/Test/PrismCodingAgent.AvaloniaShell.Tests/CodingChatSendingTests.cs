@@ -381,12 +381,42 @@ public sealed class CodingChatSendingTests
         await application.InitializeAsync();
         Task sendTask = application.SendMessageAsync("触发异常");
         await runner.Started.Task;
-        runner.Fail(new InvalidOperationException("模型失败"));
+        var operationException = new InvalidOperationException("模型失败");
+        runner.AssistantMessage.ClearMessageItems();
+        runner.AssistantMessage.AppendText("partial");
+        runner.Fail(operationException);
 
         InvalidOperationException exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await sendTask);
 
-        Assert.AreEqual("模型失败", exception.Message);
+        Assert.AreSame(operationException, exception);
+        Assert.AreSame(store.SaveException, exception.Data["SessionSaveException"]);
+        Assert.AreEqual("partial", manager.SelectedSession.ChatMessages.Last().Content);
         Assert.IsFalse(application.IsRunActive);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task RunFailureShouldTakePrecedenceOverDiagnosticFailure()
+    {
+        var manager = new CopilotChatManager(new FailureDiagnosticLogger());
+        var runner = new TestCodingChatRunner(manager);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
+        await application.InitializeAsync();
+        Task sending = application.SendMessageAsync("question");
+        await runner.Started.Task;
+        var failure = new InvalidOperationException("model failed");
+        runner.Fail(failure);
+
+        InvalidOperationException actual = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await sending);
+
+        Assert.AreSame(failure, actual);
+    }
+
+    private sealed class FailureDiagnosticLogger : ICopilotChatLogger
+    {
+        public Task LogMessageAsync(Guid sessionId, CopilotChatMessage message) => Task.CompletedTask;
+        public Task LogDiagnosticAsync(Guid sessionId, string category, string message, Exception? exception = null)
+            => exception is null ? Task.CompletedTask : Task.FromException(new IOException("diagnostic failed"));
     }
 
     [TestMethod(DisplayName = "运行成功但保存失败时应抛出保存异常")]
