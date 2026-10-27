@@ -56,7 +56,7 @@ public sealed class CodingAgent : IAsyncDisposable
     /// 使用有序多模态内容和运行选项执行编程对话。
     /// </summary>
     /// <param name="context">本次编程执行的模型会话和输出上下文。</param>
-    /// <param name="contents">保持原始顺序的用户输入内容。</param>
+    /// <param name="contents">保持原始顺序的用户输入内容；空集合表示不添加用户消息，使用现有会话历史运行。</param>
     /// <param name="workspacePath">本次运行期望使用的工作区路径。</param>
     /// <param name="options">运行选项；未指定时使用默认选项。</param>
     /// <param name="cancellationToken">取消令牌。</param>
@@ -71,11 +71,6 @@ public sealed class CodingAgent : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(contents);
         AIContent[] runContents = [.. contents];
-        if (runContents.Length == 0)
-        {
-            throw new ArgumentException("编程任务内容不能为空。", nameof(contents));
-        }
-
         ThrowIfDisposed();
         CodingChatRunOptions runOptions = options ?? CodingChatRunOptions.Default;
         CodingRunWorkspaceContext workspaceContext = await GetRunWorkspaceContextAsync(
@@ -98,10 +93,6 @@ public sealed class CodingAgent : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(contents);
         AIContent[] runContents = [.. contents];
-        if (runContents.Length == 0)
-        {
-            throw new ArgumentException("编程任务内容不能为空。", nameof(contents));
-        }
 
         CancellationTokenSource? runCancellationTokenSource = null;
         bool ownershipTransferred = false;
@@ -306,10 +297,9 @@ public sealed class CodingAgent : IAsyncDisposable
             await CodingSystemPrompt
                 .EnsureSystemPromptInSessionAsync(agentSession, prompts, cancellationToken)
                 .ConfigureAwait(false);
-            ChatMessage[] inputMessages =
-            [
-                new ChatMessage(ChatRole.User, new List<AIContent>(contents)),
-            ];
+            ChatMessage[] inputMessages = contents.Count == 0
+                ? []
+                : [new ChatMessage(ChatRole.User, new List<AIContent>(contents))];
 
             await foreach (AgentResponseUpdate update in chatClientAgent.RunWithHistoryCompletionAsync
                            (
