@@ -244,6 +244,32 @@ public sealed class ShellControlStyleTests
     }
 
     [TestMethod]
+    public void EmptyTimelineShouldUseWelcomeLayout()
+    {
+        using var chat = new ChatViewModel();
+        Assert.IsTrue(chat.ShowWelcome);
+    }
+
+    [TestMethod]
+    public void ErrorNoticeShouldNotBeHiddenByWelcomeLayout()
+    {
+        using var chat = new ChatViewModel();
+        chat.Messages.Add(new NoticeItemViewModel(new AgentLib.Model.CopilotChatNotice("Error", AgentLib.Model.CopilotChatNoticeLevel.Error)));
+
+        Assert.IsFalse(chat.ShowWelcome);
+    }
+
+    [TestMethod]
+    public void PresetGreetingAndErrorNoticeShouldUseTimelineLayout()
+    {
+        using var chat = new ChatViewModel();
+        chat.Messages.Add(new MessageItemViewModel(AgentLib.Model.CopilotChatMessage.CreateAssistant("Greeting", isPresetInfo: true)));
+        chat.Messages.Add(new NoticeItemViewModel(new AgentLib.Model.CopilotChatNotice("Error", AgentLib.Model.CopilotChatNoticeLevel.Error)));
+
+        Assert.IsFalse(chat.ShowWelcome);
+    }
+
+    [TestMethod]
     public void RealAssistantMessageShouldNotBeHiddenByWelcomeLayout()
     {
         using var chat = new ChatViewModel();

@@ -106,7 +106,7 @@ public class SessionTitleGenerator
                     ChatOptions = options,
                 });
 
-            await agent.RunAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await agent.RunAsync(messages, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return submittedTitle;
         }
@@ -157,24 +157,16 @@ public class SessionTitleGenerator
 
     private static List<ChatMessage> BuildMessages(CopilotChatSession session)
     {
-        var relevantMessages = session.ChatMessages
-            .Where(m => !m.IsPresetInfo && m.HasContent)
-            .ToList();
-
-        int count = relevantMessages.Count;
-        if (count == 0)
-        {
-            return [];
-        }
-
-        int start = Math.Max(0, count - MaxMessages);
         var messages = new List<ChatMessage>(MaxMessages);
-        for (int i = start; i < count; i++)
+        for (int i = session.Entries.Count - 1; i >= 0 && messages.Count < MaxMessages; i--)
         {
-            CopilotChatMessage copilotMessage = relevantMessages[i];
-            messages.Add(new ChatMessage(copilotMessage.Role, copilotMessage.Content));
+            if (session.Entries[i] is CopilotChatMessage { IsPresetInfo: false, HasContent: true } copilotMessage)
+            {
+                messages.Add(new ChatMessage(copilotMessage.Role, copilotMessage.Content));
+            }
         }
 
+        messages.Reverse();
         return messages;
     }
 

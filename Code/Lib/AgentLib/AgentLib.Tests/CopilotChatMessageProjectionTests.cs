@@ -24,7 +24,7 @@ public class CopilotChatMessageProjectionTests
     {
         var session = new CopilotChatSession();
         var changes = new List<NotifyCollectionChangedEventArgs>();
-        session.ChatMessages.CollectionChanged += (_, e) => changes.Add(e);
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += (_, e) => changes.Add(e);
         session.Entries.Add(new CopilotChatNotice("first"));
         session.Entries.Add(new CopilotChatNotice("second"));
         session.Entries[0] = new CopilotChatNotice("replacement");
@@ -114,11 +114,11 @@ public class CopilotChatMessageProjectionTests
         var session = CreateSession();
         var changes = new List<NotifyCollectionChangedEventArgs>();
         NotifyCollectionChangedEventHandler handler = (_, e) => changes.Add(e);
-        session.ChatMessages.CollectionChanged += handler;
-        session.ChatMessages.CollectionChanged -= handler;
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += handler;
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged -= handler;
         session.Entries.Clear();
         session.Entries.Add(Message("new"));
-        session.ChatMessages.CollectionChanged += handler;
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += handler;
         session.Entries.Clear();
         Assert.AreEqual(NotifyCollectionChangedAction.Reset, changes.Single().Action);
     }
@@ -129,9 +129,9 @@ public class CopilotChatMessageProjectionTests
         var session = new CopilotChatSession();
         var properties = new List<string?>();
         PropertyChangedEventHandler handler = (_, e) => properties.Add(e.PropertyName);
-        session.ChatMessages.PropertyChanged += handler;
+        ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += handler;
         session.Entries.Add(Message("new"));
-        session.ChatMessages.PropertyChanged -= handler;
+        ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged -= handler;
         session.Entries.Clear();
         CollectionAssert.AreEqual(new[] { "Count", "Item[]" }, properties);
     }
@@ -145,13 +145,13 @@ public class CopilotChatMessageProjectionTests
         var changes = new List<NotifyCollectionChangedEventArgs>();
         int bindingChanges = 0;
         NotifyCollectionChangedEventHandler handler = (_, e) => changes.Add(e);
-        projection.CollectionChanged += handler;
+        ((INotifyCollectionChanged)projection).CollectionChanged += handler;
         manager.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName != nameof(manager.ChatMessages)) return;
-            projection.CollectionChanged -= handler;
+            ((INotifyCollectionChanged)projection).CollectionChanged -= handler;
             projection = manager.ChatMessages;
-            projection.CollectionChanged += handler;
+            ((INotifyCollectionChanged)projection).CollectionChanged += handler;
             bindingChanges++;
         };
         var newSession = new CopilotChatSession();
@@ -239,7 +239,7 @@ public class CopilotChatMessageProjectionTests
     {
         var session = CreateSession();
         var properties = new List<string?>();
-        session.ChatMessages.PropertyChanged += (_, e) => properties.Add(e.PropertyName);
+        ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += (_, e) => properties.Add(e.PropertyName);
         session.Entries.Insert(0, new CopilotChatNotice("added"));
         session.Entries[0] = new CopilotChatNotice("replaced");
         session.Entries.Move(0, 5);
@@ -253,9 +253,9 @@ public class CopilotChatMessageProjectionTests
         var session = new CopilotChatSession();
         var properties = new List<string?>();
         NotifyCollectionChangedEventHandler collectionHandler = (_, _) => Assert.Fail("Unsubscribed handler invoked.");
-        session.ChatMessages.CollectionChanged += collectionHandler;
-        session.ChatMessages.PropertyChanged += (_, e) => properties.Add(e.PropertyName);
-        session.ChatMessages.CollectionChanged -= collectionHandler;
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += collectionHandler;
+        ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += (_, e) => properties.Add(e.PropertyName);
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged -= collectionHandler;
         session.Entries.Add(Message("new"));
         CollectionAssert.AreEqual(new[] { "Count", "Item[]" }, properties);
     }
@@ -266,8 +266,8 @@ public class CopilotChatMessageProjectionTests
         var session = new CopilotChatSession();
         var changes = Observe(session);
         PropertyChangedEventHandler propertyHandler = (_, _) => Assert.Fail("Unsubscribed handler invoked.");
-        session.ChatMessages.PropertyChanged += propertyHandler;
-        session.ChatMessages.PropertyChanged -= propertyHandler;
+        ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += propertyHandler;
+        ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged -= propertyHandler;
         session.Entries.Add(Message("new"));
         Assert.AreEqual(NotifyCollectionChangedAction.Add, changes.Single().Action);
     }
@@ -297,6 +297,137 @@ public class CopilotChatMessageProjectionTests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => projection[-1]);
     }
 
+    [TestMethod]
+    public void UnobservedChangesKeepProjectionCurrent()
+    {
+        var session = CreateSession();
+        var projection = session.ChatMessages;
+        var duplicate = projection[0];
+        session.Entries.Add(duplicate);
+        session.Entries[0] = Message("replacement");
+        session.Entries[3] = new CopilotChatNotice("replacement notice");
+        session.Entries.Move(5, 0);
+        session.Entries.RemoveAt(2);
+        CollectionAssert.AreEqual(session.Entries.OfType<CopilotChatMessage>().ToArray(), projection.ToArray());
+    }
+
+    [TestMethod]
+    public void UnobservedClearAndAppendKeepProjectionCurrent()
+    {
+        var session = CreateSession();
+        session.Entries.Clear();
+        var message = Message("after reset");
+        session.Entries.Add(message);
+        Assert.AreSame(message, session.ChatMessages.Single());
+    }
+
+    [DataTestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void EventCallbacksReadUpdatedProjection(bool propertyEvents)
+    {
+        var session = CreateSession();
+        var snapshots = new List<bool>();
+        void RecordSnapshot()
+        {
+            var expected = session.Entries.OfType<CopilotChatMessage>().ToArray();
+            var projection = session.ChatMessages;
+            snapshots.Add(expected.Length == projection.Count && expected.SequenceEqual(projection)
+                && expected.Select((message, index) => ReferenceEquals(message, projection[index])).All(equal => equal));
+        }
+        if (propertyEvents) ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += (_, _) => RecordSnapshot();
+        else ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += (_, _) => RecordSnapshot();
+        session.Entries.Add(Message("append"));
+        session.Entries.Insert(0, Message("insert"));
+        session.Entries[2] = new CopilotChatNotice("replace message");
+        session.Entries[3] = Message("replace notice");
+        session.Entries[0] = Message("replace message");
+        session.Entries.Move(0, session.Entries.Count - 1);
+        session.Entries.RemoveAt(session.Entries.Count - 1);
+        session.Entries.Clear();
+        CollectionAssert.AreEqual(Enumerable.Repeat(true, propertyEvents ? 14 : 8).ToArray(), snapshots);
+    }
+
+    [TestMethod]
+    public void ProjectionCannotBeWrittenThroughCollectionInterface()
+    {
+        var projection = CreateSession().ChatMessages;
+        Assert.ThrowsExactly<NotSupportedException>(() => ((ICollection<CopilotChatMessage>)projection).Add(Message("invalid")));
+    }
+
+    [TestMethod]
+    public void ReadingApisExposeSameReferencesThroughReadOnlyList()
+    {
+        var session = CreateSession();
+        IReadOnlyList<CopilotChatMessage> projection = session.ChatMessages;
+        session.Entries.Add(projection[0]);
+        var expected = session.Entries.OfType<CopilotChatMessage>().ToArray();
+        var actual = Enumerable.Range(0, projection.Count).Select(index => projection[index]).ToArray();
+        CollectionAssert.AreEqual(expected, actual);
+    }
+
+    [DataTestMethod]
+    [DataRow(1, 5, 4)]
+    [DataRow(5, 1, 4)]
+    [DataRow(3, 0, 4)]
+    [DataRow(0, 5, 2)]
+    [DataRow(1, 2, 2)]
+    [DataRow(2, 1, 2)]
+    [DataRow(3, 3, 2)]
+    public void ConsecutiveMovesCanBeReplayedByInterfaceSubscriber(int from, int to, int expectedNotifications)
+    {
+        var session = CreateSession();
+        session.Entries.Add(session.ChatMessages[0]);
+        var replay = session.ChatMessages.ToList();
+        var snapshots = new List<bool>();
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += (sender, e) =>
+        {
+            var moved = replay[e.OldStartingIndex];
+            replay.RemoveAt(e.OldStartingIndex);
+            replay.Insert(e.NewStartingIndex, (CopilotChatMessage)e.NewItems![0]!);
+            snapshots.Add(e.Action == NotifyCollectionChangedAction.Move
+                && ReferenceEquals(sender, session.ChatMessages)
+                && ReferenceEquals(moved, e.OldItems![0])
+                && replay.SequenceEqual(session.Entries.OfType<CopilotChatMessage>())
+                && replay.SequenceEqual(session.ChatMessages));
+        };
+        session.Entries.Move(from, to);
+        session.Entries.Move(to, from);
+        session.Entries.Move(5, 0);
+        session.Entries.Move(0, 5);
+        CollectionAssert.AreEqual(Enumerable.Repeat(true, expectedNotifications).ToArray(), snapshots);
+    }
+
+    [TestMethod]
+    public void RepeatedAppendMaintainsFilteredIndicesWithoutObservers()
+    {
+        var session = new CopilotChatSession();
+        var expected = new List<CopilotChatMessage>();
+        for (int i = 0; i < 256; i++)
+        {
+            session.Entries.Add(new CopilotChatNotice("notice"));
+            var message = Message("message");
+            expected.Add(message);
+            session.Entries.Add(message);
+        }
+        var changes = Observe(session);
+        session.Entries.Add(new CopilotChatNotice("last notice"));
+        session.Entries.Add(expected[0]);
+        Assert.AreEqual((256, 257, expected[0]),
+            (changes.Single().NewStartingIndex, session.ChatMessages.Count, session.ChatMessages[256]));
+    }
+
+    [DataTestMethod]
+    [DataRow(1, 5)]
+    [DataRow(5, 1)]
+    public void DuplicateMovesKeepAllOccurrencesInSourceOrder(int from, int to)
+    {
+        var session = CreateSession();
+        session.Entries.Add(session.ChatMessages[0]);
+        session.Entries.Move(from, to);
+        CollectionAssert.AreEqual(session.Entries.OfType<CopilotChatMessage>().ToArray(), session.ChatMessages.ToArray());
+    }
+
     private static CopilotChatMessage Message(string text) => new(ChatRole.User, text);
 
     private static CopilotChatSession CreateSession()
@@ -313,7 +444,7 @@ public class CopilotChatMessageProjectionTests
     private static List<NotifyCollectionChangedEventArgs> Observe(CopilotChatSession session)
     {
         var changes = new List<NotifyCollectionChangedEventArgs>();
-        session.ChatMessages.CollectionChanged += (_, e) => changes.Add(e);
+        ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += (_, e) => changes.Add(e);
         return changes;
     }
 }

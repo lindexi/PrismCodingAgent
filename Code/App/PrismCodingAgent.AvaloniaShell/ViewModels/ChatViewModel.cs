@@ -125,7 +125,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取是否仅有预设欢迎信息，尚无实际对话。
     /// </summary>
-    public bool ShowWelcome => Messages.OfType<MessageItemViewModel>().All(item => item.Message.IsPresetInfo);
+    public bool ShowWelcome => Messages.All(item => item is MessageItemViewModel { Message.IsPresetInfo: true });
 
     /// <summary>获取当前会话标题。</summary>
     public string CurrentSessionTitle => _subscribedSession?.Title ?? Localizations.Lang.Current.ChatTitle;
