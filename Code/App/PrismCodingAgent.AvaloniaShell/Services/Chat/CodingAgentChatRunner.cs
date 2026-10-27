@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +14,8 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
     private readonly CopilotChatManager _chatManager;
     private readonly CodingAgent _codingAgent;
     private ICodingAgentRunResult? _activeRun;
+
+    internal CopilotChatMessage? FailedAssistantMessage { get; private set; }
 
     public CodingAgentChatRunner(CopilotChatManager chatManager, CodingAgent codingAgent)
     {
@@ -32,6 +34,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
     )
     {
         ArgumentNullException.ThrowIfNull(contents);
+        FailedAssistantMessage = null;
         CopilotChatSession session = _chatManager.SelectedSession;
         AIContent[] runContents = System.Linq.Enumerable.ToArray(contents);
         var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
@@ -52,6 +55,40 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
             await session.AddMessageAsync(userMessage).ConfigureAwait(false);
             await _chatManager.ChatLogger.LogMessageAsync(session.SessionId, userMessage).ConfigureAwait(false);
             await session.AddMessageAsync(assistantMessage).ConfigureAwait(false);
+            _activeRun = run;
+            return new CompletedCodingAgentRunResult(run.AssistantChatMessage,
+                CompleteAndClearActiveRunAsync(run, session.SessionId, chatting));
+        }
+        catch
+        {
+            chatting.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>在原会话和原助手消息上继续已结束的运行，不新增时间线消息。</summary>
+    public async Task<ICodingAgentRunResult> ContinueAsync
+    (
+        CopilotChatSession session,
+        CopilotChatMessage assistantMessage,
+        string? workspacePath,
+        CodingChatRunOptions options,
+        CancellationToken cancellationToken
+    )
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(assistantMessage);
+        ArgumentNullException.ThrowIfNull(session.AgentSession);
+        FailedAssistantMessage = null;
+        var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
+            .ConfigureAwait(false);
+        var context = new CodingRunContext(client, assistantMessage, session.AgentSession,
+            _chatManager.MainThreadDispatcher);
+        IDisposable chatting = _chatManager.StartChatting();
+        try
+        {
+            ICodingAgentRunResult run = await _codingAgent.RunAsync(
+                context, [], workspacePath, options, cancellationToken).ConfigureAwait(false);
             _activeRun = run;
             return new CompletedCodingAgentRunResult(run.AssistantChatMessage,
                 CompleteAndClearActiveRunAsync(run, session.SessionId, chatting));
@@ -91,13 +128,26 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         {
             try
             {
+                FailedAssistantMessage = null;
                 return await run.CompletionTask.ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                FailedAssistantMessage = run.AssistantChatMessage;
+                throw;
             }
             finally
             {
-                await _chatManager.ChatLogger
-                    .LogMessageAsync(sessionId, run.AssistantChatMessage)
-                    .ConfigureAwait(false);
+                try
+                {
+                    await _chatManager.ChatLogger
+                        .LogMessageAsync(sessionId, run.AssistantChatMessage)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception logException) when (FailedAssistantMessage is not null)
+                {
+                    System.Diagnostics.Trace.TraceError($"{logException}");
+                }
             }
         }
         finally

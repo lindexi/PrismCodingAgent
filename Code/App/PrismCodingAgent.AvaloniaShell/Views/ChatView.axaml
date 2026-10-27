@@ -352,6 +352,10 @@
                               <StackPanel Spacing="4">
                                 <TextBlock Text="{Binding TimeText}" Classes="Timestamp" />
                                 <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
+                                <Button Content="{Binding RetryChatText, Source={x:Static localizations:Lang.Current}}"
+                                        Command="{Binding RetryCommand}"
+                                        IsVisible="{Binding HasContinuation}"
+                                        HorizontalAlignment="Left" />
                               </StackPanel>
                             </Border>
                           </DataTemplate>

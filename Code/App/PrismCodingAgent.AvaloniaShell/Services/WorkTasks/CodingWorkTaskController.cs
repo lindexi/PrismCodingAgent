@@ -59,6 +59,11 @@ internal sealed class CodingWorkTaskController
     private volatile bool _isLoopIterationEnabled;
     private CodingWorkTaskOperationState _operationState;
     private TaskCompletionSource? _operationCompletion;
+    private FailedChatRun? _failedChatRun;
+
+    private sealed record FailedChatRun(CopilotChatNotice Notice, CopilotChatSession Session,
+        CodingAgentChatRunner Runner, CopilotChatMessage Assistant, string? WorkspacePath,
+        CodingChatRunOptions Options);
 
     public CodingWorkTaskController
     (
@@ -345,6 +350,31 @@ internal sealed class CodingWorkTaskController
         }
     }
 
+    internal bool HasChatContinuation(CopilotChatNotice notice)
+        => _failedChatRun is { } failed && ReferenceEquals(failed.Notice, notice)
+            && ReferenceEquals(failed.Session, _chatManager.SelectedSession);
+
+    internal bool CanContinueChat(CopilotChatNotice notice)
+        => !HasActiveOperation && HasChatContinuation(notice);
+
+    internal async Task ContinueChatAsync(CopilotChatNotice notice)
+    {
+        if (!CanContinueChat(notice) || _failedChatRun is not { } failed) return;
+        _failedChatRun = null;
+        using var cancellation = new CancellationTokenSource();
+        _activeOperationCancellationTokenSource = cancellation;
+        UpdateOperationState(CodingWorkTaskOperationState.Running);
+        try
+        {
+            await RunSingleMessageAsync(failed.Runner, [], failed.Options, cancellation.Token, failed);
+        }
+        finally
+        {
+            _activeOperationCancellationTokenSource = null;
+            UpdateOperationState(default);
+        }
+    }
+
     internal Task SaveSessionAsync(CopilotChatSession session) => _sessionStore.SaveSessionAsync(session, CancellationToken.None);
 
     private async Task RunSingleMessageAsync
@@ -352,12 +382,14 @@ internal sealed class CodingWorkTaskController
         ICodingChatRunner chatRunner,
         IReadOnlyList<AIContent> runContents,
         CodingChatRunOptions options,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        FailedChatRun? continuation = null
     )
     {
         AdvanceOperationState(CodingWorkTaskOperationState.Running);
-        CopilotChatSession session = _chatManager.SelectedSession;
-        session.WorkspacePath = _workspaceController.NextRunWorkspacePath;
+        _failedChatRun = null;
+        CopilotChatSession session = continuation?.Session ?? _chatManager.SelectedSession;
+        session.WorkspacePath = continuation is null ? _workspaceController.NextRunWorkspacePath : continuation.WorkspacePath;
         ApplyWorkTaskMetadata(session);
         await _chatManager.ChatLogger.LogDiagnosticAsync
         (
@@ -368,13 +400,10 @@ internal sealed class CodingWorkTaskController
         Exception? runException = null;
         try
         {
-            ICodingAgentRunResult runResult = await chatRunner.RunAsync
-            (
-                runContents,
-                _workspaceController.NextRunWorkspacePath,
-                options,
-                cancellationToken
-            );
+            ICodingAgentRunResult runResult = continuation is null
+                ? await chatRunner.RunAsync(runContents, session.WorkspacePath, options, cancellationToken)
+                : await continuation.Runner.ContinueAsync(session, continuation.Assistant,
+                    session.WorkspacePath, options, cancellationToken);
             await runResult.CompletionTask;
             await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "运行", "运行正常完成。");
         }
@@ -388,8 +417,16 @@ internal sealed class CodingWorkTaskController
         catch (Exception exception)
         {
             runException = exception;
-            await session.AddEntryAsync(new CopilotChatNotice(
-                Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message), CopilotChatNoticeLevel.Error));
+            var notice = new CopilotChatNotice(
+                Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message), CopilotChatNoticeLevel.Error);
+            if (_operationState == CodingWorkTaskOperationState.Running
+                && chatRunner is CodingAgentChatRunner { FailedAssistantMessage: { } assistant } codingRunner
+                && assistant.HasContent && session.AgentSession is not null)
+            {
+                _failedChatRun = new FailedChatRun(notice, session, codingRunner, assistant,
+                    session.WorkspacePath, options);
+            }
+            await session.AddEntryAsync(notice);
             await LogOperationFailureAsync
             (
                 session,
@@ -512,6 +549,7 @@ internal sealed class CodingWorkTaskController
             throw new InvalidOperationException("当前会话没有可压缩的对话历史，或已有操作正在运行。");
         }
 
+        _failedChatRun = null;
         using var operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _activeOperationCancellationTokenSource = operationCancellation;
         UpdateOperationState(CodingWorkTaskOperationState.Compressing);

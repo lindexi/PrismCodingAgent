@@ -599,6 +599,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsFinalizing));
         OnPropertyChanged(nameof(SendButtonText));
         RaiseCommandCanExecuteChanged();
+        foreach (NoticeItemViewModel notice in Messages.OfType<NoticeItemViewModel>())
+        {
+            notice.RefreshContinuation();
+        }
     }
 
     private async Task StopLanguageServerAsync()
@@ -953,12 +957,40 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         Messages.Clear();
     }
 
-    private static ChatEntryViewModel CreateEntryViewModel(CopilotChatEntry entry) => entry switch
+    private ChatEntryViewModel CreateEntryViewModel(CopilotChatEntry entry) => entry switch
     {
         CopilotChatMessage message => new MessageItemViewModel(message),
+        CopilotChatNotice notice when _workTaskController is { } controller => new NoticeItemViewModel(notice,
+            () => controller.HasChatContinuation(notice),
+            () => controller.CanContinueChat(notice),
+            () => ContinueChatAsync(notice)),
         CopilotChatNotice notice => new NoticeItemViewModel(notice),
         _ => throw new ArgumentException(nameof(entry)),
     };
+
+    private async Task ContinueChatAsync(CopilotChatNotice notice)
+    {
+        if (_workTaskController is null) return;
+        _runStatusText = Localizations.Lang.Current.Running;
+        OnPropertyChanged(nameof(StatusText));
+        try
+        {
+            await _workTaskController.ContinueChatAsync(notice).ConfigureAwait(true);
+            _runStatusText = null;
+        }
+        catch (OperationCanceledException)
+        {
+            _runStatusText = Localizations.Lang.Current.RunStopped;
+        }
+        catch (Exception exception)
+        {
+            _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message);
+        }
+        finally
+        {
+            OnPropertyChanged(nameof(StatusText));
+        }
+    }
 
     private async Task AddSystemMessageAsync(CopilotChatSession? session, string content,
         CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Information)

@@ -1,3 +1,4 @@
+RetryChatText = "重试"
 ExitConfirmationTitle = "确认退出 Prism Coding Agent？"
 ExitConfirmationDescription = "关闭将结束所有正在执行的任务。确认后将停止任务并释放资源，然后退出应用。"
 ExitCancelText = "取消"

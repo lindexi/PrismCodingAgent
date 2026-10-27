@@ -277,6 +277,28 @@ public sealed class ShellControlStyleTests
         Assert.IsFalse(chat.ShowWelcome);
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void NoticeTemplateShouldShowRetryOnlyForAssociatedFailure(bool hasContinuation)
+    {
+        using var chat = new ChatViewModel();
+        var notice = new NoticeItemViewModel(new AgentLib.Model.CopilotChatNotice("failure"),
+            () => hasContinuation, () => hasContinuation, () => Task.CompletedTask);
+        chat.Messages.Add(notice);
+        var view = new ChatView { DataContext = chat };
+        var window = new Window { Width = 980, Height = 620, Content = view };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            Button retry = view.GetVisualDescendants().OfType<Button>()
+                .Single(button => ReferenceEquals(button.Command, notice.RetryCommand));
+            Assert.AreEqual(hasContinuation, retry.IsVisible);
+        }
+        finally { window.Close(); }
+    }
+
     private static (string? Background, string? Foreground) GetColors(Button button)
     {
         var presenter = button.GetVisualDescendants().OfType<ContentPresenter>().First(item => item.Name == "PART_ContentPresenter");

@@ -1,3 +1,4 @@
+RetryChatText = "Retry"
 ExitConfirmationTitle = "Exit Prism Coding Agent?"
 ExitConfirmationDescription = "Closing will end all running tasks. Confirm to stop tasks and release resources before exiting."
 ExitCancelText = "Cancel"
