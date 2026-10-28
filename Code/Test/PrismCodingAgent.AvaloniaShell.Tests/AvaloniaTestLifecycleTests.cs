@@ -1,5 +1,7 @@
+using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using PrismCodingAgent.AvaloniaShell.Localizations;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -13,6 +15,8 @@ public sealed class AvaloniaTestLifecycleTests
     {
         Dispatcher.UIThread.VerifyAccess();
         _initializationThread = Environment.CurrentManagedThreadId;
+        Assert.AreEqual(("zh-Hans", "zh-Hans", "zh-Hans"),
+            (Lang.Current.IetfLanguageTag, CultureInfo.CurrentCulture.Name, CultureInfo.CurrentUICulture.Name));
     }
 
     [TestCleanup]

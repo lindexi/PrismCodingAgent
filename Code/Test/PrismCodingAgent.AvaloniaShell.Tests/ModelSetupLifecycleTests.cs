@@ -1,5 +1,4 @@
 using AgentLib;
-using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.Abilities;
 using PrismCodingAgent.AvaloniaShell.Infrastructure;
 using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
@@ -10,17 +9,6 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [AvaloniaTestClass]
 public sealed class ModelSetupLifecycleTests
 {
-    private string _originalLanguage = "zh-Hans";
-
-    [TestInitialize]
-    public void RememberLanguage() => _originalLanguage = Lang.Current.IetfLanguageTag;
-
-    [TestCleanup]
-    public Task RestoreLanguageAsync() => Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-    {
-        Lang.SetCurrent(_originalLanguage);
-        return Task.CompletedTask;
-    });
     [TestMethod]
     public async Task SavingThenRemovingModelShouldUpdateAllTasks()
     {

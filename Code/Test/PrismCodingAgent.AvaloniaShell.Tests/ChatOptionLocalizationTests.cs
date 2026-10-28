@@ -11,22 +11,6 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [AvaloniaTestClass]
 public sealed class ChatOptionLocalizationTests
 {
-    private string _originalLanguage = "zh-Hans";
-
-    [TestInitialize]
-    public void RememberLanguage()
-    {
-        _originalLanguage = Lang.Current.IetfLanguageTag;
-        Lang.SetCurrent("zh-Hans");
-    }
-
-    [TestCleanup]
-    public Task RestoreLanguageAsync() => Dispatcher.UIThread.InvokeAsync(() =>
-    {
-        Lang.SetCurrent(_originalLanguage);
-        return Task.CompletedTask;
-    });
-
     [TestMethod]
     public void WhenSwitchingLanguageThenReasoningOptionsKeepTheirIdentity()
     {

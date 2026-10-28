@@ -29,6 +29,14 @@
 | ShellComposerScreenshotTests | 配置离线模型、多行草稿编辑、本地选项切换、设置往返保留 |
 | ShellTaskMenuScreenshotTests | 菜单重命名、保存、置顶、列表顺序 |
 
+## 语言隔离
+
+`AvaloniaTestClassAttribute` 在共享会话的 UI 线程内、执行 MSTest 的 `inner.ExecuteAsync` 前，将 `Lang.Current`、`CultureInfo.CurrentCulture` 和 `CultureInfo.CurrentUICulture` 统一设为 `zh-Hans`。测试初始化、执行和清理结束后，即使发生异常，也会在 `finally` 恢复入口保存的外部状态；原有 dispatch 和程序集 cleanup 的线程调度保持不变。
+
+普通 UI/截图测试不再自行保存、初始化或恢复语言，也不会默认按中英双语重复运行。控件优先通过 Name、类、命令引用或 `Lang.Current` 资源定位；默认中文文案断言和真实文本输入可以保留。
+
+专门语言用例负责触发并验证业务语言切换，例如 `ShellLanguageScreenshotTests` 通过设置页选择语言、保存并验证界面和持久化结果；初始语言与最终恢复仍由框架负责。非 UI 的 `LocalizationSettingsTests` 独立管理其用于验证系统语言默认值的 Culture 生命周期。当前没有同一截图用例按多语言重复执行，故不增加语言输出目录层级；语言切换场景在步骤名称中标注语言。
+
 ## 编写约定
 
 - 使用真实 MainWindow、运行时、磁盘服务及界面控件，不以 Fake/Mock 或设计期主视图模型替代应用。

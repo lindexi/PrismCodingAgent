@@ -11,18 +11,6 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [AvaloniaTestClass]
 public sealed class LocalizationTests
 {
-    private string _originalLanguage = "zh-Hans";
-
-    [TestInitialize]
-    public void RememberLanguage() => _originalLanguage = Lang.Current.IetfLanguageTag;
-
-    [TestCleanup]
-    public Task RestoreLanguageAsync() => Dispatcher.UIThread.InvokeAsync(() =>
-    {
-        Lang.SetCurrent(_originalLanguage);
-        return Task.CompletedTask;
-    });
-
     [TestMethod]
     public void WhenReadingDefaultThenChineseTextIsAvailable()
     {
