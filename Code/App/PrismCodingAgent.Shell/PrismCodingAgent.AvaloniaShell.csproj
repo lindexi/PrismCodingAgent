@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -8,8 +9,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Icons\CodingChatRoom.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <UseUIFramework>Avalonia</UseUIFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="DotNetCampus.SourceLocalizations" Version="0.1.1-alpha.6" />
     <PackageReference Include="Avalonia" Version="12.1.0" />
@@ -21,15 +22,12 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Lib\AgentLib\AgentLib.Coding\AgentLib.Coding.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <InternalsVisibleTo Include="PrismCodingAgent.AvaloniaShell.Tests" />
   </ItemGroup>
-
   <ItemGroup>
     <AvaloniaResource Include="Assets\Icons\CodingChatRoom.ico" />
     <AvaloniaResource Include="Assets\Icons\CodingChatRoom_48x48.png" />
@@ -37,5 +35,13 @@
     <AvaloniaResource Include="Styles\Controls.axaml" />
     <AvaloniaResource Include="Styles\MessageBubble.axaml" />
     <AvaloniaResource Include="Styles\Settings.axaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="**/*.wpf.cs" />
+    <Compile Remove="**/*.xaml.cs" />
+    <None Remove="**/*.xaml" />
+    <Page Remove="**/*.xaml" />
+    <ApplicationDefinition Remove="**/*.xaml" />
+    <AvaloniaResource Remove="**/*.xaml" />
   </ItemGroup>
 </Project>

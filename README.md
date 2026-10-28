@@ -35,7 +35,7 @@ dotnet tool update -g roslyn-language-server
 在仓库根目录执行：
 
 ```sh
-dotnet run --project Code/App/PrismCodingAgent.AvaloniaShell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
+dotnet run --project Code/App/PrismCodingAgent.Shell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
 ```
 
 首次启动填写服务地址与 API 密钥、选择一个模型；进入主界面后新建工作任务、指定代码目录，就可以把目标交给它了。
@@ -62,7 +62,7 @@ PrismCodingAgent/
 ├─ PrismCodingAgent.slnx
 ├─ Directory.Build.props
 ├─ Code/
-│  ├─ App/PrismCodingAgent.AvaloniaShell/
+│  ├─ App/PrismCodingAgent.Shell/
 │  ├─ Test/PrismCodingAgent.AvaloniaShell.Tests/
 │  └─ Lib/
 │     ├─ AgentLib/

@@ -33,7 +33,7 @@ A build you compile yourself beats any package someone else put together.
 Run this from the repository root:
 
 ```sh
-dotnet run --project Code/App/PrismCodingAgent.AvaloniaShell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
+dotnet run --project Code/App/PrismCodingAgent.Shell/PrismCodingAgent.AvaloniaShell.csproj --launch-profile PrismCodingAgent.AvaloniaShell
 ```
 
 On first launch, enter a service address and API key and pick a model; then create a work task, point it at a code directory, and hand over the goal.
@@ -60,7 +60,7 @@ PrismCodingAgent/
 ├─ PrismCodingAgent.slnx
 ├─ Directory.Build.props
 ├─ Code/
-│  ├─ App/PrismCodingAgent.AvaloniaShell/
+│  ├─ App/PrismCodingAgent.Shell/
 │  ├─ Test/PrismCodingAgent.AvaloniaShell.Tests/
 │  └─ Lib/
 │     ├─ AgentLib/

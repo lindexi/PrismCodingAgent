@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseUIFramework>Wpf</UseUIFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="**/*.ava.cs" />
+    <Compile Remove="**/*.axaml.cs" />
+    <None Remove="**/*.axaml" />
+    <Page Remove="**/*.axaml" />
+    <ApplicationDefinition Remove="**/*.axaml" />
+    <AvaloniaResource Remove="**/*.axaml" />
+  </ItemGroup>
+</Project>
