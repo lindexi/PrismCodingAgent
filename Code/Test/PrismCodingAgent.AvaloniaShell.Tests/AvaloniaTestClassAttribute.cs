@@ -14,7 +14,11 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
     internal static HeadlessUnitTestSession Session => SharedSession.Value;
 
     public override TestMethodAttribute GetTestMethodAttribute(TestMethodAttribute testMethodAttribute)
-        => new UiTestMethodAttribute(testMethodAttribute);
+        => new UiTestMethodAttribute(testMethodAttribute)
+        {
+            DisplayName = testMethodAttribute.DisplayName,
+            UnfoldingStrategy = testMethodAttribute.UnfoldingStrategy,
+        };
 
     private sealed class UiTestMethodAttribute(
         TestMethodAttribute inner,
@@ -31,10 +35,41 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
                 CultureInfo originalUICulture = CultureInfo.CurrentUICulture;
                 try
                 {
-                    CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("zh-Hans");
-                    CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("zh-Hans");
-                    Lang.SetCurrent("zh-Hans");
-                    return await inner.ExecuteAsync(testMethod);
+                    var results = new List<TestResult>();
+                    foreach (string language in Lang.SupportedLanguageTags)
+                    {
+                        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(language);
+                        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
+                        Lang.SetCurrent(language);
+                        try
+                        {
+                            foreach (TestResult result in await inner.ExecuteAsync(testMethod))
+                            {
+                                string name = result.DisplayName ?? inner.DisplayName ?? testMethod.TestMethodName;
+                                if (result.DisplayName is null && testMethod.Arguments is { Length: > 0 } arguments)
+                                {
+                                    DataRowAttribute? row = testMethod.GetAttributes<DataRowAttribute>()
+                                        .FirstOrDefault(candidate => candidate.Data.SequenceEqual(arguments));
+                                    name = row?.GetDisplayName(testMethod.MethodInfo, arguments)
+                                        ?? $"{name} ({string.Join(", ", arguments.Select(argument => argument?.ToString() ?? "null"))})";
+                                }
+
+                                result.DisplayName = $"{name} [{language}]";
+                                results.Add(result);
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            results.Add(new TestResult
+                            {
+                                DisplayName = $"{testMethod.TestMethodName} [{language}]",
+                                Outcome = UnitTestOutcome.Failed,
+                                TestFailureException = exception,
+                            });
+                        }
+                    }
+
+                    return results.ToArray();
                 }
                 finally
                 {

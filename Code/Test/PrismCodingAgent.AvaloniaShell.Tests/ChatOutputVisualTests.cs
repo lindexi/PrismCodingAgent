@@ -107,7 +107,10 @@ public sealed class ChatOutputVisualTests
 
     private static string GetScreenshotPath()
     {
-        return Path.Combine(AppContext.BaseDirectory, "ChatOutputFocused.png");
+        string directory = Path.Combine(AppContext.BaseDirectory, "Screenshots",
+            PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag);
+        Directory.CreateDirectory(directory);
+        return Path.Combine(directory, "ChatOutputFocused.png");
     }
 
     [TestMethod]
@@ -172,7 +175,7 @@ public sealed class ChatOutputVisualTests
         using WriteableBitmap bitmap = window.CaptureRenderedFrame()
             ?? throw new InvalidOperationException("无法捕获用户消息选区视觉测试截图。");
         bitmap.Save(
-            Path.Combine(AppContext.BaseDirectory, "UserChatOutputSelection.png"),
+            Path.Combine(Path.GetDirectoryName(GetScreenshotPath())!, "UserChatOutputSelection.png"),
             PngBitmapEncoderOptions.Default);
 
         var selectionBrush = textBox.SelectionBrush as ISolidColorBrush;

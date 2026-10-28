@@ -113,7 +113,8 @@ public sealed class SecretInputControlTests
             window.UpdateLayout();
             using var bitmap = window.CaptureRenderedFrame()
                 ?? throw new InvalidOperationException("Headless frame unavailable.");
-            string screenshotDirectory = System.IO.Path.Join(AppContext.BaseDirectory, "SecretInputScreenshots");
+            string screenshotDirectory = System.IO.Path.Join(AppContext.BaseDirectory, "SecretInputScreenshots",
+                PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag);
             System.IO.Directory.CreateDirectory(screenshotDirectory);
             bitmap.Save(System.IO.Path.Join(screenshotDirectory, $"checked-rounded-{rounded}-focused-{focused}.png"), PngBitmapEncoderOptions.Default);
             var border = input.GetVisualDescendants().OfType<Border>().Single(item => item.Name == "PART_BorderElement");

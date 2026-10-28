@@ -29,7 +29,7 @@ public sealed class LocalizationTests
     public void WhenSwitchingLanguageThenCurrentObjectRemainsStable()
     {
         var current = Lang.Current;
-        Lang.SetCurrent("en");
+        Lang.SetCurrent(current.IetfLanguageTag == "en" ? "zh-Hans" : "en");
 
         Assert.AreSame(current, Lang.Current);
     }
@@ -37,14 +37,14 @@ public sealed class LocalizationTests
     [TestMethod]
     public void WhenSwitchingLanguageThenCurrentNotifiesBindings()
     {
-        Lang.SetCurrent("zh-Hans");
+        string target = Lang.Current.IetfLanguageTag == "en" ? "zh-Hans" : "en";
         var current = (INotifyPropertyChanged)Lang.Current;
         int notifications = 0;
         PropertyChangedEventHandler handler = (_, _) => notifications++;
         current.PropertyChanged += handler;
         try
         {
-            Lang.SetCurrent("en");
+            Lang.SetCurrent(target);
 
             Assert.IsGreaterThan(0, notifications);
         }
@@ -57,17 +57,17 @@ public sealed class LocalizationTests
     [TestMethod]
     public void WhenSwitchingLanguageThenExistingSettingsViewUpdates()
     {
-        Lang.SetCurrent("zh-Hans");
+        string target = Lang.Current.IetfLanguageTag == "en" ? "zh-Hans" : "en";
         var window = new Window { Content = new SettingsView { DataContext = new SettingsViewModel() } };
         window.Show();
         try
         {
-            var title = window.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == "设置");
+            var title = window.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == Lang.Current.SettingsNavigationText);
 
-            Lang.SetCurrent("en");
+            Lang.SetCurrent(target);
             Dispatcher.UIThread.RunJobs();
 
-            Assert.AreEqual("Settings", title.Text);
+            Assert.AreEqual(Lang.Current.SettingsNavigationText, title.Text);
         }
         finally
         {

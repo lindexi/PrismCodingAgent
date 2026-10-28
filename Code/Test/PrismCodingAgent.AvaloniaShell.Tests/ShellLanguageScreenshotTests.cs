@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.Views;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
@@ -22,14 +23,17 @@ public sealed class ShellLanguageScreenshotTests
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
         var navigation = session.Window.GetVisualDescendants().OfType<Button>()
             .Single(button => button.Name == "SettingsButton");
-        session.Capture("main-initial-zh-Hans");
-        Assert.AreEqual("设置", navigation.GetVisualDescendants().OfType<TextBlock>().Single().Text);
+        string initialLanguage = Lang.Current.IetfLanguageTag;
+        session.Capture($"main-initial-{initialLanguage}");
+        Assert.AreEqual(Lang.Current.SettingsNavigationText,
+            navigation.GetVisualDescendants().OfType<TextBlock>().Single().Text);
 
-        foreach (var transition in new[]
+        var transitions = new[]
         {
             (From: "zh-Hans", To: "en", Save: "Save changes", Navigation: "Settings", Key: PhysicalKey.ArrowDown),
             (From: "en", To: "zh-Hans", Save: "保存更改", Navigation: "设置", Key: PhysicalKey.ArrowUp),
-        })
+        };
+        foreach (var transition in initialLanguage == "zh-Hans" ? transitions : transitions.Reverse())
         {
             await session.ClickAndWaitAsync(navigation);
             var settings = session.Window.GetVisualDescendants().OfType<SettingsView>().Single();

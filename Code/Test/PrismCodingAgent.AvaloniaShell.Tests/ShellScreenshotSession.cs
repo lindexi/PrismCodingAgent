@@ -35,10 +35,16 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
     public static async Task<ShellScreenshotSession> OpenAsync(TestContext testContext)
     {
         string directory = Path.Combine(AppContext.BaseDirectory, "ShellScreenshots",
-            testContext.TestName!, Guid.NewGuid().ToString("N"));
+            testContext.TestName!, Lang.Current.IetfLanguageTag, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         testContext.WriteLine($"UI artifacts: {directory}");
         var paths = CodingChatRoomPaths.Create(Path.Combine(directory, "AppData"));
+        paths.EnsureDirectories();
+        await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName,
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                LanguageTag = Lang.Current.IetfLanguageTag,
+            }));
         var dispatcher = new AvaloniaMainThreadDispatcher();
         await DefaultAbilityInstaller.InstallOnceAsync(paths.AbilitiesDirectory);
         var runtime = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher);

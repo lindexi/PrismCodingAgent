@@ -11,6 +11,8 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [AvaloniaTestClass]
 public sealed class ChatOptionLocalizationTests
 {
+    private static void SwitchLanguage() =>
+        Lang.SetCurrent(Lang.Current.IetfLanguageTag == "en" ? "zh-Hans" : "en");
     [TestMethod]
     public void WhenSwitchingLanguageThenReasoningOptionsKeepTheirIdentity()
     {
@@ -19,7 +21,7 @@ public sealed class ChatOptionLocalizationTests
         int collectionChanges = 0;
         chat.AvailableReasoningEfforts.CollectionChanged += (_, _) => collectionChanges++;
 
-        Lang.SetCurrent("en");
+        SwitchLanguage();
 
         CollectionAssert.AreEqual(options, chat.AvailableReasoningEfforts.ToArray());
         Assert.AreEqual(0, collectionChanges);
@@ -33,7 +35,7 @@ public sealed class ChatOptionLocalizationTests
         int collectionChanges = 0;
         chat.AvailableAbilities.CollectionChanged += (_, _) => collectionChanges++;
 
-        Lang.SetCurrent("en");
+        SwitchLanguage();
 
         CollectionAssert.AreEqual(options, chat.AvailableAbilities.ToArray());
         Assert.AreEqual(0, collectionChanges);
@@ -50,7 +52,7 @@ public sealed class ChatOptionLocalizationTests
         var selected = chat.AvailableReasoningEfforts[index];
         chat.SelectedReasoningEffort = selected;
 
-        Lang.SetCurrent("en");
+        SwitchLanguage();
 
         Assert.AreSame(selected, chat.SelectedReasoningEffort);
     }
@@ -64,7 +66,7 @@ public sealed class ChatOptionLocalizationTests
         var selected = chat.AvailableAbilities[index];
         chat.SelectedAbility = selected;
 
-        Lang.SetCurrent("en");
+        SwitchLanguage();
 
         Assert.AreSame(selected, chat.SelectedAbility);
     }
@@ -78,7 +80,7 @@ public sealed class ChatOptionLocalizationTests
         var changes = new List<string?>();
         chat.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
 
-        Lang.SetCurrent("en");
+        SwitchLanguage();
 
         CollectionAssert.DoesNotContain(changes, nameof(ChatViewModel.SelectedReasoningEffort));
         CollectionAssert.DoesNotContain(changes, nameof(ChatViewModel.SelectedAbility));
@@ -91,10 +93,12 @@ public sealed class ChatOptionLocalizationTests
         var options = chat.AvailableReasoningEfforts.ToArray();
         var abilities = chat.AvailableAbilities.ToArray();
 
-        Lang.SetCurrent("en");
+        SwitchLanguage();
 
         CollectionAssert.AreEqual(
-            new[] { "Default", "Low", "Medium", "High", "Coding", "Compress with instructions" },
+            Lang.Current.IetfLanguageTag == "en"
+                ? new[] { "Default", "Low", "Medium", "High", "Coding", "Compress with instructions" }
+                : new[] { "默认", "低", "中", "高", "编程", "按照指令进行压缩" },
             options.Select(option => option.DisplayName).Concat(abilities.Select(option => option.DisplayName)).ToArray());
     }
 
@@ -126,14 +130,18 @@ public sealed class ChatOptionLocalizationTests
             Dispatcher.UIThread.RunJobs();
             var reasoning = view.FindControl<ComboBox>("ReasoningEffortSelector")!;
             var ability = view.FindControl<ComboBox>("AbilitySelector")!;
-            var reasoningText = reasoning.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == "默认");
-            var abilityText = ability.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == "编程");
+            var selectedReasoning = chat.SelectedReasoningEffort;
+            var selectedAbility = chat.SelectedAbility;
+            Assert.IsNotNull(selectedReasoning);
+            Assert.IsNotNull(selectedAbility);
+            var reasoningText = reasoning.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == selectedReasoning.DisplayName);
+            var abilityText = ability.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == selectedAbility.DisplayName);
 
-            Lang.SetCurrent("en");
+            SwitchLanguage();
             Dispatcher.UIThread.RunJobs();
 
-            Assert.AreEqual("Default", reasoningText.Text);
-            Assert.AreEqual("Coding", abilityText.Text);
+            Assert.AreEqual(selectedReasoning.DisplayName, reasoningText.Text);
+            Assert.AreEqual(selectedAbility.DisplayName, abilityText.Text);
         }
         finally
         {

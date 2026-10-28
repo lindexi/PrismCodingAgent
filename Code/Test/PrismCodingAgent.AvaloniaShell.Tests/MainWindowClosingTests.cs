@@ -176,7 +176,8 @@ public sealed class MainWindowClosingTests
             window.UpdateLayout();
             using var bitmap = Avalonia.Headless.HeadlessWindowExtensions.CaptureRenderedFrame(window)
                 ?? throw new InvalidOperationException("Exit confirmation frame unavailable.");
-            string directory = Path.Join(AppContext.BaseDirectory, "Screenshots");
+            string directory = Path.Join(AppContext.BaseDirectory, "Screenshots",
+                PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag);
             Directory.CreateDirectory(directory);
             bitmap.Save(Path.Join(directory, "exit-confirmation.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
             Assert.IsTrue(cancel.IsFocused && cancel.CornerRadius == new Avalonia.CornerRadius(4));

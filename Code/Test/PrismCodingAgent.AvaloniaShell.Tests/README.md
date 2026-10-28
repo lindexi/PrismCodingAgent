@@ -8,7 +8,7 @@
 
 每次运行的图片与独立应用数据保存于测试程序集输出目录：
 
-`ShellScreenshots/<测试方法名>/<独立运行GUID>/`
+`ShellScreenshots/<测试方法名>/<语言>/<独立运行GUID>/`
 
 图片按 `01-步骤名称.png` 编号，绝对路径写入 TestContext，并通过 AddResultFile 注册为测试结果附件。目录下 AppData 是该用例真实的设置、会话及任务数据，不读取个人生产配置。结果不自动删除，便于回看。
 
@@ -24,18 +24,20 @@
 | ShellExitConfirmationScreenshotTests | 系统关闭入口、鼠标取消、Escape 取消、鼠标确认退出 |
 | ShellHistoryScreenshotTests | 启动会话列表、搜索无匹配、清空恢复、任务历史、存档空状态、返回聊天 |
 | ShellArchiveScreenshotTests | 菜单归档、存档列表、搜索命中/无匹配/清空、恢复任务 |
-| ShellLanguageScreenshotTests | 简中改英语、保存生效、主界面往返、改回简中 |
+| ShellLanguageScreenshotTests | 从当前语言切到另一语言、保存生效、主界面往返、切回初始语言 |
 | ShellOptionsScreenshotTests | 代理默认禁用、启用编辑、保存、重进保留、恢复默认 |
 | ShellComposerScreenshotTests | 配置离线模型、多行草稿编辑、本地选项切换、设置往返保留 |
 | ShellTaskMenuScreenshotTests | 菜单重命名、保存、置顶、列表顺序 |
 
 ## 语言隔离
 
-`AvaloniaTestClassAttribute` 在共享会话的 UI 线程内、执行 MSTest 的 `inner.ExecuteAsync` 前，将 `Lang.Current`、`CultureInfo.CurrentCulture` 和 `CultureInfo.CurrentUICulture` 统一设为 `zh-Hans`。测试初始化、执行和清理结束后，即使发生异常，也会在 `finally` 恢复入口保存的外部状态；原有 dispatch 和程序集 cleanup 的线程调度保持不变。
+`AvaloniaTestClassAttribute` 使用 `Lang.SupportedLanguageTags`（当前 `zh-Hans`、`en`），在共享会话的 UI 线程内逐语言串行执行完整的 MSTest `inner.ExecuteAsync`。每轮统一设置 `Lang.Current`、`CultureInfo.CurrentCulture` 和 `CultureInfo.CurrentUICulture`，汇总结果并在原显示名（包括参数行名）后添加 `[语言]`；失败结果和执行器异常均保留，仍继续另一语言。结束后在 `finally` 恢复入口状态，原有 dispatch 与线程池 continuation 保持不变，避免程序集 cleanup 等待自身 UI 线程。
 
-普通 UI/截图测试不再自行保存、初始化或恢复语言，也不会默认按中英双语重复运行。控件优先通过 Name、类、命令引用或 `Lang.Current` 资源定位；默认中文文案断言和真实文本输入可以保留。
+所有使用 `[AvaloniaTestClass]` 的测试按支持语言重复运行，普通测试不自行强制中文。控件优先通过 Name、类、命令引用或 `Lang.Current` 资源定位；真实用户输入文本不要求翻译。`ShellScreenshotSession` 在创建真实运行时前将当前语言写入独立 AppData 的 shell settings，之后的保存仍由真实鼠标键盘交互完成，不使用 Fake。其他视觉截图目录也按语言隔离。
 
-专门语言用例负责触发并验证业务语言切换，例如 `ShellLanguageScreenshotTests` 通过设置页选择语言、保存并验证界面和持久化结果；初始语言与最终恢复仍由框架负责。非 UI 的 `LocalizationSettingsTests` 独立管理其用于验证系统语言默认值的 Culture 生命周期。当前没有同一截图用例按多语言重复执行，故不增加语言输出目录层级；语言切换场景在步骤名称中标注语言。
+专门语言用例负责触发并验证真实切换；`ShellLanguageScreenshotTests` 从当前初始语言出发，往返两种语言并验证持久化。非 UI 的 `LocalizationSettingsTests` 独立管理系统语言默认值的 Culture 生命周期。
+
+MSTest 4.0.2 的重复调用已先通过 `AvaloniaTestLifecycleTests` 验证：每轮必须收到新实例、执行初始化与异步清理，不能复用已 Dispose 的实例；同步、异步及具名参数行均覆盖。该测试直接使用现有调度，不创建嵌套 dispatch。可先运行 `FullyQualifiedName~AvaloniaTestLifecycleTests`，再运行截图/语言专项，最后运行本项目 `FullyQualifiedName!~Live`；Live 网络用例不包含在离线回归中。
 
 ## 编写约定
 
