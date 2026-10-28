@@ -4,6 +4,9 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.AvaloniaShell.Views;
 using PrismCodingAgent.AvaloniaShell.Abilities;
 using PrismCodingAgent.AvaloniaShell.Infrastructure;
 using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
@@ -49,6 +52,74 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
         var window = new MainWindow { DataContext = model };
         window.Show();
         return new ShellScreenshotSession(window, model, directory, testContext);
+    }
+
+    /// <summary>仅通过真实输入手动保存离线模型，不刷新模型列表或发送消息。</summary>
+    public async Task ConfigureOfflineModelAsync()
+    {
+        var main = Window.GetVisualDescendants().OfType<MainView>().Single();
+        var setup = main.GetVisualDescendants().OfType<ScrollViewer>()
+            .Single(control => control.Name == "ModelSetupScrollViewer");
+        Capture("offline-model-guide");
+        Assert.IsTrue(setup.IsEffectivelyVisible);
+        var editor = setup.GetVisualDescendants().OfType<ModelSettingsView>().Single();
+        var connection = editor.GetVisualDescendants().OfType<ModelServiceConnectionView>().Single();
+        var catalog = editor.GetVisualDescendants().OfType<OpenAIModelCatalogView>().Single();
+
+        void ScrollTo(Control control)
+        {
+            for (int attempt = 0; attempt < 80; attempt++)
+            {
+                Window.UpdateLayout();
+                Point position = control.TranslatePoint(default, setup)
+                    ?? throw new InvalidOperationException("Setup control is not attached.");
+                if (position.Y >= 0 && position.Y + control.Bounds.Height <= setup.Bounds.Height)
+                {
+                    return;
+                }
+
+                Point wheelPoint = setup.TranslatePoint(new Point(setup.Bounds.Width - 30,
+                    setup.Bounds.Height / 2), Window)
+                    ?? throw new InvalidOperationException("Setup scroll viewer is not attached.");
+                Window.MouseMove(wheelPoint);
+                Window.MouseWheel(wheelPoint, new Vector(0, position.Y < 0 ? 3 : -3));
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            Assert.Fail("Could not scroll the setup control into view using the mouse wheel.");
+        }
+
+        void ReplaceText(TextBox input, string value, string step)
+        {
+            ScrollTo(input);
+            Click(input);
+            Window.KeyPressQwerty(PhysicalKey.A, RawInputModifiers.Control);
+            Window.KeyReleaseQwerty(PhysicalKey.A, RawInputModifiers.Control);
+            Window.KeyTextInput(value);
+            Capture(step);
+            Assert.AreEqual(value, input.Text);
+        }
+
+        ReplaceText(connection.GetVisualDescendants().OfType<TextBox>()
+            .Single(input => input.PlaceholderText == "https://api.openai.com/v1"),
+            "http://127.0.0.1:1/v1", "offline-endpoint");
+        ReplaceText(connection.GetVisualDescendants().OfType<SecretInput>().Single(),
+            "screenshot-only-key", "offline-key");
+        ReplaceText(catalog.GetVisualDescendants().OfType<TextBox>().Single(),
+            "screenshot-offline-model", "offline-model-name");
+        Button add = catalog.GetVisualDescendants().OfType<Button>()
+            .Single(button => Equals(button.Content, Lang.Current.SetupAddModel));
+        ScrollTo(add);
+        Click(add);
+        Capture("offline-model-added");
+        Assert.AreEqual(1, editor.GetVisualDescendants().OfType<Border>()
+            .Count(border => border.Classes.Contains("ModelCard")));
+        Button save = main.GetVisualDescendants().OfType<Button>()
+            .Single(button => button.IsEffectivelyVisible && button.Classes.Contains("SaveSettings"));
+        await ClickAndWaitAsync(save);
+        Capture("offline-chat-ready");
+        Assert.IsTrue(Model.IsChatOpen);
+        Assert.IsTrue(main.GetVisualDescendants().OfType<ChatView>().Single().IsEffectivelyVisible);
     }
 
     public string Capture(string stepName)
