@@ -4,6 +4,7 @@
      <Project Path="Code/App/PrismCodingAgent.Shell/PrismCodingAgent.WpfShell.csproj" />
   </Folder>
   <Folder Name="/Test/">
+    <Project Path="Code/Test/PrismCodingAgent.WpfShell.Tests/PrismCodingAgent.WpfShell.Tests.csproj" />
     <Project Path="Code/Test/PrismCodingAgent.AvaloniaShell.Tests/PrismCodingAgent.AvaloniaShell.Tests.csproj" />
     <Project Path="Code/Lib/AgentLib/AgentLib.Tests/AgentLib.Tests.csproj" />
     <Project Path="Code/Lib/AgentLib/AgentLib.Coding.Tests/AgentLib.Coding.Tests.csproj" />

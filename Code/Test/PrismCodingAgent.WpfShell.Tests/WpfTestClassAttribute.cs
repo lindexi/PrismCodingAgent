@@ -1,0 +1,81 @@
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using PrismCodingAgent.AvaloniaShell.Localizations;
+
+namespace PrismCodingAgent.WpfShell.Tests;
+
+internal sealed class WpfTestClassAttribute : TestClassAttribute
+{
+    private static readonly Lazy<WpfTestSession> SharedSession = new(() => new WpfTestSession());
+
+    internal static void Shutdown()
+    {
+        if (SharedSession.IsValueCreated)
+        {
+            SharedSession.Value.Dispose();
+        }
+    }
+
+    public override TestMethodAttribute GetTestMethodAttribute(TestMethodAttribute testMethodAttribute)
+        => new UiTestMethodAttribute(testMethodAttribute)
+        {
+            DisplayName = testMethodAttribute.DisplayName,
+            UnfoldingStrategy = testMethodAttribute.UnfoldingStrategy,
+        };
+
+    private sealed class UiTestMethodAttribute(
+        TestMethodAttribute inner,
+        [CallerFilePath] string callerFilePath = "",
+        [CallerLineNumber] int callerLineNumber = -1) : TestMethodAttribute(callerFilePath, callerLineNumber)
+    {
+        public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+            => SharedSession.Value.ExecuteAsync(async () =>
+            {
+                string originalLanguage = Lang.Current.IetfLanguageTag;
+                CultureInfo originalCulture = CultureInfo.CurrentCulture;
+                CultureInfo originalUICulture = CultureInfo.CurrentUICulture;
+                try
+                {
+                    var results = new List<TestResult>();
+                    foreach (string language in Lang.SupportedLanguageTags)
+                    {
+                        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(language);
+                        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
+                        Lang.SetCurrent(language);
+                        try
+                        {
+                            foreach (TestResult result in await inner.ExecuteAsync(testMethod))
+                            {
+                                string name = result.DisplayName ?? inner.DisplayName ?? testMethod.TestMethodName;
+                                if (result.DisplayName is null && testMethod.Arguments is { Length: > 0 } arguments)
+                                {
+                                    DataRowAttribute? row = testMethod.GetAttributes<DataRowAttribute>()
+                                        .FirstOrDefault(candidate => candidate.Data.SequenceEqual(arguments));
+                                    name = row?.GetDisplayName(testMethod.MethodInfo, arguments)
+                                        ?? $"{name} ({string.Join(", ", arguments.Select(argument => argument?.ToString() ?? "null"))})";
+                                }
+                                result.DisplayName = $"{name} [{language}]";
+                                results.Add(result);
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            results.Add(new TestResult
+                            {
+                                DisplayName = $"{testMethod.TestMethodName} [{language}]",
+                                Outcome = UnitTestOutcome.Failed,
+                                TestFailureException = exception,
+                            });
+                        }
+                    }
+                    return results.ToArray();
+                }
+                finally
+                {
+                    Lang.SetCurrent(originalLanguage);
+                    CultureInfo.CurrentCulture = originalCulture;
+                    CultureInfo.CurrentUICulture = originalUICulture;
+                }
+            });
+    }
+}
