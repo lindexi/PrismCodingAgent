@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -10,6 +10,7 @@
     <ApplicationIcon>Assets\Icons\CodingChatRoom.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <UseUIFramework>Avalonia</UseUIFramework>
+    <DefineConstants>$(DefineConstants);USE_AVALONIA</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DotNetCampus.SourceLocalizations" Version="0.1.1-alpha.6" />

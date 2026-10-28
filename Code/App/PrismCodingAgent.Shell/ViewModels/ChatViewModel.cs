@@ -10,7 +10,7 @@ using System.Windows.Input;
 using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Model;
-using Avalonia.Threading;
+using PrismCodingAgent.AvaloniaShell.Infrastructure;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.AvaloniaShell.Abilities;
 using PrismCodingAgent.AvaloniaShell.Services.Chat;
@@ -793,13 +793,13 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     private void OnAbilityCatalogChanged(object? sender, EventArgs e)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        if (UiThreadDispatcher.CheckAccess())
         {
             RebuildAbilities();
         }
         else
         {
-            Dispatcher.UIThread.Post(RebuildAbilities);
+            UiThreadDispatcher.Post(RebuildAbilities);
         }
     }
 

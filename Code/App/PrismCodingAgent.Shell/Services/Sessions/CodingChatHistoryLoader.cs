@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using AgentLib.Logging;
-using Avalonia.Threading;
+using PrismCodingAgent.AvaloniaShell.Infrastructure;
 using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
 
 namespace PrismCodingAgent.AvaloniaShell.Services.Sessions;
@@ -25,11 +25,8 @@ internal sealed class CodingChatHistoryLoader
             IReadOnlyList<CopilotChatSessionSummary> summaries = await _workTaskController
                 .LoadSessionSummariesAsync()
                 .ConfigureAwait(false);
-            await Dispatcher.UIThread.InvokeAsync
-            (
-                () => _workTaskController.AddSessionSummaries(summaries),
-                DispatcherPriority.Render
-            );
+            await UiThreadDispatcher.InvokeAtRenderAsync(
+                () => _workTaskController.AddSessionSummaries(summaries));
         }
         catch (Exception exception)
         {
