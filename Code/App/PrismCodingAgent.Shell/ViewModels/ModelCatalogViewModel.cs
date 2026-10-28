@@ -4,8 +4,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
 using PrismCodingAgent.AvaloniaShell.Services.Integrations.OpenAI;
 
 namespace PrismCodingAgent.AvaloniaShell.ViewModels;

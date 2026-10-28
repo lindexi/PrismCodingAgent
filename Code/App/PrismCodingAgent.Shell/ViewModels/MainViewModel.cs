@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Controls;
 using PrismCodingAgent.AvaloniaShell.Abilities;
 using PrismCodingAgent.AvaloniaShell.Services.Settings;
 using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
