@@ -91,7 +91,7 @@ public sealed class FileCopilotChatSessionStore
     }
 
     /// <summary>
-    /// 逐个读取并返回会话摘要，不等待其余文件加载完成。
+    /// 逐个读取文件头并返回会话摘要，不解析正文或统计消息；正文在打开会话时验证。
     /// </summary>
     public async IAsyncEnumerable<CopilotChatSessionSummary> EnumerateSessionsAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -114,7 +114,7 @@ public sealed class FileCopilotChatSessionStore
             }
             catch (Exception exception) when (exception is InvalidDataException or XmlException or JsonException or FormatException or FileNotFoundException or DirectoryNotFoundException)
             {
-                System.Diagnostics.Trace.TraceWarning($"{file}: {exception.Message}");
+                System.Diagnostics.Trace.TraceWarning("[FileCopilotChatSessionStore][EnumerateSessions] FilePath={0} Exception={1}", file, exception);
                 continue;
             }
             yield return summary;
@@ -198,17 +198,9 @@ public sealed class FileCopilotChatSessionStore
             IgnoreComments = true,
             IgnoreWhitespace = true,
         });
-        bool foundRoot = false;
-        while (await reader.ReadAsync().WaitAsync(cancellationToken).ConfigureAwait(false))
-        {
-            if (reader.NodeType == XmlNodeType.Element && reader.Name == "CopilotChatSessionHistory")
-            {
-                foundRoot = true;
-                break;
-            }
-        }
-
-        if (!foundRoot)
+        cancellationToken.ThrowIfCancellationRequested();
+        await reader.MoveToContentAsync().ConfigureAwait(false);
+        if (reader.NodeType != XmlNodeType.Element || reader.Name != "CopilotChatSessionHistory")
         {
             throw new InvalidDataException("聊天历史文件缺少根节点。");
         }
@@ -236,21 +228,7 @@ public sealed class FileCopilotChatSessionStore
             ? parsedWorkTaskId
             : null;
         string? workTaskName = reader.GetAttribute("WorkTaskName");
-        int messageCount = 0;
-        while (await reader.ReadAsync().WaitAsync(cancellationToken).ConfigureAwait(false))
-        {
-            if (reader.NodeType == XmlNodeType.Element && reader.Name == "Message")
-            {
-                messageCount++;
-            }
-        }
-
-        if (formatVersion < 4)
-        {
-            // 旧格式的预设系统文本会迁移成通知，摘要必须与加载后的消息投影一致。
-            CopilotChatSessionPersistenceData data = await LoadFileAsync(filePath, cancellationToken).ConfigureAwait(false);
-            messageCount = data.Entries.OfType<CopilotChatMessage>().Count();
-        }
+        cancellationToken.ThrowIfCancellationRequested();
 
         return new CopilotChatSessionSummary
         {
@@ -260,7 +238,6 @@ public sealed class FileCopilotChatSessionStore
             WorkTaskId = workTaskId,
             WorkTaskName = workTaskName,
             StartedTime = startedTime,
-            MessageCount = messageCount,
         };
     }
 

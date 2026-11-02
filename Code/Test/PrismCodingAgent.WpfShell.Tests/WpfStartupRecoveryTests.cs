@@ -74,7 +74,7 @@ public sealed class WpfStartupRecoveryTests
                     Assert.AreEqual(session.WorkTaskId, item.WorkTaskId);
                     Assert.AreEqual(session.WorkTaskName, item.WorkTaskName);
                     Assert.AreEqual(session.Title, item.Title);
-                    Assert.AreEqual(2, item.MessageCount);
+                    Assert.IsNull(item.MessageCount);
                     model.OpenSessionCommand.Execute(item);
                     await WpfInput.WaitAsync(() => task.Chat.Messages.Count == 2
                         && task.Chat.Messages[0].Content == session.Title + " question"

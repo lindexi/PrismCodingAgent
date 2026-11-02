@@ -52,5 +52,5 @@ jobs:
       - name: Test WPF (Windows interactive desktop required)
         if: runner.os == 'Windows'
         timeout-minutes: 10
-        run: artifacts/bin/PrismCodingAgent.WpfShell.Tests/release/PrismCodingAgent.WpfShell.Tests.exe --report-trx --results-directory TestResults/Wpf
+        run: dotnet test -c Release --no-build Code/Test/PrismCodingAgent.WpfShell.Tests/PrismCodingAgent.WpfShell.Tests.csproj --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults/Wpf
 

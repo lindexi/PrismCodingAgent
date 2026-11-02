@@ -29,7 +29,7 @@ public sealed class FileCopilotChatSessionStoreTests
     [DataRow(1)]
     [DataRow(2)]
     [DataRow(3)]
-    public async Task LegacySummaryShouldExcludeMigratedNotices(int version)
+    public async Task LegacySummaryShouldLeaveMessageCountUnknown(int version)
     {
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Console.WriteLine(directory);
@@ -44,7 +44,29 @@ public sealed class FileCopilotChatSessionStoreTests
 
         CopilotChatSessionSummary summary = (await store.ListSessionsAsync()).Single();
 
-        Assert.AreEqual(1, summary.MessageCount);
+        Assert.IsNull(summary.MessageCount);
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    [DataRow(3)]
+    [DataRow(4)]
+    public async Task SummaryShouldNotParseBodyButFullLoadShouldValidateIt(int version)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Console.WriteLine(directory);
+        Directory.CreateDirectory(directory);
+        Guid sessionId = Guid.NewGuid();
+        string header = $"<CopilotChatSessionHistory FormatVersion=\"{version}\" SessionId=\"{sessionId}\" StartedTime=\"2026-04-12T08:00:00Z\" Title=\"Header only\">";
+        await File.WriteAllTextAsync(Path.Combine(directory, $"history_{sessionId:N}.xml"),
+            header + new string(' ', 16384) + "<Message>invalid & body");
+        var store = new FileCopilotChatSessionStore(directory);
+
+        CopilotChatSessionSummary summary = (await store.ListSessionsAsync()).Single();
+
+        Assert.AreEqual((sessionId, "Header only", (int?)null), (summary.SessionId, summary.Title, summary.MessageCount));
+        await Assert.ThrowsExactlyAsync<System.Xml.XmlException>(() => store.LoadSessionAsync(sessionId));
     }
 
     [TestMethod]
@@ -173,7 +195,7 @@ public sealed class FileCopilotChatSessionStoreTests
         Assert.HasCount(2, summaries);
         Assert.AreEqual(newerSession.SessionId, summaries[0].SessionId);
         Assert.AreEqual("最近会话", summaries[0].Title);
-        Assert.AreEqual(1, summaries[0].MessageCount);
+        Assert.IsNull(summaries[0].MessageCount);
     }
 
     [TestMethod(DisplayName = "历史枚举应按日期目录和文件名从新到旧返回")]

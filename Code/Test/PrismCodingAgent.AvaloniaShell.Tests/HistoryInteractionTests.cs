@@ -12,7 +12,7 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 public sealed class HistoryInteractionTests
 {
     [TestMethod]
-    public void SessionSubtitleShouldIncludeMessageCountAndFullTimestamp()
+    public void SessionSubtitleShouldIncludeOnlyFullTimestamp()
     {
         var item = new SessionItemViewModel(new CopilotChatSessionSummary
         {
@@ -22,7 +22,7 @@ public sealed class HistoryInteractionTests
             MessageCount = 4,
         });
 
-        string expected = Lang.Current.SessionSubtitle.ToString(4, "2026-09-30 15:10:42");
+        string expected = Lang.Current.SessionSubtitle.ToString("2026-09-30 15:10:42");
         Assert.AreEqual(expected, item.Subtitle);
     }
 
@@ -246,6 +246,102 @@ public sealed class HistoryInteractionTests
         finally { store.Continue.TrySetResult(); }
     }
 
+    [TestMethod]
+    public async Task SearchShouldApplyToItemsArrivingDuringLoad()
+    {
+        var store = new StreamingStore();
+        using var vm = CreateViewModel(store);
+        Task loading = vm.LoadAsync();
+        vm.SearchText = "Later result";
+        store.LaterTitle = "Later result";
+        store.Continue.TrySetResult();
+        await loading;
+        Assert.AreEqual("Later result", vm.Sessions.Single().Title);
+    }
+
+    [TestMethod]
+    public async Task CancellationShouldKeepReadItemsAndAllowRetry()
+    {
+        var store = new StreamingStore();
+        using var vm = CreateViewModel(store);
+        using var cancellation = new CancellationTokenSource();
+        Task loading = vm.LoadAsync(cancellation.Token);
+        cancellation.Cancel();
+        await loading;
+        store.Continue.TrySetResult();
+        await vm.LoadAsync();
+        Assert.AreEqual((false, 2, 1), (vm.IsLoading, store.LoadCount,
+            vm.Sessions.Count(item => item.SessionId == store.Session.SessionId)));
+    }
+
+    [TestMethod]
+    public async Task ReadFailureShouldKeepReadItemsAndAllowRetry()
+    {
+        var store = new StreamingStore { FailRead = true };
+        store.Continue.TrySetResult();
+        using var vm = CreateViewModel(store);
+        await vm.LoadAsync();
+        Assert.AreEqual(Lang.Current.HistoryLoadFailed.ToString(), vm.ErrorMessage);
+        store.FailRead = false;
+        await vm.LoadAsync();
+        Assert.AreEqual((false, 2, 1), (vm.IsLoading, store.LoadCount,
+            vm.Sessions.Count(item => item.SessionId == store.Session.SessionId)));
+    }
+
+    [TestMethod]
+    public async Task ReloadShouldUpdateMetadataAndRemoveMissingHistory()
+    {
+        var store = new StreamingStore();
+        store.Continue.TrySetResult();
+        using var vm = CreateViewModel(store);
+        await vm.LoadAsync();
+        var originalItem = vm.Sessions.Single(item => item.SessionId == store.Session.SessionId);
+        store.Session.SetTitle("Updated on disk");
+        store.IncludeLater = false;
+        vm.ReloadCommand.Execute(null);
+        await WaitUntilAsync(() => !vm.IsLoading);
+        Assert.AreEqual((2, "Updated on disk", originalItem),
+            (vm.Sessions.Count, originalItem.Title, vm.Sessions.Single(item => item.SessionId == store.Session.SessionId)));
+    }
+
+    [TestMethod]
+    public async Task AppendingHistoryShouldNotResetVisibleItems()
+    {
+        var store = new StreamingStore();
+        using var vm = CreateViewModel(store);
+        int resets = 0;
+        vm.Sessions.CollectionChanged += (_, args) => resets += args.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset ? 1 : 0;
+        Task loading = vm.LoadAsync();
+        store.Continue.TrySetResult();
+        await loading;
+        Assert.AreEqual(0, resets);
+    }
+
+    [TestMethod]
+    public async Task FailedOpenShouldReturnFalseAndKeepCurrentSession()
+    {
+        var store = new StreamingStore { FailOpen = true };
+        store.Continue.TrySetResult();
+        using var vm = CreateViewModel(store);
+        await vm.LoadAsync();
+        Guid? selectedId = vm.SelectedSession?.SessionId;
+        bool opened = await vm.OpenSessionAsync(vm.Sessions.Single(item => item.SessionId == store.Session.SessionId));
+        Assert.AreEqual((false, selectedId, Lang.Current.HistoryOperationFailed.ToString()),
+            (opened, vm.SelectedSession?.SessionId, vm.ErrorMessage));
+    }
+
+    [TestMethod]
+    public async Task LargeHistoryShouldAppendWithoutResettingOrLosingItems()
+    {
+        var store = new StreamingStore { AdditionalCount = 2000 };
+        store.Continue.TrySetResult();
+        using var vm = CreateViewModel(store);
+        int resets = 0;
+        vm.Sessions.CollectionChanged += (_, args) => resets += args.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset ? 1 : 0;
+        await vm.LoadAsync();
+        Assert.AreEqual((2003, 0), (vm.Sessions.Count, resets));
+    }
+
     private static SessionListViewModel CreateViewModel(StreamingStore store) => new(
         CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store));
 
@@ -273,6 +369,11 @@ public sealed class HistoryInteractionTests
         public CopilotChatSession Session { get; }
         public TaskCompletionSource Continue { get; } = new();
         public int LoadCount { get; private set; }
+        public string LaterTitle { get; set; } = "Later";
+        public bool IncludeLater { get; set; } = true;
+        public bool FailRead { get; set; }
+        public bool FailOpen { get; set; }
+        public int AdditionalCount { get; set; }
 
         public async IAsyncEnumerable<CopilotChatSessionSummary> EnumerateSessionsAsync(
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -285,14 +386,20 @@ public sealed class HistoryInteractionTests
             };
             yield return summary;
             await Continue.Task.WaitAsync(cancellationToken);
+            if (FailRead) throw new System.IO.IOException("Read failed");
             yield return summary;
-            yield return summary with { SessionId = Guid.NewGuid() };
+            if (IncludeLater) yield return summary with { SessionId = Guid.NewGuid(), Title = LaterTitle };
+            for (int index = 0; index < AdditionalCount; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return summary with { SessionId = Guid.NewGuid() };
+            }
         }
 
         public Task<IReadOnlyList<CopilotChatSessionSummary>> ListSessionsAsync(CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
-            => Task.FromResult(Session);
+            => FailOpen ? Task.FromException<CopilotChatSession>(new System.IO.IOException("Open failed")) : Task.FromResult(Session);
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)

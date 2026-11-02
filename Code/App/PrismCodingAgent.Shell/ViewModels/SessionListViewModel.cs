@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using AgentLib.Logging;
@@ -13,7 +14,7 @@ using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
 namespace PrismCodingAgent.AvaloniaShell.ViewModels;
 
 /// <summary>
-/// 提供按需加载、搜索和管理历史会话的页面。
+/// 提供持续加载、搜索和管理历史会话的页面。
 /// </summary>
 public sealed class SessionListViewModel : ViewModelBase, IDisposable
 {
@@ -24,6 +25,7 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
     private string? _errorMessage;
     private bool _isLoading;
     private bool _hasLoaded;
+    private readonly CancellationTokenSource _loadCancellation = new();
     private readonly System.Collections.Generic.Dictionary<Guid, SessionItemViewModel> _items = [];
     private bool _isOperating;
     private readonly SimpleAsyncCommand _createNewSessionCommand;
@@ -70,7 +72,41 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
     {
         ArgumentNullException.ThrowIfNull(workTaskController);
         _workTaskController = workTaskController;
-        _sessionsChangedHandler = (_, _) => Refresh();
+        _sessionsChangedHandler = (_, args) =>
+        {
+            if (args.Action == NotifyCollectionChangedAction.Add && args.NewItems is { } added
+                && args.NewStartingIndex == workTaskController.Sessions.Count - added.Count)
+            {
+                foreach (CopilotChatSessionSummary summary in added)
+                {
+                    var item = new SessionItemViewModel(summary)
+                    {
+                        IsCurrent = summary.SessionId == workTaskController.SelectedSessionId,
+                    };
+                    _items.Add(summary.SessionId, item);
+                    if (MatchesSearch(summary, SearchText.Trim())) Sessions.Add(item);
+                }
+                OnPropertyChanged(nameof(IsEmpty));
+            }
+            else if (args.Action == NotifyCollectionChangedAction.Remove && args.OldItems is { } removed)
+            {
+                foreach (CopilotChatSessionSummary summary in removed)
+                {
+                    if (_items.Remove(summary.SessionId, out var item)) Sessions.Remove(item);
+                }
+                UpdateState();
+            }
+            else if (args.Action == NotifyCollectionChangedAction.Replace
+                && args.NewItems is { Count: 1 } && args.OldItems is { Count: 1 }
+                && args.NewItems[0] is CopilotChatSessionSummary updated
+                && args.OldItems[0] is CopilotChatSessionSummary previous
+                && updated.SessionId == previous.SessionId)
+            {
+                _items[updated.SessionId].Update(updated);
+                if (MatchesSearch(updated, SearchText.Trim()) != MatchesSearch(previous, SearchText.Trim())) Refresh();
+            }
+            else Refresh();
+        };
         _stateChangedHandler = (_, _) => UpdateState();
         workTaskController.Sessions.CollectionChanged += _sessionsChangedHandler;
         workTaskController.StateChanged += _stateChangedHandler;
@@ -106,22 +142,28 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 进入页面时在后台读取历史摘要。
     /// </summary>
-    public Task LoadAsync() => _hasLoaded ? Task.CompletedTask : LoadCoreAsync();
+    public Task LoadAsync(CancellationToken cancellationToken = default) => _hasLoaded ? Task.CompletedTask : LoadCoreAsync(cancellationToken);
 
-    private async Task LoadCoreAsync()
+    private async Task LoadCoreAsync(CancellationToken cancellationToken = default)
     {
-        if (_workTaskController is null || IsLoading) return;
+        if (_workTaskController is null || IsLoading || _loadCancellation.IsCancellationRequested) return;
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _loadCancellation.Token);
         IsLoading = true;
+        _hasLoaded = false;
         ErrorMessage = null;
         try
         {
-            await _workTaskController.InitializeAsync();
+            await _workTaskController.InitializeAsync(linkedCancellation.Token);
             _hasLoaded = true;
+        }
+        catch (OperationCanceledException) when (linkedCancellation.IsCancellationRequested)
+        {
+            _hasLoaded = false;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.Text.Json.JsonException or System.Xml.XmlException)
         {
-            Trace.TraceError(exception.ToString());
-            ErrorMessage = exception.Message;
+            Trace.TraceError("[SessionListViewModel][Load] Exception={0}", exception);
+            ErrorMessage = Localizations.Lang.Current.HistoryLoadFailed;
         }
         finally
         {
@@ -141,8 +183,8 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.Text.Json.JsonException or System.Xml.XmlException)
         {
-            Trace.TraceError(exception.ToString());
-            ErrorMessage = exception.Message;
+            Trace.TraceError("[SessionListViewModel][Operation] Exception={0}", exception);
+            ErrorMessage = Localizations.Lang.Current.HistoryOperationFailed;
         }
         finally
         {
@@ -187,31 +229,29 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
             {
                 item.Update(summary);
             }
-            if (query.Length == 0
-                || summary.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || (summary.WorkspacePath?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
-                || (summary.WorkTaskName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
-                || (summary.WorkTaskId?.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ?? false))
+            if (MatchesSearch(summary, query))
             {
                 visible.Add(item);
             }
         }
-        var visibleIds = visible.Select(item => item.SessionId).ToHashSet();
-        for (int index = Sessions.Count - 1; index >= 0; index--)
-            if (!visibleIds.Contains(Sessions[index].SessionId)) Sessions.RemoveAt(index);
-        for (int index = 0; index < visible.Count; index++)
+        if (!Sessions.SequenceEqual(visible))
         {
-            var item = visible[index];
-            int previousIndex = Sessions.IndexOf(item);
-            if (previousIndex < 0) Sessions.Insert(index, item);
-            else if (previousIndex != index) Sessions.Move(previousIndex, index);
+            Sessions.Clear();
+            foreach (var item in visible) Sessions.Add(item);
         }
         UpdateState();
     }
 
+    private static bool MatchesSearch(CopilotChatSessionSummary summary, string query) => query.Length == 0
+        || summary.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || (summary.WorkspacePath?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (summary.WorkTaskName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (summary.WorkTaskId?.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ?? false);
+
     /// <inheritdoc />
     public void Dispose()
     {
+        _loadCancellation.Cancel();
         if (_workTaskController is null) return;
         if (_sessionsChangedHandler is not null)
         {
@@ -280,7 +320,7 @@ public sealed class SessionItemViewModel : ViewModelBase
         ? $"{WorkTaskName ?? Localizations.Lang.Current.UnnamedTask} ({workTaskId})"
         : WorkTaskName ?? string.Empty;
     public DateTimeOffset StartedTime { get; }
-    public int MessageCount { get; private set; }
+    public int? MessageCount { get; private set; }
 
     internal void Update(CopilotChatSessionSummary summary)
     {
@@ -312,5 +352,5 @@ public sealed class SessionItemViewModel : ViewModelBase
     }
     public string EditedTitle { get => _editedTitle; set => SetField(ref _editedTitle, value); }
     public bool IsEditing { get => _isEditing; set => SetField(ref _isEditing, value); }
-    public string Subtitle => Localizations.Lang.Format(Localizations.Lang.Current.SessionSubtitle, MessageCount, StartedTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture));
+    public string Subtitle => Localizations.Lang.Format(Localizations.Lang.Current.SessionSubtitle, StartedTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture));
 }

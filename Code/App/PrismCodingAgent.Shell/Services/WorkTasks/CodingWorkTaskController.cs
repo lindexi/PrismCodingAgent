@@ -134,9 +134,39 @@ internal sealed class CodingWorkTaskController
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        var originalSummaries = Sessions.ToDictionary(summary => summary.SessionId);
+        var knownIds = originalSummaries.Keys.ToHashSet();
+        var summaries = new Dictionary<Guid, CopilotChatSessionSummary>();
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         await foreach (CopilotChatSessionSummary summary in _sessionStore.EnumerateSessionsAsync(cancellationToken))
         {
-            AddSessionSummaries([summary]);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (summaries.TryAdd(summary.SessionId, summary)
+                && !_deletedSessionIds.Contains(summary.SessionId)
+                && !_chatManager.ChatSessions.Any(session => session.SessionId == summary.SessionId))
+            {
+                if (knownIds.Add(summary.SessionId))
+                {
+                    Sessions.Add(summary);
+                }
+            }
+
+            if (stopwatch.ElapsedMilliseconds >= 50)
+            {
+                await Task.Delay(1, cancellationToken);
+                stopwatch.Restart();
+            }
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var loadedIds = _chatManager.ChatSessions.Select(session => session.SessionId).ToHashSet();
+        for (int index = Sessions.Count - 1; index >= 0; index--)
+        {
+            Guid id = Sessions[index].SessionId;
+            if (loadedIds.Contains(id)) continue;
+            if (!summaries.TryGetValue(id, out var summary)) Sessions.RemoveAt(index);
+            else if (originalSummaries.TryGetValue(id, out var original)
+                && ReferenceEquals(Sessions[index], original) && original != summary) Sessions[index] = summary;
         }
     }
 
@@ -149,11 +179,11 @@ internal sealed class CodingWorkTaskController
     internal void AddSessionSummaries(IReadOnlyList<CopilotChatSessionSummary> summaries)
     {
         ArgumentNullException.ThrowIfNull(summaries);
+        var knownIds = Sessions.Select(summary => summary.SessionId).ToHashSet();
+        knownIds.UnionWith(_chatManager.ChatSessions.Select(session => session.SessionId));
         foreach (CopilotChatSessionSummary summary in summaries)
         {
-            if (!_deletedSessionIds.Contains(summary.SessionId)
-                && Sessions.All(item => item.SessionId != summary.SessionId)
-                && _chatManager.ChatSessions.All(session => session.SessionId != summary.SessionId))
+            if (!_deletedSessionIds.Contains(summary.SessionId) && knownIds.Add(summary.SessionId))
             {
                 Sessions.Add(summary);
             }
