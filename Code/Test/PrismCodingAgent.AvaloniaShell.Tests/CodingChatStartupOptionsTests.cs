@@ -45,6 +45,36 @@ public sealed class CodingChatStartupOptionsTests
     }
 
     [TestMethod]
+    public void ExplicitDirectoryShouldUseFirstOccurrence()
+    {
+        string first = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var options = CodingChatStartupOptions.FromArguments(["--DATA-DIRECTORY", first, "--data-directory", "ignored"]);
+        Assert.AreEqual(CodingChatRoomPaths.Create(first).RootDirectory, options.Paths.RootDirectory);
+    }
+
+    [TestMethod]
+    [DataRow(new string[] { "--data-directory" })]
+    [DataRow(new string[] { "--data-directory", "" })]
+    [DataRow(new string[] { "--data-directory", " " })]
+    [DataRow(new string[] { "--data-directory", "--data-directory", "ignored" })]
+    public void MissingDirectoryShouldRejectArguments(string[] arguments)
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => CodingChatStartupOptions.FromArguments(arguments));
+    }
+
+    [TestMethod]
+    [DataRow(new string[] { "--data-directory", "ignored", "--debug-onboarding" })]
+    [DataRow(new string[] { "--debug-onboarding", "--data-directory" })]
+    [DataRow(new string[] { "--debug-onboarding", "--debug-onboarding" })]
+    public void DebugShouldPreserveIsolatedDirectoryPriority(string[] arguments)
+    {
+        var options = CodingChatStartupOptions.FromArguments(arguments);
+        Assert.IsTrue(options.Paths.RootDirectory.StartsWith(
+            Path.Combine(Path.GetTempPath(), "CodingChatRoom-OnboardingDebug") + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
     public void AllApplicationDataShouldUseDebugDirectory()
     {
         var paths = CodingChatStartupOptions.FromArguments(["--debug-onboarding"]).Paths;

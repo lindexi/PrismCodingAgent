@@ -27,16 +27,32 @@ internal sealed class WpfScreenshotSession : IDisposable
     internal string DirectoryPath { get; }
     internal string AppDataDirectory { get; }
 
-    internal async Task<string> CaptureAsync(string stepName)
+    internal Task<string> CaptureAsync(string stepName)
+        => CaptureSurfaceAsync((FrameworkElement)Window.Content, stepName);
+
+    // Popup.Child and ContextMenu live in separate HWNDs; capture each visible WPF surface explicitly.
+    internal async Task<string> CaptureSurfaceAsync(FrameworkElement content, string stepName)
     {
         Window.Dispatcher.VerifyAccess();
-        await Window.Dispatcher.InvokeAsync(Window.UpdateLayout, DispatcherPriority.ApplicationIdle);
-        var content = (FrameworkElement)Window.Content;
+        await Window.Dispatcher.InvokeAsync(content.UpdateLayout, DispatcherPriority.ApplicationIdle);
+        if (!content.IsVisible || content.ActualWidth <= 0 || content.ActualHeight <= 0)
+        {
+            throw new InvalidOperationException("Screenshot surface is not visible or has no size.");
+        }
         DpiScale dpi = VisualTreeHelper.GetDpi(content);
         var bitmap = new RenderTargetBitmap(
             (int)Math.Ceiling(content.ActualWidth * dpi.DpiScaleX),
             (int)Math.Ceiling(content.ActualHeight * dpi.DpiScaleY),
             dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        if (content is System.Windows.Controls.ContextMenu)
+        {
+            var background = new DrawingVisual();
+            using (DrawingContext drawing = background.RenderOpen())
+            {
+                drawing.DrawRectangle(Brushes.White, null, new Rect(content.RenderSize));
+            }
+            bitmap.Render(background);
+        }
         bitmap.Render(content);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));

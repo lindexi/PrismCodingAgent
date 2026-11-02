@@ -104,6 +104,12 @@ public sealed class ShellOptionsScreenshotTests
         Assert.IsFalse(toggle.IsChecked);
         Assert.IsFalse(address.IsEffectivelyEnabled);
         Assert.IsTrue(string.IsNullOrEmpty(address.Text));
+        var instructionsCard = settings.GetVisualDescendants().OfType<TextBox>()
+            .Single(input => input.PlaceholderText == Localizations.Lang.Current.InstructionsPlaceholder)
+            .GetVisualAncestors().OfType<Border>().First(border => border.Classes.Contains("SettingsCard"));
+        ScrollTo(instructionsCard);
+        session.Capture("instructions-default-disabled");
+        ScrollTo(card);
 
         session.Click(toggle);
         Assert.IsTrue(address.IsEffectivelyEnabled);

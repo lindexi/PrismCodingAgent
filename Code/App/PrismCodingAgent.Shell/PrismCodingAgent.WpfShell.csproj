@@ -14,6 +14,8 @@
     <ProjectReference Include="..\..\Lib\AgentLib\AgentLib.Coding\AgentLib.Coding.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Assets/Icons/CodingChatRoom_48x48.png" />
+    <Resource Include="Assets/Icons/CodingChatRoom.ico" />
     <Compile Remove="**/*.ava.cs" />
     <Compile Remove="**/*.axaml.cs" />
     <None Remove="**/*.axaml" />

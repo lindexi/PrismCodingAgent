@@ -20,6 +20,8 @@ public sealed class ShellModelSettingsScreenshotTests
     public async Task ModelSettingsShouldSaveAndRemoveModelThroughUserInput()
     {
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
+        await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory,
+            $"phase5-model-reference-{Lang.Current.IetfLanguageTag}.txt"), session.DirectoryPath);
         session.Capture("main-without-model");
         Assert.IsEmpty(session.Model.ChatViewModel.AvailableModels);
 
@@ -86,7 +88,14 @@ public sealed class ShellModelSettingsScreenshotTests
             .Single(border => border.Classes.Contains("ModelCard"));
         ReplaceText(modelCard.GetVisualDescendants().OfType<TextBox>()
             .Single(input => input.Parent is StackPanel panel && panel.Children.OfType<TextBlock>()
-                .Any(label => label.Text == Lang.Current.ModelDisplayNameText)), "Screenshot Model");
+                .Any(label => label.Text == Lang.Current.ModelDisplayNameText)), "Edited offline model");
+        ScrollTo(editor.GetVisualDescendants().OfType<Button>()
+            .Single(button => Equals(button.Content, Lang.Current.AddModelServiceText)));
+        Point bottomWheel = scroll.TranslatePoint(new Point(scroll.Bounds.Width - 30, scroll.Bounds.Height / 2), session.Window)
+            ?? throw new InvalidOperationException("Settings scroll viewer is not attached.");
+        session.Window.MouseWheel(bottomWheel, new Vector(0, -1000));
+        Dispatcher.UIThread.RunJobs();
+        session.Capture("model-fields-bottom");
         session.Capture("model-edited");
 
         await session.ClickAndWaitAsync(save);

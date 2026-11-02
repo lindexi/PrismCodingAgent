@@ -32,7 +32,7 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
     public MainViewModel Model { get; }
     public string DirectoryPath { get; }
 
-    public static async Task<ShellScreenshotSession> OpenAsync(TestContext testContext)
+    public static async Task<ShellScreenshotSession> OpenAsync(TestContext testContext, string? agentConfiguration = null)
     {
         string directory = Path.Combine(AppContext.BaseDirectory, "ShellScreenshots",
             testContext.TestName!, Lang.Current.IetfLanguageTag, Guid.NewGuid().ToString("N"));
@@ -45,13 +45,17 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
             {
                 LanguageTag = Lang.Current.IetfLanguageTag,
             }));
+        if (agentConfiguration is not null)
+        {
+            await File.WriteAllTextAsync(Path.Combine(paths.ShellSettingsFile.DirectoryName!, "AgentConfiguration.json"), agentConfiguration);
+        }
         var dispatcher = new AvaloniaMainThreadDispatcher();
         await DefaultAbilityInstaller.InstallOnceAsync(paths.AbilitiesDirectory);
         var runtime = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher);
         var abilities = new AbilityCatalog(paths.AbilitiesDirectory);
         await abilities.RefreshAsync();
         var task = MainViewModel.CreateRuntimeTask(runtime,
-            new WorkTaskRecord(Guid.NewGuid(), "工作任务 1", null, null, null), abilities);
+            new WorkTaskRecord(Guid.NewGuid(), Lang.Current.IetfLanguageTag == "en" ? "Task 1" : "工作任务 1", null, null, null), abilities);
         var model = MainViewModel.Create([task], [], runtime.SettingsService, new WorkTaskStore(paths),
             () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities);
         await model.InitializeSettingsAsync();
@@ -132,6 +136,9 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
     {
         Dispatcher.UIThread.RunJobs();
         Window.UpdateLayout();
+        Assert.AreEqual(1440d, Window.ClientSize.Width, 1d);
+        Assert.AreEqual(900d, Window.ClientSize.Height, 1d);
+        Assert.AreEqual(1d, Window.RenderScaling);
         using var frame = Window.CaptureRenderedFrame()
             ?? throw new InvalidOperationException("Headless renderer did not produce a frame.");
         string path = Path.Combine(DirectoryPath, $"{++_step:00}-{stepName}.png");

@@ -14,6 +14,43 @@ public sealed class ShellTaskMenuScreenshotTests
 {
     public TestContext TestContext { get; set; } = null!;
 
+    /// <summary>Captures the production archived search flyout after public command initialization.</summary>
+    [TestMethod]
+    public async Task ArchivedSearchMenuRendersWithoutInput()
+    {
+        await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
+        var original = session.Model.ActiveWorkTask;
+        session.Model.CreateWorkTaskCommand.Execute(null);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        while (session.Model.WorkTasks.Count != 2)
+        {
+            await Task.Delay(20, timeout.Token);
+            Dispatcher.UIThread.RunJobs();
+        }
+        session.Model.ArchiveWorkTaskCommand.Execute(original);
+        while (session.Model.ArchivedWorkTasks.Count != 1)
+        {
+            await Task.Delay(20, timeout.Token);
+            Dispatcher.UIThread.RunJobs();
+        }
+        session.Model.WorkTaskSearchText = original.DisplayName;
+        Dispatcher.UIThread.RunJobs();
+        session.Window.UpdateLayout();
+        var more = session.Window.GetVisualDescendants().OfType<Button>().Single(button => button.Classes.Contains("TaskMore") && button.DataContext is PrismCodingAgent.AvaloniaShell.ViewModels.ArchivedWorkTaskItemViewModel);
+        var menu = (MenuFlyout)more.Flyout!;
+        menu.ShowAt(more);
+        Dispatcher.UIThread.RunJobs();
+        var restore = menu.Items.OfType<MenuItem>().First();
+        session.Window.MouseMove(new Point(1200, 800));
+        restore.IsSelected = false;
+        Dispatcher.UIThread.RunJobs();
+        session.Capture("production-archived-search-menu-rendering-not-interaction");
+        TestContext.WriteLine($"Restore state: selected={restore.IsSelected}, focus={restore.IsFocused}, hover={restore.IsPointerOver}");
+        Assert.IsFalse(restore.IsSelected);
+        CollectionAssert.AreEqual(new[] { Lang.Current.RestoreWorkTaskText.ToString(), Lang.Current.DeleteSessionText.ToString() }, menu.Items.OfType<MenuItem>().Select(item => item.Header!.ToString()).ToArray());
+        menu.Hide();
+    }
+
     [TestMethod]
     public async Task TaskMenuShouldRenameAndPinThroughUserInput()
     {

@@ -802,13 +802,13 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
 
     private async Task DisposeTaskAsync(WorkTaskItemViewModel task)
     {
-        Unsubscribe(task);
-        task.Chat.Dispose();
-        task.Sessions.Dispose();
         if (task.Runtime is not null)
         {
             await task.Runtime.DisposeAsync().ConfigureAwait(true);
         }
+        Unsubscribe(task);
+        task.Chat.Dispose();
+        task.Sessions.Dispose();
     }
 
     private void ReportError(string message, Exception exception)

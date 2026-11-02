@@ -26,10 +26,31 @@ jobs:
             6.0.x
             10.0.x
 
-      - name: Build
-        run: dotnet build -c Release PrismCodingAgent.slnx
+      - name: Build cross-platform projects
+        run: |
+          dotnet build -c Release Code/App/PrismCodingAgent.Shell/PrismCodingAgent.AvaloniaShell.csproj
+          dotnet build -c Release Code/Test/PrismCodingAgent.AvaloniaShell.Tests/PrismCodingAgent.AvaloniaShell.Tests.csproj
+          dotnet build -c Release Code/Lib/AgentLib/AgentLib.Tests/AgentLib.Tests.csproj
+          dotnet build -c Release Code/Lib/AgentLib/AgentLib.Coding.Tests/AgentLib.Coding.Tests.csproj
+          dotnet build -c Release Code/Lib/DeepSeekSDK/Code/DeepSeekSDK.Tests/DeepSeekSDK.Tests.csproj
+          dotnet build -c Release Docs/Docs.csproj
 
-      - name: Test
+      - name: Test cross-platform projects
         timeout-minutes: 20
-        run: dotnet test -c Release --framework net10.0 --no-build PrismCodingAgent.slnx --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
+        run: |
+          dotnet test -c Release --framework net10.0 --no-build Code/Test/PrismCodingAgent.AvaloniaShell.Tests/PrismCodingAgent.AvaloniaShell.Tests.csproj --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
+          dotnet test -c Release --framework net10.0 --no-build Code/Lib/AgentLib/AgentLib.Tests/AgentLib.Tests.csproj --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
+          dotnet test -c Release --framework net10.0 --no-build Code/Lib/AgentLib/AgentLib.Coding.Tests/AgentLib.Coding.Tests.csproj --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
+          dotnet test -c Release --framework net10.0 --no-build Code/Lib/DeepSeekSDK/Code/DeepSeekSDK.Tests/DeepSeekSDK.Tests.csproj --settings Test.runsettings --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults
+
+      - name: Build WPF (Windows only)
+        if: runner.os == 'Windows'
+        run: dotnet build -c Release Code/Test/PrismCodingAgent.WpfShell.Tests/PrismCodingAgent.WpfShell.Tests.csproj
+
+      # Real-input tests require an unlocked interactive desktop, STA, 96 DPI and clipboard access.
+      # A hosted-runner result does not certify these conditions on another runner.
+      - name: Test WPF (Windows interactive desktop required)
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        run: artifacts/bin/PrismCodingAgent.WpfShell.Tests/release/PrismCodingAgent.WpfShell.Tests.exe --report-trx --results-directory TestResults/Wpf
 

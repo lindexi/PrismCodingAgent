@@ -41,7 +41,7 @@ public partial class SettingsView : UserControl
             startInfo.ArgumentList.Add("tool");
             startInfo.ArgumentList.Add("update");
             startInfo.ArgumentList.Add("-g");
-            startInfo.ArgumentList.Add("roslyn-language-server");
+            startInfo.ArgumentList.Add(Services.LanguageServerInstallCommand.ToolName);
 
             using Process? process = Process.Start(startInfo);
             if (process is not null)
@@ -65,7 +65,7 @@ public partial class SettingsView : UserControl
         try
         {
             var dataTransfer = new DataTransfer();
-            dataTransfer.Add(DataTransferItem.CreateText("dotnet tool update -g roslyn-language-server"));
+            dataTransfer.Add(DataTransferItem.CreateText(Services.LanguageServerInstallCommand.Text));
             await clipboard.SetDataAsync(dataTransfer);
         }
         catch (Exception exception)

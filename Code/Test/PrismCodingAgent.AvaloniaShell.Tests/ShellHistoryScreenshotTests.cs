@@ -18,10 +18,9 @@ public sealed class ShellHistoryScreenshotTests
     [TestMethod]
     public async Task EmptyHistoryAndArchiveShouldNavigateThroughMouseInput()
     {
-        await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
-        session.Capture("main-model-setup");
+        const string configuration = """{"PrimaryModel":"SS05 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS05 offline model","ModelId":"ss05-offline","Provider":"openai"}]}]}""";
+        await using var session = await ShellScreenshotSession.OpenAsync(TestContext, configuration);
         var main = session.Window.GetVisualDescendants().OfType<MainView>().Single();
-        await session.ConfigureOfflineModelAsync();
         session.Capture("chat-ready");
         Assert.IsTrue(session.Model.IsChatOpen);
         var chat = main.GetVisualDescendants().OfType<ChatView>().Single();

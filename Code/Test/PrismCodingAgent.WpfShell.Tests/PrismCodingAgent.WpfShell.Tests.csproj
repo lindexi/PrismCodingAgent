@@ -5,9 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsTestProject>true</IsTestProject>
+    <OutputType>Library</OutputType>
+    <EnableMSTestRunner>false</EnableMSTestRunner>
+    <VSTestLogger>trx</VSTestLogger>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" Version="4.0.2" />
+    <PackageReference Include="Microsoft.CodeCoverage" Version="18.3.0" />
     <ProjectReference Include="..\..\App\PrismCodingAgent.Shell\PrismCodingAgent.WpfShell.csproj" />
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>

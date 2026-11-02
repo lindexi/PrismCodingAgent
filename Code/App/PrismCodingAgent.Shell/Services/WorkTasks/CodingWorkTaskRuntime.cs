@@ -83,5 +83,6 @@ internal sealed class CodingWorkTaskRuntime : IAsyncDisposable
     {
         await Controller.StopAndWaitAsync().ConfigureAwait(false);
         await CodingAgent.DisposeAsync().ConfigureAwait(false);
+        EndpointManager.HttpClient?.Dispose();
     }
 }

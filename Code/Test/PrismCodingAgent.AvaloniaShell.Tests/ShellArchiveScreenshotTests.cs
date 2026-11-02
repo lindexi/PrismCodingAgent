@@ -17,7 +17,8 @@ public sealed class ShellArchiveScreenshotTests
     [TestMethod]
     public async Task ArchivedTaskShouldBeSearchableAndRestoredThroughUserInput()
     {
-        await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
+        await using var session = await ShellScreenshotSession.OpenAsync(TestContext,
+            """{"PrimaryModel":"SS05 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS05 offline model","ModelId":"ss05-offline","Provider":"openai"}]}]}""");
         var original = session.Model.ActiveWorkTask;
         await session.ClickAndWaitAsync(session.Window.GetVisualDescendants().OfType<Button>()
             .Single(button => ReferenceEquals(button.Command, session.Model.CreateWorkTaskCommand)));

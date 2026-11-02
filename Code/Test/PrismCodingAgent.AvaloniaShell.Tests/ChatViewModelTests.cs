@@ -258,6 +258,7 @@ public sealed class ChatViewModelTests
         Assert.AreEqual("改为优先修复测试", runner.InjectedText);
         viewModel.StopCommand.Execute(null);
         await runner.Canceled.Task;
+        await application.StopAndWaitAsync();
     }
 
     [TestMethod(DisplayName = "循环迭代运行期间插话不应启动独立循环")]
@@ -285,6 +286,7 @@ public sealed class ChatViewModelTests
         viewModel.IsLoopIterationEnabled = false;
         viewModel.StopCommand.Execute(null);
         await runner.Canceled.Task;
+        await application.StopAndWaitAsync();
     }
 
     [TestMethod(DisplayName = "循环迭代应使用自动压缩复选框状态")]
@@ -424,6 +426,7 @@ public sealed class ChatViewModelTests
         Assert.IsTrue(viewModel.StopCommand.CanExecute(null));
         viewModel.StopCommand.Execute(null);
         await runner.Canceled.Task;
+        await application.StopAndWaitAsync();
         await WaitUntilAsync(() => viewModel.Messages[^1].Content == Lang.Current.RunStopped);
 
         Assert.IsTrue(runner.CancellationToken.IsCancellationRequested);

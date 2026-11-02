@@ -184,6 +184,30 @@ public sealed class SettingsViewModelTests
         Assert.AreEqual("沙箱连接测试成功。", viewModel.SandboxConnectionStatusMessage);
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task WhenSandboxConnectionFailsThenErrorEndsBusyAndAllowsRetry()
+    {
+        var tester = new ControllableWindowsSandboxConnectionTester();
+        using SettingsViewModel viewModel = CreateViewModel(tester);
+        var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SettingsViewModel.IsSandboxConnectionTestRunning)
+                && !viewModel.IsSandboxConnectionTestRunning)
+                completed.TrySetResult();
+        };
+        viewModel.TestWindowsSandboxConnectionCommand.Execute(null);
+        await tester.Started.Task;
+        Assert.IsTrue(viewModel.IsSandboxConnectionTestRunning);
+        Assert.IsFalse(viewModel.TestWindowsSandboxConnectionCommand.CanExecute(null));
+        tester.Complete(new WindowsSandboxConnectionTestResult(false, "offline failure"));
+        await completed.Task;
+        Assert.AreEqual("offline failure", viewModel.SandboxConnectionStatusMessage);
+        Assert.IsTrue(viewModel.IsSandboxConnectionStatusError);
+        Assert.IsTrue(viewModel.TestWindowsSandboxConnectionCommand.CanExecute(null));
+    }
+
     private static SettingsViewModel CreateViewModel(IWindowsSandboxConnectionTester tester)
     {
         string rootDirectory = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
