@@ -9,6 +9,43 @@ namespace AgentLib.Coding.Tests;
 public sealed class CodingRunEntryTests
 {
     [TestMethod]
+    public void CodingRunContextWhenCreatedShouldKeepProvidedSession()
+    {
+        var session = new CopilotChatSession();
+        var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
+
+        var context = new CodingRunContext(new FakeChatClient(), message, session);
+
+        Assert.AreSame(session, context.Session);
+    }
+
+    [TestMethod]
+    public void CodingRunContextWhenSessionIsNullShouldRejectIt()
+    {
+        var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
+
+        Assert.ThrowsExactly<ArgumentNullException>(() => new CodingRunContext(new FakeChatClient(), message, null!));
+    }
+
+    [TestMethod]
+    public async Task RunAsyncWhenSessionHasNoModelHistoryShouldInitializeProvidedSession()
+    {
+        var client = new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (_, _, cancellationToken) => RespondAsync(cancellationToken),
+        };
+        var session = new CopilotChatSession();
+        var context = new CodingRunContext(client,
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), session);
+        await using var agent = new CodingAgent();
+
+        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")], null);
+        await run.CompletionTask;
+
+        Assert.IsNotNull(session.AgentSession);
+    }
+
+    [TestMethod]
     public async Task RunAsyncWhenContentsAreEmptyShouldNotAddUserMessage()
     {
         var requests = new List<ChatMessage[]>();
@@ -22,7 +59,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var context = new CodingRunContext(client,
-            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false));
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession());
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [], null);
         await run.CompletionTask;
@@ -39,7 +76,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var context = new CodingRunContext(client,
-            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false));
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession());
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")], null);
 
@@ -50,7 +87,7 @@ public sealed class CodingRunEntryTests
     public void CodingRunContextWhenCreatedShouldUseAssistantMessageAsOutput()
     {
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
-        var context = new CodingRunContext(new FakeChatClient(), message);
+        var context = new CodingRunContext(new FakeChatClient(), message, new CopilotChatSession());
 
         Assert.AreSame(message, context.Output);
     }
@@ -64,7 +101,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var message = CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var context = new CodingRunContext(client, message);
+        var context = new CodingRunContext(client, message, new CopilotChatSession());
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")], null);
         await run.CompletionTask;
@@ -86,18 +123,19 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
-        var context = new CodingRunContext(client, message);
+        var context = new CodingRunContext(client, message, new CopilotChatSession());
         var options = new CodingChatRunOptions(false, false, null);
         ICodingAgentRunResult first = await agent.RunAsync(context, [new TextContent("task")], null, options);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => first.CompletionTask);
         Assert.HasCount(1, requests);
         Assert.AreEqual("A", message.Content);
-        var session = context.AgentSession;
+        var session = context.Session;
+        var agentSession = session.AgentSession;
         var continuationContext = new CodingRunContext(client, message, session);
 
         ICodingAgentRunResult second = await agent.RunAsync(continuationContext, [], null, options);
         Assert.AreEqual("AB", await second.CompletionTask);
-        Assert.AreSame(session, continuationContext.AgentSession);
+        Assert.AreSame(agentSession, continuationContext.Session.AgentSession);
         Assert.AreSame(message, second.AssistantChatMessage);
         Assert.HasCount(2, requests);
         CollectionAssert.AreEqual(new[] { "task" }, requests[1]

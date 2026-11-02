@@ -151,7 +151,7 @@ public sealed class CodingSubAgentOutputTests
         var message = CopilotChatMessage.CreateAssistant(string.Empty, false);
         CopilotChatSubAgentItem child = message.CreateSubAgentItem("child", "task");
         var compatibilityMessage = CopilotChatMessage.CreateAssistant(string.Empty, false);
-        var context = new CodingRunContext(new FakeChatClient(), compatibilityMessage, output: child);
+        var context = new CodingRunContext(new FakeChatClient(), compatibilityMessage, new CopilotChatSession(), output: child);
         context.Output.AppendText("stream");
         Assert.AreEqual(string.Empty, context.AssistantChatMessage.Content);
     }
@@ -185,7 +185,7 @@ public sealed class CodingSubAgentOutputTests
         var client = new FakeChatClient { OnGetStreamingResponseAsync = (_, _, _) => EmptyAsync() };
         await using var agent = new CodingAgent();
         ICodingAgentRunResult run = await agent.RunAsync(new CodingRunContext(client, message,
-            mainThreadDispatcher: dispatcher), [new TextContent("task")], null);
+            new CopilotChatSession { MainThreadDispatcher = dispatcher }), [new TextContent("task")], null);
         await run.CompletionTask;
         Assert.IsFalse(outsideDispatcher);
         Assert.AreEqual(string.Empty, message.Content);
@@ -211,7 +211,7 @@ public sealed class CodingSubAgentOutputTests
         public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default)
         {
             var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
-            return agent.RunAsync(new CodingRunContext(client, Message, mainThreadDispatcher: dispatcher),
+            return agent.RunAsync(new CodingRunContext(client, Message, new CopilotChatSession { MainThreadDispatcher = dispatcher }),
                 [new TextContent("parent task")], null, new CodingChatRunOptions(false, false, null), cancellationToken);
         }
 

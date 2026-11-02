@@ -32,9 +32,9 @@ internal sealed class CodingSubAgentTools(
         var submission = new GeneratedTextSubmissionTool();
         CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
             submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
+        var subSession = parentContext.Session.CreateSubSession();
         var context = new CodingRunContext(parentContext.ChatClient,
-            childMessage,
-            mainThreadDispatcher: parentContext.MainThreadDispatcher);
+            childMessage, subSession);
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent(prompt)], childTools,
             childPrompts, options, cancellationToken).ConfigureAwait(false);

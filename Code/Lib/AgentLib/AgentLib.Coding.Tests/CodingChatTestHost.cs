@@ -18,8 +18,9 @@ internal static class CodingChatTestHost
         CancellationToken cancellationToken = default)
     {
         AIContent[] snapshot = [.. contents];
-        var context = new CodingRunContext(host.ChatClient, host.AssistantChatMessage,
-            await host.GetAgentSessionAsync(cancellationToken), host.MainThreadDispatcher);
+        var session = new CopilotChatSession { MainThreadDispatcher = host.MainThreadDispatcher };
+        session.SetAgentSession(await host.GetAgentSessionAsync(cancellationToken));
+        var context = new CodingRunContext(host.ChatClient, host.AssistantChatMessage, session);
         using IDisposable chatting = host.StartChatting();
         var userMessage = new CopilotChatMessage(ChatRole.User, snapshot);
         foreach (ICopilotChatMessageItem item in userMessage.MessageItems)

@@ -86,7 +86,7 @@ public sealed class CodingAgent : IAsyncDisposable
         CodingRunContext context,
         IReadOnlyList<AIContent> contents,
         CodingRunWorkspaceContext workspaceContext,
-        IReadOnlyList<string> prompts,
+        IReadOnlyList<string> systemPrompts,
         CodingChatRunOptions runOptions,
         CancellationToken cancellationToken)
     {
@@ -141,9 +141,9 @@ public sealed class CodingAgent : IAsyncDisposable
             ChatClientAgent chatClientAgent = context.ChatClient.AsAIAgent(options);
             MessageInjectingChatClient messageInjector = chatClientAgent.GetService<MessageInjectingChatClient>()
                                                          ?? throw new InvalidOperationException("编程代理未启用消息注入。");
-            AgentSession agentSession = context.AgentSession
+            AgentSession agentSession = context.Session.AgentSession
                 ?? await chatClientAgent.CreateSessionAsync(runCancellationToken).ConfigureAwait(false);
-            context.AgentSession = agentSession;
+            context.Session.SetAgentSession(agentSession);
             Task<string?> completionTask = RunCoreAsync
             (
                 context,
@@ -151,7 +151,7 @@ public sealed class CodingAgent : IAsyncDisposable
                 chatClientAgent,
                 agentSession,
                 workspaceContext.ToolRegistrationRegistry,
-                prompts,
+                systemPrompts,
                 runCancellationTokenSource
             );
             ownershipTransferred = true;
@@ -284,7 +284,7 @@ public sealed class CodingAgent : IAsyncDisposable
         ChatClientAgent chatClientAgent,
         AgentSession agentSession,
         ToolRegistrationRegistry toolRegistrationRegistry,
-        IReadOnlyList<string> prompts,
+        IReadOnlyList<string> systemPrompts,
         CancellationTokenSource runCancellationTokenSource
     )
     {
@@ -295,7 +295,7 @@ public sealed class CodingAgent : IAsyncDisposable
             CancellationToken cancellationToken = runCancellationTokenSource.Token;
 
             await CodingSystemPrompt
-                .EnsureSystemPromptInSessionAsync(agentSession, prompts, cancellationToken)
+                .EnsureSystemPromptInSessionAsync(agentSession, systemPrompts, cancellationToken)
                 .ConfigureAwait(false);
             ChatMessage[] inputMessages = contents.Count == 0
                 ? []

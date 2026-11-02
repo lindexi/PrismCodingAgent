@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,15 +42,12 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         var userMessage = new CopilotChatMessage(ChatRole.User, runContents);
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var context = new CodingRunContext(client, assistantMessage, session.AgentSession,
-            _chatManager.MainThreadDispatcher);
+        var context = new CodingRunContext(client, assistantMessage, session);
         IDisposable chatting = _chatManager.StartChatting();
         try
         {
             ICodingAgentRunResult run = await _codingAgent.RunAsync(
                 context, runContents, workspacePath, options, cancellationToken).ConfigureAwait(false);
-            session.SetAgentSession(context.AgentSession
-                ?? throw new InvalidOperationException("编程代理未创建模型会话。"));
             cancellationToken.ThrowIfCancellationRequested();
             await session.AddMessageAsync(userMessage).ConfigureAwait(false);
             await _chatManager.ChatLogger.LogMessageAsync(session.SessionId, userMessage).ConfigureAwait(false);
@@ -82,8 +79,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         FailedAssistantMessage = null;
         var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
             .ConfigureAwait(false);
-        var context = new CodingRunContext(client, assistantMessage, session.AgentSession,
-            _chatManager.MainThreadDispatcher);
+        var context = new CodingRunContext(client, assistantMessage, session);
         IDisposable chatting = _chatManager.StartChatting();
         try
         {

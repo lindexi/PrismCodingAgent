@@ -41,8 +41,7 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
         var userMessage = new CopilotChatMessage(ChatRole.User, runContents);
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var runContext = new CodingRunContext(client, assistantMessage, session.AgentSession,
-            chatManager.MainThreadDispatcher);
+        var runContext = new CodingRunContext(client, assistantMessage, session);
 
         await _lifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -54,8 +53,6 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
                 ICodingAgentRunResult runResult = await _codingAgent.RunAsync(
                     runContext, runContents, _workspacePath, cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
-                session.SetAgentSession(runContext.AgentSession
-                    ?? throw new InvalidOperationException("编程代理未创建模型会话。"));
                 cancellationToken.ThrowIfCancellationRequested();
                 return new ChatRoomRoleExecutionResult(runResult.AssistantChatMessage,
                     CompleteAsync(runResult.CompletionTask, chatting, cancellationToken,
