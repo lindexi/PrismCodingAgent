@@ -68,7 +68,7 @@
         <Setter Property="Template"><Setter.Value>
             <ControlTemplate TargetType="TextBox">
                 <Border x:Name="Surface" CornerRadius="4" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                    <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
+                    <ScrollViewer x:Name="PART_ContentHost" />
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" /></Trigger>

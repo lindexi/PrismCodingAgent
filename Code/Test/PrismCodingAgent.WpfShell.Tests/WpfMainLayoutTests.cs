@@ -152,6 +152,32 @@ public sealed class WpfMainLayoutTests
         }
     });
 
+    [DataTestMethod]
+    [DataRow("WorkspaceInput")]
+    [DataRow("TaskSearch")]
+    public async Task SingleLineInputDoesNotClipTextAsync(string inputName) => await WpfTestClassAttribute.RunUiAsync(() =>
+    {
+        var window = new MainWindow();
+        window.Show();
+        try
+        {
+            var input = (TextBox)window.FindName(inputName);
+            input.Text = @"C:\Workspace\PrismCodingAgent 工作目录";
+            window.UpdateLayout();
+            var host = (ScrollViewer)input.Template.FindName("PART_ContentHost", input);
+            Rect character = input.GetRectFromCharacterIndex(0);
+
+            Assert.IsTrue(host.ViewportHeight >= character.Height && character.Height > 0,
+                $"Text viewport {host.ViewportHeight} must accommodate line height {character.Height}.");
+        }
+        finally
+        {
+            window.Close();
+            ((Button)window.FindName("ConfirmExitButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        }
+        return Task.CompletedTask;
+    });
+
     private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)

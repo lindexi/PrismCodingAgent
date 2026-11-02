@@ -370,7 +370,7 @@
                                             <ControlTemplate TargetType="TextBox">
                                                 <Border CornerRadius="4" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                                                     <Grid>
-                                                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                                                        <ScrollViewer x:Name="PART_ContentHost"/>
                                                         <TextBlock x:Name="Placeholder" Margin="{TemplateBinding Padding}" Text="{Binding WorkspacePlaceholderText, Source={x:Static l:Lang.Current}}" Foreground="#999999" IsHitTestVisible="False" Visibility="Collapsed"/>
                                                     </Grid>
                                                 </Border>
