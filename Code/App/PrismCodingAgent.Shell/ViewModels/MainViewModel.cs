@@ -361,12 +361,23 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
     private void Subscribe(WorkTaskItemViewModel task)
     {
         task.PropertyChanged += OnTaskPropertyChanged;
+        task.Sessions.PropertyChanged += OnSessionListPropertyChanged;
     }
 
     private void Unsubscribe(WorkTaskItemViewModel task)
     {
         task.PropertyChanged -= OnTaskPropertyChanged;
+        task.Sessions.PropertyChanged -= OnSessionListPropertyChanged;
         task.Detach();
+    }
+
+    private void OnSessionListPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (ReferenceEquals(sender, ActiveWorkTask.Sessions)
+            && e.PropertyName == nameof(SessionListViewModel.CanChangeSession))
+        {
+            (OpenSessionCommand as SimpleAsyncCommand<SessionItemViewModel>)?.RaiseCanExecuteChanged();
+        }
     }
 
     private async void OnTaskPropertyChanged(object? sender, PropertyChangedEventArgs e)
