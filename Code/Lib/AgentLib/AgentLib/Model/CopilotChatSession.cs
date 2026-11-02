@@ -49,6 +49,23 @@ public sealed class CopilotChatSession : NotifyBase
     public Guid SessionId { get; }
 
     /// <summary>
+    /// 创建当前子会话的父会话；根会话为 null。
+    /// </summary>
+    public CopilotChatSession? ParentSession { get; private init; }
+
+    /// <summary>
+    /// 创建独立的子会话，沿用当前工作任务、工作路径和线程调度器，不复制消息或模型历史。
+    /// </summary>
+    public CopilotChatSession CreateSubSession() => new()
+    {
+        ParentSession = this,
+        WorkTaskId = WorkTaskId,
+        WorkTaskName = WorkTaskName,
+        WorkspacePath = WorkspacePath,
+        MainThreadDispatcher = MainThreadDispatcher,
+    };
+
+    /// <summary>
     /// 获取或设置会话最近一次运行的工作路径。
     /// </summary>
     public string? WorkspacePath { get; set; }

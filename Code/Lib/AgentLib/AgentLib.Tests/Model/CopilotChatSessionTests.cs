@@ -1,5 +1,6 @@
 using AgentLib.Model;
 
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
 namespace AgentLib.Tests.Model;
@@ -74,6 +75,100 @@ public class CopilotChatSessionTests
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "测试消息"));
 
         Assert.AreEqual(1, dispatcher.InvocationCount);
+    }
+
+    [TestMethod]
+    public void CreateSubSession_WhenCreated_HasIndependentIdentity()
+    {
+        var parent = new CopilotChatSession();
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.AreNotEqual(parent.SessionId, child.SessionId);
+    }
+
+    [TestMethod]
+    public void CreateSubSession_WhenCreated_ReferencesImmediateParent()
+    {
+        var parent = new CopilotChatSession().CreateSubSession();
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.AreSame(parent, child.ParentSession);
+    }
+
+    [TestMethod]
+    public void CreateSubSession_WhenCreated_InheritsExecutionEnvironment()
+    {
+        var parent = new CopilotChatSession
+        {
+            WorkTaskId = Guid.NewGuid(),
+            WorkTaskName = "Task",
+            WorkspacePath = "workspace",
+            MainThreadDispatcher = new RecordingMainThreadDispatcher(),
+        };
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.AreEqual(
+            (parent.WorkTaskId, parent.WorkTaskName, parent.WorkspacePath, parent.MainThreadDispatcher),
+            (child.WorkTaskId, child.WorkTaskName, child.WorkspacePath, child.MainThreadDispatcher));
+    }
+
+    [TestMethod]
+    public async Task CreateSubSession_WhenParentHasMessages_DoesNotCopyMessages()
+    {
+        var parent = new CopilotChatSession();
+        await parent.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Parent message"));
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.IsEmpty(child.Entries);
+    }
+
+    [TestMethod]
+    public async Task CreateSubSession_WhenChildReceivesMessage_DoesNotChangeParentMessages()
+    {
+        var parent = new CopilotChatSession();
+        CopilotChatSession child = parent.CreateSubSession();
+
+        await child.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Child message"));
+
+        Assert.IsEmpty(parent.Entries);
+    }
+
+    [TestMethod]
+    public void CreateSubSession_WhenParentHasTitle_KeepsDefaultTitle()
+    {
+        var parent = new CopilotChatSession();
+        parent.SetTitle("Parent title");
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.AreEqual(new CopilotChatSession().Title, child.Title);
+    }
+
+    [TestMethod]
+    public async Task CreateSubSession_WhenParentHasAgentSession_DoesNotShareModelHistory()
+    {
+        var parent = new CopilotChatSession();
+        var client = new AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes.FakeChatClient();
+        var agent = client.AsAIAgent();
+        parent.SetAgentSession(await agent.CreateSessionAsync());
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.IsNull(child.AgentSession);
+    }
+
+    [TestMethod]
+    public void CreateSubSession_WhenCreated_DoesNotShareResponsesSession()
+    {
+        var parent = new CopilotChatSession();
+
+        CopilotChatSession child = parent.CreateSubSession();
+
+        Assert.AreNotSame(parent.ResponsesSession, child.ResponsesSession);
     }
 
     private sealed class RecordingMainThreadDispatcher : IMainThreadDispatcher
