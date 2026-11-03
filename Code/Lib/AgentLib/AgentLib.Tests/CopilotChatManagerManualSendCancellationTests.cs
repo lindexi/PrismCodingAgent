@@ -585,7 +585,7 @@ public class CopilotChatManagerManualSendCancellationTests
         try
         {
             await foreach (AgentResponseUpdate update in agent.RunWithHistoryCompletionAsync(
-                inputMessages, session, loopCancellationTokenSource.Token).ConfigureAwait(false))
+                inputMessages, session, new AgentLib.Logging.EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()), loopCancellationTokenSource.Token).ConfigureAwait(false))
             {
                 manualContext.AppendResponseUpdate(update);
                 currentAssistantResponseUpdateList.Add(update);
@@ -612,7 +612,7 @@ public class CopilotChatManagerManualSendCancellationTests
         try
         {
             await foreach (AgentResponseUpdate update in agent.RunWithHistoryCompletionAsync(
-                inputMessages, session, loopCancellationTokenSource.Token).ConfigureAwait(false))
+                inputMessages, session, new AgentLib.Logging.EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()), loopCancellationTokenSource.Token).ConfigureAwait(false))
             {
                 updates.Add(update);
                 onUpdate?.Invoke(update);

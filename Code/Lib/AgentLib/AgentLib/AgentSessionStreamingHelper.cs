@@ -1,3 +1,4 @@
+using AgentLib.Logging;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System.Net;
@@ -28,6 +29,7 @@ public static class AgentSessionStreamingHelper
     /// <param name="agent">已配置好的 <see cref="ChatClientAgent"/>。</param>
     /// <param name="inputMessages">本轮要发送的输入消息。</param>
     /// <param name="session">代理会话，其历史将在退出时自动补全。</param>
+    /// <param name="logger">本次执行所属会话的日志记录器。</param>
     /// <param name="cancellationToken">取消令牌。取消时，已收集的助手更新会被补全进会话历史。</param>
     /// <returns>流式响应更新序列。</returns>
     public static async IAsyncEnumerable<AgentResponseUpdate> RunWithHistoryCompletionAsync
@@ -35,12 +37,14 @@ public static class AgentSessionStreamingHelper
         this ChatClientAgent agent,
         IReadOnlyList<ChatMessage> inputMessages,
         AgentSession session,
+        ISessionCopilotChatLogger logger,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(agent);
         ArgumentNullException.ThrowIfNull(inputMessages);
         ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(logger);
 
         SanitizeSessionHistory(session);
 
@@ -174,7 +178,7 @@ public static class AgentSessionStreamingHelper
             CompleteRunHistory(session, inputMessages, collectedUpdates);
         }
 
-        static async Task<MoveNextResult> TryMoveNextAsync(IAsyncEnumerator<AgentResponseUpdate> enumerator)
+        async Task<MoveNextResult> TryMoveNextAsync(IAsyncEnumerator<AgentResponseUpdate> enumerator)
         {
             // 由于 C# 不允许在包含 yield return 的 try 中直接 catch，只用一个内部流式转发方法封装异常
             try
@@ -184,6 +188,8 @@ public static class AgentSessionStreamingHelper
             }
             catch (Exception exception)
             {
+                await logger.LogDiagnosticAsync("AgentSessionStreamingHelper",
+                    "[AgentSessionStreamingHelper][MoveNext] 流式响应读取失败。", exception).ConfigureAwait(false);
                 return new MoveNextResult(false, exception);
             }
         }

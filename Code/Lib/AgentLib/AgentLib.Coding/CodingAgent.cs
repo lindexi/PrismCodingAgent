@@ -305,6 +305,7 @@ public sealed class CodingAgent : IAsyncDisposable
                            (
                                inputMessages,
                                agentSession,
+                               context.Session.Logger,
                                cancellationToken
                            ))
             {
