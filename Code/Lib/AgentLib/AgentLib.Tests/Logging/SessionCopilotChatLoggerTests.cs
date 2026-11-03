@@ -86,17 +86,6 @@ public sealed class SessionCopilotChatLoggerTests
         Assert.IsTrue(diagnostic.IsCompletedSuccessfully);
     }
 
-    [TestMethod]
-    public void EmptySessionLogger_WhenCreatedRepeatedly_ReusesInstance()
-    {
-        var logger = new EmptyCopilotChatLogger();
-
-        ISessionCopilotChatLogger first = logger.CreateSessionLogger(Guid.NewGuid());
-        ISessionCopilotChatLogger second = logger.CreateSessionLogger(Guid.NewGuid());
-
-        Assert.AreSame(first, second);
-    }
-
     private string CreateLogPath()
     {
         string path = Path.Combine(Path.GetTempPath(), "AgentLib.Tests", Guid.NewGuid().ToString("N"));
