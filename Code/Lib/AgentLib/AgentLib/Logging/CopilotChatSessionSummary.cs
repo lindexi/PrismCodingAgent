@@ -17,6 +17,12 @@ public sealed record CopilotChatSessionSummary
     /// </summary>
     public required string Title { get; init; }
 
+    /// <summary>入口保存的简短内容预览。</summary>
+    public string? Summary { get; init; }
+
+    /// <summary>会话内容最近保存时间；旧格式未记录时为空。</summary>
+    public DateTimeOffset? UpdatedTime { get; init; }
+
     /// <summary>
     /// 获取会话工作路径；未设置时为空。
     /// </summary>
@@ -38,7 +44,7 @@ public sealed record CopilotChatSessionSummary
     public required DateTimeOffset StartedTime { get; init; }
 
     /// <summary>
-    /// 获取精确的会话消息数；仅读取文件头的摘要不统计消息，返回空值。
+    /// 获取入口记录的会话消息数；旧格式未记录时为空。
     /// </summary>
     public int? MessageCount { get; init; }
 }

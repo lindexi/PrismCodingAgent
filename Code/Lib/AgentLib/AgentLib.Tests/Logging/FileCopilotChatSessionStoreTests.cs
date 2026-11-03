@@ -195,7 +195,7 @@ public sealed class FileCopilotChatSessionStoreTests
         Assert.HasCount(2, summaries);
         Assert.AreEqual(newerSession.SessionId, summaries[0].SessionId);
         Assert.AreEqual("最近会话", summaries[0].Title);
-        Assert.IsNull(summaries[0].MessageCount);
+        Assert.AreEqual(1, summaries[0].MessageCount);
     }
 
     [TestMethod(DisplayName = "历史枚举应按日期目录和文件名从新到旧返回")]
@@ -263,7 +263,7 @@ public sealed class FileCopilotChatSessionStoreTests
 
         await store.SaveSessionAsync(session, agentSessionState: null);
 
-        Assert.HasCount(1, Directory.GetFiles(temporaryDirectory.SessionPath, "*.xml", SearchOption.AllDirectories));
+        Assert.HasCount(1, Directory.GetFiles(temporaryDirectory.SessionPath, "Session.xml", SearchOption.AllDirectories));
         CopilotChatSessionPersistenceData persistenceData = await store.LoadSessionAsync(session.SessionId);
         Assert.HasCount(2, persistenceData.Entries.OfType<CopilotChatMessage>().ToArray());
     }

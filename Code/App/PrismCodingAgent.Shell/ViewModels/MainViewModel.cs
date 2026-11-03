@@ -93,6 +93,8 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             exceptionHandler: HandleCommandException);
         OpenTaskHistoryCommand = new SimpleAsyncCommand(() => OpenHistoryAsync(true), allowConcurrentExecutions: true,
             exceptionHandler: HandleCommandException);
+        OrganizeHistoryCommand = new SimpleAsyncCommand(OrganizeHistoryAsync, () => ActiveWorkTask.Runtime is not null,
+            exceptionHandler: HandleCommandException);
         OpenLogDirectoryCommand = new SimpleCommand(OpenLogDirectory, () => ActiveWorkTask.Runtime is not null);
         OpenArchiveCommand = new SimpleCommand(OpenArchive);
         CloseHistoryCommand = new SimpleCommand(CloseNavigationPages);
@@ -644,6 +646,36 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         => string.IsNullOrWhiteSpace(searchText)
             || displayName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)
             || (workspacePath?.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ?? false);
+
+    /// <summary>整理全部持久化历史会话。</summary>
+    public ICommand OrganizeHistoryCommand { get; }
+
+    private string? _historyOrganizationResult;
+    /// <summary>历史整理结果。</summary>
+    public string? HistoryOrganizationResult
+    {
+        get => _historyOrganizationResult;
+        private set => SetField(ref _historyOrganizationResult, value);
+    }
+
+    private async Task OrganizeHistoryAsync()
+    {
+        if (ActiveWorkTask.Runtime is not { } runtime) return;
+        HistoryOrganizationResult = Localizations.Lang.Current.HistoryOrganizingText;
+        try
+        {
+            var store = new AgentLib.Logging.FileCopilotChatSessionStore(runtime.Paths.SessionDirectory.FullName);
+            var result = await store.OrganizeAsync().ConfigureAwait(true);
+            HistoryOrganizationResult = Localizations.Lang.Format(Localizations.Lang.Current.HistoryOrganizedText, result.Upgraded, result.Compressed);
+        }
+        catch (Exception exception) when (IsExpectedOperationException(exception))
+        {
+            HistoryOrganizationResult = Localizations.Lang.Current.HistoryOrganizeFailedText;
+            await runtime.ChatLogger.LogDiagnosticAsync(runtime.ChatManager.SelectedSession.SessionId,
+                "History", "[History][Organize] Failed.", exception).ConfigureAwait(true);
+            throw;
+        }
+    }
 
     private void OpenLogDirectory()
     {

@@ -477,11 +477,13 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding SessionListTitle, Source={x:Static l:Lang.Current}}" FontSize="20" FontWeight="SemiBold"/>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Margin="0,0,8,0" Content="{Binding OrganizeHistoryText, Source={x:Static l:Lang.Current}}" Command="{Binding OrganizeHistoryCommand}"/>
                                     <Button x:Name="RefreshHistory" Background="#E0E0E0" Content="{Binding RefreshHistoryText, Source={x:Static l:Lang.Current}}" Command="{Binding SessionListViewModel.ReloadCommand}"/>
                                 </StackPanel>
                             </Grid>
                             <Grid Grid.Row="2" Margin="0,0,0,12"><TextBox x:Name="HistorySearch" Height="32" Padding="10,3" BorderBrush="#888888" Text="{Binding SessionListViewModel.SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{Binding HistorySearchText, Source={x:Static l:Lang.Current}}" ToolTip="{Binding HistorySearchText, Source={x:Static l:Lang.Current}}"/><TextBlock Text="{Binding HistorySearchText, Source={x:Static l:Lang.Current}}" Foreground="#B8B8B8" Margin="11,0" VerticalAlignment="Center" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Text, ElementName=HistorySearch}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Grid>
                             <StackPanel Grid.Row="3">
+                                <TextBlock Text="{Binding HistoryOrganizationResult}" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding HistoryLoadingText, Source={x:Static l:Lang.Current}}" Visibility="{Binding SessionListViewModel.IsLoading, Converter={StaticResource BooleanVisibility}}"/>
                                 <ProgressBar Height="4" IsIndeterminate="True" Visibility="{Binding SessionListViewModel.IsLoading, Converter={StaticResource BooleanVisibility}}"/>
                                 <TextBlock Text="{Binding SessionListViewModel.ErrorMessage}" Foreground="DarkRed" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>

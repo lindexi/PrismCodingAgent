@@ -8,13 +8,18 @@
     <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="16,0,16,16">
         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
             <TextBlock Text="{Binding SessionListTitle, Source={x:Static localizations:Lang.Current}}" Classes="Title" />
-            <Button Grid.Column="1" Content="{Binding RefreshHistoryText, Source={x:Static localizations:Lang.Current}}" Command="{Binding ReloadCommand}" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="{Binding OrganizeHistoryText, Source={x:Static localizations:Lang.Current}}"
+                        Command="{Binding $parent[views11:MainView].((vm:MainViewModel)DataContext).OrganizeHistoryCommand}" />
+                <Button Content="{Binding RefreshHistoryText, Source={x:Static localizations:Lang.Current}}" Command="{Binding ReloadCommand}" />
+            </StackPanel>
         </Grid>
         <TextBox Grid.Row="1" PlaceholderText="{Binding HistorySearchText, Source={x:Static localizations:Lang.Current}}" Text="{Binding SearchText}" Margin="0,0,0,12" />
         <StackPanel Grid.Row="2" Spacing="6">
             <TextBlock Text="{Binding HistoryLoadingText, Source={x:Static localizations:Lang.Current}}" IsVisible="{Binding IsLoading}" />
             <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" />
             <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding $parent[views11:MainView].((vm:MainViewModel)DataContext).HistoryOrganizationResult}" TextWrapping="Wrap" />
         </StackPanel>
         <Grid Grid.Row="3">
             <TextBlock Text="{Binding EmptySessionListText, Source={x:Static localizations:Lang.Current}}" Classes="Subtitle"
