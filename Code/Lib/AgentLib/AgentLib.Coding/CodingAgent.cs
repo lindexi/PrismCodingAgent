@@ -61,34 +61,45 @@ public sealed class CodingAgent : IAsyncDisposable
     /// <param name="options">运行选项；未指定时使用默认选项。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>流式消息和完整生命周期任务。</returns>
-    public async Task<ICodingAgentRunResult> RunAsync(
+    public async Task<ICodingAgentRunResult> RunAsync
+    (
         CodingRunContext context,
         IReadOnlyList<AIContent> contents,
         string? workspacePath,
         CodingChatRunOptions? options = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(contents);
         AIContent[] runContents = [.. contents];
         ThrowIfDisposed();
         CodingChatRunOptions runOptions = options ?? CodingChatRunOptions.Default;
-        CodingRunWorkspaceContext workspaceContext = await GetRunWorkspaceContextAsync(
-            workspacePath, runOptions.EnableDotNetRun, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(
-            _copilotInstructionsPath, cancellationToken).ConfigureAwait(false);
+        CodingRunWorkspaceContext workspaceContext = await GetRunWorkspaceContextAsync
+        (
+            workspacePath, runOptions.EnableDotNetRun, cancellationToken
+        ).ConfigureAwait(false);
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync
+        (
+            _copilotInstructionsPath, runOptions, cancellationToken
+        ).ConfigureAwait(false);
         var delegation = new CodingSubAgentTools(this, context, workspaceContext, prompts, runOptions);
-        return await RunAsync(context, runContents, workspaceContext.WithTool(delegation.CreateRegistration()),
-            prompts, runOptions, cancellationToken).ConfigureAwait(false);
+        return await RunAsync
+        (
+            context, runContents, workspaceContext.WithTool(delegation.CreateRegistration()),
+            prompts, runOptions, cancellationToken
+        ).ConfigureAwait(false);
     }
 
-    internal async Task<ICodingAgentRunResult> RunAsync(
+    internal async Task<ICodingAgentRunResult> RunAsync
+    (
         CodingRunContext context,
         IReadOnlyList<AIContent> contents,
         CodingRunWorkspaceContext workspaceContext,
         IReadOnlyList<string> systemPrompts,
         CodingChatRunOptions runOptions,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(contents);
@@ -108,41 +119,43 @@ public sealed class CodingAgent : IAsyncDisposable
             runCancellationToken.ThrowIfCancellationRequested();
             var options = new ChatClientAgentOptions();
             {
-                    options.ChatOptions ??= new ChatOptions();
-                    options.ChatOptions.Tools = [.. workspaceContext.Tools];
-                    options.AIContextProviders = [];
-                    options.EnableMessageInjection = true;
-                    options.RequirePerServiceCallChatHistoryPersistence = true;
-                    if (runOptions.ReasoningEffort is { } effort)
+                options.ChatOptions ??= new ChatOptions();
+                options.ChatOptions.Tools = [.. workspaceContext.Tools];
+                options.AIContextProviders = [];
+                options.EnableMessageInjection = true;
+                options.RequirePerServiceCallChatHistoryPersistence = true;
+                if (runOptions.ReasoningEffort is { } effort)
+                {
+                    options.ChatOptions.Reasoning = new ReasoningOptions { Effort = effort };
+                }
+
+                if (runOptions.EnableAutomaticCompression)
+                {
+                    var reducer = new CopilotChatManagerToolCallChatReducer(context.ChatClient)
                     {
-                        options.ChatOptions.Reasoning = new ReasoningOptions { Effort = effort };
-                    }
-                    if (runOptions.EnableAutomaticCompression)
-                    {
-                        var reducer = new CopilotChatManagerToolCallChatReducer(context.ChatClient)
+                        ConditionalCompressionTokenCountThreshold = CodingCompressionThresholds.Conditional,
+                        ForcedCompressionTokenCountThreshold = CodingCompressionThresholds.Forced,
+                    };
+                    var compressionObserver = new CompressionToolCallObserver(context, reducer);
+                    options.ChatHistoryProvider = new InMemoryChatHistoryProvider
+                    (
+                        new InMemoryChatHistoryProviderOptions
                         {
-                            ConditionalCompressionTokenCountThreshold = CodingCompressionThresholds.Conditional,
-                            ForcedCompressionTokenCountThreshold = CodingCompressionThresholds.Forced,
-                        };
-                        var compressionObserver = new CompressionToolCallObserver(context, reducer);
-                        options.ChatHistoryProvider = new InMemoryChatHistoryProvider
-                        (
-                            new InMemoryChatHistoryProviderOptions
-                            {
-                                ChatReducer = new ToolCallAwareChatReducer(compressionObserver),
-                            }
-                        );
-                    }
-                    else
-                    {
-                        options.ChatHistoryProvider = null;
-                    }
+                            ChatReducer = new ToolCallAwareChatReducer(compressionObserver),
+                        }
+                    );
+                }
+                else
+                {
+                    options.ChatHistoryProvider = null;
+                }
             }
             ChatClientAgent chatClientAgent = context.ChatClient.AsAIAgent(options);
             MessageInjectingChatClient messageInjector = chatClientAgent.GetService<MessageInjectingChatClient>()
                                                          ?? throw new InvalidOperationException("编程代理未启用消息注入。");
             AgentSession agentSession = context.Session.AgentSession
-                ?? await chatClientAgent.CreateSessionAsync(runCancellationToken).ConfigureAwait(false);
+                                        ?? await chatClientAgent.CreateSessionAsync(runCancellationToken).ConfigureAwait
+                                            (false);
             context.Session.SetAgentSession(agentSession);
             Task<string?> completionTask = RunCoreAsync
             (
@@ -309,8 +322,10 @@ public sealed class CodingAgent : IAsyncDisposable
                                cancellationToken
                            ))
             {
-                await context.InvokeOutputAsync(() =>
-                    AppendResponseUpdate(context, update, toolRegistrationRegistry)).ConfigureAwait(false);
+                await context.InvokeOutputAsync
+                (() =>
+                    AppendResponseUpdate(context, update, toolRegistrationRegistry)
+                ).ConfigureAwait(false);
                 hasResponseUpdate = true;
             }
 

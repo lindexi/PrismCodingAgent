@@ -13,6 +13,7 @@ using AgentLib.Model;
 using PrismCodingAgent.AvaloniaShell.Infrastructure;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.AvaloniaShell.Abilities;
+using PrismCodingAgent.AvaloniaShell.Localizations;
 using PrismCodingAgent.AvaloniaShell.Services.Chat;
 using PrismCodingAgent.AvaloniaShell.Services.Workspace;
 using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
@@ -718,12 +719,15 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         InputText = string.Empty;
         PendingImages.Clear();
         SelectProgrammingAbility();
-        _runStatusText = isInterruption ? Localizations.Lang.Current.InterruptSubmitting : Localizations.Lang.Current.Running;
+        _runStatusText = isInterruption ? Lang.Current.InterruptSubmitting : Lang.Current.Running;
         OnPropertyChanged(nameof(StatusText));
         var runOptions = new CodingChatRunOptions(
             IsAutomaticCompressionEnabled,
             IsDotNetRunEnabled,
-            SelectedReasoningEffort?.Value);
+            SelectedReasoningEffort?.Value)
+        {
+            LanguageTag = Lang.Current.IetfLanguageTag,
+        };
         try
         {
             if (runLoopIteration)
@@ -740,18 +744,18 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             }
 
             _runStatusText = isInterruption && IsRunning
-                ? Localizations.Lang.Current.InterruptSubmitted
+                ? Lang.Current.InterruptSubmitted
                 : IsRunning
-                    ? Localizations.Lang.Current.Running
+                    ? Lang.Current.Running
                     : null;
         }
         catch (OperationCanceledException)
         {
-            _runStatusText = Localizations.Lang.Current.RunStopped;
+            _runStatusText = Lang.Current.RunStopped;
         }
         catch (Exception exception)
         {
-            _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message);
+            _runStatusText = Lang.Format(Lang.Current.RunFailed, exception.Message);
         }
         finally
         {
@@ -778,10 +782,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             option.DisplayName = option.Value switch
             {
-                ReasoningEffort.Low => Localizations.Lang.Current.ReasoningLow,
-                ReasoningEffort.Medium => Localizations.Lang.Current.ReasoningMedium,
-                ReasoningEffort.High => Localizations.Lang.Current.ReasoningHigh,
-                _ => Localizations.Lang.Current.ReasoningDefault,
+                ReasoningEffort.Low => Lang.Current.ReasoningLow,
+                ReasoningEffort.Medium => Lang.Current.ReasoningMedium,
+                ReasoningEffort.High => Lang.Current.ReasoningHigh,
+                _ => Lang.Current.ReasoningDefault,
             };
         }
 
@@ -808,11 +812,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         string selectedId = SelectedAbility?.Id ?? AbilityCatalog.ProgrammingId;
         AvailableAbilities.Clear();
         AvailableAbilities.Add(new AbilityOptionViewModel(new AbilityDefinition(
-            AbilityCatalog.ProgrammingId, Localizations.Lang.Current.ProgrammingAbilityText, null, null)));
+            AbilityCatalog.ProgrammingId, Lang.Current.ProgrammingAbilityText, null, null)));
         AbilityCollection abilities = _abilityCatalog?.Current ?? AbilityCollection.Empty;
         AvailableAbilities.Add(new AbilityOptionViewModel(new AbilityDefinition(
             AbilityCatalog.CompressionId,
-            abilities.CompressionDisplayName ?? Localizations.Lang.Current.CompressWithInstructionsAbilityText,
+            abilities.CompressionDisplayName ?? Lang.Current.CompressWithInstructionsAbilityText,
             abilities.CompressionPrompt,
             null), usesDefaultCompressionName: abilities.CompressionDisplayName is null));
         foreach (AbilityDefinition ability in abilities.Items)

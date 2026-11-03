@@ -46,7 +46,7 @@ public sealed class ResponsesCodingAgent
 
         CodingChatRunOptions runOptions = options ?? CodingChatRunOptions.Default;
         var input = ResponseItem.CreateUserMessageItem(contents.Select(CreateInputPart));
-        var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, cancellationToken).ConfigureAwait(false);
+        var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, runOptions, cancellationToken).ConfigureAwait(false);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel)
             .GetResponsesClientAsync().ConfigureAwait(false);
         var workspaceContext = await _codingAgent.GetRunWorkspaceContextAsync(workspacePath, runOptions.EnableDotNetRun, cancellationToken).ConfigureAwait(false);
@@ -76,7 +76,7 @@ public sealed class ResponsesCodingAgent
         ArgumentNullException.ThrowIfNull(conversation);
         cancellationToken.ThrowIfCancellationRequested();
         if (conversation.Items.Count == 0) return false;
-        var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, cancellationToken).ConfigureAwait(false);
+        var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, CodingChatRunOptions.Default, cancellationToken).ConfigureAwait(false);
         string instructions = string.Join(Environment.NewLine + Environment.NewLine, prompts);
         if (!string.IsNullOrWhiteSpace(additionalInstructions)) instructions += Environment.NewLine + additionalInstructions;
         var clientContext = await ((IResponsesClientProvider)model).GetResponsesClientAsync().ConfigureAwait(false);

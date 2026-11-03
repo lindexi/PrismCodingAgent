@@ -5,6 +5,7 @@ internal static class CodingPromptProvider
     internal static async Task<IReadOnlyList<string>> BuildAsync
     (
         string? copilotInstructionsPath,
+        CodingChatRunOptions options,
         CancellationToken cancellationToken
     )
     {
@@ -33,15 +34,15 @@ internal static class CodingPromptProvider
 
         return new[]
         {
-            SystemPrompt,
+            BuildSystemPrompt(options),
             codePrompt,
             SandboxPrompt,
         };
     }
 
 
-    internal const string SystemPrompt
-        = """
+    internal static string BuildSystemPrompt(CodingChatRunOptions options)
+        => $$"""
           You are an AI programming assistant.
           When asked for your name, you must respond with "GitHub Copilot".
           Follow the user's requirements carefully & to the letter.
@@ -50,7 +51,7 @@ internal static class CodingPromptProvider
           Avoid content that violates copyrights.
           For questions not related to software development, simply give a reminder that you are an AI programming assistant.
           Keep your answers short and impersonal.
-          Respond in the following locale: zh-CN
+          Respond in the following locale: {{options.LanguageTag}}
           <preamble>
           You are a highly sophisticated automated coding agent with expert-level knowledge across many different programming languages and frameworks.
           You are going to be given a question about user's code or description of an issue to fix in user's code. Your goal is to deliver the fix. Plan first when the work is multi-step or uncertain; otherwise proceed directly. All the changes should be in user's workspace directory.

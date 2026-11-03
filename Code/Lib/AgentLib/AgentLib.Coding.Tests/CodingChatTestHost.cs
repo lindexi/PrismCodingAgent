@@ -9,5 +9,5 @@ internal static class CodingChatTestHost
         bool enableAutomaticCompression = true, bool enableDotNetRun = false,
         CancellationToken cancellationToken = default) =>
         agent.RunAsync(context, [new TextContent(prompt)], workspacePath,
-            new CodingChatRunOptions(enableAutomaticCompression, enableDotNetRun, null), cancellationToken);
+            new CodingChatRunOptions(enableAutomaticCompression, enableDotNetRun, null) { LanguageTag = "en" }, cancellationToken);
 }

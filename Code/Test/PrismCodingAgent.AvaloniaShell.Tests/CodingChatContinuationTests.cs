@@ -39,7 +39,7 @@ public sealed class CodingChatContinuationTests
         manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([model]));
         await using var agent = new CodingAgent();
         var runner = new CodingAgentChatRunner(manager, agent);
-        var options = new CodingChatRunOptions(false, false, null);
+        var options = new CodingChatRunOptions(false, false, null) { LanguageTag = "en" };
         var session = manager.SelectedSession;
         int initialEntryCount = session.Entries.Count;
 
@@ -99,7 +99,7 @@ public sealed class CodingChatContinuationTests
         using var viewModel = new ChatViewModel(manager, controller, "test");
         var session = manager.SelectedSession;
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.SendMessageAsync(
-            [new TextContent("original user")], new CodingChatRunOptions(false, false, null)));
+            [new TextContent("original user")], new CodingChatRunOptions(false, false, null) { LanguageTag = "en" }));
         var assistant = session.ChatMessages.Last();
         var notice = (NoticeItemViewModel)viewModel.Messages.Last();
         var originalSession = session.AgentSession;

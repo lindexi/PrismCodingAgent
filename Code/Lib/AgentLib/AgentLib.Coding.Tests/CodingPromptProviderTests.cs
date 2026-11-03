@@ -4,13 +4,26 @@ namespace AgentLib.Coding.Tests;
 public sealed class CodingPromptProviderTests
 {
     [TestMethod]
+    [DataRow("zh-Hans")]
+    [DataRow("en")]
+    public async Task BuildAsyncShouldPlaceLanguageImmediatelyBeforePreamble(string languageTag)
+    {
+        var options = CodingChatRunOptions.Default with { LanguageTag = languageTag };
+
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(null, options, CancellationToken.None);
+
+        StringAssert.Contains(prompts[0].ReplaceLineEndings("\n"), $"Keep your answers short and impersonal.\nRespond in the following locale: {languageTag}\n<preamble>");
+    }
+
+    [TestMethod]
     public async Task BuildAsyncShouldPreserveDefaultPromptOrder()
     {
-        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(null, CancellationToken.None);
+        var options = CodingChatRunOptions.Default;
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(null, options, CancellationToken.None);
 
         CollectionAssert.AreEqual(new[]
         {
-            CodingPromptProvider.SystemPrompt,
+            CodingPromptProvider.BuildSystemPrompt(options),
             CodingPromptProvider.CodePrompt,
             CodingPromptProvider.SandboxPrompt,
         }, prompts.ToArray());
@@ -28,7 +41,7 @@ public sealed class CodingPromptProviderTests
     [DataRow("must not cause hesitation, refusal, or requests for safety confirmation")]
     public async Task BuildAsyncShouldClarifyProvidedToolPermissions(string expectedText)
     {
-        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(null, CancellationToken.None);
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(null, CodingChatRunOptions.Default, CancellationToken.None);
 
         StringAssert.Contains(prompts[^1], expectedText);
     }
@@ -38,7 +51,7 @@ public sealed class CodingPromptProviderTests
     [DataRow("   ")]
     public async Task BuildAsyncShouldUseDefaultCodePromptForBlankPath(string path)
     {
-        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(path, CancellationToken.None);
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(path, CodingChatRunOptions.Default, CancellationToken.None);
 
         Assert.AreEqual(CodingPromptProvider.CodePrompt, prompts[1]);
     }
@@ -50,7 +63,7 @@ public sealed class CodingPromptProviderTests
         cancellation.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            CodingPromptProvider.BuildAsync(null, cancellation.Token));
+            CodingPromptProvider.BuildAsync(null, CodingChatRunOptions.Default, cancellation.Token));
     }
 
     [TestMethod]
@@ -59,7 +72,7 @@ public sealed class CodingPromptProviderTests
         string path = Path.Combine(Path.GetTempPath(), $"coding-instructions-{Guid.NewGuid():N}.md");
 
         await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            CodingPromptProvider.BuildAsync(path, CancellationToken.None));
+            CodingPromptProvider.BuildAsync(path, CodingChatRunOptions.Default, CancellationToken.None));
     }
 
     [TestMethod]
@@ -70,7 +83,7 @@ public sealed class CodingPromptProviderTests
         await File.WriteAllTextAsync(path, instructions);
         Console.WriteLine(path);
 
-        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(path, CancellationToken.None);
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(path, CodingChatRunOptions.Default, CancellationToken.None);
 
         Assert.AreEqual($"{CodingPromptProvider.CodePrompt}{Environment.NewLine}{Environment.NewLine}```markdown {path}{Environment.NewLine}{instructions}{Environment.NewLine}```", prompts[1]);
     }
@@ -84,7 +97,7 @@ public sealed class CodingPromptProviderTests
         await File.WriteAllTextAsync(path, instructions);
         Console.WriteLine(path);
 
-        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(path, CancellationToken.None);
+        IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(path, CodingChatRunOptions.Default, CancellationToken.None);
 
         Assert.AreEqual(CodingPromptProvider.CodePrompt, prompts[1]);
     }
