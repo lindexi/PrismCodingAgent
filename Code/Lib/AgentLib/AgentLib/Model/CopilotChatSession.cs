@@ -1,3 +1,4 @@
+using AgentLib.Logging;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
@@ -27,20 +28,21 @@ public sealed class CopilotChatSession : NotifyBase
     /// 使用新的会话 ID 和当前时间创建会话。
     /// </summary>
     public CopilotChatSession()
-        : this(Guid.NewGuid(), DateTimeOffset.Now)
+        : this(Guid.NewGuid(), DateTimeOffset.Now, new EmptyCopilotChatLogger())
     {
     }
 
-    /// <summary>
-    /// 使用指定的会话 ID 和开始时间创建会话。
-    /// </summary>
+    /// <summary>使用指定的身份、开始时间及日志系统创建会话。</summary>
     /// <param name="sessionId">会话唯一标识符。</param>
     /// <param name="startedTime">会话开始时间。</param>
-    public CopilotChatSession(Guid sessionId, DateTimeOffset startedTime)
+    /// <param name="chatLogger">用于创建该会话日志的记录器。</param>
+    public CopilotChatSession(Guid sessionId, DateTimeOffset startedTime, ICopilotChatLogger chatLogger)
     {
+        ArgumentNullException.ThrowIfNull(chatLogger);
         ChatMessages = new CopilotChatMessageProjection(Entries);
         SessionId = sessionId;
         StartedTime = startedTime;
+        Logger = chatLogger.CreateSessionLogger(sessionId);
     }
 
     /// <summary>
@@ -54,11 +56,17 @@ public sealed class CopilotChatSession : NotifyBase
     public CopilotChatSession? ParentSession { get; private init; }
 
     /// <summary>
+    /// 会话日志记录器；子会话与父会话共享日志归属。
+    /// </summary>
+    public ISessionCopilotChatLogger Logger { get; private init; }
+
+    /// <summary>
     /// 创建独立的子会话，沿用当前工作任务、工作路径和线程调度器，不复制消息或模型历史。
     /// </summary>
     public CopilotChatSession CreateSubSession() => new()
     {
         ParentSession = this,
+        Logger = this.Logger,
         WorkTaskId = WorkTaskId,
         WorkTaskName = WorkTaskName,
         WorkspacePath = WorkspacePath,

@@ -14,7 +14,7 @@ public sealed class CopilotChatManagerSessionRestoreTests
     public void AddSessionShouldSelectExistingMessagesWithoutWelcomeMessage()
     {
         CopilotChatManager manager = CreateManager();
-        var restoredSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now);
+        var restoredSession = new CopilotChatSession();
         restoredSession.AddMessage(new CopilotChatMessage(ChatRole.User, "历史消息"));
 
         CopilotChatSession addedSession = manager.AddSession(restoredSession, select: true);
@@ -30,8 +30,8 @@ public sealed class CopilotChatManagerSessionRestoreTests
     {
         CopilotChatManager manager = CreateManager();
         Guid sessionId = Guid.NewGuid();
-        var existingSession = new CopilotChatSession(sessionId, DateTimeOffset.Now);
-        var duplicateSession = new CopilotChatSession(sessionId, DateTimeOffset.Now.AddMinutes(1));
+        var existingSession = new CopilotChatSession(sessionId, DateTimeOffset.Now, manager.ChatLogger);
+        var duplicateSession = new CopilotChatSession(sessionId, DateTimeOffset.Now.AddMinutes(1), manager.ChatLogger);
         manager.AddSession(existingSession);
 
         CopilotChatSession addedSession = manager.AddSession(duplicateSession, select: true);
@@ -47,7 +47,7 @@ public sealed class CopilotChatManagerSessionRestoreTests
     {
         CopilotChatManager manager = CreateManager();
         CopilotChatSession selectedSession = manager.SelectedSession;
-        var removableSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now);
+        var removableSession = new CopilotChatSession();
         manager.AddSession(removableSession);
 
         bool removed = manager.RemoveSession(removableSession);
@@ -63,8 +63,8 @@ public sealed class CopilotChatManagerSessionRestoreTests
     {
         CopilotChatManager manager = CreateManager();
         Guid sessionId = Guid.NewGuid();
-        var storedSession = new CopilotChatSession(sessionId, DateTimeOffset.Now);
-        var differentInstance = new CopilotChatSession(sessionId, DateTimeOffset.Now);
+        var storedSession = new CopilotChatSession(sessionId, DateTimeOffset.Now, manager.ChatLogger);
+        var differentInstance = new CopilotChatSession(sessionId, DateTimeOffset.Now, manager.ChatLogger);
         manager.AddSession(storedSession, select: true);
 
         bool removed = manager.RemoveSession(differentInstance);
@@ -80,7 +80,7 @@ public sealed class CopilotChatManagerSessionRestoreTests
     {
         CopilotChatManager manager = CreateManager();
         CopilotChatSession originalSession = manager.SelectedSession;
-        var removableSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now);
+        var removableSession = new CopilotChatSession();
         manager.AddSession(removableSession, select: true);
 
         bool removed = manager.RemoveSession(removableSession);

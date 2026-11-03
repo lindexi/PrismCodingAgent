@@ -425,7 +425,7 @@ public sealed class CodingWorkTaskControllerTests
 
     private static CopilotChatSession CreateSession(string title, string content, DateTimeOffset startedTime)
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), startedTime);
+        var session = new CopilotChatSession(Guid.NewGuid(), startedTime, new NullChatLogger());
         session.SetTitle(title);
         session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, content)).GetAwaiter().GetResult();
         return session;

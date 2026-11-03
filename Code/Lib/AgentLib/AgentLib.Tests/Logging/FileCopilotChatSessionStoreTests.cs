@@ -129,7 +129,7 @@ public sealed class FileCopilotChatSessionStoreTests
         var store = new FileCopilotChatSessionStore(temporaryDirectory.SessionPath, temporaryDirectory.LogPath);
         Guid sessionId = Guid.NewGuid();
         DateTimeOffset startedTime = new(2026, 4, 13, 8, 30, 0, TimeSpan.FromHours(8));
-        var session = new CopilotChatSession(sessionId, startedTime);
+        var session = new CopilotChatSession(sessionId, startedTime, new EmptyCopilotChatLogger());
         session.SetTitle("历史会话标题", TitleSource.UserSet);
 
         var userMessage = new CopilotChatMessage(ChatRole.User,
@@ -374,7 +374,7 @@ public sealed class FileCopilotChatSessionStoreTests
 
     private static CopilotChatSession CreateSession(DateTimeOffset startedTime, string title, string content)
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), startedTime);
+        var session = new CopilotChatSession(Guid.NewGuid(), startedTime, new EmptyCopilotChatLogger());
         session.SetTitle(title, TitleSource.UserSet);
         session.AddMessage(new CopilotChatMessage(ChatRole.User, content));
         return session;

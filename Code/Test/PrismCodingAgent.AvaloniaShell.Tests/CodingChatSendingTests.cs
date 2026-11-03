@@ -479,7 +479,7 @@ public sealed class CodingChatSendingTests
         CopilotChatSession runningSession = manager.SelectedSession;
         Task sendTask = application.SendMessageAsync("检查代码");
         await runner.Started.Task;
-        var otherSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now);
+        var otherSession = new CopilotChatSession();
         manager.AddSession(otherSession, select: true);
 
         runner.Complete("完成");

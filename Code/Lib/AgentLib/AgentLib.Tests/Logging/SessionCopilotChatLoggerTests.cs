@@ -86,6 +86,59 @@ public sealed class SessionCopilotChatLoggerTests
         Assert.IsTrue(diagnostic.IsCompletedSuccessfully);
     }
 
+    [TestMethod]
+    public async Task SessionLogger_WhenCreatedWithFileLogger_WritesUsingOwnSessionId()
+    {
+        string path = CreateLogPath();
+        Guid sessionId = Guid.NewGuid();
+        var session = new CopilotChatSession(sessionId, DateTimeOffset.Now, new FileCopilotChatLogger(path));
+
+        await session.Logger.LogDiagnosticAsync("Run", "Root diagnostic");
+
+        string content = await ReadSessionLogAsync(path, sessionId);
+        StringAssert.Contains(content, "Root diagnostic");
+    }
+
+    [TestMethod]
+    public async Task ChildSessionLogger_WhenUsed_WritesToParentLog()
+    {
+        string path = CreateLogPath();
+        var parent = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, new FileCopilotChatLogger(path));
+        CopilotChatSession child = parent.CreateSubSession();
+
+        await child.Logger.LogDiagnosticAsync("Run", "Child diagnostic");
+
+        string content = await ReadSessionLogAsync(path, parent.SessionId);
+        StringAssert.Contains(content, "Child diagnostic");
+    }
+
+    [TestMethod]
+    public async Task ManagerCreatedSessionLogger_WhenUsed_WritesToConfiguredLog()
+    {
+        string path = CreateLogPath();
+        var manager = new CopilotChatManager(new FileCopilotChatLogger(path));
+
+        await manager.SelectedSession.Logger.LogDiagnosticAsync("Run", "Manager diagnostic");
+
+        string content = await ReadSessionLogAsync(path, manager.SelectedSession.SessionId);
+        StringAssert.Contains(content, "Manager diagnostic");
+    }
+
+    [TestMethod]
+    public async Task BranchedSessionLogger_WhenUsed_WritesToBranchLog()
+    {
+        string path = CreateLogPath();
+        var manager = new CopilotChatManager(new FileCopilotChatLogger(path));
+        var message = new CopilotChatMessage(ChatRole.User, "Branch point");
+        await manager.SelectedSession.AddMessageAsync(message);
+        manager.CreateSessionFromMessage(message);
+
+        await manager.SelectedSession.Logger.LogDiagnosticAsync("Run", "Branch diagnostic");
+
+        string content = await ReadSessionLogAsync(path, manager.SelectedSession.SessionId);
+        StringAssert.Contains(content, "Branch diagnostic");
+    }
+
     private string CreateLogPath()
     {
         string path = Path.Combine(Path.GetTempPath(), "AgentLib.Tests", Guid.NewGuid().ToString("N"));

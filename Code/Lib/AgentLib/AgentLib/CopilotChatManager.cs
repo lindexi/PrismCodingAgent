@@ -301,7 +301,7 @@ public class CopilotChatManager : NotifyBase
             throw new InvalidOperationException("在当前的会话中找不到所选的聊天消息。");
         }
 
-        var newSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now)
+        var newSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, ChatLogger)
         {
             MainThreadDispatcher = MainThreadDispatcher,
         };
@@ -833,7 +833,7 @@ public class CopilotChatManager : NotifyBase
 
     private CopilotChatSession CreateSession()
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now)
+        var session = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, ChatLogger)
         {
             MainThreadDispatcher = MainThreadDispatcher,
         };

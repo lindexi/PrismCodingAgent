@@ -48,7 +48,7 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
         CopilotChatSessionPersistenceData persistenceData = await _store
             .LoadSessionAsync(sessionId, cancellationToken)
             .ConfigureAwait(false);
-        var session = new CopilotChatSession(persistenceData.SessionId, persistenceData.StartedTime)
+        var session = new CopilotChatSession(persistenceData.SessionId, persistenceData.StartedTime, _chatManager.ChatLogger)
         {
             MainThreadDispatcher = _mainThreadDispatcher,
             WorkspacePath = persistenceData.WorkspacePath,

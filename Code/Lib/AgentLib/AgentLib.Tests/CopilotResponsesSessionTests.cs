@@ -59,7 +59,7 @@ public sealed class CopilotResponsesSessionTests
 
         await store.SaveSessionAsync(session, null);
         var data = await store.LoadSessionAsync(session.SessionId);
-        var restored = new CopilotChatSession(data.SessionId, data.StartedTime) { ResponsesSession = data.ResponsesSession };
+        var restored = new CopilotChatSession(data.SessionId, data.StartedTime, new EmptyCopilotChatLogger()) { ResponsesSession = data.ResponsesSession };
 
         CopilotResponsesSession restoredState = restored.ResponsesSession
             ?? throw new InvalidOperationException("Restored state missing.");
@@ -84,7 +84,7 @@ public sealed class CopilotResponsesSessionTests
         await store.SaveSessionAsync(session, null);
 
         var data = await store.LoadSessionAsync(session.SessionId);
-        var restored = new CopilotChatSession(data.SessionId, data.StartedTime) { ResponsesSession = data.ResponsesSession };
+        var restored = new CopilotChatSession(data.SessionId, data.StartedTime, new EmptyCopilotChatLogger()) { ResponsesSession = data.ResponsesSession };
         var state = restored.ResponsesSession ?? throw new InvalidDataException("Stored state missing.");
         var next = ResponseItem.CreateUserMessageItem("next input");
         state.AppendItem(next);

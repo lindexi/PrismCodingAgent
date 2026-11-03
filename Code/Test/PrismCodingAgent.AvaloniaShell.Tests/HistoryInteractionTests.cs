@@ -363,7 +363,7 @@ public sealed class HistoryInteractionTests
 
         public StreamingStore(Guid sessionId)
         {
-            Session = new CopilotChatSession(sessionId, DateTimeOffset.Now);
+            Session = new CopilotChatSession(sessionId, DateTimeOffset.Now, new NullChatLogger());
         }
 
         public CopilotChatSession Session { get; }
