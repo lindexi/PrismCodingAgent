@@ -1,5 +1,4 @@
 using AgentLib.Coding.Sandboxes;
-using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
 using AgentLib.Reducers;
@@ -36,10 +35,7 @@ public sealed class CodingAgentTests
                 value => capturedOptions = value,
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
-        chatManager.WorkspacePath = defaultWorkspace;
-        IManualSendMessageContext context = await chatManager.CreateManualSendMessageContextAsync();
-        Assert.IsNotEmpty(context.DefaultTools);
+        CodingRunContext context = CreateContext(client, new CopilotChatSession { WorkspacePath = defaultWorkspace });
         AITool codingTool = AIFunctionFactory.Create(() => "coding", "coding_only");
         await using var agent = CreateAgent(CreateProvider("coding-workspace", [codingTool]));
         IReadOnlyList<AIContent> contents =
@@ -74,17 +70,9 @@ public sealed class CodingAgentTests
         releaseStream.TrySetResult();
         Assert.AreEqual("完成", await result.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
         Assert.AreEqual("完成", result.AssistantChatMessage.Content);
-        Assert.HasCount(3, chatManager.SelectedSession.ChatMessages);
-        Assert.IsTrue(chatManager.SelectedSession.ChatMessages[0].IsPresetInfo);
-        Assert.AreSame(context.UserChatMessage, chatManager.SelectedSession.ChatMessages[1]);
-        Assert.AreSame(context.AssistantChatMessage, chatManager.SelectedSession.ChatMessages[2]);
-        Assert.AreEqual("前后", context.UserChatMessage.Content);
-        Assert.HasCount(3, context.UserChatMessage.MessageItems);
-        Assert.IsInstanceOfType<CopilotChatTextItem>(context.UserChatMessage.MessageItems[0]);
-        CopilotChatImageItem imageItem = Assert.IsInstanceOfType<CopilotChatImageItem>(context.UserChatMessage.MessageItems[1]);
-        CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, imageItem.Data.ToArray());
-        Assert.AreEqual("image/png", imageItem.MimeType);
-        Assert.IsInstanceOfType<CopilotChatTextItem>(context.UserChatMessage.MessageItems[2]);
+        DataContent image = (DataContent)userMessage.Contents[1];
+        CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, image.Data.ToArray());
+        Assert.AreEqual("image/png", image.MediaType);
     }
 
     [TestMethod(DisplayName = "运行期间注入消息应由实际运行的 Agent 继续处理")]
@@ -106,9 +94,8 @@ public sealed class CodingAgentTests
                     : CaptureAndRespondAsync(messages, secondCallStarted, value => secondCallMessages = value, "插话已处理", cancellationToken);
             },
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        IManualSendMessageContext context = await chatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext context = CreateContext(client, new CopilotChatSession());
 
         ICodingAgentRunResult result = await agent.RunAsync(context, "开始任务", "workspace");
         await firstCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -131,9 +118,8 @@ public sealed class CodingAgentTests
             OnGetStreamingResponseAsync = (_, _, cancellationToken) =>
                 InterleavedStreamAsync(cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        IManualSendMessageContext context = await chatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext context = CreateContext(client, new CopilotChatSession());
 
         ICodingAgentRunResult result = await agent.RunAsync(context, "检查顺序", "workspace");
         Assert.AreEqual("正文一正文二", await result.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
@@ -157,20 +143,20 @@ public sealed class CodingAgentTests
                 observedMessageCounts,
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        IManualSendMessageContext firstContext = await chatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext firstContext = CreateContext(client, session);
 
         ICodingAgentRunResult first = await agent.RunAsync(firstContext, "第一轮", "workspace");
         await first.CompletionTask;
-        object? firstSession = chatManager.SelectedSession.AgentSession;
+        object? firstSession = session.AgentSession;
         Assert.IsNotNull(firstSession);
 
-        IManualSendMessageContext secondContext = await chatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext secondContext = CreateContext(client, session);
         ICodingAgentRunResult second = await agent.RunAsync(secondContext, "第二轮", "workspace");
         await second.CompletionTask;
 
-        Assert.AreSame(firstSession, chatManager.SelectedSession.AgentSession);
+        Assert.AreSame(firstSession, session.AgentSession);
         Assert.HasCount(2, observedMessageCounts);
         Assert.IsGreaterThan(observedMessageCounts[0], observedMessageCounts[1]);
     }
@@ -186,21 +172,21 @@ public sealed class CodingAgentTests
                 [],
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider("workspace", []));
 
         ICodingAgentRunResult first = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "第一轮",
             "workspace");
         await first.CompletionTask;
         ICodingAgentRunResult second = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "第二轮",
             "workspace");
         await second.CompletionTask;
 
-        AgentSession agentSession = chatManager.SelectedSession.AgentSession!;
+        AgentSession agentSession = session.AgentSession!;
         int systemPromptCount = agentSession.TryGetInMemoryChatHistory(out List<ChatMessage>? messages)
             ? messages.Count(message => message.Role == ChatRole.System)
             : 0;
@@ -221,16 +207,16 @@ public sealed class CodingAgentTests
                 [],
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider("workspace", []), instructionsPath);
 
         ICodingAgentRunResult result = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "测试自定义指令",
             "workspace");
         await result.CompletionTask;
 
-        AgentSession agentSession = chatManager.SelectedSession.AgentSession!;
+        AgentSession agentSession = session.AgentSession!;
         bool containsInstructions = agentSession.TryGetInMemoryChatHistory(out List<ChatMessage>? messages)
                                     && messages.Any(message =>
                                         message.Role == ChatRole.System
@@ -255,15 +241,15 @@ public sealed class CodingAgentTests
                 _ => { },
                 cancellationToken),
         };
-        CopilotChatManager firstChatManager = CreateChatManager(client);
-        CopilotChatManager secondChatManager = CreateChatManager(client);
+        var firstSession = new CopilotChatSession();
+        var secondSession = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider("workspace", []));
         ICodingAgentRunResult first = await agent.RunAsync(
-            await firstChatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, firstSession),
             "第一轮",
             "workspace");
         await streamStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
-        IManualSendMessageContext secondContext = await secondChatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext secondContext = CreateContext(client, secondSession);
 
         ICodingAgentRunResult second = await agent.RunAsync(
             secondContext,
@@ -286,17 +272,17 @@ public sealed class CodingAgentTests
                 [],
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider("workspace", []));
 
-        IManualSendMessageContext failingContext = await chatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext failingContext = CreateContext(client, session);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => agent.RunAsync(
             failingContext,
             new ThrowingReadOnlyList(),
             "workspace"));
 
         ICodingAgentRunResult nextRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "后续任务",
             "workspace");
         Assert.AreEqual("完成", await nextRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
@@ -345,7 +331,7 @@ public sealed class CodingAgentTests
                 tools => secondRunTools = tools,
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = new CodingAgent(new CodingAgentOptions
         {
             LanguageServerCommand = $"missing-roslyn-{Guid.NewGuid():N}",
@@ -353,7 +339,7 @@ public sealed class CodingAgentTests
         });
 
         ICodingAgentRunResult firstRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "第一轮",
             firstPath);
         await firstStreamStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -365,7 +351,7 @@ public sealed class CodingAgentTests
         Assert.AreEqual("完成", await firstRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
 
         ICodingAgentRunResult secondRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "第二轮",
             secondPath);
         Assert.AreEqual("完成", await secondRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
@@ -396,7 +382,7 @@ public sealed class CodingAgentTests
                 tools => secondRunTools = tools,
                 cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         var sandboxToolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
         await using var agent = new CodingAgent(new CodingAgentOptions
         {
@@ -405,7 +391,7 @@ public sealed class CodingAgentTests
         });
 
         ICodingAgentRunResult firstRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "第一轮",
             workspacePath);
         await firstRunStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -414,7 +400,7 @@ public sealed class CodingAgentTests
         releaseFirstRun.TrySetResult();
         Assert.AreEqual("完成", await firstRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
         ICodingAgentRunResult secondRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "第二轮",
             workspacePath);
         Assert.AreEqual("完成", await secondRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
@@ -430,9 +416,8 @@ public sealed class CodingAgentTests
         {
             OnGetStreamingResponseAsync = (_, _, cancellationToken) => EmptyStreamAsync(cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        IManualSendMessageContext context = await chatManager.CreateManualSendMessageContextAsync();
+        CodingRunContext context = CreateContext(client, new CopilotChatSession());
 
         ICodingAgentRunResult result = await agent.RunAsync(context, "任务", "workspace");
 
@@ -455,11 +440,11 @@ public sealed class CodingAgentTests
                     ? WaitForCancellationAsync(messages, options, streamStarted, cancellationToken)
                     : ImmediateStreamAsync(messages, [], cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider(workspacePath, []));
         using var cancellationTokenSource = new CancellationTokenSource();
         ICodingAgentRunResult canceledRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "取消任务",
             workspacePath,
             cancellationToken: cancellationTokenSource.Token);
@@ -469,7 +454,7 @@ public sealed class CodingAgentTests
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
             await canceledRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
         ICodingAgentRunResult nextRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "后续任务",
             workspacePath);
 
@@ -489,17 +474,17 @@ public sealed class CodingAgentTests
                     ? ThrowingStreamAsync(new InvalidOperationException("模型失败"), cancellationToken)
                     : ImmediateStreamAsync(messages, [], cancellationToken),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         await using var agent = CreateAgent(CreateProvider(workspacePath, []));
         ICodingAgentRunResult failedRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "失败任务",
             workspacePath);
 
         InvalidOperationException exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
             await failedRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
         ICodingAgentRunResult nextRun = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "后续任务",
             workspacePath);
 
@@ -521,10 +506,10 @@ public sealed class CodingAgentTests
                 streamStarted,
                 releaseStream),
         };
-        CopilotChatManager chatManager = CreateChatManager(client);
+        var session = new CopilotChatSession();
         var agent = CreateAgent(CreateProvider("workspace", []));
         ICodingAgentRunResult run = await agent.RunAsync(
-            await chatManager.CreateManualSendMessageContextAsync(),
+            CreateContext(client, session),
             "任务",
             "workspace");
         await streamStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -610,26 +595,8 @@ public sealed class CodingAgentTests
         };
     }
 
-    private static CopilotChatManager CreateChatManager(
-        FakeChatClient client,
-        IMainThreadDispatcher? mainThreadDispatcher = null)
-    {
-        var chatManager = new CopilotChatManager
-        {
-            MainThreadDispatcher = mainThreadDispatcher,
-        };
-        var model = new FakeLanguageModel(client)
-        {
-            ModelDefinition = new ModelDefinition
-            {
-                Provider = "fake",
-                ModelId = "fake",
-                ModelName = "Fake",
-            },
-        };
-        chatManager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([model]));
-        return chatManager;
-    }
+    private static CodingRunContext CreateContext(FakeChatClient client, CopilotChatSession session) =>
+        new(client, CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false), session);
 
     private static async IAsyncEnumerable<ChatResponseUpdate> InterleavedStreamAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)

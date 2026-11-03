@@ -43,6 +43,17 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
     public string ChatLogFolder { get; }
 
     /// <inheritdoc/>
+    public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => new SessionLogger(this, sessionId);
+
+    private sealed class SessionLogger(FileCopilotChatLogger logger, Guid sessionId) : ISessionCopilotChatLogger
+    {
+        public Task LogMessageAsync(CopilotChatMessage chatMessage) => logger.LogMessageAsync(sessionId, chatMessage);
+
+        public Task LogDiagnosticAsync(string category, string message, Exception? exception = null) =>
+            logger.LogDiagnosticAsync(sessionId, category, message, exception);
+    }
+
+    /// <inheritdoc/>
     public Task LogMessageAsync(Guid sessionId, CopilotChatMessage chatMessage)
     {
         ArgumentNullException.ThrowIfNull(chatMessage);

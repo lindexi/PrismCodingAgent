@@ -4,6 +4,17 @@ namespace AgentLib.Logging;
 
 class EmptyCopilotChatLogger : ICopilotChatLogger
 {
+    private static readonly ISessionCopilotChatLogger SessionLoggerInstance = new SessionLogger();
+
+    public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => SessionLoggerInstance;
+
+    private sealed class SessionLogger : ISessionCopilotChatLogger
+    {
+        public Task LogMessageAsync(CopilotChatMessage chatMessage) => Task.CompletedTask;
+
+        public Task LogDiagnosticAsync(string category, string message, Exception? exception = null) => Task.CompletedTask;
+    }
+
     public Task LogMessageAsync(Guid sessionId, CopilotChatMessage chatMessage)
     {
         return Task.CompletedTask;

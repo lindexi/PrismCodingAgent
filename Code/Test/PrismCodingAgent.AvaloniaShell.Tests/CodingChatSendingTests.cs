@@ -414,6 +414,16 @@ public sealed class CodingChatSendingTests
 
     private sealed class FailureDiagnosticLogger : ICopilotChatLogger
     {
+        public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => new SessionLogger(this, sessionId);
+
+        private sealed class SessionLogger(FailureDiagnosticLogger logger, Guid sessionId) : ISessionCopilotChatLogger
+        {
+            public Task LogMessageAsync(CopilotChatMessage message) => logger.LogMessageAsync(sessionId, message);
+
+            public Task LogDiagnosticAsync(string category, string message, Exception? exception = null) =>
+                logger.LogDiagnosticAsync(sessionId, category, message, exception);
+        }
+
         public Task LogMessageAsync(Guid sessionId, CopilotChatMessage message) => Task.CompletedTask;
         public Task LogDiagnosticAsync(Guid sessionId, string category, string message, Exception? exception = null)
             => exception is null ? Task.CompletedTask : Task.FromException(new IOException("diagnostic failed"));

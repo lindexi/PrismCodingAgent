@@ -10,6 +10,10 @@ namespace AgentLib.Logging;
 /// </summary>
 public interface ICopilotChatLogger
 {
+    /// <summary>创建日志归属固定为指定会话的记录器。</summary>
+    /// <param name="sessionId">日志所属会话的 ID。</param>
+    ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId);
+
     /// <summary>
     /// 记录一条 Copilot 聊天消息。
     /// </summary>
