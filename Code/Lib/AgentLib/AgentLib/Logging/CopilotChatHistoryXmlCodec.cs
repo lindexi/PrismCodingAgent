@@ -22,7 +22,7 @@ internal static class CopilotChatHistoryXmlCodec
         string title,
         int formatVersion,
         IEnumerable<CopilotChatEntry> messages,
-        JsonElement? agentSessionState)
+        JsonElement? agentSessionState, SessionResources? resources = null)
     {
         var rootElement = new XElement("CopilotChatSessionHistory",
             new XAttribute("FormatVersion", formatVersion),
@@ -31,7 +31,7 @@ internal static class CopilotChatHistoryXmlCodec
             new XAttribute("CreatedTime", startedTime.ToString("o")),
             new XAttribute("Title", title));
         AppendAgentSessionStateElement(rootElement, agentSessionState);
-        rootElement.Add(new XElement("Messages", messages.Select(CreateEntryElement)));
+        rootElement.Add(new XElement("Messages", messages.Select(entry => CreateEntryElement(entry, resources))));
         return rootElement;
     }
 
@@ -51,16 +51,16 @@ internal static class CopilotChatHistoryXmlCodec
         AppendAgentSessionStateElement(rootElement, agentSessionState);
     }
 
-    private static XElement CreateEntryElement(CopilotChatEntry entry) => entry switch
+    private static XElement CreateEntryElement(CopilotChatEntry entry, SessionResources? resources) => entry switch
     {
-        CopilotChatMessage message => CreateMessageElement(message),
+        CopilotChatMessage message => CreateMessageElement(message, resources),
         CopilotChatNotice notice => new XElement("Notice",
             new XAttribute("CreatedTime", notice.CreatedTime.ToString("o")),
             new XAttribute("Level", notice.Level), new XElement("Content", notice.Content)),
         _ => throw new InvalidDataException("Unknown timeline entry."),
     };
 
-    private static CopilotChatEntry ReadEntry(XElement element, int version)
+    private static CopilotChatEntry ReadEntry(XElement element, int version, SessionResources? resources)
     {
         if (element.Name == "Notice")
         {
@@ -75,14 +75,14 @@ internal static class CopilotChatHistoryXmlCodec
             return new CopilotChatNotice(content.Value, level, createdTime);
         }
         if (element.Name != "Message") throw new InvalidDataException("Unknown timeline entry.");
-        CopilotChatMessage message = ReadMessage(element);
+        CopilotChatMessage message = ReadMessage(element, resources);
         if (version < 4 && message.Role == ChatRole.System && message.IsPresetInfo
             && message.MessageItems.All(item => item is CopilotChatTextItem))
             return new CopilotChatNotice(message.Content, createdTime: message.CreatedTime);
         return message;
     }
 
-    public static XElement CreateMessageElement(CopilotChatMessage chatMessage)
+    public static XElement CreateMessageElement(CopilotChatMessage chatMessage, SessionResources? resources = null)
     {
         return new XElement("Message",
             new XAttribute("Role", chatMessage.Role),
@@ -91,11 +91,11 @@ internal static class CopilotChatHistoryXmlCodec
             new XAttribute("IsPresetInfo", chatMessage.IsPresetInfo),
             new XElement("Content", chatMessage.Content),
             new XElement("Reason", chatMessage.Reason),
-            new XElement("MessageItems", chatMessage.MessageItems.Select(CreateMessageItemElement)),
+            new XElement("MessageItems", chatMessage.MessageItems.Select(item => CreateMessageItemElement(item, resources))),
             chatMessage.TotalUsageDetails is { } usageDetails ? CreateUsageDetailsElement(usageDetails) : null);
     }
 
-    public static CopilotChatSessionPersistenceData ReadPersistenceData(XDocument document)
+    public static CopilotChatSessionPersistenceData ReadPersistenceData(XDocument document, SessionResources? resources = null)
     {
         XElement rootElement = document.Root ?? throw new InvalidDataException("聊天历史文件缺少根节点。");
         Guid sessionId = ParseRequiredGuid(rootElement, "SessionId");
@@ -103,7 +103,7 @@ internal static class CopilotChatHistoryXmlCodec
         int formatVersion = ParseOptionalInt(rootElement.Attribute("FormatVersion")?.Value) ?? 1;
         XElement messagesElement = rootElement.Element("Messages")
                                    ?? throw new InvalidDataException("聊天历史文件缺少 Messages 节点。");
-        List<CopilotChatEntry> entries = messagesElement.Elements().Select(element => ReadEntry(element, formatVersion)).ToList();
+        List<CopilotChatEntry> entries = messagesElement.Elements().Select(element => ReadEntry(element, formatVersion, resources)).ToList();
         JsonElement? agentSessionState = ReadAgentSessionState(rootElement);
         return new CopilotChatSessionPersistenceData
         {
@@ -165,7 +165,7 @@ internal static class CopilotChatHistoryXmlCodec
             ?? throw new InvalidDataException("Responses 历史 Item 不能为空。");
     }
 
-    private static CopilotChatMessage ReadMessage(XElement messageElement)
+    private static CopilotChatMessage ReadMessage(XElement messageElement, SessionResources? resources)
     {
         ChatRole role = new(messageElement.Attribute("Role")?.Value ?? throw new InvalidDataException("消息缺少 Role 属性。"));
         DateTimeOffset createdTime = ParseRequiredDateTimeOffset(messageElement, "CreatedTime");
@@ -173,7 +173,7 @@ internal static class CopilotChatHistoryXmlCodec
         XElement? messageItemsElement = messageElement.Element("MessageItems");
         List<ICopilotChatMessageItem> messageItems = messageItemsElement is null
             ? CreateLegacyMessageItems(messageElement)
-            : messageItemsElement.Elements().Select(ReadMessageItem).ToList();
+            : messageItemsElement.Elements().Select(element => ReadMessageItem(element, resources)).ToList();
         UsageDetails? usageDetails = ReadUsageDetails(messageElement.Element("UsageDetails"));
         return CopilotChatMessage.Restore(role, createdTime, isPresetInfo, messageItems, usageDetails);
     }
@@ -196,24 +196,24 @@ internal static class CopilotChatHistoryXmlCodec
         return items;
     }
 
-    private static ICopilotChatMessageItem ReadMessageItem(XElement element)
+    private static ICopilotChatMessageItem ReadMessageItem(XElement element, SessionResources? resources)
     {
         return element.Name.LocalName switch
         {
             "TextItem" => new CopilotChatTextItem(element.Attribute("Text")?.Value ?? string.Empty),
             "ReasoningItem" => new CopilotChatReasoningItem(element.Attribute("Text")?.Value ?? string.Empty),
-            "ImageItem" => new CopilotChatImageItem(BinaryData.FromBytes(Convert.FromBase64String(element.Value)),
+            "ImageItem" => new CopilotChatImageItem(ReadResource(element, resources),
                 element.Attribute("MimeType")?.Value ?? "application/octet-stream"),
-            "AudioItem" => new CopilotChatAudioItem(BinaryData.FromBytes(Convert.FromBase64String(element.Value)),
+            "AudioItem" => new CopilotChatAudioItem(ReadResource(element, resources),
                 element.Attribute("MimeType")?.Value ?? "application/octet-stream"),
-            "ToolItem" => ReadToolItem(element),
+            "ToolItem" => ReadToolItem(element, resources),
             "ApprovalToolItem" => ReadApprovalToolItem(element),
-            "SubAgentItem" => ReadSubAgentItem(element),
+            "SubAgentItem" => ReadSubAgentItem(element, resources),
             _ => throw new InvalidDataException($"不支持的聊天消息片段类型：{element.Name.LocalName}")
         };
     }
 
-    private static CopilotChatToolItem ReadToolItem(XElement element)
+    private static CopilotChatToolItem ReadToolItem(XElement element, SessionResources? resources)
     {
         return new CopilotChatToolItem(
             element.Attribute("CallId")?.Value ?? string.Empty,
@@ -225,7 +225,7 @@ internal static class CopilotChatHistoryXmlCodec
                 element.Element("SecondaryText")?.Value,
                 element.Element("FullTargetText")?.Value))
         {
-            Details = element.Element("Details")?.Element("Message") is { } details ? ReadMessage(details) : null
+            Details = element.Element("Details")?.Element("Message") is { } details ? ReadMessage(details, resources) : null
         };
     }
 
@@ -259,7 +259,7 @@ internal static class CopilotChatHistoryXmlCodec
         return item;
     }
 
-    private static CopilotChatSubAgentItem ReadSubAgentItem(XElement element)
+    private static CopilotChatSubAgentItem ReadSubAgentItem(XElement element, SessionResources? resources)
     {
         var item = new CopilotChatSubAgentItem(
             element.Attribute("CallId")?.Value ?? string.Empty,
@@ -269,7 +269,7 @@ internal static class CopilotChatHistoryXmlCodec
         XElement? messageItemsElement = element.Element("MessageItems");
         if (messageItemsElement is not null)
         {
-            foreach (ICopilotChatMessageItem messageItem in messageItemsElement.Elements().Select(ReadMessageItem))
+            foreach (ICopilotChatMessageItem messageItem in messageItemsElement.Elements().Select(element => ReadMessageItem(element, resources)))
             {
                 item.MessageItems.Add(messageItem);
             }
@@ -278,14 +278,14 @@ internal static class CopilotChatHistoryXmlCodec
         return item;
     }
 
-    private static XElement CreateMessageItemElement(ICopilotChatMessageItem messageItem)
+    private static XElement CreateMessageItemElement(ICopilotChatMessageItem messageItem, SessionResources? resources)
     {
         return messageItem switch
         {
             CopilotChatTextItem textItem => new XElement("TextItem", new XAttribute("Text", textItem.Text)),
             CopilotChatReasoningItem reasoningItem => new XElement("ReasoningItem", new XAttribute("Text", reasoningItem.Text)),
-            CopilotChatImageItem imageItem => new XElement("ImageItem", new XAttribute("MimeType", imageItem.MimeType), Convert.ToBase64String(imageItem.Data.ToArray())),
-            CopilotChatAudioItem audioItem => new XElement("AudioItem", new XAttribute("MimeType", audioItem.MimeType), Convert.ToBase64String(audioItem.Data.ToArray())),
+            CopilotChatImageItem imageItem => CreateResourceElement("ImageItem", imageItem.Data, imageItem.MimeType, resources),
+            CopilotChatAudioItem audioItem => CreateResourceElement("AudioItem", audioItem.Data, audioItem.MimeType, resources),
             CopilotChatToolItem toolItem => new XElement("ToolItem",
                 new XAttribute("CallId", toolItem.CallId),
                 new XAttribute("ToolName", toolItem.ToolName),
@@ -294,7 +294,7 @@ internal static class CopilotChatHistoryXmlCodec
                 new XElement("FullTargetText", toolItem.FullTargetText),
                 new XElement("Input", toolItem.InputText),
                 new XElement("Output", toolItem.OutputText),
-                toolItem.Details is { } details ? new XElement("Details", CreateMessageElement(details)) : null),
+                toolItem.Details is { } details ? new XElement("Details", CreateMessageElement(details, resources)) : null),
             CopilotChatApprovalToolItem approvalToolItem => new XElement("ApprovalToolItem",
                 new XAttribute("CallId", approvalToolItem.CallId),
                 new XAttribute("ToolName", approvalToolItem.ToolName),
@@ -309,10 +309,20 @@ internal static class CopilotChatHistoryXmlCodec
                 new XAttribute("ToolName", subAgentItem.ToolName),
                 new XElement("Input", subAgentItem.InputText),
                 new XElement("Output", subAgentItem.OutputText),
-                new XElement("MessageItems", subAgentItem.MessageItems.Select(CreateMessageItemElement))),
+                new XElement("MessageItems", subAgentItem.MessageItems.Select(item => CreateMessageItemElement(item, resources)))),
             _ => throw new InvalidOperationException($"不支持的聊天消息片段类型: {messageItem.GetType().FullName}")
         };
     }
+
+    private static XElement CreateResourceElement(string name, BinaryData data, string mediaType, SessionResources? resources) =>
+        resources is null
+            ? new XElement(name, new XAttribute("MimeType", mediaType), Convert.ToBase64String(data.ToArray()))
+            : new XElement(name, new XAttribute("MimeType", mediaType), new XAttribute("Resource", resources.Add(data, mediaType)));
+
+    private static BinaryData ReadResource(XElement element, SessionResources? resources) =>
+        resources is null
+            ? BinaryData.FromBytes(Convert.FromBase64String(element.Value))
+            : resources.Get(element.Attribute("Resource")!.Value);
 
     private static XElement CreateUsageDetailsElement(UsageDetails usageDetails)
     {

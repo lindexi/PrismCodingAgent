@@ -298,7 +298,7 @@ public sealed class FileCopilotChatSessionStoreTests
             Path.Join(temporaryDirectory.SessionPath, $"20260413_090000_{sessionId:N}.xml"),
             "<invalid>");
 
-        await Assert.ThrowsAsync<System.Xml.XmlException>(() => store.LoadSessionAsync(sessionId));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => store.LoadSessionAsync(sessionId));
     }
 
     [TestMethod(DisplayName = "原子保存取消时应保留旧文件并清理临时文件")]

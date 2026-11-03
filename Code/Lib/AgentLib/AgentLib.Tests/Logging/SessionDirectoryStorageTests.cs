@@ -122,6 +122,77 @@ public sealed class SessionDirectoryStorageTests
         Assert.HasCount(1, Directory.GetFiles(root, "*.png", SearchOption.AllDirectories));
     }
 
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    [DataRow(3)]
+    [DataRow(4)]
+    public async Task LoadLegacyShouldMigrateBeforeLoadingCurrentFormat(int version)
+    {
+        string root = CreatePath();
+        Directory.CreateDirectory(root);
+        var session = new CopilotChatSession();
+        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Preserved message"));
+        string legacy = Path.Join(root, $"20260101_120000_{session.SessionId:N}.xml");
+        var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(session.SessionId,
+            session.StartedTime, "Legacy", version, session.Entries, null));
+        await FileCopilotChatSessionStore.SaveDocumentAsync(legacy, document);
+        var store = new FileCopilotChatSessionStore(root);
+
+        CopilotChatSessionPersistenceData loaded = await store.LoadSessionAsync(session.SessionId);
+
+        Assert.AreEqual(5, loaded.FormatVersion);
+        Assert.AreEqual("Preserved message", loaded.Entries.OfType<CopilotChatMessage>().Single().Content);
+        Assert.IsFalse(File.Exists(legacy));
+        Assert.HasCount(1, Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories));
+        Assert.AreEqual((0, 0), await store.OrganizeAsync());
+    }
+
+    [TestMethod]
+    public async Task LoadShouldRejectFutureVersionBeforeReadingContent()
+    {
+        string root = CreatePath();
+        var session = new CopilotChatSession();
+        var store = new FileCopilotChatSessionStore(root);
+        await store.SaveSessionAsync(session, null);
+        string entry = Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories).Single();
+        XDocument document = XDocument.Load(entry);
+        document.Root!.SetAttributeValue("FormatVersion", 6);
+        document.Save(entry);
+        File.Delete(Path.Join(Path.GetDirectoryName(entry)!, "History.xml"));
+
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => store.LoadSessionAsync(session.SessionId));
+    }
+
+    [TestMethod]
+    public async Task NestedMessagesShouldStoreDirectResourceReferencesAndRestoreBinaryContents()
+    {
+        string root = CreatePath();
+        var store = new FileCopilotChatSessionStore(root);
+        var session = new CopilotChatSession();
+        var message = CopilotChatMessage.CreateAssistant(string.Empty, false);
+        var detail = CopilotChatMessage.CreateAssistant(string.Empty, false);
+        detail.MessageItems.Add(new CopilotChatImageItem(BinaryData.FromBytes(new byte[] { 1, 2, 3 }), "image/png"));
+        message.CreateToolItem(new FunctionCallContent("tool", "read", new Dictionary<string, object?>())).Details = detail;
+        var child = message.CreateSubAgentItem("child", "task");
+        child.MessageItems.Add(new CopilotChatAudioItem(BinaryData.FromBytes(new byte[] { 4, 5, 6 }), "audio/wav"));
+        await session.AddMessageAsync(message);
+
+        await store.SaveSessionAsync(session, null);
+
+        string historyPath = Directory.GetFiles(root, "History.xml", SearchOption.AllDirectories).Single();
+        XDocument history = XDocument.Load(historyPath);
+        Assert.HasCount(2, history.Descendants().Attributes("Resource").ToArray());
+        Assert.IsTrue(history.Descendants().Where(element => element.Name == "ImageItem" || element.Name == "AudioItem")
+            .All(element => element.Value.Length == 0));
+        var loaded = await store.LoadSessionAsync(session.SessionId);
+        var restored = loaded.Entries.OfType<CopilotChatMessage>().Single();
+        var image = restored.MessageItems.OfType<CopilotChatToolItem>().Single().Details!.MessageItems.OfType<CopilotChatImageItem>().Single();
+        var audio = restored.MessageItems.OfType<CopilotChatSubAgentItem>().Single().MessageItems.OfType<CopilotChatAudioItem>().Single();
+        CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, image.Data.ToArray());
+        CollectionAssert.AreEqual(new byte[] { 4, 5, 6 }, audio.Data.ToArray());
+    }
+
     private string CreatePath()
     {
         string path = Path.Join(Path.GetTempPath(), "PrismCodingAgent.StorageTests", Guid.NewGuid().ToString("N"));

@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
@@ -11,18 +10,13 @@ internal static class SessionDirectoryStorage
     internal const string EntryFileName = "Session.xml";
     private const string ArchiveFileName = "Content.zip";
 
-    internal static async Task WriteAsync(string entryPath, XDocument document, DateTimeOffset updatedTime,
+    internal static async Task WriteAsync(string entryPath, XDocument document, SessionResources resources, DateTimeOffset updatedTime,
         CancellationToken cancellationToken)
     {
         string directory = Path.GetDirectoryName(entryPath)!;
         Directory.CreateDirectory(directory);
         XElement root = document.Root!;
-        foreach (XElement resource in root.Descendants().Where(element => element.Name == "ImageItem" || element.Name == "AudioItem"))
-        {
-            resource.SetAttributeValue("Resource", await WriteResourceAsync(directory,
-                Convert.FromBase64String(resource.Value), resource.Attribute("MimeType")!.Value, cancellationToken).ConfigureAwait(false));
-            resource.Value = string.Empty;
-        }
+        await resources.WriteAsync(directory, cancellationToken).ConfigureAwait(false);
 
         XElement? agentState = root.Element("AgentSessionState");
         if (agentState is not null)
@@ -61,18 +55,14 @@ internal static class SessionDirectoryStorage
         await FileCopilotChatSessionStore.SaveDocumentAsync(entryPath, new XDocument(entry), cancellationToken).ConfigureAwait(false);
     }
 
-    internal static async Task<XDocument> ReadAsync(string entryPath, CancellationToken cancellationToken)
+    internal static async Task<CopilotChatSessionPersistenceData> ReadAsync(string entryPath, CancellationToken cancellationToken)
     {
         await ExpandAsync(entryPath, cancellationToken).ConfigureAwait(false);
         string directory = Path.GetDirectoryName(entryPath)!;
         XDocument document = await ReadXmlAsync(Path.Join(directory, "History.xml"), cancellationToken).ConfigureAwait(false);
         XElement root = document.Root!;
-        foreach (XElement resource in root.Descendants().Where(element => element.Attribute("Resource") is not null))
-        {
-            byte[] data = await File.ReadAllBytesAsync(Path.Join(directory, resource.Attribute("Resource")!.Value), cancellationToken).ConfigureAwait(false);
-            resource.Value = Convert.ToBase64String(data);
-            resource.Attribute("Resource")!.Remove();
-        }
+        var resources = new SessionResources();
+        await resources.ReadAsync(directory, root.Descendants().Attributes("Resource").Select(attribute => attribute.Value), cancellationToken).ConfigureAwait(false);
         string agentPath = Path.Join(directory, "AgentSession.json");
         if (File.Exists(agentPath))
         {
@@ -88,7 +78,7 @@ internal static class SessionDirectoryStorage
             root.Add(new XElement("ProtocolStates", new XElement("ResponsesState",
                 items.Select(item => new XElement("Item", item!.ToJsonString())))));
         }
-        return document;
+        return CopilotChatHistoryXmlCodec.ReadPersistenceData(document, resources);
     }
 
     internal static async Task<bool> CompressAsync(string entryPath, CancellationToken cancellationToken)
@@ -137,17 +127,10 @@ internal static class SessionDirectoryStorage
 
     private static async Task<string> WriteResourceAsync(string directory, byte[] data, string mimeType, CancellationToken cancellationToken)
     {
-        string extension = mimeType.ToLowerInvariant() switch
-        {
-            "image/png" => ".png", "image/jpeg" => ".jpg", "image/gif" => ".gif", "image/webp" => ".webp",
-            "image/bmp" => ".bmp", "audio/wav" or "audio/x-wav" => ".wav", "audio/mpeg" => ".mp3",
-            "audio/ogg" => ".ogg", "application/pdf" => ".pdf", _ => ".bin",
-        };
-        string resource = "Resources/" + Convert.ToHexString(SHA1.HashData(data)).ToLowerInvariant() + extension;
-        string path = Path.Join(directory, resource);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        if (!File.Exists(path)) await File.WriteAllBytesAsync(path, data, cancellationToken).ConfigureAwait(false);
-        return resource;
+        var resources = new SessionResources();
+        string reference = resources.Add(BinaryData.FromBytes(data), mimeType);
+        await resources.WriteAsync(directory, cancellationToken).ConfigureAwait(false);
+        return reference;
     }
 
     private static async Task TransformResourcesAsync(JsonNode node, string directory, bool restore, CancellationToken cancellationToken)

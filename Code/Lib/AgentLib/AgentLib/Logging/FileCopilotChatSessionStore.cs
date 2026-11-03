@@ -56,24 +56,22 @@ public sealed class FileCopilotChatSessionStore
         {
             string dayDirectory = Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"));
             Directory.CreateDirectory(dayDirectory);
-            string? existingPath = FindSessionFile(session.SessionId);
-            string filePath = existingPath is not null && Path.GetFileName(existingPath) == SessionDirectoryStorage.EntryFileName
-                ? existingPath : Path.Join(dayDirectory, session.SessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
-            if (existingPath is not null && existingPath == filePath)
+            string filePath = Path.Join(dayDirectory, session.SessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+            if (File.Exists(filePath))
                 await SessionDirectoryStorage.ExpandAsync(filePath, cancellationToken).ConfigureAwait(false);
+            var resources = new SessionResources();
             var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(
                 session.SessionId,
                 session.StartedTime,
                 session.Title,
                 CurrentFormatVersion,
                 session.Entries,
-                agentSessionState));
+                agentSessionState, resources));
             CopilotChatHistoryXmlCodec.AppendResponsesSession(document.Root!, session.ExistingResponsesSession);
             document.Root!.SetAttributeValue("WorkspacePath", session.WorkspacePath);
             document.Root.SetAttributeValue("WorkTaskId", session.WorkTaskId);
             document.Root.SetAttributeValue("WorkTaskName", session.WorkTaskName);
-            await SessionDirectoryStorage.WriteAsync(filePath, document, DateTimeOffset.Now, cancellationToken).ConfigureAwait(false);
-            if (existingPath is not null && existingPath != filePath) File.Delete(existingPath);
+            await SessionDirectoryStorage.WriteAsync(filePath, document, resources, DateTimeOffset.Now, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -134,12 +132,8 @@ public sealed class FileCopilotChatSessionStore
     {
         string filePath = FindSessionFile(sessionId)
                           ?? throw new FileNotFoundException($"未找到会话 {sessionId} 的历史文件。", sessionId.ToString());
-        if (Path.GetFileName(filePath) == SessionDirectoryStorage.EntryFileName)
-        {
-            XDocument document = await SessionDirectoryStorage.ReadAsync(filePath, cancellationToken).ConfigureAwait(false);
-            return CopilotChatHistoryXmlCodec.ReadPersistenceData(document);
-        }
-        return await LoadFileAsync(filePath, cancellationToken).ConfigureAwait(false);
+        filePath = await SessionStorageMigrations.UpgradeAsync(filePath, _sessionDirectory, cancellationToken).ConfigureAwait(false);
+        return await SessionDirectoryStorage.ReadAsync(filePath, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -155,9 +149,8 @@ public sealed class FileCopilotChatSessionStore
             string? historyFile = FindSessionFile(sessionId);
             if (historyFile is not null)
             {
-                if (Path.GetFileName(historyFile) == SessionDirectoryStorage.EntryFileName)
-                    Directory.Delete(Path.GetDirectoryName(historyFile)!, recursive: true);
-                else File.Delete(historyFile);
+                historyFile = await SessionStorageMigrations.UpgradeAsync(historyFile, _sessionDirectory, cancellationToken).ConfigureAwait(false);
+                Directory.Delete(Path.GetDirectoryName(historyFile)!, recursive: true);
                 deleted = true;
             }
 
@@ -192,23 +185,9 @@ public sealed class FileCopilotChatSessionStore
         foreach (string path in EnumerateEntryFiles().ToArray())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string entryPath = path;
-            XDocument entry = await SessionDirectoryStorage.ReadXmlAsync(path, cancellationToken).ConfigureAwait(false);
-            if (Path.GetFileName(path) != SessionDirectoryStorage.EntryFileName)
-            {
-                CopilotChatSessionPersistenceData data = await LoadFileAsync(path, cancellationToken).ConfigureAwait(false);
-                var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(data.SessionId, data.StartedTime,
-                    data.Title, CurrentFormatVersion, data.Entries, data.AgentSessionState));
-                CopilotChatHistoryXmlCodec.AppendResponsesSession(document.Root!, data.ResponsesSession);
-                document.Root!.SetAttributeValue("WorkspacePath", data.WorkspacePath);
-                document.Root.SetAttributeValue("WorkTaskId", data.WorkTaskId);
-                document.Root.SetAttributeValue("WorkTaskName", data.WorkTaskName);
-                entryPath = Path.Join(_sessionDirectory, data.StartedTime.ToString("yyyyMMdd"), data.SessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
-                await SessionDirectoryStorage.WriteAsync(entryPath, document, File.GetLastWriteTimeUtc(path), cancellationToken).ConfigureAwait(false);
-                File.Delete(path);
-                upgraded++;
-                entry = await SessionDirectoryStorage.ReadXmlAsync(entryPath, cancellationToken).ConfigureAwait(false);
-            }
+            string entryPath = await SessionStorageMigrations.UpgradeAsync(path, _sessionDirectory, cancellationToken).ConfigureAwait(false);
+            if (entryPath != path) upgraded++;
+            XDocument entry = await SessionDirectoryStorage.ReadXmlAsync(entryPath, cancellationToken).ConfigureAwait(false);
             DateTimeOffset updated = DateTimeOffset.Parse(entry.Root!.Attribute("UpdatedTime")!.Value, CultureInfo.InvariantCulture);
             if (updated < cutoff && await SessionDirectoryStorage.CompressAsync(entryPath, cancellationToken).ConfigureAwait(false)) compressed++;
         }
@@ -222,9 +201,9 @@ public sealed class FileCopilotChatSessionStore
             return null;
         }
 
-        string? entry = Directory.EnumerateDirectories(_sessionDirectory, sessionId.ToString("N"), SearchOption.AllDirectories)
-            .Select(directory => Path.Join(directory, SessionDirectoryStorage.EntryFileName)).FirstOrDefault(File.Exists);
-        return entry ?? Directory.GetFiles(_sessionDirectory, $"*_{sessionId:N}.xml", SearchOption.AllDirectories).SingleOrDefault();
+        return EnumerateEntryFiles().SingleOrDefault(path =>
+            Path.GetFileName(Path.GetDirectoryName(path)) == sessionId.ToString("N")
+            || Path.GetFileNameWithoutExtension(path).EndsWith("_" + sessionId.ToString("N"), StringComparison.Ordinal));
     }
 
     private static (bool IsRecognized, string SortKey) GetSessionFileSortInfo(string filePath)
@@ -307,21 +286,6 @@ public sealed class FileCopilotChatSessionStore
             UpdatedTime = updatedTime,
             Summary = preview,
         };
-    }
-
-    private static async Task<CopilotChatSessionPersistenceData> LoadFileAsync(
-        string filePath,
-        CancellationToken cancellationToken)
-    {
-        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        XDocument document = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken).ConfigureAwait(false);
-        CopilotChatSessionPersistenceData persistenceData = CopilotChatHistoryXmlCodec.ReadPersistenceData(document);
-        if (persistenceData.FormatVersion is < 1 or > CurrentFormatVersion)
-        {
-            throw new InvalidDataException($"不支持的聊天历史格式版本：{persistenceData.FormatVersion}。");
-        }
-
-        return persistenceData;
     }
 
     internal static async Task SaveDocumentAsync(string filePath, XDocument document, CancellationToken cancellationToken = default)
