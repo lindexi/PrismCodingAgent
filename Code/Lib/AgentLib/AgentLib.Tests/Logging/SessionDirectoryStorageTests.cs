@@ -42,7 +42,7 @@ public sealed class SessionDirectoryStorageTests
         string legacy = Path.Join(root, $"20260101_120000_{id:N}.xml");
         var session = new CopilotChatSession(id, started, new EmptyCopilotChatLogger());
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "legacy text"));
-        var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(id, started, "Legacy", 4, session.Entries, null));
+        var document = new XDocument(LegacySessionXmlFixture.CreateRootElement(id, started, "Legacy", 4, session.Entries, null));
         await FileCopilotChatSessionStore.SaveDocumentAsync(legacy, document);
         File.SetLastWriteTimeUtc(legacy, started.UtcDateTime);
         var store = new FileCopilotChatSessionStore(root);
@@ -134,7 +134,7 @@ public sealed class SessionDirectoryStorageTests
         var session = new CopilotChatSession();
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Preserved message"));
         string legacy = Path.Join(root, $"20260101_120000_{session.SessionId:N}.xml");
-        var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(session.SessionId,
+        var document = new XDocument(LegacySessionXmlFixture.CreateRootElement(session.SessionId,
             session.StartedTime, "Legacy", version, session.Entries, null));
         await FileCopilotChatSessionStore.SaveDocumentAsync(legacy, document);
         var store = new FileCopilotChatSessionStore(root);

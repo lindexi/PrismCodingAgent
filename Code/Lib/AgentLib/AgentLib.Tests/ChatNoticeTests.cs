@@ -157,17 +157,17 @@ public class ChatNoticeTests
     [DataRow("CreatedTime", "invalid")]
     public void InvalidNoticeAttributesAreReportedAsInvalidData(string attribute, string? value)
     {
-        XElement root = CopilotChatHistoryXmlCodec.CreateRootElement(Guid.NewGuid(), DateTimeOffset.Now,
+        XElement root = LegacySessionXmlFixture.CreateRootElement(Guid.NewGuid(), DateTimeOffset.Now,
             "title", 4, [new CopilotChatNotice("notice")], null);
         root.Element("Messages")!.Element("Notice")!.SetAttributeValue(attribute, value);
 
         Assert.ThrowsExactly<InvalidDataException>(() =>
-            CopilotChatHistoryXmlCodec.ReadPersistenceData(new XDocument(root)));
+            LegacySessionXmlReader.Read(new XDocument(root)));
     }
 
     private static CopilotChatSessionPersistenceData RoundTrip(CopilotChatEntry[] entries, int version)
-        => CopilotChatHistoryXmlCodec.ReadPersistenceData(new XDocument(
-            CopilotChatHistoryXmlCodec.CreateRootElement(Guid.NewGuid(), DateTimeOffset.Now,
+        => LegacySessionXmlReader.Read(new XDocument(
+            LegacySessionXmlFixture.CreateRootElement(Guid.NewGuid(), DateTimeOffset.Now,
                 "title", version, entries, null)));
 
     private sealed class InlineDispatcher : IMainThreadDispatcher

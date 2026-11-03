@@ -1,3 +1,6 @@
+using AgentLib.Model;
+using Microsoft.Extensions.AI;
+using System.Globalization;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -10,47 +13,54 @@ internal static class SessionDirectoryStorage
     internal const string EntryFileName = "Session.xml";
     private const string ArchiveFileName = "Content.zip";
 
-    internal static async Task WriteAsync(string entryPath, XDocument document, SessionResources resources, DateTimeOffset updatedTime,
+    internal static async Task WriteAsync(string entryPath, CopilotChatSessionPersistenceData data, DateTimeOffset updatedTime,
         CancellationToken cancellationToken)
     {
         string directory = Path.GetDirectoryName(entryPath)!;
         Directory.CreateDirectory(directory);
-        XElement root = document.Root!;
+        var resources = new SessionResources();
+        XDocument document = SessionHistoryXmlCodec.Write(data.Entries, resources);
         await resources.WriteAsync(directory, cancellationToken).ConfigureAwait(false);
 
-        XElement? agentState = root.Element("AgentSessionState");
-        if (agentState is not null)
+        if (data.AgentSessionState is { } agentState)
         {
-            JsonNode state = JsonNode.Parse(agentState.Value)!;
+            JsonNode state = JsonNode.Parse(agentState.GetRawText())!;
             await TransformResourcesAsync(state, directory, false, cancellationToken).ConfigureAwait(false);
             await File.WriteAllTextAsync(Path.Join(directory, "AgentSession.json"), state.ToJsonString(), cancellationToken).ConfigureAwait(false);
-            agentState.Remove();
         }
-        else File.Delete(Path.Join(directory, "AgentSession.json"));
+        else
+        {
+            File.Delete(Path.Join(directory, "AgentSession.json"));
+        }
 
-        XElement? protocolStates = root.Element("ProtocolStates");
-        if (protocolStates is not null)
+        if (data.ResponsesSession is { } responsesSession)
         {
             var items = new JsonArray();
-            foreach (XElement item in protocolStates.Element("ResponsesState")!.Elements("Item"))
-                items.Add(JsonNode.Parse(item.Value));
+            foreach (var item in responsesSession.Items)
+            {
+                items.Add(JsonNode.Parse(System.ClientModel.Primitives.ModelReaderWriter.Write(item).ToString()));
+            }
+
             await TransformResourcesAsync(items, directory, false, cancellationToken).ConfigureAwait(false);
             await File.WriteAllTextAsync(Path.Join(directory, "ResponsesSession.json"), items.ToJsonString(), cancellationToken).ConfigureAwait(false);
-            protocolStates.Remove();
         }
         else File.Delete(Path.Join(directory, "ResponsesSession.json"));
 
         await FileCopilotChatSessionStore.SaveDocumentAsync(Path.Join(directory, "History.xml"), document, cancellationToken).ConfigureAwait(false);
-        var entry = new XElement("CopilotChatSessionHistory", root.Attributes().Select(attribute => new XAttribute(attribute)));
+        var entry = new XElement("CopilotChatSessionHistory",
+            new XAttribute("SessionId", data.SessionId), new XAttribute("StartedTime", data.StartedTime.ToString("o")),
+            new XAttribute("Title", data.Title));
+        entry.SetAttributeValue("WorkspacePath", data.WorkspacePath);
+        entry.SetAttributeValue("WorkTaskId", data.WorkTaskId);
+        entry.SetAttributeValue("WorkTaskName", data.WorkTaskName);
         entry.SetAttributeValue("FormatVersion", FileCopilotChatSessionStore.CurrentFormatVersion);
         entry.SetAttributeValue("UpdatedTime", updatedTime.ToString("o"));
         entry.SetAttributeValue("ContentStorage", "Expanded");
-        XElement[] entries = root.Element("Messages")!.Elements().ToArray();
-        entry.SetAttributeValue("MessageCount", entries.Count(element => element.Name == "Message"));
-        entry.SetAttributeValue("EntryCount", entries.Length);
-        string? preview = entries.Where(element => element.Name == "Message"
-                && ((string?)element.Attribute("Role") is "user" or "assistant"))
-            .Select(element => (string?)element.Element("Content")).LastOrDefault(text => !string.IsNullOrWhiteSpace(text));
+        entry.SetAttributeValue("MessageCount", data.Entries.OfType<CopilotChatMessage>().Count());
+        entry.SetAttributeValue("EntryCount", data.Entries.Count);
+        string? preview = data.Entries.OfType<CopilotChatMessage>()
+            .Where(message => message.Role == ChatRole.User || message.Role == ChatRole.Assistant)
+            .Select(message => message.Content).LastOrDefault(text => !string.IsNullOrWhiteSpace(text));
         if (preview is not null) entry.Add(new XElement("Summary", preview[..Math.Min(preview.Length, 200)]));
         await FileCopilotChatSessionStore.SaveDocumentAsync(entryPath, new XDocument(entry), cancellationToken).ConfigureAwait(false);
     }
@@ -63,22 +73,38 @@ internal static class SessionDirectoryStorage
         XElement root = document.Root!;
         var resources = new SessionResources();
         await resources.ReadAsync(directory, root.Descendants().Attributes("Resource").Select(attribute => attribute.Value), cancellationToken).ConfigureAwait(false);
+        XElement entry = (await ReadXmlAsync(entryPath, cancellationToken).ConfigureAwait(false)).Root!;
+        JsonElement? agentState = null;
+        CopilotResponsesSession? responses = null;
         string agentPath = Path.Join(directory, "AgentSession.json");
         if (File.Exists(agentPath))
         {
             JsonNode state = JsonNode.Parse(await File.ReadAllTextAsync(agentPath, cancellationToken).ConfigureAwait(false))!;
             await TransformResourcesAsync(state, directory, true, cancellationToken).ConfigureAwait(false);
-            root.Add(new XElement("AgentSessionState", new XCData(state.ToJsonString())));
+            using JsonDocument stateDocument = JsonDocument.Parse(state.ToJsonString());
+            agentState = stateDocument.RootElement.Clone();
         }
         string responsesPath = Path.Join(directory, "ResponsesSession.json");
         if (File.Exists(responsesPath))
         {
             JsonArray items = JsonNode.Parse(await File.ReadAllTextAsync(responsesPath, cancellationToken).ConfigureAwait(false))!.AsArray();
             await TransformResourcesAsync(items, directory, true, cancellationToken).ConfigureAwait(false);
-            root.Add(new XElement("ProtocolStates", new XElement("ResponsesState",
-                items.Select(item => new XElement("Item", item!.ToJsonString())))));
+            responses = new CopilotResponsesSession();
+            foreach (JsonNode? item in items) responses.AppendItem(ResponsesSessionJsonCodec.ReadItem(item!.ToJsonString()));
         }
-        return CopilotChatHistoryXmlCodec.ReadPersistenceData(document, resources);
+        return new CopilotChatSessionPersistenceData
+        {
+            FormatVersion = (int)entry.Attribute("FormatVersion")!,
+            SessionId = Guid.Parse(entry.Attribute("SessionId")!.Value),
+            StartedTime = DateTimeOffset.Parse(entry.Attribute("StartedTime")!.Value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+            Title = (string?)entry.Attribute("Title") ?? string.Empty,
+            WorkspacePath = (string?)entry.Attribute("WorkspacePath"),
+            WorkTaskId = Guid.TryParse((string?)entry.Attribute("WorkTaskId"), out Guid taskId) ? taskId : null,
+            WorkTaskName = (string?)entry.Attribute("WorkTaskName"),
+            Entries = SessionHistoryXmlCodec.Read(document, resources),
+            AgentSessionState = agentState,
+            ResponsesSession = responses,
+        };
     }
 
     internal static async Task<bool> CompressAsync(string entryPath, CancellationToken cancellationToken)

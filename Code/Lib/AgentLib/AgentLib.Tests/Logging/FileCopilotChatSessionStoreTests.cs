@@ -35,7 +35,7 @@ public sealed class FileCopilotChatSessionStoreTests
         Console.WriteLine(directory);
         Directory.CreateDirectory(directory);
         Guid sessionId = Guid.NewGuid();
-        XElement root = CopilotChatHistoryXmlCodec.CreateRootElement(sessionId, DateTimeOffset.Now,
+        XElement root = LegacySessionXmlFixture.CreateRootElement(sessionId, DateTimeOffset.Now,
             "title", version,
             [new CopilotChatMessage(ChatRole.User, "question"),
                 new CopilotChatMessage(ChatRole.System, "legacy notice") { IsPresetInfo = true }], null);

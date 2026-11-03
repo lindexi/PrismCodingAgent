@@ -40,17 +40,10 @@ internal static class SessionStorageMigrations
     private static async Task<string> Upgrade4To5Async(string path, string sessionDirectory, CancellationToken cancellationToken)
     {
         XDocument source = await SessionDirectoryStorage.ReadXmlAsync(path, cancellationToken).ConfigureAwait(false);
-        CopilotChatSessionPersistenceData data = CopilotChatHistoryXmlCodec.ReadPersistenceData(source);
-        var resources = new SessionResources();
-        var document = new XDocument(CopilotChatHistoryXmlCodec.CreateRootElement(data.SessionId, data.StartedTime,
-            data.Title, 5, data.Entries, data.AgentSessionState, resources));
-        CopilotChatHistoryXmlCodec.AppendResponsesSession(document.Root!, data.ResponsesSession);
-        document.Root!.SetAttributeValue("WorkspacePath", data.WorkspacePath);
-        document.Root.SetAttributeValue("WorkTaskId", data.WorkTaskId);
-        document.Root.SetAttributeValue("WorkTaskName", data.WorkTaskName);
+        CopilotChatSessionPersistenceData data = LegacySessionXmlReader.Read(source);
         string entryPath = Path.Join(sessionDirectory, data.StartedTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
             data.SessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
-        await SessionDirectoryStorage.WriteAsync(entryPath, document, resources, File.GetLastWriteTimeUtc(path), cancellationToken).ConfigureAwait(false);
+        await SessionDirectoryStorage.WriteAsync(entryPath, data, File.GetLastWriteTimeUtc(path), cancellationToken).ConfigureAwait(false);
         File.Delete(path);
         return entryPath;
     }
