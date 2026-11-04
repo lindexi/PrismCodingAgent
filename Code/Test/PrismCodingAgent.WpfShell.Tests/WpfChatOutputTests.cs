@@ -55,7 +55,7 @@ public sealed class WpfChatOutputTests
         await screenshots.CaptureAsync("empty-assistant-reference-semantics");
         var parts = Descendants(content).OfType<ItemsControl>().Single();
         var bubble = (Border)VisualTreeHelper.GetParent(parts);
-        Assert.IsTrue(bubble.IsVisible && bubble.ActualHeight >= 32);
+        Assert.IsTrue(bubble.IsVisible && bubble.ActualHeight >= bubble.Padding.Top + bubble.Padding.Bottom);
         Assert.IsFalse(Descendants(parts).OfType<TextBlock>().Any(text => text.IsVisible && !string.IsNullOrEmpty(text.Text)));
         resources.Close();
     });

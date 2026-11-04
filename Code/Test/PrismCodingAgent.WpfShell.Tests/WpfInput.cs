@@ -76,12 +76,23 @@ internal static class WpfInput
 
     internal static async Task RightClickAsync(FrameworkElement target, Point? position = null)
     {
+        target.Dispatcher.VerifyAccess();
+        Window? window = Window.GetWindow(target);
+        if (window is not null)
+        {
+            window.Activate();
+            SetForegroundWindow(new WindowInteropHelper(window).Handle);
+            await WaitAsync(() => window.IsActive, "Window did not activate for right click.");
+        }
+        await target.Dispatcher.InvokeAsync(target.UpdateLayout,
+            System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         Point point = target.PointToScreen(position ?? new Point(target.ActualWidth / 2, target.ActualHeight / 2));
         if (!SetCursorPos((int)point.X, (int)point.Y))
         {
             throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         }
         await target.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        await WaitAsync(() => target.IsMouseOver, $"Cursor did not reach right-click target {target.Name}.");
         Send(new Input { Type = 0, Data = new InputUnion { Mouse = new MouseInput { Flags = 0x0008 } } },
             new Input { Type = 0, Data = new InputUnion { Mouse = new MouseInput { Flags = 0x0010 } } });
     }

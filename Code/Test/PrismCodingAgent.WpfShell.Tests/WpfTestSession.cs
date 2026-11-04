@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using PrismCodingAgent.CodingShell;
 
@@ -82,15 +83,34 @@ internal sealed class WpfTestSession : IDisposable
         }
     }
 
-    internal static void CloseWindows()
+    internal static async Task CloseWindowsAsync()
     {
         foreach (Window window in Application.Current.Windows.Cast<Window>().ToArray())
         {
-            window.Close();
-        }
-        if (Application.Current.Windows.Count != 0)
-        {
-            throw new InvalidOperationException("Test windows refused to close.");
+            var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void OnClosed(object? sender, EventArgs args) => closed.TrySetResult();
+            window.Closed += OnClosed;
+            try
+            {
+                window.Close();
+                if (!closed.Task.IsCompleted && window is MainWindow)
+                {
+                    var confirm = (Button)window.FindName("ConfirmExitButton");
+                    if (confirm.IsEnabled)
+                    {
+                        confirm.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, confirm));
+                    }
+                }
+                await closed.Task.WaitAsync(Deadline);
+            }
+            catch (TimeoutException exception)
+            {
+                throw new TimeoutException($"Test window did not complete closing: {window.GetType().FullName}; Title={window.Title}.", exception);
+            }
+            finally
+            {
+                window.Closed -= OnClosed;
+            }
         }
     }
 
@@ -105,13 +125,13 @@ internal sealed class WpfTestSession : IDisposable
             return;
         }
         int remainingWindows = -1;
-        _dispatcher.InvokeAsync(() =>
+        _dispatcher.InvokeAsync(async () =>
         {
-            CloseWindows();
+            await CloseWindowsAsync();
             remainingWindows = Application.Current.Windows.Count;
             Application.Current.Shutdown();
             _dispatcher.BeginInvokeShutdown(DispatcherPriority.Send);
-        }).Task.WaitAsync(Deadline).GetAwaiter().GetResult();
+        }).Task.Unwrap().WaitAsync(Deadline).GetAwaiter().GetResult();
         if (!_thread.Join(Deadline))
         {
             throw new TimeoutException("WPF Dispatcher did not terminate.");

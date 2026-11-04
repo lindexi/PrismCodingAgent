@@ -60,12 +60,23 @@ public sealed class WpfInfrastructureTests
         VerifyUiAccess();
         Assert.AreEqual(_initializedThread, Environment.CurrentManagedThreadId);
         Assert.AreEqual(_initializedLanguage, Lang.Current.IetfLanguageTag);
-        WpfTestSession.CloseWindows();
+        await WpfTestSession.CloseWindowsAsync();
         Assert.AreEqual(0, Application.Current.Windows.Count);
         _phase = 3;
         TestContext.WriteLine("Cleanup continuation completed");
         File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "lifecycle-evidence.txt"),
             $"{TestContext.TestName}; language={_initializedLanguage}; phase={_phase}; thread={Environment.CurrentManagedThreadId}; STA={Thread.CurrentThread.GetApartmentState()}; context={SynchronizationContext.Current?.GetType().Name}; windows={Application.Current.Windows.Count}{Environment.NewLine}");
+    });
+
+    [TestMethod]
+    public async Task WindowCleanupShouldConfirmAndAwaitMainWindowClose() => await OnUiAsync(async () =>
+    {
+        var window = new MainWindow();
+        window.Show();
+
+        await WpfTestSession.CloseWindowsAsync();
+
+        Assert.AreEqual(0, Application.Current.Windows.Count);
     });
 
     /// <summary>Checks that awaits resume on the initialized STA Dispatcher.</summary>

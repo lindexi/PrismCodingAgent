@@ -95,7 +95,7 @@ public sealed class WpfMessageCopyTests
             await screenshots.CaptureAsync("bubble-copy-public-projection");
             var bubble = Descendants(content).OfType<Border>().Single(border => border.ContextMenu is not null);
             Clipboard.SetText("body-sentinel");
-            await WpfInput.RightClickAsync(bubble, new Point(8, 8));
+            await WpfInput.RightClickAsync(bubble, new Point(bubble.ActualWidth - 4, 4));
             await WpfInput.WaitAsync(() => bubble.ContextMenu.IsOpen, "Bubble menu did not open.");
             var menu = bubble.ContextMenu;
             await screenshots.CaptureSurfaceAsync(menu, "bubble-copy-menu");
@@ -103,7 +103,7 @@ public sealed class WpfMessageCopyTests
             await WpfInput.WaitAsync(() => !menu.IsOpen, "Body copy menu did not close.");
             Assert.AreEqual("Exact body / 精确正文\r\nSecond line", WpfInput.ReadClipboard(TestContext), "Exact body copy failed; no retry.");
             Clipboard.SetText("full-sentinel");
-            await WpfInput.RightClickAsync(bubble, new Point(8, 8));
+            await WpfInput.RightClickAsync(bubble, new Point(bubble.ActualWidth - 4, 4));
             await WpfInput.WaitAsync(() => menu.IsOpen, "Full message menu did not open.");
             await WpfInput.ClickAsync((MenuItem)menu.Items[1]);
             await WpfInput.WaitAsync(() => !menu.IsOpen, "Full copy menu did not close.");

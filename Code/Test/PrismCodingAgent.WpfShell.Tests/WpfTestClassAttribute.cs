@@ -65,9 +65,9 @@ internal sealed class WpfTestClassAttribute : TestClassAttribute
                 {
                     try
                     {
-                        WpfTestSession.CloseWindows();
+                        await WpfTestSession.CloseWindowsAsync();
                     }
-                    catch (InvalidOperationException exception)
+                    catch (Exception exception) when (exception is InvalidOperationException or TimeoutException)
                     {
                         results.Add(new TestResult
                         {

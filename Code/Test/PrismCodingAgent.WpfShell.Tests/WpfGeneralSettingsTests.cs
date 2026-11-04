@@ -193,9 +193,8 @@ public sealed class WpfGeneralSettingsTests
                 }
                 input.BringIntoView();
                 await WpfInput.ClickAsync(masked);
-                WpfInput.Key(0x24);
-                int length = masked.Password.Length;
-                for (int i = 0; i < length; i++) WpfInput.Key(0x2E);
+                WpfInput.ControlKey(0x41);
+                WpfInput.Key(0x2E);
                 WpfInput.Text(pass == 0 ? secret : "");
                 await WpfInput.WaitAsync(() => string.Equals(vm.DeepSeekApiKey ?? "", pass == 0 ? secret : "", StringComparison.Ordinal), "Independent key input mismatch.");
                 await WpfInput.ClickAsync(reveal);
@@ -207,6 +206,7 @@ public sealed class WpfGeneralSettingsTests
                 Assert.IsFalse(revealed.IsVisible);
                 Assert.IsTrue(string.IsNullOrEmpty(revealed.Text), "Hidden plaintext must be cleared.");
                 await screenshots.CaptureAsync($"pass-{pass}-key-masked");
+                enabled.BringIntoView();
                 await ToggleAsync(enabled);
                 Assert.AreEqual(pass == 0, path.IsEnabled);
                 if (pass == 0)
