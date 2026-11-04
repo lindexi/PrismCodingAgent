@@ -492,9 +492,9 @@ public sealed class CodingAgentTests
         Assert.AreEqual("完成", await nextRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
     }
 
-    [TestMethod(DisplayName = "并发释放调用应等待同一个活动运行")]
+    [TestMethod(DisplayName = "释放应取消关联运行")]
     [Timeout(10000)]
-    public async Task DisposeAsyncShouldReturnSamePendingLifetime()
+    public async Task DisposeAsyncShouldCancelAssociatedRun()
     {
         var streamStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseStream = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -514,11 +514,9 @@ public sealed class CodingAgentTests
             "workspace");
         await streamStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
-        Task firstDispose = agent.DisposeAsync().AsTask();
-        Task secondDispose = agent.DisposeAsync().AsTask();
+        await agent.DisposeAsync();
 
         releaseStream.TrySetResult();
-        await Task.WhenAll(firstDispose, secondDispose).WaitAsync(TimeSpan.FromSeconds(2));
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await run.CompletionTask);
     }
 

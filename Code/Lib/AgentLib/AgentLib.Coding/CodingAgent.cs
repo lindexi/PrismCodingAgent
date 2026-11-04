@@ -18,9 +18,7 @@ public sealed class CodingAgent : IAsyncDisposable
     private readonly SemaphoreSlim _workspaceCacheGate = new(1, 1);
     private readonly string? _copilotInstructionsPath;
     private CodingWorkspaceCache? _workspaceCache;
-    private readonly object _disposeSync = new();
     private readonly CancellationTokenSource _disposeCancellationTokenSource = new();
-    private Task? _disposeTask;
     private int _isDisposed;
 
     /// <summary>
@@ -251,18 +249,9 @@ public sealed class CodingAgent : IAsyncDisposable
     }
 
     /// <summary>
-    /// 异步取消活动运行，并在它们完成清理后释放工作区缓存。
+    /// 取消关联运行并释放工作区资源；调用方负责先停止并等待运行结束。
     /// </summary>
-    public ValueTask DisposeAsync()
-    {
-        lock (_disposeSync)
-        {
-            _disposeTask ??= DisposeCoreAsync();
-            return new ValueTask(_disposeTask);
-        }
-    }
-
-    private async Task DisposeCoreAsync()
+    public async ValueTask DisposeAsync()
     {
         Volatile.Write(ref _isDisposed, 1);
         try
