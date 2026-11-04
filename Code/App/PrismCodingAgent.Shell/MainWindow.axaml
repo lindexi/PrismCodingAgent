@@ -44,7 +44,8 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
                         <Button x:Name="CancelExitButton" Click="OnCancelExit" IsDefault="False"
                                 Content="{Binding ExitCancelText, Source={x:Static localizations:Lang.Current}}" />
-                        <Button x:Name="ConfirmExitButton" Classes="Danger Primary" Click="OnConfirmExit" IsDefault="False"
+                        <Button x:Name="ConfirmExitButton" Classes="Danger Primary" Click="OnConfirmExit"
+                                IsDefault="False"
                                 Content="{Binding ExitConfirmText, Source={x:Static localizations:Lang.Current}}" />
                     </StackPanel>
                 </StackPanel>

@@ -1,32 +1,68 @@
 <UserControl x:Class="PrismCodingAgent.CodingShell.Views.OpenAIModelCatalogView"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations">
- <UserControl.Resources>
-  <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Background" Value="#F0F0F0"/><Setter Property="MinHeight" Value="32"/></Style>
- </UserControl.Resources>
- <StackPanel x:Name="CatalogPanel">
-  <DockPanel Margin="0,0,0,12">
-   <Button x:Name="DiscoverButton" DockPanel.Dock="Right" Content="{Binding SetupDiscoverAction, Source={x:Static l:Lang.Current}}" Command="{Binding LoadCommand}"/>
-   <TextBlock Text="{Binding SetupModelsLabel, Source={x:Static l:Lang.Current}}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-  </DockPanel>
-  <ProgressBar x:Name="CatalogProgress" Height="3" IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource BooleanVisibility}}"/>
-  <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><ItemsControl ItemsSource="{Binding Models}">
-   <ItemsControl.ItemTemplate><DataTemplate><DockPanel Margin="0,4">
-    <Button DockPanel.Dock="Right" Content="{Binding SetupAddModel, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.AddCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
-    <TextBlock Text="{Binding}" TextWrapping="Wrap" ToolTip="{Binding}" VerticalAlignment="Center"/>
-   </DockPanel></DataTemplate></ItemsControl.ItemTemplate>
-  </ItemsControl></ScrollViewer>
-  <TextBlock Text="{Binding SetupManualHint, Source={x:Static l:Lang.Current}}" TextWrapping="Wrap" Margin="0,12"/>
-  <Grid>
-   <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-   <Button Grid.Column="1" x:Name="AddManualButton" VerticalAlignment="Center" Height="32" DockPanel.Dock="Right" Margin="12,0,0,0" Content="{Binding SetupAddModel, Source={x:Static l:Lang.Current}}" Command="{Binding AddManualCommand}"/>
-   <Grid>
-    <TextBox x:Name="ManualModelId" Height="38" MinHeight="38" Text="{Binding ModelId, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{Binding SetupModelIdText, Source={x:Static l:Lang.Current}}"/>
-    <TextBlock Margin="11,0" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" IsHitTestVisible="False" Text="{Binding SetupModelIdText, Source={x:Static l:Lang.Current}}">
-     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding ModelId}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-    </TextBlock>
-   </Grid>
-  </Grid>
-  <TextBlock x:Name="CatalogStatus" AutomationProperties.LiveSetting="Polite" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,12,0,0" FontSize="11" MinHeight="15" Foreground="{StaticResource TextSecondaryBrush}"/>
- </StackPanel>
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations">
+    <UserControl.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#F0F0F0" /><Setter Property="MinHeight" Value="32" />
+        </Style>
+    </UserControl.Resources>
+    <StackPanel x:Name="CatalogPanel">
+        <DockPanel Margin="0,0,0,12">
+            <Button x:Name="DiscoverButton" DockPanel.Dock="Right"
+                    Content="{Binding SetupDiscoverAction, Source={x:Static l:Lang.Current}}"
+                    Command="{Binding LoadCommand}" />
+            <TextBlock Text="{Binding SetupModelsLabel, Source={x:Static l:Lang.Current}}" FontSize="16"
+                       FontWeight="SemiBold" VerticalAlignment="Center" />
+        </DockPanel>
+        <ProgressBar x:Name="CatalogProgress" Height="3" IsIndeterminate="True"
+                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanVisibility}}" />
+        <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Models}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="0,4">
+                            <Button DockPanel.Dock="Right"
+                                    Content="{Binding SetupAddModel, Source={x:Static l:Lang.Current}}"
+                                    Command="{Binding DataContext.AddCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}" />
+                            <TextBlock Text="{Binding}" TextWrapping="Wrap" ToolTip="{Binding}"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        <TextBlock Text="{Binding SetupManualHint, Source={x:Static l:Lang.Current}}" TextWrapping="Wrap" Margin="0,12" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition /><ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" x:Name="AddManualButton" VerticalAlignment="Center" Height="32"
+                    DockPanel.Dock="Right" Margin="12,0,0,0"
+                    Content="{Binding SetupAddModel, Source={x:Static l:Lang.Current}}"
+                    Command="{Binding AddManualCommand}" />
+            <Grid>
+                <TextBox x:Name="ManualModelId" Height="38" MinHeight="38"
+                         Text="{Binding ModelId, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="{Binding SetupModelIdText, Source={x:Static l:Lang.Current}}" />
+                <TextBlock Margin="11,0" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"
+                           IsHitTestVisible="False" Text="{Binding SetupModelIdText, Source={x:Static l:Lang.Current}}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ModelId}" Value="">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </Grid>
+        <TextBlock x:Name="CatalogStatus" AutomationProperties.LiveSetting="Polite" Text="{Binding Status}"
+                   TextWrapping="Wrap" Margin="0,12,0,0" FontSize="11" MinHeight="15"
+                   Foreground="{StaticResource TextSecondaryBrush}" />
+    </StackPanel>
 </UserControl>

@@ -5,22 +5,34 @@
         Title="{Binding StartupFailureTitle, Source={x:Static l:Lang.Current}}"
         Width="760" Height="520" MinWidth="560" MinHeight="360" WindowStartupLocation="CenterScreen">
     <Grid Margin="20">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <TextBlock Text="{Binding StartupFailureTitle, Source={x:Static l:Lang.Current}}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,12"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="{Binding StartupFailureTitle, Source={x:Static l:Lang.Current}}" FontSize="22"
+                   FontWeight="Bold" Foreground="{StaticResource ErrorBrush}" Margin="0,0,0,12" />
         <StackPanel Grid.Row="1" Margin="0,0,0,12">
-            <TextBlock Text="{Binding ConfigurationFile, Source={x:Static l:Lang.Current}}"/>
-            <TextBlock Text="{Binding ConfigurationFilePath}" TextWrapping="Wrap" FontFamily="Consolas" Margin="0,4,0,0"/>
-            <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource ErrorBrush}" Margin="0,12,0,0"/>
+            <TextBlock Text="{Binding ConfigurationFile, Source={x:Static l:Lang.Current}}" />
+            <TextBlock Text="{Binding ConfigurationFilePath}" TextWrapping="Wrap" FontFamily="Consolas"
+                       Margin="0,4,0,0" />
+            <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="{StaticResource ErrorBrush}"
+                       Margin="0,12,0,0" />
         </StackPanel>
-        <TextBox Grid.Row="2" Text="{Binding ErrorDetails, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" VerticalContentAlignment="Top" Padding="10,6,6,5" BorderBrush="#999999" FontFamily="Consolas" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <TextBox Grid.Row="2" Text="{Binding ErrorDetails, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True"
+                 TextWrapping="NoWrap" VerticalContentAlignment="Top" Padding="10,6,6,5" BorderBrush="#999999"
+                 FontFamily="Consolas" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <TextBox.Template>
                 <ControlTemplate TargetType="TextBox">
-                    <Border CornerRadius="4" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                        <ScrollViewer x:Name="PART_ContentHost"/>
+                    <Border CornerRadius="4" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ScrollViewer x:Name="PART_ContentHost" />
                     </Border>
                 </ControlTemplate>
             </TextBox.Template>
         </TextBox>
-        <Button x:Name="ExitButton" Grid.Row="3" Content="{Binding ExitText, Source={x:Static l:Lang.Current}}" Command="{Binding ExitCommand}" HorizontalAlignment="Right" Foreground="{StaticResource ErrorBrush}" Background="#33000000" Padding="16,6" Margin="0,12,0,0"/>
+        <Button x:Name="ExitButton" Grid.Row="3" Content="{Binding ExitText, Source={x:Static l:Lang.Current}}"
+                Command="{Binding ExitCommand}" HorizontalAlignment="Right" Foreground="{StaticResource ErrorBrush}"
+                Background="#33000000" Padding="16,6" Margin="0,12,0,0" />
     </Grid>
 </Window>
