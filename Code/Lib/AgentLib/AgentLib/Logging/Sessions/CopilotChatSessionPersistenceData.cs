@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions;
 
 /// <summary>
 /// 表示从持久化存储读取的 Copilot 会话数据。

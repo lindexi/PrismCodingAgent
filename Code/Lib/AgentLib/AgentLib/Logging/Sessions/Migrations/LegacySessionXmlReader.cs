@@ -1,10 +1,12 @@
+using AgentLib.Logging.Sessions;
+using AgentLib.Logging.Sessions.Codecs;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using System.Globalization;
 using System.Text.Json;
 using System.Xml.Linq;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions.Migrations;
 
 internal static class LegacySessionXmlReader
 {

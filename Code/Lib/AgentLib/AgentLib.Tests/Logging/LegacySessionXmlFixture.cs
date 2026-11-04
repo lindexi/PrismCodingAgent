@@ -1,3 +1,5 @@
+using AgentLib.Logging.Sessions;
+using AgentLib.Logging.Sessions.Codecs;
 using AgentLib.Model;
 using System.Text.Json;
 using System.Xml.Linq;

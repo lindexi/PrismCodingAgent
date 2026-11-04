@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -30,7 +31,7 @@ public sealed class WpfStartupRecoveryTests
             new { Id = first, DisplayName = "Configured task", WorkspacePath = workspace, ModelReference = "test/demo", ReasoningEffort = ReasoningEffort.High, IsArchived = false },
             new { Id = second, DisplayName = "Independent task", WorkspacePath = workspace, ModelReference = "test/demo", ReasoningEffort = ReasoningEffort.Low, IsArchived = false },
         }));
-        var store = new AgentLib.Logging.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
         var sessions = new List<CopilotChatSession>();
         foreach (var (taskId, title) in new[] { (first, "First conversation"), (first, "Second conversation"), (second, "Other task conversation") })
         {

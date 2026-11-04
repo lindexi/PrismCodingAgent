@@ -1,3 +1,5 @@
+using AgentLib.Logging.Sessions;
+using AgentLib.Logging.Sessions.Migrations;
 using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;

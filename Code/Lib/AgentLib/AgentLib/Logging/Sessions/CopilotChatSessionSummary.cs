@@ -1,6 +1,6 @@
 using System;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions;
 
 /// <summary>
 /// 表示持久化 Copilot 会话的列表摘要。

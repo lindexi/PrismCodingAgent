@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -110,7 +111,7 @@ public sealed class WpfStartupTests
         session.SetTitle("Persisted conversation");
         await session.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.User, "Persisted question"));
         await session.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, "Persisted answer"));
-        var store = new AgentLib.Logging.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
         await store.SaveSessionAsync(session, null);
         var window = (MainWindow)await ((App)Application.Current).OpenAsync(["--data-directory", root]);
         var model = (MainViewModel)window.DataContext;

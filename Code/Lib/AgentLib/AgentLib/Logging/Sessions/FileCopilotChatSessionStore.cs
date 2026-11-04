@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions.Migrations;
 using AgentLib.Core;
 using AgentLib.Model;
 using System;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions;
 
 /// <summary>
 /// 在显式目录中保存、列出、加载和删除 Copilot 聊天会话。

@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -665,7 +666,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         HistoryOrganizationResult = Lang.Current.HistoryOrganizingText;
         try
         {
-            var store = new AgentLib.Logging.FileCopilotChatSessionStore(runtime.Paths.SessionDirectory.FullName);
+            var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(runtime.Paths.SessionDirectory.FullName);
             var result = await store.OrganizeAsync().ConfigureAwait(true);
             HistoryOrganizationResult = Localizations.Lang.Format(Lang.Current.HistoryOrganizedText, result.Upgraded, result.Compressed);
         }

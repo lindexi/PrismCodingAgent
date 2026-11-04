@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -207,7 +208,7 @@ public sealed class WpfTaskMenuTests
             Assert.IsTrue(restored.IsArchiveEmpty);
             await reopenedScreenshots.CaptureAsync("saved-tasks-reopened");
             WorkTaskItemViewModel target = restored.WorkTasks[0];
-            var store = new AgentLib.Logging.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
+            var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
             var history = new AgentLib.Model.CopilotChatSession { WorkTaskId = target.Id, WorkTaskName = target.DisplayName };
             history.SetTitle("Retained task history");
             await history.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.User, "Retained task history"));

@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions;
 
 internal sealed class SessionResources
 {

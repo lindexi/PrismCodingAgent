@@ -1,7 +1,8 @@
+using AgentLib.Logging.Sessions;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions.Migrations;
 
 internal static class SessionStorageMigrations
 {

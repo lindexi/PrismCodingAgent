@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

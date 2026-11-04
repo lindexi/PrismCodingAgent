@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions.Codecs;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using System.Globalization;
@@ -6,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions;
 
 internal static class SessionDirectoryStorage
 {

@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Core.AgentApiManagers.Contexts;

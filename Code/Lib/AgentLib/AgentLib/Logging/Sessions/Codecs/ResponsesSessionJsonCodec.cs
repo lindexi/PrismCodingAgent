@@ -4,7 +4,7 @@ using OpenAI.Responses;
 
 #pragma warning disable OPENAI001, SCME0001
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions.Codecs;
 
 internal static class ResponsesSessionJsonCodec
 {

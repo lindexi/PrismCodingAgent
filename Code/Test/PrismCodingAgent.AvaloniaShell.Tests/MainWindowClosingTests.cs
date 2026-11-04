@@ -1,3 +1,4 @@
+using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
 using Avalonia.Controls;
@@ -235,8 +236,8 @@ public sealed class MainWindowClosingTests
 
     private sealed class EmptySessionStore : ICodingChatSessionStore
     {
-        public Task<IReadOnlyList<AgentLib.Logging.CopilotChatSessionSummary>> ListSessionsAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult<IReadOnlyList<AgentLib.Logging.CopilotChatSessionSummary>>([]);
+        public Task<IReadOnlyList<AgentLib.Logging.Sessions.CopilotChatSessionSummary>> ListSessionsAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<AgentLib.Logging.Sessions.CopilotChatSessionSummary>>([]);
         public Task<AgentLib.Model.CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)

@@ -1,9 +1,10 @@
+using AgentLib.Logging.Sessions;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace AgentLib.Logging;
+namespace AgentLib.Logging.Sessions.Codecs;
 
 internal static class SessionHistoryXmlCodec
 {
