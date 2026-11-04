@@ -1,8 +1,7 @@
 <UserControl x:Class="PrismCodingAgent.CodingShell.Views.ArchivedWorkTasksView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
-             xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations">
+             xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations">
     <Border Background="{StaticResource BackgroundBrush}" Padding="16">
         <Grid>
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>

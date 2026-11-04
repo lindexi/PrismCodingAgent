@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
-        xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
         xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views"
         Width="1440" Height="900" MinWidth="1280" MinHeight="720"
         Icon="Assets/Icons/CodingChatRoom.ico" WindowStartupLocation="CenterScreen" PreviewKeyDown="OnExitKeyDown">

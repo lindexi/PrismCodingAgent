@@ -2,8 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:views="using:PrismCodingAgent.CodingShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
-             xmlns:localizations1="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
-             xmlns:views1="clr-namespace:PrismCodingAgent.CodingShell.Views"
              x:Class="PrismCodingAgent.CodingShell.Views.ModelServiceConnectionView"
              x:DataType="vm:ProviderSettingsViewModel"
              FontFamily="{StaticResource ShellFont}" FontSize="13">
@@ -21,16 +19,16 @@
     </UserControl.Styles>
     <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
         <StackPanel Spacing="6">
-            <TextBlock Text="{Binding SetupEndpointText, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsLabel" />
+            <TextBlock Text="{Binding SetupEndpointText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
             <TextBox Text="{Binding EndPoint, UpdateSourceTrigger=PropertyChanged}" Classes="Rounded SettingsInput"
                      FontSize="13" PlaceholderText="https://api.openai.com/v1" />
-            <TextBlock Text="{Binding SetupEndpointHint, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SetupEndpointHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
         </StackPanel>
         <StackPanel Grid.Column="1" Spacing="6">
-            <TextBlock Text="{Binding SetupKeyText, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsLabel" />
-            <views1:SecretInput Text="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            <TextBlock Text="{Binding SetupKeyText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
+            <views:SecretInput Text="{Binding ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                Classes="Rounded SettingsInput" FontSize="13" />
-            <TextBlock Text="{Binding SetupKeyHint, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SetupKeyHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
         </StackPanel>
     </Grid>
 </UserControl>

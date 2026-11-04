@@ -2,28 +2,25 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:views="using:PrismCodingAgent.CodingShell.Views"
-             xmlns:views2="clr-namespace:PrismCodingAgent.CodingShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
-             xmlns:localizations1="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
-             xmlns:views1="clr-namespace:PrismCodingAgent.CodingShell.Views"
              x:Class="PrismCodingAgent.CodingShell.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
     <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource SettingsBackgroundBrush}">
         <Border Grid.Row="0" Classes="SettingsHeader" Padding="32,24,32,16">
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="20" HorizontalAlignment="Stretch">
                 <Button Classes="SettingsBack"
-                        Content="{Binding BackArrowText, Source={x:Static localizations1:Lang.Current}}"
-                        ToolTip.Tip="{Binding BackToChatText, Source={x:Static localizations1:Lang.Current}}"
+                        Content="{Binding BackArrowText, Source={x:Static localizations:Lang.Current}}"
+                        ToolTip.Tip="{Binding BackToChatText, Source={x:Static localizations:Lang.Current}}"
                         Command="{Binding BackCommand}"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsPageTitle" />
-                    <TextBlock Text="{Binding SettingsSubtitle, Source={x:Static localizations1:Lang.Current}}" Classes="Subtitle" />
+                    <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsPageTitle" />
+                    <TextBlock Text="{Binding SettingsSubtitle, Source={x:Static localizations:Lang.Current}}" Classes="Subtitle" />
                 </StackPanel>
                 <Button Grid.Column="2"
                         Classes="Primary accent SaveSettings"
-                        Content="{Binding SaveChangesText, Source={x:Static localizations1:Lang.Current}}"
+                        Content="{Binding SaveChangesText, Source={x:Static localizations:Lang.Current}}"
                         Command="{Binding SaveCommand}"
                         IsEnabled="{Binding !IsBusy}"
                         HorizontalAlignment="Right"
@@ -37,16 +34,16 @@
                         HorizontalAlignment="Stretch">
                 <Border Classes="SettingsCard" Padding="24">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="{Binding LanguageText, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsSectionTitle" />
+                        <TextBlock Text="{Binding LanguageText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
                         <ComboBox x:Name="LanguageSelector" ItemsSource="{Binding LanguageTags}" SelectedItem="{Binding LanguageTag, Mode=TwoWay}" />
-                        <TextBlock Text="{Binding LanguageHint, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding LanguageHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
                 <Border Classes="SettingsCard" Padding="24">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="{Binding DeepSeekApiKeyText, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <views1:SecretInput x:Name="DeepSeekApiKeyInput" Text="{Binding DeepSeekApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Text="{Binding DeepSeekApiKeyHint, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding DeepSeekApiKeyText, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                        <views:SecretInput x:Name="DeepSeekApiKeyInput" Text="{Binding DeepSeekApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="{Binding DeepSeekApiKeyHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
                 <Border Classes="SettingsIntro" Padding="18" IsVisible="False">
@@ -59,17 +56,17 @@
                                        VerticalAlignment="Center" />
                         </Border>
                         <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding WorkspaceConfiguration, Source={x:Static localizations1:Lang.Current}}" Classes="Eyebrow" />
-                            <TextBlock Text="{Binding WorkspaceConfigurationDescription, Source={x:Static localizations1:Lang.Current}}"
+                            <TextBlock Text="{Binding WorkspaceConfiguration, Source={x:Static localizations:Lang.Current}}" Classes="Eyebrow" />
+                            <TextBlock Text="{Binding WorkspaceConfigurationDescription, Source={x:Static localizations:Lang.Current}}"
                                        FontSize="15"
                                        FontWeight="SemiBold"
                                        Foreground="#22313F" />
-                            <TextBlock Text="{Binding WorkspaceConfigurationHint, Source={x:Static localizations1:Lang.Current}}"
+                            <TextBlock Text="{Binding WorkspaceConfigurationHint, Source={x:Static localizations:Lang.Current}}"
                                        Classes="SettingsHint"
                                        TextWrapping="Wrap" />
                         </StackPanel>
                         <Border Grid.Column="2" Classes="SectionTag" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding ReloadRequired, Source={x:Static localizations1:Lang.Current}}"
+                            <TextBlock Text="{Binding ReloadRequired, Source={x:Static localizations:Lang.Current}}"
                                        FontSize="11"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource PrimaryDarkBrush}" />
@@ -89,15 +86,15 @@
                                            VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
-                                <TextBlock Text="{Binding SandboxTitle, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsSectionTitle" />
-                                <TextBlock Text="{Binding SandboxDescription, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding SandboxTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                                <TextBlock Text="{Binding SandboxDescription, Source={x:Static localizations:Lang.Current}}"
                                            Classes="Subtitle"
                                            TextWrapping="Wrap" />
                             </StackPanel>
                             <ToggleSwitch Grid.Column="2"
                                           IsChecked="{Binding IsWindowsSandboxEnabled}"
-                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations1:Lang.Current}}"
-                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations1:Lang.Current}}"
+                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}"
                                           VerticalAlignment="Center" />
                         </Grid>
 
@@ -107,7 +104,7 @@
                                            FontWeight="Bold"
                                            Foreground="{StaticResource SandboxAccentBrush}" />
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding SandboxTrustHint, Source={x:Static localizations1:Lang.Current}}"
+                                           Text="{Binding SandboxTrustHint, Source={x:Static localizations:Lang.Current}}"
                                            TextWrapping="Wrap"
                                            Foreground="{StaticResource SandboxTextBrush}" />
                             </Grid>
@@ -115,22 +112,22 @@
 
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="16" IsEnabled="{Binding IsWindowsSandboxEnabled}">
                             <StackPanel Spacing="6">
-                                <TextBlock Text="{Binding SandboxToolPath, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsLabel" />
+                                <TextBlock Text="{Binding SandboxToolPath, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
                                 <TextBox Classes="Rounded SettingsInput"
                                          Text="{Binding WindowsSandboxToolPath}"
                                          PlaceholderText="C:\Tools\WinRemoteShell.exe" />
-                                <TextBlock Text="{Binding SandboxToolHint, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding SandboxToolHint, Source={x:Static localizations:Lang.Current}}"
                                            Classes="SettingsHint"
                                            TextWrapping="Wrap" />
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Text="{Binding SandboxAddress, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsLabel" />
+                                <TextBlock Text="{Binding SandboxAddress, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
                                 <TextBox Classes="Rounded SettingsInput"
                                          Text="{Binding WindowsSandboxServerAddress}"
                                          PlaceholderText="127.0.0.1:12399"
                                          LostFocus="OnWindowsSandboxServerAddressLostFocus" />
-                                <TextBlock Text="{Binding SandboxAddressHint, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding SandboxAddressHint, Source={x:Static localizations:Lang.Current}}"
                                            Classes="SettingsHint"
                                            TextWrapping="Wrap" />
                                 <Grid ColumnDefinitions="Auto,*"
@@ -168,34 +165,34 @@
                                            VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
-                                <TextBlock Text="{Binding NetworkProxySettingsTitle, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding NetworkProxySettingsTitle, Source={x:Static localizations:Lang.Current}}"
                                            Classes="SettingsSectionTitle" />
-                                <TextBlock Text="{Binding NetworkProxySettingsDescription, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding NetworkProxySettingsDescription, Source={x:Static localizations:Lang.Current}}"
                                            Classes="Subtitle"
                                            TextWrapping="Wrap" />
                             </StackPanel>
                             <ToggleSwitch Grid.Column="2"
                                           IsChecked="{Binding IsNetworkProxyEnabled}"
-                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations1:Lang.Current}}"
-                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations1:Lang.Current}}"
+                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}"
                                           VerticalAlignment="Center" />
                         </Grid>
 
                         <StackPanel Spacing="14" IsEnabled="{Binding IsNetworkProxyEnabled}">
                             <StackPanel Spacing="6">
-                                <TextBlock Text="{Binding NetworkProxyAddressLabel, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsLabel" />
+                                <TextBlock Text="{Binding NetworkProxyAddressLabel, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
                                 <TextBox Classes="Rounded SettingsInput"
                                          Text="{Binding NetworkProxyAddress}"
-                                         PlaceholderText="{Binding NetworkProxyAddressPlaceholder, Source={x:Static localizations1:Lang.Current}}" />
-                                <TextBlock Text="{Binding NetworkProxyAddressHint, Source={x:Static localizations1:Lang.Current}}"
+                                         PlaceholderText="{Binding NetworkProxyAddressPlaceholder, Source={x:Static localizations:Lang.Current}}" />
+                                <TextBlock Text="{Binding NetworkProxyAddressHint, Source={x:Static localizations:Lang.Current}}"
                                            Classes="SettingsHint"
                                            TextWrapping="Wrap" />
                             </StackPanel>
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                 <CheckBox IsChecked="{Binding BypassProxyOnLocal}"
-                                          Content="{Binding BypassProxyOnLocalText, Source={x:Static localizations1:Lang.Current}}" />
+                                          Content="{Binding BypassProxyOnLocalText, Source={x:Static localizations:Lang.Current}}" />
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding BypassProxyOnLocalHint, Source={x:Static localizations1:Lang.Current}}"
+                                           Text="{Binding BypassProxyOnLocalHint, Source={x:Static localizations:Lang.Current}}"
                                            Classes="SettingsHint"
                                            TextWrapping="Wrap"
                                            VerticalAlignment="Center" />
@@ -216,9 +213,9 @@
                                            VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
-                                <TextBlock Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations:Lang.Current}}"
                                            Classes="SettingsSectionTitle" />
-                                <TextBlock Text="{Binding LanguageServerSettingsDescription, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding LanguageServerSettingsDescription, Source={x:Static localizations:Lang.Current}}"
                                            Classes="Subtitle"
                                            TextWrapping="Wrap" />
                             </StackPanel>
@@ -227,15 +224,15 @@
                                         Spacing="8"
                                         VerticalAlignment="Center">
                                 <Button Classes="Primary accent"
-                                        Content="{Binding InstallOrUpdateLanguageServerText, Source={x:Static localizations1:Lang.Current}}"
+                                        Content="{Binding InstallOrUpdateLanguageServerText, Source={x:Static localizations:Lang.Current}}"
                                         Click="OnInstallOrUpdateLanguageServerClick" />
-                                <Button Content="{Binding CopyLanguageServerInstallCommandText, Source={x:Static localizations1:Lang.Current}}"
-                                        ToolTip.Tip="{Binding CopyLanguageServerInstallCommandToolTip, Source={x:Static localizations1:Lang.Current}}"
+                                <Button Content="{Binding CopyLanguageServerInstallCommandText, Source={x:Static localizations:Lang.Current}}"
+                                        ToolTip.Tip="{Binding CopyLanguageServerInstallCommandToolTip, Source={x:Static localizations:Lang.Current}}"
                                         Click="OnCopyLanguageServerInstallCommandClick" />
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="{Binding LanguageServerInstallHint, Source={x:Static localizations1:Lang.Current}}"
+                        <TextBlock Text="{Binding LanguageServerInstallHint, Source={x:Static localizations:Lang.Current}}"
                                    Classes="SettingsHint"
                                    TextWrapping="Wrap" />
                     </StackPanel>
@@ -253,24 +250,24 @@
                                            VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Spacing="3">
-                                <TextBlock Text="{Binding InstructionsTitle, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsSectionTitle" />
-                                <TextBlock Text="{Binding InstructionsDescription, Source={x:Static localizations1:Lang.Current}}"
+                                <TextBlock Text="{Binding InstructionsTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                                <TextBlock Text="{Binding InstructionsDescription, Source={x:Static localizations:Lang.Current}}"
                                            Classes="Subtitle"
                                            TextWrapping="Wrap" />
                             </StackPanel>
                             <ToggleSwitch Grid.Column="2"
                                           IsChecked="{Binding IsCopilotInstructionsEnabled}"
-                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations1:Lang.Current}}"
-                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations1:Lang.Current}}"
+                                          OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                          OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}"
                                           VerticalAlignment="Center" />
                         </Grid>
 
                         <StackPanel Spacing="6" IsEnabled="{Binding IsCopilotInstructionsEnabled}">
-                            <TextBlock Text="{Binding InstructionsPath, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsLabel" />
+                            <TextBlock Text="{Binding InstructionsPath, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" />
                             <TextBox Classes="Rounded SettingsInput"
                                      Text="{Binding CopilotInstructionsPath}"
-                                     PlaceholderText="{Binding InstructionsPlaceholder, Source={x:Static localizations1:Lang.Current}}" />
-                            <TextBlock Text="{Binding InstructionsHint, Source={x:Static localizations1:Lang.Current}}"
+                                     PlaceholderText="{Binding InstructionsPlaceholder, Source={x:Static localizations:Lang.Current}}" />
+                            <TextBlock Text="{Binding InstructionsHint, Source={x:Static localizations:Lang.Current}}"
                                        Classes="SettingsHint"
                                        TextWrapping="Wrap" />
                         </StackPanel>
@@ -279,9 +276,9 @@
 
                 <Border Classes="SettingsCard" Padding="24">
                     <StackPanel Spacing="16">
-                        <TextBlock Text="{Binding ModelConfigurationTitle, Source={x:Static localizations1:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <TextBox Text="{Binding PrimaryModel}" PlaceholderText="{Binding DefaultModelHint, Source={x:Static localizations1:Lang.Current}}" Classes="Rounded SettingsInput" />
-                        <views1:ModelSettingsView />
+                        <TextBlock Text="{Binding ModelConfigurationTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                        <TextBox Text="{Binding PrimaryModel}" PlaceholderText="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" Classes="Rounded SettingsInput" />
+                        <views:ModelSettingsView />
                     </StackPanel>
                 </Border>
 

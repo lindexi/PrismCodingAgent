@@ -1,7 +1,6 @@
 <UserControl x:Class="PrismCodingAgent.CodingShell.Views.ModelSettingsView"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
- xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
  xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views"
  FontSize="14" TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
  <UserControl.Resources>
