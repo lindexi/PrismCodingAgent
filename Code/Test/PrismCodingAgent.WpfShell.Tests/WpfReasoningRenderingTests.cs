@@ -5,7 +5,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 

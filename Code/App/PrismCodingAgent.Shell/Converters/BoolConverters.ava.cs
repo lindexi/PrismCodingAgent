@@ -4,7 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 
-namespace PrismCodingAgent.AvaloniaShell.Converters;
+namespace PrismCodingAgent.CodingShell.Converters;
 
 /// <summary>
 /// 将布尔值取反。

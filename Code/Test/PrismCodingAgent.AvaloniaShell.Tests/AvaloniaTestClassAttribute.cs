@@ -2,7 +2,8 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Headless;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.CodingShell;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

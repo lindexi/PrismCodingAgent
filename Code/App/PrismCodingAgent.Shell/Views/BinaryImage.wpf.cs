@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>以等比例居中方式显示二进制图片；无效数据不显示图片。</summary>
 public sealed class BinaryImage : Image

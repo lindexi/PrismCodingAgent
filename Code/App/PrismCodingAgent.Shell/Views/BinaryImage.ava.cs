@@ -5,7 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>
 /// 显示来自 <see cref="BinaryData"/> 的图片内容。

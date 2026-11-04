@@ -4,8 +4,11 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.Views;
+using ArchivedWorkTasksView = PrismCodingAgent.CodingShell.Views.ArchivedWorkTasksView;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
+using MainView = PrismCodingAgent.CodingShell.Views.MainView;
+using SessionListView = PrismCodingAgent.CodingShell.Views.SessionListView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

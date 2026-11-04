@@ -1,7 +1,7 @@
 using System;
 using Avalonia.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>将密钥编辑与显隐切换合并为单个输入控件。</summary>
 public partial class SecretInput : TextBox

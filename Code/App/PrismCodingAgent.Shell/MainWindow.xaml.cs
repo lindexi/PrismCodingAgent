@@ -2,9 +2,11 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
+using PrismCodingAgent.CodingShell.Views;
 
-namespace PrismCodingAgent.WpfShell;
+namespace PrismCodingAgent.CodingShell;
 
 /// <summary>承载真实运行时，并在用户确认后异步停止及释放所有任务。</summary>
 public partial class MainWindow : Window
@@ -13,7 +15,7 @@ public partial class MainWindow : Window
     private bool _allowClose;
     private bool _shutdownRequested;
     private IInputElement? _previousFocus;
-    private readonly AvaloniaShell.Views.ChatAutoScrollState _autoScrollState = new();
+    private readonly ChatAutoScrollState _autoScrollState = new();
     private ChatViewModel? _scrollChat;
 
     public MainWindow()
@@ -70,7 +72,7 @@ public partial class MainWindow : Window
     {
         if (sender is System.Windows.Controls.Button { CommandParameter: AgentLib.Model.CopilotChatImageItem image } button)
         {
-            AvaloniaShell.Views.ImageViewer.Open(button, image.Data, AvaloniaShell.Localizations.Lang.Current.ImageType);
+            ImageViewer.Open(button, image.Data, Lang.Current.ImageType);
         }
     }
 

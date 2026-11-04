@@ -6,11 +6,11 @@ using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
-using PrismCodingAgent.AvaloniaShell.Services.Sessions;
-using PrismCodingAgent.AvaloniaShell.Services.Workspace;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.ViewModels;
 using CodingChatApplicationTestFactory = global::PrismCodingAgent.AvaloniaShell.Tests.CodingWorkTaskControllerTestFactory;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;

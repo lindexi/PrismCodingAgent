@@ -5,12 +5,17 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.Views;
-using PrismCodingAgent.AvaloniaShell.Abilities;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
+using MainView = PrismCodingAgent.CodingShell.Views.MainView;
+using ModelServiceConnectionView = PrismCodingAgent.CodingShell.Views.ModelServiceConnectionView;
+using ModelSettingsView = PrismCodingAgent.CodingShell.Views.ModelSettingsView;
+using OpenAIModelCatalogView = PrismCodingAgent.CodingShell.Views.OpenAIModelCatalogView;
+using SecretInput = PrismCodingAgent.CodingShell.Views.SecretInput;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -20,7 +25,7 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
     private readonly TestContext _testContext;
     private int _step;
 
-    private ShellScreenshotSession(MainWindow window, MainViewModel model, string directory, TestContext testContext)
+    private ShellScreenshotSession(CodingShell.MainWindow window, MainViewModel model, string directory, TestContext testContext)
     {
         Window = window;
         Model = model;
@@ -28,7 +33,7 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
         _testContext = testContext;
     }
 
-    public MainWindow Window { get; }
+    public CodingShell.MainWindow Window { get; }
     public MainViewModel Model { get; }
     public string DirectoryPath { get; }
 
@@ -59,7 +64,7 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
         var model = MainViewModel.Create([task], [], runtime.SettingsService, new WorkTaskStore(paths),
             () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities);
         await model.InitializeSettingsAsync();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         return new ShellScreenshotSession(window, model, directory, testContext);
     }

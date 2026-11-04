@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Windows.Data;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.Converters;
+namespace PrismCodingAgent.CodingShell.Converters;
 
 internal sealed class ModelStatusLabelConverter : IMultiValueConverter
 {

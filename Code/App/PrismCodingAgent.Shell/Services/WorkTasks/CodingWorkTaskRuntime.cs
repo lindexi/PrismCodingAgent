@@ -5,12 +5,12 @@ using AgentLib.Coding;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Logging;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
-using PrismCodingAgent.AvaloniaShell.Services.Settings;
-using PrismCodingAgent.AvaloniaShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Settings;
+using PrismCodingAgent.CodingShell.Services.Workspace;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+namespace PrismCodingAgent.CodingShell.Services.WorkTasks;
 
 /// <summary>
 /// 保存由 Shell 组合根创建的核心运行时对象。

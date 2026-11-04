@@ -4,7 +4,10 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -18,7 +21,7 @@ public sealed class ShellComposerScreenshotTests
     [TestMethod]
     public async Task Ss08PairedComposerThroughUserInput()
     {
-        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag == "en" ? "en" : "zh-CN");
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(Lang.Current.IetfLanguageTag == "en" ? "en" : "zh-CN");
         System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.CurrentCulture;
         const string configuration = """{"PrimaryModel":"SS08 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS08 offline model","ModelId":"ss08-offline","Provider":"openai"},{"ModelName":"SS08 alternate model","ModelId":"ss08-alternate","Provider":"openai"}]}]}""";
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext, configuration);
@@ -26,7 +29,7 @@ public sealed class ShellComposerScreenshotTests
         session.Window.Height = 900;
         session.Window.UpdateLayout();
         var chat = session.Window.GetVisualDescendants().OfType<ChatView>().Single();
-        var model = (PrismCodingAgent.AvaloniaShell.ViewModels.ChatViewModel)chat.DataContext!;
+        var model = (ChatViewModel)chat.DataContext!;
         void Press(PhysicalKey key)
         {
             session.Window.KeyPressQwerty(key, RawInputModifiers.None);
@@ -51,7 +54,7 @@ public sealed class ShellComposerScreenshotTests
         Assert.AreEqual(1d, session.Window.RenderScaling);
         Assert.AreEqual(0, model.PendingImages.Count);
         Assert.IsNotNull(model.SelectedModel);
-        TestContext.WriteLine($"SS08: language={PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag}; client=1440x900; dpi=96; model={model.SelectedModel.DisplayName}; reasoning={model.SelectedReasoningEffort?.DisplayName}; ability={model.SelectedAbility?.Id}; switches=false,false,false,false; attachments=0");
+        TestContext.WriteLine($"SS08: language={Lang.Current.IetfLanguageTag}; client=1440x900; dpi=96; model={model.SelectedModel.DisplayName}; reasoning={model.SelectedReasoningEffort?.DisplayName}; ability={model.SelectedAbility?.Id}; switches=false,false,false,false; attachments=0");
         var input = chat.FindControl<TextBox>("MessageInputTextBox")!;
         session.Click(input);
         Assert.AreEqual(string.Empty, input.Text ?? string.Empty);
@@ -137,7 +140,7 @@ public sealed class ShellComposerScreenshotTests
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
         await session.ConfigureOfflineModelAsync();
         var chat = session.Window.GetVisualDescendants().OfType<ChatView>().Single();
-        var chatModel = (PrismCodingAgent.AvaloniaShell.ViewModels.ChatViewModel)chat.DataContext!;
+        var chatModel = (ChatViewModel)chat.DataContext!;
         var initialMessages = chatModel.Messages.ToArray();
         var input = chat.FindControl<TextBox>("MessageInputTextBox")!;
         var send = chat.FindControl<Button>("SendButton")!;

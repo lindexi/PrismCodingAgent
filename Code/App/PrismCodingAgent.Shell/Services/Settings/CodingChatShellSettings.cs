@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Settings;
+namespace PrismCodingAgent.CodingShell.Services.Settings;
 
 internal sealed record CodingChatShellSettings
 {

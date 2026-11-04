@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>编辑共享设置中的服务连接和模型。</summary>
 public partial class ModelSettingsView : UserControl

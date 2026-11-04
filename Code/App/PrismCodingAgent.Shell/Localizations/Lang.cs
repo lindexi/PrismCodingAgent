@@ -1,6 +1,6 @@
 using DotNetCampus.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.Localizations;
+namespace PrismCodingAgent.CodingShell.Localizations;
 
 /// <summary>提供应用界面文本及运行时语言通知。</summary>
 [LocalizedConfiguration(

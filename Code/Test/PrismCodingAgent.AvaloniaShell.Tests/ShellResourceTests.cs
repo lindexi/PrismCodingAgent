@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -22,7 +22,7 @@ public sealed class ShellResourceTests
     [TestMethod]
     public void MainWindowShouldConstructWithItsResources()
     {
-        var window = new PrismCodingAgent.AvaloniaShell.MainWindow
+        var window = new CodingShell.MainWindow
         {
             DataContext = new MainViewModel(),
         };

@@ -1,7 +1,7 @@
 using System;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Settings;
+namespace PrismCodingAgent.CodingShell.Services.Settings;
 
 internal static class DeepSeekApiKeyResolver
 {

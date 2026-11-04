@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell;
+namespace PrismCodingAgent.CodingShell;
 
 /// <summary>
 /// 显示无法恢复的应用启动错误。

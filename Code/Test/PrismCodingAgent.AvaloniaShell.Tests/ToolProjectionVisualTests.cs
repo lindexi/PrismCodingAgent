@@ -3,8 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.ViewModels;
+using PrismCodingAgent.CodingShell.Views;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

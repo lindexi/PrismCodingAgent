@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.AvaloniaShell;
+namespace PrismCodingAgent.CodingShell;
 
 public partial class App : Application
 {

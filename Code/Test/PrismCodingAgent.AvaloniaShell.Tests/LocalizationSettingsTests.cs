@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Text.Json;
 using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Services.Settings;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Services.Settings;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

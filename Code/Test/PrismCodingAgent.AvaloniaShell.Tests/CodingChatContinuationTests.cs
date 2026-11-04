@@ -2,13 +2,13 @@ using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Logging;
 using AgentLib.Model;
-using PrismCodingAgent.AvaloniaShell.Services.Sessions;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
 using System.Runtime.CompilerServices;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

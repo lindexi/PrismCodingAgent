@@ -3,9 +3,9 @@ using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.AvaloniaShell;
+namespace PrismCodingAgent.CodingShell;
 
 public partial class MainWindow : Window
 {

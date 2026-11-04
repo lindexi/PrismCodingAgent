@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using AgentLib;
 using Avalonia.Threading;
 
-namespace PrismCodingAgent.AvaloniaShell.Infrastructure;
+namespace PrismCodingAgent.CodingShell.Infrastructure;
 
 /// <summary>
 /// 将 AgentLib 的主线程操作调度到 Avalonia UI 线程。

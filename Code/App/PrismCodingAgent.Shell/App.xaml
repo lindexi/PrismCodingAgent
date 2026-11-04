@@ -1,8 +1,7 @@
-<Application x:Class="PrismCodingAgent.WpfShell.App"
+<Application x:Class="PrismCodingAgent.CodingShell.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:PrismCodingAgent.WpfShell"
-             xmlns:converters="clr-namespace:PrismCodingAgent.AvaloniaShell.Converters"
+             xmlns:converters="clr-namespace:PrismCodingAgent.CodingShell.Converters"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <ResourceDictionary>

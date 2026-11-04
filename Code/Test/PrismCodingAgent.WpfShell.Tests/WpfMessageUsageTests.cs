@@ -3,8 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using Lang = PrismCodingAgent.AvaloniaShell.Localizations.Lang;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.ViewModels;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 

@@ -5,8 +5,9 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using ChatView = PrismCodingAgent.AvaloniaShell.Views.ChatView;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -21,7 +22,7 @@ public sealed class ChatOutputVisualTests
     {
         var view = new ChatView();
 
-        Assert.IsInstanceOfType<global::PrismCodingAgent.AvaloniaShell.Views.ChatMessageItemTemplateSelector>(
+        Assert.IsInstanceOfType<global::PrismCodingAgent.CodingShell.Views.ChatMessageItemTemplateSelector>(
             view.DataTemplates.Single());
     }
 
@@ -108,7 +109,7 @@ public sealed class ChatOutputVisualTests
     private static string GetScreenshotPath()
     {
         string directory = Path.Combine(AppContext.BaseDirectory, "Screenshots",
-            PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag);
+            Lang.Current.IetfLanguageTag);
         Directory.CreateDirectory(directory);
         return Path.Combine(directory, "ChatOutputFocused.png");
     }

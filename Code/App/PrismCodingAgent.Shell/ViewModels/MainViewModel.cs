@@ -9,11 +9,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using PrismCodingAgent.AvaloniaShell.Abilities;
-using PrismCodingAgent.AvaloniaShell.Services.Settings;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Settings;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>组合独立工作任务与常驻导航。</summary>
 public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
@@ -351,7 +352,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         => new(GetTaskName(1), new ChatViewModel(), new SessionListViewModel());
 
     private static string GetTaskName(int number)
-        => $"{Localizations.Lang.Current.WorkTaskText} {number}";
+        => $"{Lang.Current.WorkTaskText} {number}";
 
     private static void StartRenamingTask(WorkTaskItemViewModel? task)
     {
@@ -403,7 +404,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             }
             catch (Exception exception)
             {
-                ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskUpdateFailed, exception.Message), exception);
+                ReportError(Localizations.Lang.Format(Lang.Current.TaskUpdateFailed, exception.Message), exception);
             }
         }
     }
@@ -473,7 +474,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
                 await runtime.DisposeAsync().ConfigureAwait(true);
             }
 
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskCreateFailed, exception.Message), exception);
+            ReportError(Localizations.Lang.Format(Lang.Current.TaskCreateFailed, exception.Message), exception);
         }
     }
 
@@ -493,7 +494,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
             task.DisplayName = previousName;
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskRenameFailed, exception.Message), exception);
+            ReportError(Lang.Format(Lang.Current.TaskRenameFailed, exception.Message), exception);
         }
         finally
         {
@@ -539,7 +540,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskArchiveFailed, exception.Message), exception);
+            ReportError(Localizations.Lang.Format(Lang.Current.TaskArchiveFailed, exception.Message), exception);
         }
     }
 
@@ -573,7 +574,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
                 await runtime.DisposeAsync().ConfigureAwait(true);
             }
 
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskRestoreFailed, exception.Message), exception);
+            ReportError(Lang.Format(Lang.Current.TaskRestoreFailed, exception.Message), exception);
         }
     }
 
@@ -595,7 +596,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskDeleteArchiveFailed, exception.Message), exception);
+            ReportError(Localizations.Lang.Format(Lang.Current.TaskDeleteArchiveFailed, exception.Message), exception);
         }
     }
 
@@ -613,7 +614,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskDeleteFailed, exception.Message), exception);
+            ReportError(Localizations.Lang.Format(Lang.Current.TaskDeleteFailed, exception.Message), exception);
         }
     }
 
@@ -661,16 +662,16 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
     private async Task OrganizeHistoryAsync()
     {
         if (ActiveWorkTask.Runtime is not { } runtime) return;
-        HistoryOrganizationResult = Localizations.Lang.Current.HistoryOrganizingText;
+        HistoryOrganizationResult = Lang.Current.HistoryOrganizingText;
         try
         {
             var store = new AgentLib.Logging.FileCopilotChatSessionStore(runtime.Paths.SessionDirectory.FullName);
             var result = await store.OrganizeAsync().ConfigureAwait(true);
-            HistoryOrganizationResult = Localizations.Lang.Format(Localizations.Lang.Current.HistoryOrganizedText, result.Upgraded, result.Compressed);
+            HistoryOrganizationResult = Localizations.Lang.Format(Lang.Current.HistoryOrganizedText, result.Upgraded, result.Compressed);
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
-            HistoryOrganizationResult = Localizations.Lang.Current.HistoryOrganizeFailedText;
+            HistoryOrganizationResult = Lang.Current.HistoryOrganizeFailedText;
             await runtime.ChatLogger.LogDiagnosticAsync(runtime.ChatManager.SelectedSession.SessionId,
                 "History", "[History][Organize] Failed.", exception).ConfigureAwait(true);
             throw;
@@ -701,7 +702,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.LogOpenFailed, exception.Message), exception);
+            ReportError(Localizations.Lang.Format(Lang.Current.LogOpenFailed, exception.Message), exception);
         }
     }
 
@@ -768,7 +769,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
-            ReportError(Localizations.Lang.Format(Localizations.Lang.Current.TaskSaveFailed, exception.Message), exception);
+            ReportError(Localizations.Lang.Format(Lang.Current.TaskSaveFailed, exception.Message), exception);
         }
     }
 
@@ -861,7 +862,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
     }
 
     private void HandleCommandException(Exception exception)
-        => ReportError(Localizations.Lang.Format(Localizations.Lang.Current.OperationFailed, exception.Message), exception);
+        => ReportError(Localizations.Lang.Format(Lang.Current.OperationFailed, exception.Message), exception);
 
     private static bool IsExpectedOperationException(Exception exception)
         => exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException

@@ -1,6 +1,7 @@
-using PrismCodingAgent.AvaloniaShell.Abilities;
+using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>
 /// 表示输入区可选择的发送前能力。
@@ -22,9 +23,9 @@ public sealed class AbilityOptionViewModel : ViewModelBase
 
     /// <summary>获取当前语言下的显示名称。</summary>
     public string DisplayName => Id == AbilityCatalog.ProgrammingId
-        ? Localizations.Lang.Current.ProgrammingAbilityText
+        ? Lang.Current.ProgrammingAbilityText
         : _usesDefaultCompressionName
-            ? Localizations.Lang.Current.CompressWithInstructionsAbilityText
+            ? Lang.Current.CompressWithInstructionsAbilityText
             : Definition.DisplayName;
 
     internal void RefreshDisplayName() => OnPropertyChanged(nameof(DisplayName));

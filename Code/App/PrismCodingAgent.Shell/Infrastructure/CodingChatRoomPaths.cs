@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace PrismCodingAgent.AvaloniaShell.Infrastructure;
+namespace PrismCodingAgent.CodingShell.Infrastructure;
 
 /// <summary>
 /// 定义应用的本地数据路径。

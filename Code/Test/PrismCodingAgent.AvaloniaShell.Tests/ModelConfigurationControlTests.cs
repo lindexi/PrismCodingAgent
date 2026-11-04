@@ -2,10 +2,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using ModelServiceConnectionView = PrismCodingAgent.AvaloniaShell.Views.ModelServiceConnectionView;
-using OpenAIModelCatalogView = PrismCodingAgent.AvaloniaShell.Views.OpenAIModelCatalogView;
+using PrismCodingAgent.CodingShell.ViewModels;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
+using ModelServiceConnectionView = PrismCodingAgent.CodingShell.Views.ModelServiceConnectionView;
+using OpenAIModelCatalogView = PrismCodingAgent.CodingShell.Views.OpenAIModelCatalogView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

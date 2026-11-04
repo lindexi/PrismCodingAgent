@@ -1,10 +1,8 @@
-using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using AgentLib;
 
-namespace PrismCodingAgent.AvaloniaShell.Infrastructure;
+namespace PrismCodingAgent.CodingShell.Infrastructure;
 
 /// <summary>将 AgentLib 的异步主线程操作投递到生产 WPF Dispatcher。</summary>
 public sealed class WpfMainThreadDispatcher : IMainThreadDispatcher

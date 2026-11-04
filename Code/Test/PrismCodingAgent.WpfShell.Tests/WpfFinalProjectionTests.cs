@@ -6,7 +6,8 @@ using System.Windows.Input;
 using AgentLib;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 

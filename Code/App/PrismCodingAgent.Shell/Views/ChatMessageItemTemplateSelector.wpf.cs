@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using AgentLib.Model;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>按消息片段类型选择布局。</summary>
 public sealed class ChatMessageItemTemplateSelector : DataTemplateSelector

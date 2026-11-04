@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PrismCodingAgent.AvaloniaShell.Abilities;
+namespace PrismCodingAgent.CodingShell.Abilities;
 
 internal sealed class AbilityCatalog
 {

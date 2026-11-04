@@ -5,8 +5,8 @@ using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -24,7 +24,7 @@ public sealed class ShellMainLayoutTests
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"),
             JsonSerializer.Serialize(new { LanguageTag = Lang.Current.IetfLanguageTag }));
         var model = await ShellStartup.InitializeAsync(CodingChatRoomPaths.Create(root), new AvaloniaMainThreadDispatcher());
-        var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
+        var window = new CodingShell.MainWindow { DataContext = model, Width = 1440, Height = 900 };
         window.Show();
         try
         {

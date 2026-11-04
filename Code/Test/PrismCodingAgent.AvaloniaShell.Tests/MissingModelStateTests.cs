@@ -2,10 +2,10 @@ using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using ChatView = PrismCodingAgent.AvaloniaShell.Views.ChatView;
-using ModelSettingsView = PrismCodingAgent.AvaloniaShell.Views.ModelSettingsView;
-using SettingsView = PrismCodingAgent.AvaloniaShell.Views.SettingsView;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using ModelSettingsView = PrismCodingAgent.CodingShell.Views.ModelSettingsView;
+using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -15,7 +15,7 @@ public sealed class MissingModelStateTests
     [TestMethod]
     public void ModelSetupShouldScrollEntirePaddedContentIntoView()
     {
-        var window = new PrismCodingAgent.AvaloniaShell.MainWindow { DataContext = new MainViewModel(), Height = 720 };
+        var window = new CodingShell.MainWindow { DataContext = new MainViewModel(), Height = 720 };
         try
         {
             window.Show();
@@ -112,7 +112,7 @@ public sealed class MissingModelStateTests
     public void MissingModelShouldDisableOnlyChatContainer()
     {
         var model = new MainViewModel();
-        var window = new PrismCodingAgent.AvaloniaShell.MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         try
         {
             window.Show();
@@ -126,7 +126,7 @@ public sealed class MissingModelStateTests
     [TestMethod]
     public void MissingModelShouldLeaveArchiveNavigationEnabled()
     {
-        var window = new PrismCodingAgent.AvaloniaShell.MainWindow { DataContext = new MainViewModel() };
+        var window = new CodingShell.MainWindow { DataContext = new MainViewModel() };
         try
         {
             window.Show();

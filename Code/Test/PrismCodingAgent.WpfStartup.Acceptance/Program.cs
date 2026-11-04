@@ -4,9 +4,9 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using PrismCodingAgent.WpfShell;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 internal static class Program
 {

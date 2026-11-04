@@ -1,4 +1,4 @@
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Views;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

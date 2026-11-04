@@ -1,10 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Abilities;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

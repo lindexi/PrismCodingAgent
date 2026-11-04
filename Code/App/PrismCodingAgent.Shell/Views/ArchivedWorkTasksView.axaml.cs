@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>显示并管理已存档工作任务。</summary>
 public partial class ArchivedWorkTasksView : UserControl

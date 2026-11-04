@@ -1,5 +1,6 @@
-using PrismCodingAgent.AvaloniaShell.Services.Integrations.OpenAI;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Integrations.OpenAI;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -109,7 +110,7 @@ public sealed class ModelCatalogViewModelTests
     {
         using var model = new ModelCatalogViewModel(new ProviderSettingsViewModel { EndPoint = endpoint });
         await model.LoadAsync();
-        Assert.AreEqual(PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.SetupEndpointRequired, model.Status);
+        Assert.AreEqual(Lang.Current.SetupEndpointRequired, model.Status);
     }
 
     [TestMethod]
@@ -119,7 +120,7 @@ public sealed class ModelCatalogViewModelTests
     {
         using var model = new ModelCatalogViewModel(new ProviderSettingsViewModel { EndPoint = endpoint });
         await model.LoadAsync();
-        Assert.AreEqual(PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.SetupInvalidEndpoint, model.Status);
+        Assert.AreEqual(Lang.Current.SetupInvalidEndpoint, model.Status);
     }
 
     private sealed class CatalogClient(Task<OpenAIModelCatalogResult> result) : IOpenAIModelCatalogClient

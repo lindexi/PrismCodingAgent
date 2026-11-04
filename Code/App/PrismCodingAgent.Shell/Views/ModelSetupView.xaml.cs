@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>显示首次使用时的模型配置引导。</summary>
 public partial class ModelSetupView : UserControl

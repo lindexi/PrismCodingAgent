@@ -1,9 +1,9 @@
 using AgentLib;
 using AgentLib.Coding;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
-using PrismCodingAgent.AvaloniaShell.Services.Sessions;
-using PrismCodingAgent.AvaloniaShell.Services.Workspace;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

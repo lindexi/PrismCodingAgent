@@ -5,9 +5,10 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
+using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -105,7 +106,7 @@ public sealed class ShellOptionsScreenshotTests
         Assert.IsFalse(address.IsEffectivelyEnabled);
         Assert.IsTrue(string.IsNullOrEmpty(address.Text));
         var instructionsCard = settings.GetVisualDescendants().OfType<TextBox>()
-            .Single(input => input.PlaceholderText == Localizations.Lang.Current.InstructionsPlaceholder)
+            .Single(input => input.PlaceholderText == Lang.Current.InstructionsPlaceholder)
             .GetVisualAncestors().OfType<Border>().First(border => border.Classes.Contains("SettingsCard"));
         ScrollTo(instructionsCard);
         session.Capture("instructions-default-disabled");

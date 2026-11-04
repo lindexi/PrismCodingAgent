@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace PrismCodingAgent.AvaloniaShell.Converters;
+namespace PrismCodingAgent.CodingShell.Converters;
 
 /// <summary>组合应用、任务、工作区及会话标题。</summary>
 public sealed class WorkspaceTitleConverter : IMultiValueConverter

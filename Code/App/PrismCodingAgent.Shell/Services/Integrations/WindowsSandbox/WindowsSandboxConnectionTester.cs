@@ -4,8 +4,9 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Integrations.WindowsSandbox;
+namespace PrismCodingAgent.CodingShell.Services.Integrations.WindowsSandbox;
 
 internal sealed class WindowsSandboxConnectionTester : IWindowsSandboxConnectionTester
 {
@@ -48,16 +49,16 @@ internal sealed class WindowsSandboxConnectionTester : IWindowsSandboxConnection
         {
             if (!process.Start())
             {
-                return new WindowsSandboxConnectionTestResult(false, Localizations.Lang.Current.SandboxStartFailed);
+                return new WindowsSandboxConnectionTestResult(false, Lang.Current.SandboxStartFailed);
             }
         }
         catch (Win32Exception exception)
         {
-            return new WindowsSandboxConnectionTestResult(false, Localizations.Lang.Format(Localizations.Lang.Current.SandboxTestFailed, exception.Message));
+            return new WindowsSandboxConnectionTestResult(false, Localizations.Lang.Format(Lang.Current.SandboxTestFailed, exception.Message));
         }
         catch (InvalidOperationException exception)
         {
-            return new WindowsSandboxConnectionTestResult(false, Localizations.Lang.Format(Localizations.Lang.Current.SandboxTestFailed, exception.Message));
+            return new WindowsSandboxConnectionTestResult(false, Localizations.Lang.Format(Lang.Current.SandboxTestFailed, exception.Message));
         }
 
         Task<string> standardOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
@@ -72,7 +73,7 @@ internal sealed class WindowsSandboxConnectionTester : IWindowsSandboxConnection
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             KillProcess(process);
-            return new WindowsSandboxConnectionTestResult(false, Localizations.Lang.Current.SandboxTestTimeout);
+            return new WindowsSandboxConnectionTestResult(false, Lang.Current.SandboxTestTimeout);
         }
         catch (OperationCanceledException)
         {
@@ -84,7 +85,7 @@ internal sealed class WindowsSandboxConnectionTester : IWindowsSandboxConnection
         string standardError = await standardErrorTask.ConfigureAwait(false);
         if (process.ExitCode == 0)
         {
-            return new WindowsSandboxConnectionTestResult(true, Localizations.Lang.Current.SandboxTestSucceeded);
+            return new WindowsSandboxConnectionTestResult(true, Lang.Current.SandboxTestSucceeded);
         }
 
         string detail = string.IsNullOrWhiteSpace(standardError) ? standardOutput : standardError;
@@ -93,7 +94,7 @@ internal sealed class WindowsSandboxConnectionTester : IWindowsSandboxConnection
         return new WindowsSandboxConnectionTestResult
         (
             false,
-            Localizations.Lang.Format(Localizations.Lang.Current.SandboxExitFailed, process.ExitCode, suffix)
+            Localizations.Lang.Format(Lang.Current.SandboxExitFailed, process.ExitCode, suffix)
         );
     }
 

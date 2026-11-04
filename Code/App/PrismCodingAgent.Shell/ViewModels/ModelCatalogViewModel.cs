@@ -4,9 +4,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using PrismCodingAgent.AvaloniaShell.Services.Integrations.OpenAI;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Integrations.OpenAI;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
 {
@@ -20,7 +21,7 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
     {
         _provider = provider;
         _client = client ?? new OpenAIModelCatalogClient();
-        LoadCommand = new SimpleAsyncCommand(LoadAsync, exceptionHandler: _ => Status = Localizations.Lang.Current.SetupCatalogFailed);
+        LoadCommand = new SimpleAsyncCommand(LoadAsync, exceptionHandler: _ => Status = Lang.Current.SetupCatalogFailed);
         AddCommand = new SimpleCommand<string>(Add);
         AddManualCommand = new SimpleCommand(() => { Cancel(); Add(ModelId); });
         _provider.PropertyChanged += OnConnectionChanged;
@@ -40,8 +41,8 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
 
     internal static string EndpointValidationMessage(ProviderSettingsViewModel provider)
         => string.IsNullOrWhiteSpace(provider.EndPoint)
-            ? Localizations.Lang.Current.SetupEndpointRequired
-            : Localizations.Lang.Current.SetupInvalidEndpoint;
+            ? Lang.Current.SetupEndpointRequired
+            : Lang.Current.SetupInvalidEndpoint;
 
     internal async Task LoadAsync()
     {
@@ -56,7 +57,7 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
         using var request = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         _request = request;
         IsBusy = true;
-        Status = Localizations.Lang.Current.SetupCatalogLoading;
+        Status = Lang.Current.SetupCatalogLoading;
         try
         {
             var result = await _client.GetModelIdsAsync(_provider.EndPoint.Trim(), _provider.ApiKey, request.Token);
@@ -65,12 +66,12 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
                          .Select(id => id.Trim()).Distinct(StringComparer.Ordinal).Where(id => !IsModelAdded(id)))
                 Models.Add(id);
             Status = result.IsSuccessful
-                ? (Models.Count == 0 ? Localizations.Lang.Current.SetupCatalogEmpty : Localizations.Lang.Current.SetupCatalogReady)
-                : Localizations.Lang.Current.SetupCatalogFailed;
+                ? (Models.Count == 0 ? Lang.Current.SetupCatalogEmpty : Lang.Current.SetupCatalogReady)
+                : Lang.Current.SetupCatalogFailed;
         }
         catch (OperationCanceledException) when (request.IsCancellationRequested)
         {
-            if (_request == request) Status = Localizations.Lang.Current.SetupCatalogTimeout;
+            if (_request == request) Status = Lang.Current.SetupCatalogTimeout;
         }
         finally
         {
@@ -89,14 +90,14 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(id))
         {
-            Status = Localizations.Lang.Current.SetupModelRequired;
+            Status = Lang.Current.SetupModelRequired;
             return;
         }
         id = id.Trim();
         if (IsModelAdded(id))
         {
             Models.Remove(id);
-            Status = Localizations.Lang.Current.SetupAlreadyAdded;
+            Status = Lang.Current.SetupAlreadyAdded;
             return;
         }
         var model = _provider.Models.FirstOrDefault(model => string.IsNullOrWhiteSpace(model.Provider)
@@ -114,7 +115,7 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
         }
         Models.Remove(id);
         ModelId = string.Empty;
-        Status = Localizations.Lang.Current.SetupModelAdded;
+        Status = Lang.Current.SetupModelAdded;
     }
 
     private void OnConnectionChanged(object? sender, PropertyChangedEventArgs e)

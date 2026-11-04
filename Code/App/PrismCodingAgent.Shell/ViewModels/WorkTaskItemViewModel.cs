@@ -1,8 +1,9 @@
 using System;
 using System.ComponentModel;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>
 /// 保存独立任务的界面上下文；切换导航不会销毁聊天对象。
@@ -22,7 +23,7 @@ public sealed class WorkTaskItemViewModel : ViewModelBase
         Sessions = sessions;
         Runtime = runtime;
         chat.PropertyChanged += OnChatChanged;
-        Localizations.Lang.Current.PropertyChanged += OnLanguageChanged;
+        Lang.Current.PropertyChanged += OnLanguageChanged;
     }
 
     /// <summary>获取任务标识。</summary>
@@ -52,13 +53,13 @@ public sealed class WorkTaskItemViewModel : ViewModelBase
     /// <summary>获取包含压缩阶段的任务活动状态。</summary>
     public bool IsWorking => Chat.IsRunning || Chat.IsCompressing || Chat.IsFinalizing || Chat.IsChangingWorkspace;
     /// <summary>获取任务当前状态文本。</summary>
-    public string StatusText => IsWorking ? Localizations.Lang.Current.WorkingText : Localizations.Lang.Current.IdleText;
+    public string StatusText => IsWorking ? Lang.Current.WorkingText : Lang.Current.IdleText;
     internal CodingWorkTaskRuntime? Runtime { get; }
 
     internal void Detach()
     {
         Chat.PropertyChanged -= OnChatChanged;
-        Localizations.Lang.Current.PropertyChanged -= OnLanguageChanged;
+        Lang.Current.PropertyChanged -= OnLanguageChanged;
     }
 
     private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)

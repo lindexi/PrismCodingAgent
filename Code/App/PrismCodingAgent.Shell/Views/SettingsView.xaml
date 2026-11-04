@@ -1,6 +1,9 @@
-<UserControl x:Class="PrismCodingAgent.AvaloniaShell.Views.SettingsView"
+<UserControl x:Class="PrismCodingAgent.CodingShell.Views.SettingsView"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:l="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations" xmlns:v="clr-namespace:PrismCodingAgent.AvaloniaShell.Views" FontSize="12" TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
+ xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
+ xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
+ xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views"
+ FontSize="12" TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
  <UserControl.Resources>
   <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="Height" Value="38"/><Setter Property="Padding" Value="5,3"/><Setter Property="BorderBrush" Value="#CCD5DF"/></Style>
   <Style x:Key="SettingsHint" TargetType="TextBlock"><Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#728091"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
@@ -45,7 +48,7 @@
     </StackPanel></Border>
     <Border Style="{StaticResource SettingsCard}"><StackPanel>
      <TextBlock Text="{Binding DeepSeekApiKeyText, Source={x:Static l:Lang.Current}}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12"/>
-     <v:SecretInput x:Name="DeepSeekApiKeyInput" Height="32" Text="{Binding DeepSeekApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+     <views:SecretInput x:Name="DeepSeekApiKeyInput" Height="32" Text="{Binding DeepSeekApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
      <TextBlock Style="{StaticResource SettingsHint}" Text="{Binding DeepSeekApiKeyHint, Source={x:Static l:Lang.Current}}" TextWrapping="Wrap" Margin="0,12,0,0"/>
     </StackPanel></Border>
     <Border Style="{StaticResource SettingsCard}"><StackPanel>
@@ -108,7 +111,7 @@
       <TextBox x:Name="PrimaryModelInput" Text="{Binding PrimaryModel, UpdateSourceTrigger=PropertyChanged}" FontSize="14" Height="38" Padding="10,3" BorderBrush="#CCD5DF" AutomationProperties.Name="{Binding DefaultModelHint, Source={x:Static l:Lang.Current}}"/>
       <TextBlock Text="{Binding DefaultModelHint, Source={x:Static l:Lang.Current}}" FontSize="14" Foreground="#B8B8B8" Margin="11,0" VerticalAlignment="Center" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Text, ElementName=PrimaryModelInput}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
      </Grid>
-     <v:ModelSettingsView/>
+     <views:ModelSettingsView/>
     </StackPanel></Border>
    </StackPanel>
   </ScrollViewer>

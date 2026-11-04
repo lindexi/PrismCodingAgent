@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 

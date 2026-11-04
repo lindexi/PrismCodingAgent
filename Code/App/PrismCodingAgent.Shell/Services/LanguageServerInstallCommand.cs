@@ -1,4 +1,4 @@
-namespace PrismCodingAgent.AvaloniaShell.Services;
+namespace PrismCodingAgent.CodingShell.Services;
 
 internal static class LanguageServerInstallCommand
 {

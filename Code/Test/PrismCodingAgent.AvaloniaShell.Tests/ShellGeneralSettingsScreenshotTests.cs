@@ -5,7 +5,8 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Localizations;
+using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -64,7 +65,7 @@ public sealed class ShellGeneralSettingsScreenshotTests
         ScrollTo(toggles[0]);
         session.Capture("sandbox-config");
         var bottom = scroll.TranslatePoint(new Point(scroll.Bounds.Width - 30, scroll.Bounds.Height / 2), session.Window)!.Value;
-        var lsp = settings.GetVisualDescendants().OfType<Button>().Single(b => b.Command is null && b.Classes.Contains("accent") && b.Content?.ToString() == PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.InstallOrUpdateLanguageServerText);
+        var lsp = settings.GetVisualDescendants().OfType<Button>().Single(b => b.Command is null && b.Classes.Contains("accent") && b.Content?.ToString() == Lang.Current.InstallOrUpdateLanguageServerText);
         ScrollTo(lsp);
         session.Window.MouseMove(bottom);
         session.Window.MouseWheel(bottom, new Vector(0, -3));

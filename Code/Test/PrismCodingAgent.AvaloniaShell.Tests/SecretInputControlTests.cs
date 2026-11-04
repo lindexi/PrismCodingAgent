@@ -9,10 +9,13 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Services.Settings;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Settings;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ModelServiceConnectionView = PrismCodingAgent.CodingShell.Views.ModelServiceConnectionView;
+using SecretInput = PrismCodingAgent.CodingShell.Views.SecretInput;
+using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -114,7 +117,7 @@ public sealed class SecretInputControlTests
             using var bitmap = window.CaptureRenderedFrame()
                 ?? throw new InvalidOperationException("Headless frame unavailable.");
             string screenshotDirectory = System.IO.Path.Join(AppContext.BaseDirectory, "SecretInputScreenshots",
-                PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag);
+                Lang.Current.IetfLanguageTag);
             System.IO.Directory.CreateDirectory(screenshotDirectory);
             bitmap.Save(System.IO.Path.Join(screenshotDirectory, $"checked-rounded-{rounded}-focused-{focused}.png"), PngBitmapEncoderOptions.Default);
             var border = input.GetVisualDescendants().OfType<Border>().Single(item => item.Name == "PART_BorderElement");

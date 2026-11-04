@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Infrastructure;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+namespace PrismCodingAgent.CodingShell.Services.WorkTasks;
 
 internal sealed record WorkTaskRecord
 (

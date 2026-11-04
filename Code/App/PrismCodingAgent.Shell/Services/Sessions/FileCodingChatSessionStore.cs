@@ -8,7 +8,7 @@ using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Sessions;
+namespace PrismCodingAgent.CodingShell.Services.Sessions;
 
 internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
 {

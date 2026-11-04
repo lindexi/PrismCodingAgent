@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding.Sandboxes;
-using PrismCodingAgent.AvaloniaShell.Abilities;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.AvaloniaShell.Infrastructure;
+namespace PrismCodingAgent.CodingShell.Infrastructure;
 
 internal static class ShellStartup
 {
@@ -25,7 +24,7 @@ internal static class ShellStartup
             var windowsSandboxToolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
             var languageSettingsService = new Services.Settings.CodingChatSettingsService(paths, windowsSandboxToolSource);
             var shellSettings = await languageSettingsService.LoadInitialShellSettingsAsync().ConfigureAwait(true);
-            Localizations.Lang.SetCurrent(shellSettings.LanguageTag == "en" ? "en" : "zh-Hans");
+            Lang.SetCurrent(shellSettings.LanguageTag == "en" ? "en" : "zh-Hans");
             await DefaultAbilityInstaller.InstallOnceAsync(paths.AbilitiesDirectory).ConfigureAwait(true);
             var abilityCatalog = new AbilityCatalog(paths.AbilitiesDirectory);
             await abilityCatalog.RefreshAsync().ConfigureAwait(true);
@@ -40,7 +39,7 @@ internal static class ShellStartup
                     .InitializeAsync(paths, dispatcher, windowsSandboxToolSource).ConfigureAwait(true);
                 runtimes.Add(runtime);
                 tasks.Add(MainViewModel.CreateRuntimeTask(runtime,
-                    new WorkTaskRecord(Guid.NewGuid(), $"{Localizations.Lang.Current.WorkTaskText} 1", null,
+                    new WorkTaskRecord(Guid.NewGuid(), $"{Lang.Current.WorkTaskText} 1", null,
                         runtime.ModelDisplayName, null), abilityCatalog));
             }
             else
@@ -111,6 +110,6 @@ internal static class ShellStartup
 
     private static string? FormatWorkTaskRecoveryMessage(WorkTaskRecoveryInfo? recoveryInfo)
         => recoveryInfo is null ? null
-            : Localizations.Lang.Format(Localizations.Lang.Current.WorkTaskRecoveryMessage,
+            : Localizations.Lang.Format(Lang.Current.WorkTaskRecoveryMessage,
                 recoveryInfo.AssignedMissingIdCount, recoveryInfo.ReassignedDuplicateIdCount, recoveryInfo.BackupFilePath);
 }

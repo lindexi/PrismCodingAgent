@@ -5,7 +5,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.ViewModels;
+using PrismCodingAgent.CodingShell.Views;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 
@@ -77,7 +79,7 @@ public sealed class WpfChatScrollTests
             await WpfInput.ClickAsync(Descendants(expander).OfType<ToggleButton>().First());
             await WpfInput.WaitAsync(() => expander.IsExpanded && AtBottom(viewer), "Expanded long tool did not remain reachable.");
             await screenshots.CaptureAsync("scroll-after-expanded-tool-tail");
-            var image = Descendants(expander).OfType<PrismCodingAgent.AvaloniaShell.Views.BinaryImage>().Single();
+            var image = Descendants(expander).OfType<BinaryImage>().Single();
             Rect bounds = image.TransformToAncestor(viewer).TransformBounds(new Rect(image.RenderSize));
             Assert.IsTrue(bounds.Top >= 0 && bounds.Bottom <= viewer.ActualHeight && bounds.Left >= 0 && bounds.Right <= viewer.ActualWidth, $"Expanded image is not reachable: {bounds}");
             Assert.IsTrue(Descendants(expander).OfType<TextBox>().Any(text => text.Text.Contains("END OF TOOL") && text.IsVisible));

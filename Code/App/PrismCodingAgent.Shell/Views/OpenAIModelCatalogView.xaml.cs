@@ -1,8 +1,7 @@
-using System.Windows;
 using System.Windows.Controls;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>使用共享目录逻辑添加模型。</summary>
 public partial class OpenAIModelCatalogView : UserControl

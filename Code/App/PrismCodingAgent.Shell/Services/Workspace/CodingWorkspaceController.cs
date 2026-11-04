@@ -6,8 +6,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AgentLib;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Workspace;
+namespace PrismCodingAgent.CodingShell.Services.Workspace;
 
 internal sealed record WorkspaceChangeResult
 (
@@ -24,7 +25,7 @@ internal sealed class CodingWorkspaceController : INotifyPropertyChanged
     private readonly SemaphoreSlim _changeGate = new(1, 1);
     private string _workspaceInput = string.Empty;
     private string? _nextRunWorkspacePath;
-    private string _statusText = Localizations.Lang.Current.WorkspaceUnset;
+    private string _statusText = Lang.Current.WorkspaceUnset;
     private bool _isChangingWorkspace;
 
     public CodingWorkspaceController(IMainThreadDispatcher mainThreadDispatcher)
@@ -80,7 +81,7 @@ internal sealed class CodingWorkspaceController : INotifyPropertyChanged
 
             if (validatePath && normalizedPath is not null && !Directory.Exists(normalizedPath))
             {
-                throw new DirectoryNotFoundException(Localizations.Lang.Format(Localizations.Lang.Current.WorkspaceMissing, normalizedPath));
+                throw new DirectoryNotFoundException(Localizations.Lang.Format(Lang.Current.WorkspaceMissing, normalizedPath));
             }
 
             string successMessage = FormatWorkspaceStatus(normalizedPath);
@@ -106,7 +107,7 @@ internal sealed class CodingWorkspaceController : INotifyPropertyChanged
         string.IsNullOrWhiteSpace(requestedPath) ? null : Path.GetFullPath(requestedPath.Trim());
 
     private static string FormatWorkspaceStatus(string? workspacePath) =>
-        workspacePath is null ? Localizations.Lang.Current.WorkspaceUnset : Localizations.Lang.Format(Localizations.Lang.Current.WorkspacePath, workspacePath);
+        workspacePath is null ? Lang.Current.WorkspaceUnset : Localizations.Lang.Format(Lang.Current.WorkspacePath, workspacePath);
 
     private Task PublishStateAsync(string? workspacePath, string statusText) =>
         _mainThreadDispatcher.InvokeAsync
@@ -123,7 +124,7 @@ internal sealed class CodingWorkspaceController : INotifyPropertyChanged
         _mainThreadDispatcher.InvokeAsync
         (() =>
             {
-                SetField(ref _statusText, Localizations.Lang.Format(Localizations.Lang.Current.WorkspaceFailed, message), nameof(StatusText));
+                SetField(ref _statusText, Localizations.Lang.Format(Lang.Current.WorkspaceFailed, message), nameof(StatusText));
                 return Task.CompletedTask;
             }
         );

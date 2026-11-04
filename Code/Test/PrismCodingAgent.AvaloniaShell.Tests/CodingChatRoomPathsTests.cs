@@ -1,4 +1,4 @@
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Infrastructure;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

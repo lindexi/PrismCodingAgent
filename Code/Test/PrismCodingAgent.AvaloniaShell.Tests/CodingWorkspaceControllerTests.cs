@@ -1,5 +1,5 @@
 using AgentLib;
-using PrismCodingAgent.AvaloniaShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Services.Workspace;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

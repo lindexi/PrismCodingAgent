@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using AgentLib.Logging;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Sessions;
+namespace PrismCodingAgent.CodingShell.Services.Sessions;
 
 internal sealed class CodingChatHistoryLoader
 {

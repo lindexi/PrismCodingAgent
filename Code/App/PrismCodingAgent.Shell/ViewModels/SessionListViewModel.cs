@@ -9,9 +9,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using AgentLib.Logging;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>
 /// 提供持续加载、搜索和管理历史会话的页面。
@@ -163,7 +164,7 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.Text.Json.JsonException or System.Xml.XmlException)
         {
             Trace.TraceError("[SessionListViewModel][Load] Exception={0}", exception);
-            ErrorMessage = Localizations.Lang.Current.HistoryLoadFailed;
+            ErrorMessage = Lang.Current.HistoryLoadFailed;
         }
         finally
         {
@@ -184,7 +185,7 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.Text.Json.JsonException or System.Xml.XmlException)
         {
             Trace.TraceError("[SessionListViewModel][Operation] Exception={0}", exception);
-            ErrorMessage = Localizations.Lang.Current.HistoryOperationFailed;
+            ErrorMessage = Lang.Current.HistoryOperationFailed;
         }
         finally
         {
@@ -317,7 +318,7 @@ public sealed class SessionItemViewModel : ViewModelBase
     public Guid? WorkTaskId { get; private set; }
     public string? WorkTaskName { get; private set; }
     public string WorkTaskText => WorkTaskId is Guid workTaskId
-        ? $"{WorkTaskName ?? Localizations.Lang.Current.UnnamedTask} ({workTaskId})"
+        ? $"{WorkTaskName ?? Lang.Current.UnnamedTask} ({workTaskId})"
         : WorkTaskName ?? string.Empty;
     public DateTimeOffset StartedTime { get; }
     public int? MessageCount { get; private set; }
@@ -352,5 +353,5 @@ public sealed class SessionItemViewModel : ViewModelBase
     }
     public string EditedTitle { get => _editedTitle; set => SetField(ref _editedTitle, value); }
     public bool IsEditing { get => _isEditing; set => SetField(ref _isEditing, value); }
-    public string Subtitle => Localizations.Lang.Format(Localizations.Lang.Current.SessionSubtitle, StartedTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture));
+    public string Subtitle => Localizations.Lang.Format(Lang.Current.SessionSubtitle, StartedTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture));
 }

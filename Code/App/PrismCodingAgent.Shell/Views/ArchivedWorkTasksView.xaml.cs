@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>显示归档任务列表。</summary>
 public partial class ArchivedWorkTasksView : UserControl

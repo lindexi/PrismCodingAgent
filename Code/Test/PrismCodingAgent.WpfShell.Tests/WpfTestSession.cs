@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using PrismCodingAgent.CodingShell;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 

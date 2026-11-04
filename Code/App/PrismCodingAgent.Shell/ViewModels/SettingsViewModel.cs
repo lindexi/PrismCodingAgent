@@ -1,6 +1,6 @@
 using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
@@ -11,10 +11,11 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
-using PrismCodingAgent.AvaloniaShell.Services.Integrations.WindowsSandbox;
-using PrismCodingAgent.AvaloniaShell.Services.Settings;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Integrations.WindowsSandbox;
+using PrismCodingAgent.CodingShell.Services.Settings;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 public sealed class SettingsViewModel : ViewModelBase, IDisposable
 {
@@ -25,7 +26,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     private readonly SimpleAsyncCommand _testWindowsSandboxConnectionCommand;
     private CancellationTokenSource? _sandboxConnectionTestCancellationTokenSource;
     private string? _primaryModel;
-    private string _languageTag = Localizations.Lang.Current.IetfLanguageTag;
+    private string _languageTag = Lang.Current.IetfLanguageTag;
 
     /// <summary>获取可选择的界面语言标签。</summary>
     public string[] LanguageTags { get; } = ["zh-Hans", "en"];
@@ -299,7 +300,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
 
         if (!string.IsNullOrWhiteSpace(snapshot.ModelConfigurationError))
         {
-            SetStatus(Localizations.Lang.Format(Localizations.Lang.Current.ModelReadFailed, snapshot.ModelConfigurationError), isError: true);
+            SetStatus(Localizations.Lang.Format(Lang.Current.ModelReadFailed, snapshot.ModelConfigurationError), isError: true);
         }
         else
         {
@@ -326,7 +327,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
         _sandboxConnectionTestCancellationTokenSource = cancellationTokenSource;
         IsSandboxConnectionTestRunning = true;
         IsSandboxConnectionStatusError = false;
-        SandboxConnectionStatusMessage = Localizations.Lang.Current.SandboxConnecting;
+        SandboxConnectionStatusMessage = Lang.Current.SandboxConnecting;
 
         try
         {
@@ -407,10 +408,10 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
             }
             await _settingsService.SaveAsync(modelConfiguration, shellSettings).ConfigureAwait(true);
             SetField(ref _deepSeekApiKey, shellSettings.DeepSeekApiKey, nameof(DeepSeekApiKey));
-            Localizations.Lang.SetCurrent(LanguageTag);
+            Lang.SetCurrent(LanguageTag);
             var settings = new CodingChatSettingsSnapshot(modelConfiguration, shellSettings, null);
             SettingsSaved?.Invoke(this, new CodingChatSettingsSavedEventArgs(settings));
-            SetStatus(Localizations.Lang.Current.SettingsSaved, isError: false);
+            SetStatus(Lang.Current.SettingsSaved, isError: false);
         }
         catch (ArgumentException exception)
         {
@@ -426,11 +427,11 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
         }
         catch (IOException exception)
         {
-            SetStatus(Localizations.Lang.Format(Localizations.Lang.Current.SettingsSaveFailed, exception.Message), isError: true);
+            SetStatus(Localizations.Lang.Format(Lang.Current.SettingsSaveFailed, exception.Message), isError: true);
         }
         catch (UnauthorizedAccessException exception)
         {
-            SetStatus(Localizations.Lang.Format(Localizations.Lang.Current.SettingsSaveDenied, exception.Message), isError: true);
+            SetStatus(Localizations.Lang.Format(Lang.Current.SettingsSaveDenied, exception.Message), isError: true);
         }
         finally
         {
@@ -447,14 +448,14 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
 
         if (string.IsNullOrWhiteSpace(NetworkProxyAddress))
         {
-            throw new ArgumentException(Localizations.Lang.Current.ProxyRequired);
+            throw new ArgumentException(Lang.Current.ProxyRequired);
         }
 
         string address = NetworkProxyAddress.Trim();
         if (!Uri.TryCreate(address, UriKind.Absolute, out Uri? proxyUri)
             || (proxyUri.Scheme != Uri.UriSchemeHttp && proxyUri.Scheme != Uri.UriSchemeHttps))
         {
-            throw new ArgumentException(Localizations.Lang.Current.ProxyInvalid);
+            throw new ArgumentException(Lang.Current.ProxyInvalid);
         }
 
         return address;
@@ -539,7 +540,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     private void HandleCommandException(Exception exception)
     {
         System.Diagnostics.Trace.TraceError($"设置操作失败：{exception}");
-        SetStatus(Localizations.Lang.Format(Localizations.Lang.Current.SettingsOperationFailed, exception.Message), isError: true);
+        SetStatus(Localizations.Lang.Format(Lang.Current.SettingsOperationFailed, exception.Message), isError: true);
     }
 
     private static ProviderSettingsViewModel CreateEmptyProvider()

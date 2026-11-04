@@ -4,11 +4,12 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
-using PrismCodingAgent.AvaloniaShell.Services.Sessions;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.ViewModels;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -19,7 +20,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenIdleWindowClosesThenConfirmationIsShown()
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         Assert.IsTrue(window.FindControl<Border>("ExitOverlay")!.IsVisible);
@@ -30,7 +31,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenCloseRepeatsThenSameOverlayRemainsAndWindowStaysVisible()
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         window.Close();
@@ -43,7 +44,7 @@ public sealed class MainWindowClosingTests
     {
         await using var model = new MainViewModel();
         model.ChatViewModel.InputText = "draft";
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         window.FindControl<Button>("CancelExitButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -58,7 +59,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenConfirmationReceivesKeyboardThenItDoesNotExit(Key key, bool overlayVisible)
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         window.FindControl<Button>("CancelExitButton")!.RaiseEvent(new KeyEventArgs
@@ -75,7 +76,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenConfirmationOpensThenCancelHasFocus()
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         Assert.IsTrue(window.FindControl<Button>("CancelExitButton")!.IsFocused);
@@ -86,7 +87,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenConfirmedThenWindowClosesAfterCleanup()
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         Confirm(window);
@@ -97,7 +98,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenConfirmationIsShownThenCurrentLanguageIsUsed()
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         Assert.AreEqual(Lang.Current.ExitConfirmText, window.FindControl<Button>("ConfirmExitButton")!.Content);
@@ -130,7 +131,7 @@ public sealed class MainWindowClosingTests
     {
         string root = Path.Join(Path.GetTempPath(), "PrismExitTests", Guid.NewGuid().ToString("N"));
         var runtime = await CodingWorkTaskRuntimeFactory.InitializeAsync(
-            PrismCodingAgent.AvaloniaShell.Infrastructure.CodingChatRoomPaths.Create(root), new ImmediateDispatcher());
+            CodingChatRoomPaths.Create(root), new ImmediateDispatcher());
         await using var model = new MainViewModel();
         model.WorkTasks.Add(MainViewModel.CreateRuntimeTask(runtime,
             new WorkTaskRecord(Guid.NewGuid(), "offline", null, null, null), null));
@@ -142,7 +143,7 @@ public sealed class MainWindowClosingTests
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
-            var window = new MainWindow { DataContext = model };
+            var window = new CodingShell.MainWindow { DataContext = model };
             window.Show();
             window.Close();
             bool cancelledBeforeConfirmation = cancelled.Task.IsCompleted;
@@ -167,7 +168,7 @@ public sealed class MainWindowClosingTests
     public async Task WhenConfirmationIsRenderedThenShellThemeAndCancelFocusArePreserved()
     {
         await using var model = new MainViewModel();
-        var window = new MainWindow { DataContext = model };
+        var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();
         window.Close();
         try
@@ -177,7 +178,7 @@ public sealed class MainWindowClosingTests
             using var bitmap = Avalonia.Headless.HeadlessWindowExtensions.CaptureRenderedFrame(window)
                 ?? throw new InvalidOperationException("Exit confirmation frame unavailable.");
             string directory = Path.Join(AppContext.BaseDirectory, "Screenshots",
-                PrismCodingAgent.AvaloniaShell.Localizations.Lang.Current.IetfLanguageTag);
+                Lang.Current.IetfLanguageTag);
             Directory.CreateDirectory(directory);
             bitmap.Save(Path.Join(directory, "exit-confirmation.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
             Assert.IsTrue(cancel.IsFocused && cancel.CornerRadius == new Avalonia.CornerRadius(4));
@@ -244,6 +245,6 @@ public sealed class MainWindowClosingTests
             => Task.CompletedTask;
     }
 
-    private static void Confirm(MainWindow window)
+    private static void Confirm(CodingShell.MainWindow window)
         => window.FindControl<Button>("ConfirmExitButton")!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 }

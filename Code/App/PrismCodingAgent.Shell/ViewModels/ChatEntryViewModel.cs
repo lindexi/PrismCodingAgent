@@ -2,7 +2,7 @@ using System;
 using System.Windows.Input;
 using AgentLib.Model;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>时间线显示项的公共基类。</summary>
 public abstract class ChatEntryViewModel : ViewModelBase, IDisposable

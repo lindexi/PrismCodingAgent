@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using AgentLib.Model;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 
@@ -76,7 +78,7 @@ public sealed class WpfMessageCopyTests
         object originalContent = window.Content;
         var message = new CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, "Exact body / 精确正文\r\nSecond line");
         message.AppendReasoning("Reasoning included only in full message / 完整消息思考");
-        using var projection = new PrismCodingAgent.AvaloniaShell.ViewModels.MessageItemViewModel(message);
+        using var projection = new MessageItemViewModel(message);
         var content = new ContentControl
         {
             Content = projection,

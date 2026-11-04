@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using AgentLib.Coding;
 using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Infrastructure;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Settings;
+namespace PrismCodingAgent.CodingShell.Services.Settings;
 
 internal sealed class CodingChatSettingsService
 {

@@ -6,7 +6,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 
@@ -128,7 +129,7 @@ public sealed class WpfInfrastructureTests
     public async Task ApplicationResourcesResolveAndWindowsClose() => await OnUiAsync(() =>
     {
         Assert.AreEqual(0, Application.Current.Windows.Count);
-        Assert.IsInstanceOfType<PrismCodingAgent.WpfShell.App>(Application.Current);
+        Assert.IsInstanceOfType<App>(Application.Current);
         VerifyUiAccess();
         Assert.AreEqual(Color.FromRgb(243, 243, 243),
             ((SolidColorBrush)Application.Current.FindResource("ShellBackgroundBrush")).Color);

@@ -8,9 +8,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Converters;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Converters;
+using PrismCodingAgent.CodingShell.ViewModels;
+using PrismCodingAgent.CodingShell.Views;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 

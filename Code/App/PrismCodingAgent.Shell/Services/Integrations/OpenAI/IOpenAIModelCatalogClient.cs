@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Integrations.OpenAI;
+namespace PrismCodingAgent.CodingShell.Services.Integrations.OpenAI;
 
 internal interface IOpenAIModelCatalogClient
 {

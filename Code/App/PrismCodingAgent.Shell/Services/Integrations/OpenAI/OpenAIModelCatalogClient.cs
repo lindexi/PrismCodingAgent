@@ -9,8 +9,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenAI;
 using OpenAI.Models;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Integrations.OpenAI;
+namespace PrismCodingAgent.CodingShell.Services.Integrations.OpenAI;
 
 internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
 {
@@ -23,12 +24,12 @@ internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
     {
         if (string.IsNullOrWhiteSpace(endPoint))
         {
-            return OpenAIModelCatalogResult.Failure(Localizations.Lang.Current.CatalogEndpointRequired);
+            return OpenAIModelCatalogResult.Failure(Lang.Current.CatalogEndpointRequired);
         }
 
         if (!Uri.TryCreate(endPoint, UriKind.Absolute, out Uri? endpointUri))
         {
-            return OpenAIModelCatalogResult.Failure(Localizations.Lang.Current.CatalogEndpointInvalid);
+            return OpenAIModelCatalogResult.Failure(Lang.Current.CatalogEndpointInvalid);
         }
 
         var options = new OpenAIClientOptions
@@ -44,27 +45,27 @@ internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
         }
         catch (ClientResultException exception)
         {
-            return Failure(Localizations.Lang.Current.CatalogResponseError, exception);
+            return Failure(Lang.Current.CatalogResponseError, exception);
         }
         catch (JsonException exception)
         {
-            return Failure(Localizations.Lang.Current.CatalogJsonInvalid, exception);
+            return Failure(Lang.Current.CatalogJsonInvalid, exception);
         }
         catch (HttpRequestException exception)
         {
-            return Failure(Localizations.Lang.Current.CatalogConnectionFailed, exception);
+            return Failure(Lang.Current.CatalogConnectionFailed, exception);
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return OpenAIModelCatalogResult.Failure(Localizations.Lang.Current.CatalogTimeout);
+            return OpenAIModelCatalogResult.Failure(Lang.Current.CatalogTimeout);
         }
         catch (IOException exception)
         {
-            return Failure(Localizations.Lang.Current.CatalogReadFailed, exception);
+            return Failure(Lang.Current.CatalogReadFailed, exception);
         }
         catch (InvalidOperationException exception)
         {
-            return Failure(Localizations.Lang.Current.CatalogProtocolInvalid, exception);
+            return Failure(Lang.Current.CatalogProtocolInvalid, exception);
         }
 
         var modelIds = new List<string>(result.Value.Count);
@@ -74,12 +75,12 @@ internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
             string modelId = result.Value[index].Id;
             if (string.IsNullOrWhiteSpace(modelId))
             {
-                return OpenAIModelCatalogResult.Failure(Localizations.Lang.Format(Localizations.Lang.Current.CatalogBlankId, index + 1));
+                return OpenAIModelCatalogResult.Failure(Localizations.Lang.Format(Lang.Current.CatalogBlankId, index + 1));
             }
 
             if (!uniqueModelIds.Add(modelId))
             {
-                return OpenAIModelCatalogResult.Failure(Localizations.Lang.Format(Localizations.Lang.Current.CatalogDuplicateId, modelId));
+                return OpenAIModelCatalogResult.Failure(Localizations.Lang.Format(Lang.Current.CatalogDuplicateId, modelId));
             }
 
             modelIds.Add(modelId);

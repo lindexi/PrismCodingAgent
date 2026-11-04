@@ -6,9 +6,9 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -60,7 +60,7 @@ public sealed class NoticeFailureReferenceScreenshotTests
     {
         var failure = new System.Text.Json.JsonException("配置文件格式无效：请检查模型配置。");
         var model = new StartupFailureViewModel(@"C:\示例\配置\AgentConfiguration.json", failure, () => { });
-        var window = new StartupFailureWindow { DataContext = model, Width = 760, Height = 520, WindowDecorations = WindowDecorations.None };
+        var window = new CodingShell.StartupFailureWindow { DataContext = model, Width = 760, Height = 520, WindowDecorations = WindowDecorations.None };
         try
         {
             window.Show();

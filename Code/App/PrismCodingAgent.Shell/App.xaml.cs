@@ -2,9 +2,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.WpfShell;
+namespace PrismCodingAgent.CodingShell;
 
 /// <summary>WPF 组合根；业务初始化由共享启动流程拥有。</summary>
 public partial class App : Application
@@ -50,7 +51,7 @@ public partial class App : Application
             Trace.TraceError($"CodingChatRoom initialization failed: {exception}");
             var window = new StartupFailureWindow
             {
-                DataContext = new AvaloniaShell.ViewModels.StartupFailureViewModel(
+                DataContext = new StartupFailureViewModel(
                     (paths ?? CodingChatRoomPaths.CreateForCurrentUser()).ConfigurationFile.FullName,
                     exception, () => Shutdown(1)),
             };

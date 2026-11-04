@@ -6,8 +6,10 @@ using System.Windows.Media;
 using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
+using PrismCodingAgent.CodingShell.Views;
 
 namespace PrismCodingAgent.WpfShell.Tests;
 
@@ -179,10 +181,10 @@ public sealed class WpfHistoryTests
             await WpfInput.ClickAsync((Button)historyPage.FindName("HistoryBack"));
             await WpfInput.WaitAsync(() => model.IsChatOpen, "Final history back did not close history.");
             Assert.AreEqual(stored.SessionId, model.ChatViewModel.CurrentSessionId);
-            await WpfInput.ClickAsync((Button)((PrismCodingAgent.AvaloniaShell.Views.ChatView)window.FindName("ChatComposer")).FindName("NewSessionButton"));
+            await WpfInput.ClickAsync((Button)((ChatView)window.FindName("ChatComposer")).FindName("NewSessionButton"));
             await WpfInput.WaitAsync(() => model.ChatViewModel.CurrentSessionId != stored.SessionId, "New session did not replace the nonempty conversation.");
             Guid emptyId = model.ChatViewModel.CurrentSessionId;
-            await WpfInput.ClickAsync((Button)((PrismCodingAgent.AvaloniaShell.Views.ChatView)window.FindName("ChatComposer")).FindName("NewSessionButton"));
+            await WpfInput.ClickAsync((Button)((ChatView)window.FindName("ChatComposer")).FindName("NewSessionButton"));
             Assert.AreEqual(emptyId, model.ChatViewModel.CurrentSessionId);
             await WpfInput.ClickAsync((Button)window.FindName("HistoryButton"));
             await WpfInput.WaitAsync(() => model.IsHistoryOpen && !model.SessionListViewModel.IsLoading, "History did not reopen.");

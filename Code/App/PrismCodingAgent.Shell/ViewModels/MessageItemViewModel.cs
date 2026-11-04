@@ -3,8 +3,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>
 /// 将一条 <see cref="CopilotChatMessage"/> 投影为聊天界面可绑定的消息项。
@@ -23,7 +24,7 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
         ArgumentNullException.ThrowIfNull(message);
         _message = message;
         _message.PropertyChanged += OnMessagePropertyChanged;
-        Localizations.Lang.Current.PropertyChanged += OnLanguageChanged;
+        Lang.Current.PropertyChanged += OnLanguageChanged;
     }
 
     /// <summary>
@@ -85,18 +86,18 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
         {
             var parts = new System.Collections.Generic.List<string>();
             var usage = _message.TotalUsageDetails;
-            if (usage?.TotalTokenCount is { } total) parts.Add(Localizations.Lang.Format(Localizations.Lang.Current.UsageTotal, total));
-            if (usage?.InputTokenCount is { } input) parts.Add(Localizations.Lang.Format(Localizations.Lang.Current.UsageInput, input));
-            if (usage?.OutputTokenCount is { } output) parts.Add(Localizations.Lang.Format(Localizations.Lang.Current.UsageOutput, output));
-            if (usage?.ReasoningTokenCount is { } reasoning) parts.Add(Localizations.Lang.Format(Localizations.Lang.Current.UsageReasoning, reasoning));
-            if (usage?.CachedInputTokenCount is { } cached) parts.Add(Localizations.Lang.Format(Localizations.Lang.Current.UsageCached, cached));
+            if (usage?.TotalTokenCount is { } total) parts.Add(Localizations.Lang.Format(Lang.Current.UsageTotal, total));
+            if (usage?.InputTokenCount is { } input) parts.Add(Localizations.Lang.Format(Lang.Current.UsageInput, input));
+            if (usage?.OutputTokenCount is { } output) parts.Add(Localizations.Lang.Format(Lang.Current.UsageOutput, output));
+            if (usage?.ReasoningTokenCount is { } reasoning) parts.Add(Localizations.Lang.Format(Lang.Current.UsageReasoning, reasoning));
+            if (usage?.CachedInputTokenCount is { } cached) parts.Add(Localizations.Lang.Format(Lang.Current.UsageCached, cached));
             string totalUsageSummaryText = string.Join(" | ", parts);
             if (_message.CurrentUsageDetails?.TotalTokenCount is not { } currentTotalTokenCount)
             {
                 return totalUsageSummaryText;
             }
 
-            string currentUsageSummaryText = Localizations.Lang.Format(Localizations.Lang.Current.UsageCurrent, currentTotalTokenCount);
+            string currentUsageSummaryText = Localizations.Lang.Format(Lang.Current.UsageCurrent, currentTotalTokenCount);
             return string.IsNullOrWhiteSpace(totalUsageSummaryText)
                 ? currentUsageSummaryText
                 : $"{currentUsageSummaryText} {totalUsageSummaryText}";
@@ -112,7 +113,7 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
         }
 
         _message.PropertyChanged -= OnMessagePropertyChanged;
-        Localizations.Lang.Current.PropertyChanged -= OnLanguageChanged;
+        Lang.Current.PropertyChanged -= OnLanguageChanged;
         _isDisposed = true;
     }
 

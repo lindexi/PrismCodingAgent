@@ -2,7 +2,7 @@ using AgentLib.Model;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>
 /// 按 Copilot 消息片段类型选择对应的数据模板。

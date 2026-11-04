@@ -1,7 +1,7 @@
 using System;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>表示存档页面中的工作任务。</summary>
 public sealed class ArchivedWorkTaskItemViewModel

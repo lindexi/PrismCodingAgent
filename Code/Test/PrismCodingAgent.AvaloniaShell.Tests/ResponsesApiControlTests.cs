@@ -3,8 +3,8 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using ChatView = PrismCodingAgent.AvaloniaShell.Views.ChatView;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

@@ -2,7 +2,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PrismCodingAgent.AvaloniaShell.Abilities;
+namespace PrismCodingAgent.CodingShell.Abilities;
 
 internal static class DefaultAbilityInstaller
 {

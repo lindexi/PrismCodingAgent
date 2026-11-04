@@ -11,17 +11,18 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using PrismCodingAgent.AvaloniaShell.Services.Shell;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.Services.Shell;
+using PrismCodingAgent.CodingShell.ViewModels;
+using PrismCodingAgent.CodingShell.Localizations;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>
 /// 显示当前编程助手会话。
 /// </summary>
 public partial class ChatView : UserControl
 {
-    private static FilePickerFileType ImageFileType => new(Localizations.Lang.Current.ImageType)
+    private static FilePickerFileType ImageFileType => new(Lang.Current.ImageType)
     {
         Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.bmp"],
         MimeTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"],
@@ -176,7 +177,7 @@ public partial class ChatView : UserControl
         {
             files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = Localizations.Lang.Current.ImagePickerTitle,
+                Title = Lang.Current.ImagePickerTitle,
                 AllowMultiple = true,
                 FileTypeFilter = [ImageFileType],
             });
@@ -184,7 +185,7 @@ public partial class ChatView : UserControl
         catch (Exception exception)
         {
             Trace.TraceError($"打开图片选择器失败：{exception}");
-            await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Localizations.Lang.Current.ImagePickerFailed, exception.Message));
+            await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Lang.Current.ImagePickerFailed, exception.Message));
             return;
         }
         foreach (IStorageFile file in files)
@@ -201,7 +202,7 @@ public partial class ChatView : UserControl
                 using var bitmap = new Bitmap(validationStream);
                 if (!viewModel.TryAddImageAttachment(file.Name, data))
                 {
-                    notice = Localizations.Lang.Format(Localizations.Lang.Current.ImageUnsupported, file.Name);
+                    notice = Localizations.Lang.Format(Lang.Current.ImageUnsupported, file.Name);
                     level = CopilotChatNoticeLevel.Warning;
                 }
             }
@@ -210,7 +211,7 @@ public partial class ChatView : UserControl
                                               or InvalidOperationException
                                               or ArgumentException)
             {
-                notice = Localizations.Lang.Format(Localizations.Lang.Current.ImageAttachFailed, file.Name, exception.Message);
+                notice = Localizations.Lang.Format(Lang.Current.ImageAttachFailed, file.Name, exception.Message);
             }
 
             if (notice is not null)
@@ -301,7 +302,7 @@ public partial class ChatView : UserControl
                                           or InvalidOperationException
                                           or ArgumentException)
         {
-            await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Localizations.Lang.Current.ImagePasteFailed, exception.Message));
+            await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Lang.Current.ImagePasteFailed, exception.Message));
             return true;
         }
     }

@@ -4,9 +4,13 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.Views;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
+using ModelServiceConnectionView = PrismCodingAgent.CodingShell.Views.ModelServiceConnectionView;
+using ModelSettingsView = PrismCodingAgent.CodingShell.Views.ModelSettingsView;
+using OpenAIModelCatalogView = PrismCodingAgent.CodingShell.Views.OpenAIModelCatalogView;
+using SecretInput = PrismCodingAgent.CodingShell.Views.SecretInput;
+using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

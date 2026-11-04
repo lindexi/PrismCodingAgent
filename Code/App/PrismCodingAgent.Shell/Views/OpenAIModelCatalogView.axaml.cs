@@ -1,7 +1,7 @@
 using Avalonia.Controls;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 public partial class OpenAIModelCatalogView : UserControl
 {

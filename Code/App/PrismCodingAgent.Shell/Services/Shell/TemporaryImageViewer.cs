@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using AgentLib.Model;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.Shell;
+namespace PrismCodingAgent.CodingShell.Services.Shell;
 
 internal static class TemporaryImageViewer
 {

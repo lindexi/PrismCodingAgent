@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 public partial class ModelSettingsView : UserControl
 {

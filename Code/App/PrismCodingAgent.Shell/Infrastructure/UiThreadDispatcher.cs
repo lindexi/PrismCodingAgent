@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-
 #if USE_AVALONIA
 using Avalonia.Threading;
 #elif USE_WPF
@@ -8,7 +7,7 @@ using System.Windows;
 using System.Windows.Threading;
 #endif
 
-namespace PrismCodingAgent.AvaloniaShell.Infrastructure;
+namespace PrismCodingAgent.CodingShell.Infrastructure;
 
 internal static class UiThreadDispatcher
 {

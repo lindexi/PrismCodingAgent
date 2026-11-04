@@ -9,11 +9,12 @@ using AgentLib.Coding;
 using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
-using PrismCodingAgent.AvaloniaShell.Services.Sessions;
-using PrismCodingAgent.AvaloniaShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Workspace;
 
-namespace PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+namespace PrismCodingAgent.CodingShell.Services.WorkTasks;
 
 /// <summary>
 /// 表示工作任务的完整业务操作状态，统一驱动界面属性和命令可用性。
@@ -440,7 +441,7 @@ internal sealed class CodingWorkTaskController
         catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
         {
             runException = exception;
-            await session.AddEntryAsync(new CopilotChatNotice(Localizations.Lang.Current.RunStopped));
+            await session.AddEntryAsync(new CopilotChatNotice(Lang.Current.RunStopped));
             await LogOperationFailureAsync(session, "运行", "运行已取消。", exception);
             throw;
         }
@@ -448,7 +449,7 @@ internal sealed class CodingWorkTaskController
         {
             runException = exception;
             var notice = new CopilotChatNotice(
-                Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message), CopilotChatNoticeLevel.Error);
+                Localizations.Lang.Format(Lang.Current.RunFailed, exception.Message), CopilotChatNoticeLevel.Error);
             if (_operationState == CodingWorkTaskOperationState.Running
                 && chatRunner is CodingAgentChatRunner { FailedAssistantMessage: { } assistant } codingRunner
                 && assistant.HasContent && session.AgentSession is not null)
@@ -604,20 +605,20 @@ internal sealed class CodingWorkTaskController
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (!await runner.TryCompactConversationAsync(session, compressionRequest, cancellationToken)) return false;
-            await session.AddEntryAsync(new CopilotChatNotice(Localizations.Lang.Current.Compacted));
+            await session.AddEntryAsync(new CopilotChatNotice(Lang.Current.Compacted));
             return true;
         }
         catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
         {
             operationException = exception;
-            await session.AddEntryAsync(new CopilotChatNotice(Localizations.Lang.Current.CompactCancelled));
+            await session.AddEntryAsync(new CopilotChatNotice(Lang.Current.CompactCancelled));
             throw;
         }
         catch (Exception exception)
         {
             operationException = exception;
             await session.AddEntryAsync(new CopilotChatNotice(
-                Localizations.Lang.Format(Localizations.Lang.Current.CompactFailed, exception.Message), CopilotChatNoticeLevel.Error));
+                Localizations.Lang.Format(Lang.Current.CompactFailed, exception.Message), CopilotChatNoticeLevel.Error));
             await LogOperationFailureAsync(session, "压缩", "压缩失败", exception);
             throw;
         }

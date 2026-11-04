@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>默认遮蔽、可切换显隐的密钥编辑控件。</summary>
 public partial class SecretInput : UserControl

@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Reflection;
-using PrismCodingAgent.AvaloniaShell.Converters;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
-using ChatView = PrismCodingAgent.AvaloniaShell.Views.ChatView;
+using PrismCodingAgent.CodingShell.Converters;
+using PrismCodingAgent.CodingShell.ViewModels;
+using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

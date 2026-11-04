@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 

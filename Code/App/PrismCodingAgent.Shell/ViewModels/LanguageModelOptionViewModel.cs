@@ -1,7 +1,7 @@
 using System;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>
 /// 表示聊天界面中可选择的语言模型。

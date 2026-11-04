@@ -4,7 +4,8 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PrismCodingAgent.AvaloniaShell.Localizations;
+using PrismCodingAgent.CodingShell.ViewModels;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -36,7 +37,7 @@ public sealed class ShellTaskMenuScreenshotTests
         session.Model.WorkTaskSearchText = original.DisplayName;
         Dispatcher.UIThread.RunJobs();
         session.Window.UpdateLayout();
-        var more = session.Window.GetVisualDescendants().OfType<Button>().Single(button => button.Classes.Contains("TaskMore") && button.DataContext is PrismCodingAgent.AvaloniaShell.ViewModels.ArchivedWorkTaskItemViewModel);
+        var more = session.Window.GetVisualDescendants().OfType<Button>().Single(button => button.Classes.Contains("TaskMore") && button.DataContext is ArchivedWorkTaskItemViewModel);
         var menu = (MenuFlyout)more.Flyout!;
         menu.ShowAt(more);
         Dispatcher.UIThread.RunJobs();

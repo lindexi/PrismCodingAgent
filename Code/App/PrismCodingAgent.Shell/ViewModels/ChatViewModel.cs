@@ -10,15 +10,15 @@ using System.Windows.Input;
 using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Model;
-using PrismCodingAgent.AvaloniaShell.Infrastructure;
 using Microsoft.Extensions.AI;
-using PrismCodingAgent.AvaloniaShell.Abilities;
-using PrismCodingAgent.AvaloniaShell.Localizations;
-using PrismCodingAgent.AvaloniaShell.Services.Chat;
-using PrismCodingAgent.AvaloniaShell.Services.Workspace;
-using PrismCodingAgent.AvaloniaShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Localizations;
+using PrismCodingAgent.CodingShell.Services.Chat;
+using PrismCodingAgent.CodingShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
-namespace PrismCodingAgent.AvaloniaShell.ViewModels;
+namespace PrismCodingAgent.CodingShell.ViewModels;
 
 /// <summary>
 /// 表示右侧编程助手聊天区域。
@@ -53,7 +53,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ChatViewModel()
     {
-        _modelStatusText = Localizations.Lang.Current.InitializingText;
+        _modelStatusText = Lang.Current.InitializingText;
         SendCommand = new SimpleCommand(static () => { }, static () => false);
         CompressConversationCommand = new SimpleCommand(static () => { }, static () => false);
         StopCommand = new SimpleCommand(static () => { }, static () => false);
@@ -134,7 +134,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     public bool ShowWelcome => Messages.All(item => item is MessageItemViewModel { Message.IsPresetInfo: true });
 
     /// <summary>获取当前会话标题。</summary>
-    public string CurrentSessionTitle => _subscribedSession?.Title ?? Localizations.Lang.Current.ChatTitle;
+    public string CurrentSessionTitle => _subscribedSession?.Title ?? Lang.Current.ChatTitle;
 
     /// <summary>
     /// 获取当前会话 ID。
@@ -145,8 +145,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// 获取当前状态说明。
     /// </summary>
     public string StatusText => _runStatusText ?? (SelectedModel is { } model
-        ? Localizations.Lang.Format(Localizations.Lang.Current.CurrentModel, model.DisplayName)
-        : _chatManager is not null ? Localizations.Lang.Current.NoModels : Localizations.Lang.Current.InitializingText);
+        ? Localizations.Lang.Format(Lang.Current.CurrentModel, model.DisplayName)
+        : _chatManager is not null ? Lang.Current.NoModels : Lang.Current.InitializingText);
 
     /// <summary>
     /// 获取当前进程可用的语言模型。
@@ -189,7 +189,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             if (_chatManager is not null)
             {
                 _chatManager.AgentApiEndpointManager.PrimaryModel = value.Model;
-                _modelStatusText = Localizations.Lang.Format(Localizations.Lang.Current.CurrentModel, value.DisplayName);
+                _modelStatusText = Localizations.Lang.Format(Lang.Current.CurrentModel, value.DisplayName);
                 OnPropertyChanged(nameof(StatusText));
             }
         }
@@ -198,7 +198,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取发送按钮文本。
     /// </summary>
-    public string SendButtonText => IsRunning ? Localizations.Lang.Current.InterruptText : Localizations.Lang.Current.SendText;
+    public string SendButtonText => IsRunning ? Lang.Current.InterruptText : Lang.Current.SendText;
 
     /// <summary>获取可选择的发送前能力。</summary>
     public ObservableCollection<AbilityOptionViewModel> AvailableAbilities { get; } = [];
@@ -387,7 +387,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取工作路径状态文本。
     /// </summary>
-    public string WorkspaceStatusText => _workspaceController?.StatusText ?? Localizations.Lang.Current.WorkspaceUninitialized;
+    public string WorkspaceStatusText => _workspaceController?.StatusText ?? Lang.Current.WorkspaceUninitialized;
 
     /// <summary>
     /// 获取是否正在切换工作路径。
@@ -401,7 +401,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     private void InitializeReasoningEfforts()
     {
-        Localizations.Lang.Current.PropertyChanged += OnLanguageChanged;
+        Lang.Current.PropertyChanged += OnLanguageChanged;
         RebuildReasoningEfforts();
     }
 
@@ -409,10 +409,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     {
         ReasoningEffort? selectedValue = _selectedReasoningEffort?.Value;
         AvailableReasoningEfforts.Clear();
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Localizations.Lang.Current.ReasoningDefault, null));
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Localizations.Lang.Current.ReasoningLow, ReasoningEffort.Low));
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Localizations.Lang.Current.ReasoningMedium, ReasoningEffort.Medium));
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Localizations.Lang.Current.ReasoningHigh, ReasoningEffort.High));
+        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningDefault, null));
+        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningLow, ReasoningEffort.Low));
+        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningMedium, ReasoningEffort.Medium));
+        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningHigh, ReasoningEffort.High));
         _selectedReasoningEffort = AvailableReasoningEfforts.First(option => option.Value == selectedValue);
         OnPropertyChanged(nameof(SelectedReasoningEffort));
     }
@@ -445,11 +445,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         if (selectedModel is not null)
         {
             _chatManager.AgentApiEndpointManager.PrimaryModel = selectedModel.Model;
-            _modelStatusText = Localizations.Lang.Format(Localizations.Lang.Current.CurrentModel, selectedModel.DisplayName);
+            _modelStatusText = Localizations.Lang.Format(Lang.Current.CurrentModel, selectedModel.DisplayName);
         }
         else
         {
-            _modelStatusText = Localizations.Lang.Current.NoModels;
+            _modelStatusText = Lang.Current.NoModels;
         }
 
         OnPropertyChanged(nameof(SelectedModel));
@@ -548,14 +548,14 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            string message = Localizations.Lang.Current.WorkspaceCancelled;
+            string message = Lang.Current.WorkspaceCancelled;
             Trace.TraceInformation(message);
             await AddSystemMessageAsync(session, message).ConfigureAwait(true);
         }
         catch (Exception exception)
         {
             Trace.TraceError($"工作路径切换失败：{exception}");
-            await AddSystemMessageAsync(session, Localizations.Lang.Format(Localizations.Lang.Current.WorkspaceFailed, exception.Message)).ConfigureAwait(true);
+            await AddSystemMessageAsync(session, Localizations.Lang.Format(Lang.Current.WorkspaceFailed, exception.Message)).ConfigureAwait(true);
         }
     }
 
@@ -587,7 +587,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             _abilityCatalog.Changed -= OnAbilityCatalogChanged;
         }
 
-        Localizations.Lang.Current.PropertyChanged -= OnLanguageChanged;
+        Lang.Current.PropertyChanged -= OnLanguageChanged;
         DetachSession();
         ClearMessages();
         PendingImages.CollectionChanged -= OnPendingImagesCollectionChanged;
@@ -625,13 +625,13 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             bool stopped = await _workTaskController.StopLanguageServerAsync().ConfigureAwait(true);
             _runStatusText = stopped
-                ? Localizations.Lang.Current.LspStopped
-                : Localizations.Lang.Current.LspNotRunning;
+                ? Lang.Current.LspStopped
+                : Lang.Current.LspNotRunning;
         }
         catch (Exception exception)
         {
             level = CopilotChatNoticeLevel.Error;
-            _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.LspStopFailed, exception.Message);
+            _runStatusText = Localizations.Lang.Format(Lang.Current.LspStopFailed, exception.Message);
         }
         finally
         {
@@ -650,7 +650,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
 
         CopilotChatSession? session = _subscribedSession;
-        _runStatusText = Localizations.Lang.Current.Compacting;
+        _runStatusText = Lang.Current.Compacting;
         OnPropertyChanged(nameof(StatusText));
         try
         {
@@ -662,15 +662,15 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                 _runStatusText = null;
                 return;
             }
-            _runStatusText = Localizations.Lang.Current.Compacted;
+            _runStatusText = Lang.Current.Compacted;
         }
         catch (OperationCanceledException)
         {
-            _runStatusText = Localizations.Lang.Current.CompactCancelled;
+            _runStatusText = Lang.Current.CompactCancelled;
         }
         catch (Exception exception)
         {
-            _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.CompactFailed, exception.Message);
+            _runStatusText = Localizations.Lang.Format(Lang.Current.CompactFailed, exception.Message);
         }
         finally
         {
@@ -755,7 +755,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception)
         {
-            _runStatusText = Lang.Format(Lang.Current.RunFailed, exception.Message);
+            _runStatusText = Localizations.Lang.Format(Lang.Current.RunFailed, exception.Message);
         }
         finally
         {
@@ -979,7 +979,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private async Task ContinueChatAsync(CopilotChatNotice? notice)
     {
         if (_workTaskController is null || notice is null) return;
-        _runStatusText = Localizations.Lang.Current.Running;
+        _runStatusText = Lang.Current.Running;
         OnPropertyChanged(nameof(StatusText));
         try
         {
@@ -988,11 +988,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            _runStatusText = Localizations.Lang.Current.RunStopped;
+            _runStatusText = Lang.Current.RunStopped;
         }
         catch (Exception exception)
         {
-            _runStatusText = Localizations.Lang.Format(Localizations.Lang.Current.RunFailed, exception.Message);
+            _runStatusText = Localizations.Lang.Format(Lang.Current.RunFailed, exception.Message);
         }
         finally
         {

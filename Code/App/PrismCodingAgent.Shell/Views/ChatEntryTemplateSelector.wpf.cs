@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using PrismCodingAgent.AvaloniaShell.ViewModels;
+using PrismCodingAgent.CodingShell.ViewModels;
 
-namespace PrismCodingAgent.AvaloniaShell.Views;
+namespace PrismCodingAgent.CodingShell.Views;
 
 /// <summary>按时间线条目语义选择外层布局。</summary>
 public sealed class ChatEntryTemplateSelector : DataTemplateSelector
