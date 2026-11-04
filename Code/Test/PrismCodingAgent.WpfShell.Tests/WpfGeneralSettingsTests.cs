@@ -21,7 +21,7 @@ public sealed class WpfGeneralSettingsTests
         if (!WpfTestSession.SupportsReferenceWindow()) return;
         string original = Lang.Current.IetfLanguageTag;
         string other = original == "en" ? "zh-Hans" : "en";
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "GeneralSettingsPersistenceData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         string file = Path.Combine(root, "ShellSettings.json");
         await File.WriteAllTextAsync(file, JsonSerializer.Serialize(new { LanguageTag = original, IsWindowsSandboxEnabled = false }));
@@ -149,7 +149,7 @@ public sealed class WpfGeneralSettingsTests
     public async Task DeepSeekAndInstructionsPersistThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "DeepSeekAndInstructionsPersistenceData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         string file = Path.Combine(root, "ShellSettings.json");
         string instruction = Path.Combine(root, "offline-instructions.md");
@@ -260,7 +260,7 @@ public sealed class WpfGeneralSettingsTests
     public async Task EmptyDisabledSettingsShowPlaceholdersThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "SettingsPlaceholderData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {

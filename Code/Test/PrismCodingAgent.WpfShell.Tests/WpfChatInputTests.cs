@@ -15,18 +15,18 @@ public sealed class WpfChatInputTests
 {
     public TestContext TestContext { get; set; } = null!;
 
-    /// <summary>SS08同态空草稿与多行草稿，仅真实输入，不发送请求。</summary>
+    /// <summary>通过真实输入验证空草稿、多行草稿、选项选择和开关状态，不发送请求。</summary>
     [TestMethod]
-    public async Task Ss08PairedComposerThroughUserInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    public async Task ComposerPreservesMultilineDraftAndRunOptionsThroughUserInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
         System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(Lang.Current.IetfLanguageTag == "en" ? "en" : "zh-CN");
         System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.CurrentCulture;
-        string root = Path.Combine(AppContext.BaseDirectory, "Ss08Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "ComposerInputData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new { LanguageTag = Lang.Current.IetfLanguageTag, IsWindowsSandboxEnabled = false }));
         await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
-            """{"PrimaryModel":"SS08 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS08 offline model","ModelId":"ss08-offline","Provider":"openai"},{"ModelName":"SS08 alternate model","ModelId":"ss08-alternate","Provider":"openai"}]}]}""");
+            """{"PrimaryModel":"Offline composer model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"Offline composer model","ModelId":"offline-composer","Provider":"openai"},{"ModelName":"Alternate composer model","ModelId":"alternate-composer","Provider":"openai"}]}]}""");
         var window = (MainWindow)await ((App)Application.Current).OpenAsync(["--data-directory", root]);
         using var screenshots = new WpfScreenshotSession(window, TestContext);
         var content = (FrameworkElement)window.Content;
@@ -42,7 +42,7 @@ public sealed class WpfChatInputTests
             await WpfInput.ClickAsync(selector);
             WpfInput.Key(0x24);
             WpfInput.Key(0x0D);
-            await WpfInput.WaitAsync(() => selector.SelectedIndex == 0, "SS08 selection failed.");
+            await WpfInput.WaitAsync(() => selector.SelectedIndex == 0, "Composer option selection failed.");
         }
         foreach (string name in new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton" })
         {
@@ -56,7 +56,7 @@ public sealed class WpfChatInputTests
         Assert.AreEqual(96d, VisualTreeHelper.GetDpi(content).PixelsPerInchY);
         Assert.AreEqual(0, model.PendingImages.Count);
         var card = (Border)chat.FindName("ComposerPanel");
-        Assert.IsTrue(card.ActualHeight >= 110 && card.ActualHeight <= 140, $"SS08 compact card height: {card.ActualHeight}");
+        Assert.IsTrue(card.ActualHeight >= 110 && card.ActualHeight <= 140, $"Composer card height: {card.ActualHeight}");
         double cardTop = card.TranslatePoint(new Point(), content).Y;
         var status = (TextBlock)window.FindName("ConversationStatus");
         Assert.AreEqual((string)Lang.Current.ModelText, status.Text);
@@ -91,30 +91,30 @@ public sealed class WpfChatInputTests
             Assert.IsTrue(entry.TranslatePoint(new Point(entry.ActualWidth, entry.ActualHeight), content).Y <= content.ActualHeight, name);
         }
         Assert.IsNotNull(model.SelectedModel);
-        TestContext.WriteLine($"SS08: language={Lang.Current.IetfLanguageTag}; client=1440x900; dpi=96; model={model.SelectedModel.DisplayName}; reasoning={model.SelectedReasoningEffort?.DisplayName}; ability={model.SelectedAbility?.Id}; switches=false,false,false,false; attachments=0");
+        TestContext.WriteLine($"Composer state: language={Lang.Current.IetfLanguageTag}; client=1440x900; dpi=96; model={model.SelectedModel.DisplayName}; reasoning={model.SelectedReasoningEffort?.DisplayName}; ability={model.SelectedAbility?.Id}; switches=false,false,false,false; attachments=0");
         var input = (TextBox)chat.FindName("MessageInputTextBox");
         await WpfInput.ClickAsync(input);
         Assert.AreEqual(string.Empty, input.Text);
-        await screenshots.CaptureAsync("ss08-empty");
-        WpfInput.Text("SS08 offline draft");
+        await screenshots.CaptureAsync("composer-empty-draft");
+        WpfInput.Text("Offline composer draft");
         WpfInput.Key(0x0D);
         WpfInput.Text("Second line - no request");
-        await WpfInput.WaitAsync(() => input.Text.Replace("\r\n", "\n") == "SS08 offline draft\nSecond line - no request", "SS08 draft input failed.");
+        await WpfInput.WaitAsync(() => input.Text.Replace("\r\n", "\n") == "Offline composer draft\nSecond line - no request", "Composer draft input failed.");
         Assert.AreEqual(0, model.PendingImages.Count);
-        await screenshots.CaptureAsync("ss08-multiline");
+        await screenshots.CaptureAsync("composer-multiline-draft");
         var ability = (ComboBox)chat.FindName("AbilitySelector");
         await WpfInput.ClickAsync(ability);
-        await WpfInput.WaitAsync(() => ability.IsDropDownOpen, "SS08 ability dropdown did not open.");
+        await WpfInput.WaitAsync(() => ability.IsDropDownOpen, "Ability dropdown did not open.");
         var popup = (System.Windows.Controls.Primitives.Popup)ability.Template.FindName("PART_Popup", ability);
-        TestContext.WriteLine($"SS08 culture={System.Globalization.CultureInfo.CurrentUICulture.Name}; abilities={string.Join("|", model.AvailableAbilities.Select(item => item.DisplayName))}");
+        TestContext.WriteLine($"Composer culture={System.Globalization.CultureInfo.CurrentUICulture.Name}; abilities={string.Join("|", model.AvailableAbilities.Select(item => item.DisplayName))}");
         foreach (var item in ability.Items.Cast<object>().Select(value => ability.ItemContainerGenerator.ContainerFromItem(value)).OfType<ComboBoxItem>())
-            TestContext.WriteLine($"SS08 item: selected={item.IsSelected}; hover={item.IsMouseOver}; focus={item.IsKeyboardFocusWithin}; highlighted={item.IsHighlighted}; size={item.ActualWidth}x{item.ActualHeight}");
-        await screenshots.CaptureSurfaceAsync((FrameworkElement)popup.Child, "ss08-ability-open");
+            TestContext.WriteLine($"Ability dropdown item: selected={item.IsSelected}; hover={item.IsMouseOver}; focus={item.IsKeyboardFocusWithin}; highlighted={item.IsHighlighted}; size={item.ActualWidth}x{item.ActualHeight}");
+        await screenshots.CaptureSurfaceAsync((FrameworkElement)popup.Child, "composer-ability-dropdown-open");
         WpfInput.Key(0x23);
         WpfInput.Key(0x0D);
-        await WpfInput.WaitAsync(() => !ability.IsDropDownOpen, "SS08 ability dropdown did not close.");
+        await WpfInput.WaitAsync(() => !ability.IsDropDownOpen, "Ability dropdown did not close.");
         Assert.AreEqual(ability.Items.Count - 1, ability.SelectedIndex);
-        await screenshots.CaptureAsync("ss08-ability-selected");
+        await screenshots.CaptureAsync("composer-ability-selected");
         await WpfInput.ClickAsync(ability);
         WpfInput.Key(0x24);
         WpfInput.Key(0x0D);
@@ -148,17 +148,17 @@ public sealed class WpfChatInputTests
             await screenshots.CaptureAsync($"{name}-checked-hover");
         }
         await WpfInput.HoverAsync(input);
-        await screenshots.CaptureAsync("ss08-four-checked");
+        await screenshots.CaptureAsync("composer-all-options-checked");
         window.Close();
         await WpfInput.ClickAsync((Button)window.FindName("ConfirmExitButton"));
-        await WpfInput.WaitAsync(() => !window.IsVisible, "SS08 window did not close.");
+        await WpfInput.WaitAsync(() => !window.IsVisible, "Composer window did not close.");
         await ((MainViewModel)window.DataContext).DisposeAsync();
     });
 
     [TestMethod]
     public async Task MultilineDraftSurvivesSettingsAndTaskSwitchThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase7Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "MultilineDraftData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {
@@ -290,7 +290,7 @@ public sealed class WpfChatInputTests
     {
         var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
         listener.Start();
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase7HttpData", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "HttpSendAndCancelData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         string endpoint = $"http://127.0.0.1:{((System.Net.IPEndPoint)listener.LocalEndpoint).Port}/v1";
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new

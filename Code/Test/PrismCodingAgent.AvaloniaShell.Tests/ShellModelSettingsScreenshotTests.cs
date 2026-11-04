@@ -25,7 +25,7 @@ public sealed class ShellModelSettingsScreenshotTests
     {
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext);
         await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory,
-            $"phase5-model-reference-{Lang.Current.IetfLanguageTag}.txt"), session.DirectoryPath);
+            $"model-settings-screenshot-directory-{Lang.Current.IetfLanguageTag}.txt"), session.DirectoryPath);
         session.Capture("main-without-model");
         Assert.IsEmpty(session.Model.ChatViewModel.AvailableModels);
 

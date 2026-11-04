@@ -88,7 +88,7 @@ public sealed class WpfStartupTests
                 await WpfInput.WaitAsync(() => !restored.IsVisible, "Restored window did not close.");
             }
             finally { await restoredModel.DisposeAsync(); }
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase3-evidence.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "startup-task-restoration-and-exit-evidence.txt"),
                 $"language={language}; root={root}; task={id}; restored=True; confirmedClosed={!window.IsVisible}; repeatDisposeCompleted=True{Environment.NewLine}");
         }
         finally
@@ -127,7 +127,7 @@ public sealed class WpfStartupTests
                 model.ActiveWorkTask.Chat.Messages.Select(message => message.Content).ToArray());
             using var screenshots = new WpfScreenshotSession(window, TestContext);
             await screenshots.CaptureAsync("history-restored");
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase3-history-evidence.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "startup-history-restoration-evidence.txt"),
                 $"language={Lang.Current.IetfLanguageTag}; root={root}; task={taskId}; session={session.SessionId}; messages=2; contentsVerified=True{Environment.NewLine}");
         }
         finally
@@ -192,7 +192,7 @@ public sealed class WpfStartupTests
             await model.DisposeAsync();
             await model.DisposeAsync();
             Assert.IsFalse(model.ActiveWorkTask?.IsWorking == true);
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase3-running-evidence.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "running-task-shutdown-evidence.txt"),
                 $"language={Lang.Current.IetfLanguageTag}; confirmWhileRunning={confirmWhileRunning}; requestReceived=True; cancelExitKeptRunning=True; confirmedClosed=True; repeatedDispose=True; root={root}{Environment.NewLine}");
         }
         finally

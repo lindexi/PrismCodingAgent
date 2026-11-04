@@ -18,7 +18,7 @@ public sealed class ShellMainLayoutTests
     [TestMethod]
     public async Task RealStartupRendersMatchingClientSizesAsync()
     {
-        string directory = Path.Combine(AppContext.BaseDirectory, "Phase4Screenshots", Lang.Current.IetfLanguageTag, Guid.NewGuid().ToString("N"));
+        string directory = Path.Combine(AppContext.BaseDirectory, "MainLayoutScreenshots", Lang.Current.IetfLanguageTag, Guid.NewGuid().ToString("N"));
         string root = Path.Combine(directory, "AppData");
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"),
@@ -31,7 +31,7 @@ public sealed class ShellMainLayoutTests
             Capture("main-1440x900");
             Assert.AreEqual(1440d, window.ClientSize.Width);
             Assert.AreEqual(900d, window.ClientSize.Height);
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase4-layout.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "main-layout.txt"),
                 $"{Lang.Current.IetfLanguageTag}; client={window.ClientSize}; dpi={window.RenderScaling * 96}; appData={root}{Environment.NewLine}");
             window.Width = 1280;
             window.Height = 720;

@@ -45,13 +45,13 @@ public sealed class WpfTaskMenuTests
     });
 
     [TestMethod]
-    public async Task Ss06ArchiveSearchRestoreThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    public async Task ArchiveSearchRestoreThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase9ArchiveData", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "ArchiveSearchRestoreData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
-            """{"PrimaryModel":"SS05 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS05 offline model","ModelId":"ss05-offline","Provider":"openai"}]}]}""");
+            """{"PrimaryModel":"Offline navigation model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"Offline navigation model","ModelId":"offline-navigation","Provider":"openai"}]}]}""");
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {
             LanguageTag = Lang.Current.IetfLanguageTag, IsWindowsSandboxEnabled = false
@@ -119,7 +119,7 @@ public sealed class WpfTaskMenuTests
     public async Task RenamePinArchiveAndRestoreThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase6Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "TaskMenuActionsData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {
@@ -161,7 +161,7 @@ public sealed class WpfTaskMenuTests
             await WpfInput.WaitAsync(() => !Find<Button>(window, "SaveTaskName", task).IsEnabled, "Blank task name was accepted.");
             WpfInput.Key(0x24);
             WpfInput.Key(0x2E); WpfInput.Key(0x2E); WpfInput.Key(0x2E);
-            string name = Lang.Current.IetfLanguageTag == "en" ? "Phase six task" : "阶段六任务";
+            string name = Lang.Current.IetfLanguageTag == "en" ? "Renamed task" : "重命名后的任务";
             WpfInput.Text(name);
             await WpfInput.WaitAsync(() => task.EditedDisplayName == name, "Rename input did not bind.");
             await WpfInput.ClickAsync(Find<Button>(window, "SaveTaskName", task));
@@ -204,7 +204,7 @@ public sealed class WpfTaskMenuTests
         using var reopenedScreenshots = new WpfScreenshotSession(reopened, TestContext);
         try
         {
-            string expected = Lang.Current.IetfLanguageTag == "en" ? "Phase six task" : "阶段六任务";
+            string expected = Lang.Current.IetfLanguageTag == "en" ? "Renamed task" : "重命名后的任务";
             Assert.AreEqual(expected, restored.WorkTasks[0].DisplayName);
             Assert.AreEqual(2, restored.WorkTasks.Count);
             Assert.IsTrue(restored.IsArchiveEmpty);

@@ -16,7 +16,7 @@ public sealed class ShellWorkTaskScreenshotTests
     public async Task WorkTasksShouldCreateSwitchSearchAndRestoreThroughUserInput()
     {
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext,
-            """{"PrimaryModel":"SS05 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS05 offline model","ModelId":"ss05-offline","Provider":"openai"}]}]}""");
+            """{"PrimaryModel":"Offline navigation model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"Offline navigation model","ModelId":"offline-navigation","Provider":"openai"}]}]}""");
         string mainScreenshot = session.Capture("main-window");
         Assert.IsGreaterThan(0L, new FileInfo(mainScreenshot).Length);
         var original = session.Model.ActiveWorkTask;

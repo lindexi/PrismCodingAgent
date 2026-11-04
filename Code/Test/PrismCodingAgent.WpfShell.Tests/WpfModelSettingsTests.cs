@@ -19,7 +19,7 @@ public sealed class WpfModelSettingsTests
     public async Task OfflineModelConfigurationThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "OfflineModelConfigurationData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"),
             JsonSerializer.Serialize(new { LanguageTag = Lang.Current.IetfLanguageTag }));
@@ -148,7 +148,7 @@ public sealed class WpfModelSettingsTests
     public async Task MultipleServicesAndPrimaryModelPersistThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "MultipleServicesAndPrimaryModelData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"),
             JsonSerializer.Serialize(new { LanguageTag = Lang.Current.IetfLanguageTag }));

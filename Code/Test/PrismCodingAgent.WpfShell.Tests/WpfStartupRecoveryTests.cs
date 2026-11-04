@@ -93,7 +93,7 @@ public sealed class WpfStartupRecoveryTests
             }
             using var screenshots = new WpfScreenshotSession(window, TestContext);
             await screenshots.CaptureAsync("multiple-sessions-restored");
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase3-multiple-recovery-evidence.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "multiple-task-session-recovery-evidence.txt"),
                 $"language={Lang.Current.IetfLanguageTag}; root={root}; tasks=2; sessions=3; workspaceModelReasoningVerified=True; contentsVerified=True; taskIsolationVerified=True{Environment.NewLine}");
         }
         finally

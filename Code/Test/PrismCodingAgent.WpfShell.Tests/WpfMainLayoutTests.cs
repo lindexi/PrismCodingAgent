@@ -18,7 +18,7 @@ public sealed class WpfMainLayoutTests
     public async Task RealStartupRendersShellAndTaskInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase4Data", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "MainLayoutData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"),
             JsonSerializer.Serialize(new { LanguageTag = Lang.Current.IetfLanguageTag }));
@@ -41,7 +41,7 @@ public sealed class WpfMainLayoutTests
             Assert.AreEqual(280d, surface.TranslatePoint(default, content).X, 1d);
             Assert.IsTrue(((UserControl)window.FindName("ModelGuide")).IsVisible);
             Assert.IsTrue(((Button)window.FindName("SettingsButton")).IsEnabled);
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase4-layout.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "main-layout.txt"),
                 $"{Lang.Current.IetfLanguageTag}; client={content.ActualWidth}x{content.ActualHeight}; dpi={VisualTreeHelper.GetDpi(content).PixelsPerInchX}; sidebar=280; appData={root}{Environment.NewLine}");
 
             Assert.AreEqual(96d, VisualTreeHelper.GetDpi(content).PixelsPerInchX);
@@ -51,7 +51,7 @@ public sealed class WpfMainLayoutTests
             await screenshots.CaptureAsync("settings");
             await WpfInput.ClickAsync(Descendants(window).OfType<Button>().Single(button => button.Name == "BackButton" && button.IsVisible));
             await WpfInput.WaitAsync(() => !model.IsSettingsOpen, "Settings did not close.");
-            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase4-layout.txt"),
+            File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "main-layout.txt"),
                 $"native={window.ActualWidth}x{window.ActualHeight}; decoration={window.ActualWidth - content.ActualWidth}x{window.ActualHeight - content.ActualHeight}{Environment.NewLine}");
             window.Width += 1280 - content.ActualWidth;
             window.Height += 720 - content.ActualHeight;
@@ -88,13 +88,13 @@ public sealed class WpfMainLayoutTests
     });
 
     [TestMethod]
-    public async Task Ss02TasksCreateSwitchSearchThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    public async Task TasksCreateSwitchSearchThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase9TaskData", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "TaskNavigationData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
-            """{"PrimaryModel":"SS05 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS05 offline model","ModelId":"ss05-offline","Provider":"openai"}]}]}""");
+            """{"PrimaryModel":"Offline navigation model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"Offline navigation model","ModelId":"offline-navigation","Provider":"openai"}]}]}""");
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {
             LanguageTag = Lang.Current.IetfLanguageTag, IsWindowsSandboxEnabled = false

@@ -20,17 +20,17 @@ public sealed class WpfHistoryTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
-    public async Task Ss05InitialHistoryNavigationThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    public async Task InitialHistoryNavigationThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase9HistoryData", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "InitialHistoryNavigationData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {
             LanguageTag = Lang.Current.IetfLanguageTag, IsWindowsSandboxEnabled = false
         }));
         await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
-            """{"PrimaryModel":"SS05 offline model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"SS05 offline model","ModelId":"ss05-offline","Provider":"openai"}]}]}""");
+            """{"PrimaryModel":"Offline navigation model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"Offline navigation model","ModelId":"offline-navigation","Provider":"openai"}]}]}""");
         var window = (MainWindow)await ((App)Application.Current).OpenAsync(["--data-directory", root]);
         var model = (MainViewModel)window.DataContext;
         using var screenshots = new WpfScreenshotSession(window, TestContext);
@@ -86,7 +86,7 @@ public sealed class WpfHistoryTests
     public async Task GlobalHistorySearchOpenOwnershipAndReturnThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase6HistoryData", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "GlobalHistoryNavigationData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {

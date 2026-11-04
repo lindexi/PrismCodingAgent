@@ -29,7 +29,7 @@ public sealed class WpfNoticeWelcomeTests
     {
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
-        string root = Path.Combine(AppContext.BaseDirectory, "Phase8NoticeData", Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(AppContext.BaseDirectory, "ChatFailureNoticeData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
         {
