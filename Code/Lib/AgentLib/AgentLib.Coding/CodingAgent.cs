@@ -296,9 +296,7 @@ public sealed class CodingAgent : IAsyncDisposable
             await Task.Yield();
             CancellationToken cancellationToken = runCancellationTokenSource.Token;
 
-            await CodingSystemPrompt
-                .EnsureSystemPromptInSessionAsync(agentSession, systemPrompts, cancellationToken)
-                .ConfigureAwait(false);
+            CodingSystemPrompt.EnsureSystemPromptInSession(agentSession, systemPrompts);
             ChatMessage[] inputMessages = contents.Count == 0
                 ? []
                 : [new ChatMessage(ChatRole.User, new List<AIContent>(contents))];

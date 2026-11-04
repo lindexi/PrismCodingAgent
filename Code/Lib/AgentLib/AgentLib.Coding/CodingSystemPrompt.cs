@@ -5,21 +5,19 @@ namespace AgentLib.Coding;
 
 internal static class CodingSystemPrompt
 {
-    internal static Task EnsureSystemPromptInSessionAsync
+    internal static void EnsureSystemPromptInSession
     (
         AgentSession agentSession,
-        IReadOnlyList<string> prompts,
-        CancellationToken cancellationToken
+        IReadOnlyList<string> prompts
     )
     {
         ArgumentNullException.ThrowIfNull(agentSession);
         if (agentSession.TryGetInMemoryChatHistory(out List<ChatMessage>? messages)
             && messages.Any(message => message.Role == ChatRole.System))
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
         var initializedMessages = new List<ChatMessage>((messages?.Count ?? 0) + prompts.Count);
         foreach (string prompt in prompts)
         {
@@ -31,6 +29,5 @@ internal static class CodingSystemPrompt
         }
 
         agentSession.SetInMemoryChatHistory(initializedMessages);
-        return Task.CompletedTask;
     }
 }
