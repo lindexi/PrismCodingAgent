@@ -13,6 +13,16 @@ internal sealed class WpfTestSession : IDisposable
     private int _disposed;
     internal static readonly TimeSpan Deadline = TimeSpan.FromSeconds(20);
 
+    internal static bool SupportsReferenceWindow()
+    {
+        Rect workArea = SystemParameters.WorkArea;
+        var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(new Control());
+        double width = 1440 + 2 * SystemParameters.ResizeFrameVerticalBorderWidth;
+        double height = 900 + 2 * SystemParameters.ResizeFrameHorizontalBorderHeight + SystemParameters.WindowCaptionHeight;
+        return workArea.Width >= width && workArea.Height >= height
+            && dpi.PixelsPerInchX == 96 && dpi.PixelsPerInchY == 96;
+    }
+
     internal WpfTestSession()
     {
         _thread = new Thread(Run) { IsBackground = true, Name = "WPF test UI" };

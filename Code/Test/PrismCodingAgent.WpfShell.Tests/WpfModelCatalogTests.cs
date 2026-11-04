@@ -21,6 +21,7 @@ public sealed class WpfModelCatalogTests
     [TestMethod]
     public async Task CatalogLoadingCancellationFailureAndRecoveryThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new

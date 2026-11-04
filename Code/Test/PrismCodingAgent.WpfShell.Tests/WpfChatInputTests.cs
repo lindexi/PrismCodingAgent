@@ -19,6 +19,7 @@ public sealed class WpfChatInputTests
     [TestMethod]
     public async Task Ss08PairedComposerThroughUserInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(Lang.Current.IetfLanguageTag == "en" ? "en" : "zh-CN");
         System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.CurrentCulture;
         string root = Path.Combine(AppContext.BaseDirectory, "Ss08Data", Guid.NewGuid().ToString("N"));

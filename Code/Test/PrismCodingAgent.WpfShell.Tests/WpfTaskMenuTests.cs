@@ -47,6 +47,7 @@ public sealed class WpfTaskMenuTests
     [TestMethod]
     public async Task Ss06ArchiveSearchRestoreThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase9ArchiveData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
@@ -117,6 +118,7 @@ public sealed class WpfTaskMenuTests
     [TestMethod]
     public async Task RenamePinArchiveAndRestoreThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase6Data", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new

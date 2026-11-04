@@ -22,6 +22,7 @@ public sealed class WpfHistoryTests
     [TestMethod]
     public async Task Ss05InitialHistoryNavigationThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase9HistoryData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
@@ -84,6 +85,7 @@ public sealed class WpfHistoryTests
     [TestMethod]
     public async Task GlobalHistorySearchOpenOwnershipAndReturnThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase6HistoryData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new

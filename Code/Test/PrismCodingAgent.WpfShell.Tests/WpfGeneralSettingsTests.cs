@@ -18,6 +18,7 @@ public sealed class WpfGeneralSettingsTests
     [TestMethod]
     public async Task LanguageProxyAndSandboxPersistThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string original = Lang.Current.IetfLanguageTag;
         string other = original == "en" ? "zh-Hans" : "en";
         string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
@@ -147,6 +148,7 @@ public sealed class WpfGeneralSettingsTests
     [TestMethod]
     public async Task DeepSeekAndInstructionsPersistThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         string file = Path.Combine(root, "ShellSettings.json");
@@ -257,6 +259,7 @@ public sealed class WpfGeneralSettingsTests
     [TestMethod]
     public async Task EmptyDisabledSettingsShowPlaceholdersThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase5Data", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new

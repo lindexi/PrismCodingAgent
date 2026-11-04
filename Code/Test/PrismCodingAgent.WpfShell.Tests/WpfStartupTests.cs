@@ -32,6 +32,7 @@ public sealed class WpfStartupTests
     [TestMethod]
     public async Task RealStartupRestoresTasksAndExitRequiresExplicitConfirmation() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string language = Lang.Current.IetfLanguageTag;
         string root = Path.Combine(AppContext.BaseDirectory, "StartupData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);

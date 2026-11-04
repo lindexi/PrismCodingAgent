@@ -17,6 +17,7 @@ public sealed class WpfMainLayoutTests
     [TestMethod]
     public async Task RealStartupRendersShellAndTaskInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase4Data", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"),
@@ -89,6 +90,7 @@ public sealed class WpfMainLayoutTests
     [TestMethod]
     public async Task Ss02TasksCreateSwitchSearchThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
+        if (!WpfTestSession.SupportsReferenceWindow()) return;
         string root = Path.Combine(AppContext.BaseDirectory, "Phase9TaskData", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
