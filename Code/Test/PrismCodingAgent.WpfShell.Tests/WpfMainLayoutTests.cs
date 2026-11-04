@@ -37,7 +37,7 @@ public sealed class WpfMainLayoutTests
             Assert.AreEqual(32d, ((TextBox)window.FindName("TaskSearch")).ActualHeight, 1d);
             var surface = (Border)window.FindName("ContentSurface");
             Assert.AreEqual(280d, surface.TranslatePoint(default, content).X, 1d);
-            Assert.IsTrue(((Border)window.FindName("ModelGuide")).IsVisible);
+            Assert.IsTrue(((UserControl)window.FindName("ModelGuide")).IsVisible);
             Assert.IsTrue(((Button)window.FindName("SettingsButton")).IsEnabled);
             File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "phase4-layout.txt"),
                 $"{Lang.Current.IetfLanguageTag}; client={content.ActualWidth}x{content.ActualHeight}; dpi={VisualTreeHelper.GetDpi(content).PixelsPerInchX}; sidebar=280; appData={root}{Environment.NewLine}");

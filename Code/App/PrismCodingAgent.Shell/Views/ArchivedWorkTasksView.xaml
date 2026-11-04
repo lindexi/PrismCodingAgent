@@ -1,0 +1,44 @@
+<UserControl x:Class="PrismCodingAgent.AvaloniaShell.Views.ArchivedWorkTasksView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:PrismCodingAgent.AvaloniaShell.Localizations">
+    <Border Background="{StaticResource BackgroundBrush}" Padding="16">
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+            <StackPanel>
+                <Button x:Name="ArchiveBack" HorizontalAlignment="Left" Margin="8,0,0,16" Content="{Binding BackToChatText, Source={x:Static l:Lang.Current}}" Command="{Binding CloseHistoryCommand}"/>
+                <TextBlock Text="{Binding ArchivedWorkTasksTitleText, Source={x:Static l:Lang.Current}}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,20"/>
+            </StackPanel>
+            <Grid Grid.Row="1">
+                <TextBlock x:Name="ArchiveEmpty" Text="{Binding EmptyArchivedWorkTasksText, Source={x:Static l:Lang.Current}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Visibility="{Binding IsArchiveEmpty, Converter={StaticResource BooleanVisibility}}"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="ArchiveItems" ItemsSource="{Binding ArchivedWorkTasks}" Margin="12,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,4">
+                                    <Border.Resources>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                            <Setter Property="LineHeight" Value="18"/>
+                                        </Style>
+                                    </Border.Resources>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,16,0">
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}"/>
+                                            <TextBlock Margin="0,8,0,0" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"><Run Text="{Binding WorkDirectoryText, Source={x:Static l:Lang.Current}, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding WorkspacePath, Mode=OneWay}"/></TextBlock>
+                                            <TextBlock Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"><Run Text="{Binding ModelText, Source={x:Static l:Lang.Current}, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding ModelReference, Mode=OneWay}"/></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button x:Name="RestoreTask" Background="#CCCCCC" Padding="12,6" Content="{Binding RestoreWorkTaskText, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.RestoreWorkTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <Button x:Name="DeleteArchivedTask" Margin="8,0,0,0" Padding="12,6" Foreground="DarkRed" Content="{Binding DeleteSessionText, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.DeleteArchivedWorkTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

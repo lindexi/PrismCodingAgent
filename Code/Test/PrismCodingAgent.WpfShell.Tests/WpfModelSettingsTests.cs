@@ -31,7 +31,7 @@ public sealed class WpfModelSettingsTests
             window.Width += 1440 - content.ActualWidth;
             window.Height += 900 - content.ActualHeight;
             await screenshots.CaptureAsync("without-model");
-            var guide = (Border)window.FindName("ModelGuide");
+            var guide = (UserControl)window.FindName("ModelGuide");
             await WpfInput.ClickAsync((Button)window.FindName("SettingsButton"));
             await WpfInput.WaitAsync(() => model.IsSettingsOpen, "Settings did not open.");
             var settings = Descendants(window).OfType<SettingsView>().Single();
@@ -115,7 +115,7 @@ public sealed class WpfModelSettingsTests
             await WpfInput.WaitAsync(() => restoredModel.ChatViewModel.AvailableModels.Count == 0, "Deleted model was not applied.");
             await WpfInput.ClickAsync((Button)settings.FindName("BackButton"));
             await WpfInput.WaitAsync(() => !restoredModel.IsSettingsOpen, "Deletion did not return.");
-            Assert.IsTrue(((Border)restored.FindName("ModelGuide")).IsVisible);
+            Assert.IsTrue(((UserControl)restored.FindName("ModelGuide")).IsVisible);
             await restoredScreenshots.CaptureAsync("removed-guide-restored");
         }
         finally
@@ -129,7 +129,7 @@ public sealed class WpfModelSettingsTests
         {
             SetContentSize(deleted);
             Assert.AreEqual(0, deletedModel.ChatViewModel.AvailableModels.Count);
-            Assert.IsTrue(((Border)deleted.FindName("ModelGuide")).IsVisible);
+            Assert.IsTrue(((UserControl)deleted.FindName("ModelGuide")).IsVisible);
             var provider = deletedModel.SettingsViewModel!.Providers.Single();
             Assert.AreEqual(0, provider.Models.Count);
             using var savedConfiguration = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(root, "AgentConfiguration.json")));

@@ -52,16 +52,6 @@ public partial class MainWindow : Window
     private static void ScrollToEndAfterLayout(System.Windows.Controls.ScrollViewer viewer)
         => viewer.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, (Action)viewer.ScrollToEnd);
 
-    private void OnHistoryMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ClickCount != 2
-            || sender is not FrameworkElement { DataContext: SessionItemViewModel { IsEditing: false } session }
-            || DataContext is not MainViewModel model
-            || !model.OpenSessionCommand.CanExecute(session)) return;
-        model.OpenSessionCommand.Execute(session);
-        e.Handled = true;
-    }
-
     private void OnMessageCopyCanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
         if (e.Parameter is not string text) return;
