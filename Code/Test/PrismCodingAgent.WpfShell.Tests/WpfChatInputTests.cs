@@ -44,12 +44,20 @@ public sealed class WpfChatInputTests
             WpfInput.Key(0x0D);
             await WpfInput.WaitAsync(() => selector.SelectedIndex == 0, "Composer option selection failed.");
         }
-        foreach (string name in new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton" })
+        var loop = (CheckBox)chat.FindName("LoopIterationCheckBox");
+        if (loop.IsChecked == true) await WpfInput.ClickAsync(loop);
+        Assert.IsFalse(loop.IsChecked.GetValueOrDefault());
+        await WpfInput.ClickAsync((Button)chat.FindName("OpenChatSettingsButton"));
+        await WpfInput.WaitAsync(() => model.IsChatSettingsOpen, "Chat settings did not open.");
+        var settings = (ChatSettingsView)((Border)window.FindName("ChatSettingsOverlay")).Child;
+        foreach (string name in new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" })
         {
-            var toggle = (System.Windows.Controls.Primitives.ToggleButton)chat.FindName(name);
+            var toggle = (CheckBox)settings.FindName(name);
             if (toggle.IsChecked == true) await WpfInput.ClickAsync(toggle);
             Assert.IsFalse(toggle.IsChecked.GetValueOrDefault());
         }
+        await WpfInput.ClickAsync((Button)settings.FindName("CloseChatSettingsButton"));
+        await WpfInput.WaitAsync(() => !model.IsChatSettingsOpen, "Chat settings did not close.");
         Assert.AreEqual(1440d, content.ActualWidth);
         Assert.AreEqual(900d, content.ActualHeight);
         Assert.AreEqual(96d, VisualTreeHelper.GetDpi(content).PixelsPerInchX);
@@ -65,10 +73,16 @@ public sealed class WpfChatInputTests
         Assert.IsNull(window.FindName("ReadOnlyConversationNotice"));
         Assert.IsNull(window.FindName("CurrentSessionId"));
         Assert.IsTrue(window.Title.Contains(((MainViewModel)window.DataContext).ActiveWorkTask.DisplayName, StringComparison.Ordinal));
-        var loop = (CheckBox)chat.FindName("LoopIterationCheckBox");
-        var responses = (CheckBox)chat.FindName("ResponsesApiToggleButton");
-        double optionRowOffset = responses.TranslatePoint(new Point(), chat).Y - loop.TranslatePoint(new Point(), chat).Y;
-        Assert.AreEqual(Lang.Current.IetfLanguageTag == "en" ? 32d : 0d, optionRowOffset, "Run options must follow the reference language-dependent wrapping.");
+        var runOptions = (WrapPanel)chat.FindName("RunOptionsPanel");
+        var openSettings = (Button)chat.FindName("OpenChatSettingsButton");
+        CollectionAssert.AreEqual(new UIElement[] { loop, openSettings }, runOptions.Children.Cast<UIElement>().ToArray());
+        Assert.AreSame(model.ToggleChatSettingsCommand, openSettings.Command);
+        Assert.IsTrue(openSettings.TranslatePoint(new Point(), runOptions).X >= loop.ActualWidth);
+        Assert.IsTrue(Math.Abs(openSettings.TranslatePoint(new Point(0, openSettings.ActualHeight / 2), runOptions).Y
+            - loop.TranslatePoint(new Point(0, loop.ActualHeight / 2), runOptions).Y) <= 1, "Loop and settings entry must share one row.");
+        var auxiliary = (StackPanel)((Button)chat.FindName("CompressConversationButton")).Parent;
+        CollectionAssert.AreEqual(new[] { "CompressConversationButton", "NewSessionButton" },
+            auxiliary.Children.Cast<FrameworkElement>().Select(entry => entry.Name).ToArray());
         foreach (string name in new[] { "WorkspaceInput", "ApplyWorkspaceButton", "ModelSelector", "ReasoningEffortSelector", "TaskHistoryButton", "OpenLogDirectoryButton" })
         {
             var entry = (FrameworkElement)window.FindName(name);
@@ -82,7 +96,7 @@ public sealed class WpfChatInputTests
             double top = entry.TranslatePoint(new Point(), card).Y;
             Assert.IsTrue(top >= 0 && top + entry.ActualHeight <= card.ActualHeight, name);
         }
-        foreach (string name in new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton", "CompressConversationButton", "StopLanguageServerButton", "NewSessionButton" })
+        foreach (string name in new[] { "LoopIterationCheckBox", "OpenChatSettingsButton", "CompressConversationButton", "NewSessionButton" })
         {
             var entry = (FrameworkElement)chat.FindName(name);
             Assert.IsTrue(entry.IsVisible && entry.ActualWidth > 0 && entry.ActualHeight > 0, name);
@@ -138,15 +152,21 @@ public sealed class WpfChatInputTests
             Assert.AreEqual(selector.Items.Count - 1, selector.SelectedIndex);
             await screenshots.CaptureAsync($"{name}-selected");
         }
-        foreach (string name in new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton" })
+        await WpfInput.ClickAsync(loop);
+        await WpfInput.WaitAsync(() => loop.IsChecked == true, "Loop option did not check.");
+        await WpfInput.ClickAsync(openSettings);
+        await WpfInput.WaitAsync(() => model.IsChatSettingsOpen, "Chat settings did not open.");
+        foreach (string name in new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" })
         {
-            var toggle = (System.Windows.Controls.Primitives.ToggleButton)chat.FindName(name);
+            var toggle = (CheckBox)settings.FindName(name);
             await WpfInput.ClickAsync(toggle);
             await WpfInput.WaitAsync(() => toggle.IsChecked == true, $"Checkbox did not check: {name}; enabled={toggle.IsEnabled}");
             Assert.IsTrue(toggle.IsChecked.GetValueOrDefault());
             Assert.IsTrue(toggle.IsMouseOver);
             await screenshots.CaptureAsync($"{name}-checked-hover");
         }
+        await WpfInput.ClickAsync((Button)settings.FindName("CloseChatSettingsButton"));
+        await WpfInput.WaitAsync(() => !model.IsChatSettingsOpen, "Chat settings did not close.");
         await WpfInput.HoverAsync(input);
         await screenshots.CaptureAsync("composer-all-options-checked");
         window.Close();
@@ -208,18 +228,28 @@ public sealed class WpfChatInputTests
             await WpfInput.ClickAsync((Button)window.FindName("ApplyWorkspaceButton"));
             await WpfInput.WaitAsync(() => !model.ChatViewModel.IsChangingWorkspace
                 && model.ChatViewModel.NextRunWorkspacePath == workspace, "Workspace was not applied.");
-            var toggles = new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton" }
-                .Select(name => (System.Windows.Controls.Primitives.ToggleButton)composer.FindName(name)).ToArray();
+            var loop = (CheckBox)composer.FindName("LoopIterationCheckBox");
+            bool? originalLoop = loop.IsChecked;
+            await WpfInput.ClickAsync(loop);
+            await WpfInput.WaitAsync(() => loop.IsChecked == !originalLoop, "Loop option did not toggle.");
+            await WpfInput.ClickAsync((Button)composer.FindName("OpenChatSettingsButton"));
+            await WpfInput.WaitAsync(() => model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not open.");
+            var settings = (ChatSettingsView)((Border)window.FindName("ChatSettingsOverlay")).Child;
+            var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" }
+                .Select(name => (CheckBox)settings.FindName(name)).ToArray();
             bool?[] originalOptions = toggles.Select(toggle => toggle.IsChecked).ToArray();
             foreach (var toggle in toggles)
             {
                 await WpfInput.ClickAsync(toggle);
             }
             await WpfInput.WaitAsync(() => toggles.Select(toggle => toggle.IsChecked).SequenceEqual(originalOptions.Select(value => !value)), "Run options did not toggle.");
-            Assert.AreEqual(toggles[0].IsChecked, model.ChatViewModel.IsLoopIterationEnabled);
-            Assert.AreEqual(toggles[1].IsChecked, model.ChatViewModel.IsAutomaticCompressionEnabled);
-            Assert.AreEqual(toggles[2].IsChecked, model.ChatViewModel.IsDotNetRunEnabled);
-            Assert.AreEqual(toggles[3].IsChecked, model.ChatViewModel.IsResponsesApiEnabled);
+            Assert.AreEqual(loop.IsChecked, model.ChatViewModel.IsLoopIterationEnabled);
+            Assert.AreEqual(toggles[0].IsChecked, model.ChatViewModel.IsAutomaticCompressionEnabled);
+            Assert.AreEqual(toggles[1].IsChecked, model.ChatViewModel.IsDotNetRunEnabled);
+            Assert.AreEqual(toggles[2].IsChecked, model.ChatViewModel.IsResponsesApiEnabled);
+            await WpfInput.ClickAsync((Button)settings.FindName("CloseChatSettingsButton"));
+            await WpfInput.WaitAsync(() => !model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not close.");
+            Assert.AreEqual(draft, input.Text);
             var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(48, 32, 96, 96, PixelFormats.Bgr32, null,
                 Enumerable.Repeat((byte)128, 48 * 32 * 4).ToArray(), 48 * 4);
             Clipboard.SetImage(bitmap);
@@ -313,7 +343,10 @@ public sealed class WpfChatInputTests
             var input = (TextBox)composer.FindName("MessageInputTextBox");
             var send = (Button)composer.FindName("SendButton");
             var compact = (Button)composer.FindName("CompressConversationButton");
-            var stopLsp = (Button)composer.FindName("StopLanguageServerButton");
+            await WpfInput.ClickAsync((Button)composer.FindName("OpenChatSettingsButton"));
+            await WpfInput.WaitAsync(() => model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not open.");
+            var settings = (ChatSettingsView)((Border)window.FindName("ChatSettingsOverlay")).Child;
+            var stopLsp = (Button)settings.FindName("StopLanguageServerButton");
             Assert.AreSame(model.ChatViewModel.CompressConversationCommand, compact.Command);
             Assert.AreSame(model.ChatViewModel.StopLanguageServerCommand, stopLsp.Command);
             Assert.AreEqual((string)Lang.Current.CompressConversationText, compact.Content?.ToString());
@@ -321,6 +354,8 @@ public sealed class WpfChatInputTests
             Assert.IsTrue(compact.IsEnabled);
             Assert.IsTrue(stopLsp.IsEnabled);
             await WpfInput.ClickAsync(stopLsp);
+            await WpfInput.ClickAsync((Button)settings.FindName("CloseChatSettingsButton"));
+            await WpfInput.WaitAsync(() => !model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not close.");
             await WpfInput.WaitAsync(() => model.ChatViewModel.StatusText == (string)Lang.Current.LspNotRunning
                 && Descendants((ItemsControl)window.FindName("HistoryMessages")).OfType<TextBlock>()
                     .Any(text => text.Text.Contains((string)Lang.Current.LspNotRunning)), "No-service LSP notice did not reach the UI.");

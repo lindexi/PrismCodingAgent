@@ -1,10 +1,12 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using PrismCodingAgent.CodingShell.ViewModels;
 using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using ChatSettingsView = PrismCodingAgent.CodingShell.Views.ChatSettingsView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -12,60 +14,24 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 public sealed class ResponsesApiControlTests
 {
     [TestMethod]
-    [DataRow(false, 0d)]
-    [DataRow(true, 1d)]
-    public void ResponsesApiShouldShowCheckOnlyWhenSelected(bool selected, double expectedOpacity)
+    [DataRow(false, Avalonia.Layout.HorizontalAlignment.Left)]
+    [DataRow(true, Avalonia.Layout.HorizontalAlignment.Right)]
+    public void ResponsesApiSwitchShouldReflectSelection(bool selected, Avalonia.Layout.HorizontalAlignment expectedAlignment)
     {
         using var viewModel = new ChatViewModel { IsResponsesApiEnabled = selected };
-        var view = new ChatView { DataContext = viewModel };
-        var window = new Window { Width = 1016, Height = 620, Content = view };
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var window = new Window { Width = 1016, Height = 620, Content = settings };
         try
         {
             window.Show();
             window.UpdateLayout();
-            var toggle = view.FindControl<ToggleButton>("ResponsesApiToggleButton")
-                ?? throw new InvalidOperationException("Responses toggle missing.");
-            var check = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(toggle)
-                .OfType<Avalonia.Controls.Shapes.Path>().Single(item => item.Name == "ApiModeCheck");
+            var toggle = settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!;
+            var knob = toggle.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Ellipse>()
+                .Single(item => item.Name == "SwitchKnob");
 
-            Assert.AreEqual(expectedOpacity, check.Opacity);
+            Assert.AreEqual(expectedAlignment, knob.HorizontalAlignment);
         }
         finally { window.Close(); }
-    }
-
-    [TestMethod]
-    [DataRow(false, ":pointerover")]
-    [DataRow(true, ":pointerover")]
-    [DataRow(false, ":pressed")]
-    [DataRow(true, ":pressed")]
-    public void ResponsesApiTextBackgroundShouldRemainTransparent(bool selected, string state)
-    {
-        var toggle = new StateToggleButton
-        {
-            Content = "Responses API",
-            IsChecked = selected,
-            Classes = { "ApiMode" },
-        };
-        var window = new Window { Content = toggle };
-        try
-        {
-            window.Show();
-            toggle.SetState(state);
-            var presenter = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(toggle)
-                .OfType<Avalonia.Controls.Presenters.ContentPresenter>()
-                .Single(item => item.Name == "ApiModeContent");
-
-            Assert.AreEqual(Avalonia.Media.Colors.Transparent,
-                ((Avalonia.Media.ISolidColorBrush)presenter.Background!).Color);
-        }
-        finally { window.Close(); }
-    }
-
-    private sealed class StateToggleButton : ToggleButton
-    {
-        protected override Type StyleKeyOverride => typeof(ToggleButton);
-
-        public void SetState(string state) => PseudoClasses.Set(state, true);
     }
 
     [TestMethod]
@@ -93,9 +59,8 @@ public sealed class ResponsesApiControlTests
     public void SelectingResponsesApiShouldUpdateViewModel()
     {
         using var viewModel = new ChatViewModel();
-        var view = new ChatView { DataContext = viewModel };
-        var toggle = view.FindControl<ToggleButton>("ResponsesApiToggleButton")
-            ?? throw new InvalidOperationException("Responses toggle missing.");
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var toggle = settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!;
 
         toggle.IsChecked = true;
 
@@ -106,9 +71,8 @@ public sealed class ResponsesApiControlTests
     public void ChangingViewModelShouldUpdateResponsesApiToggle()
     {
         using var viewModel = new ChatViewModel();
-        var view = new ChatView { DataContext = viewModel };
-        var toggle = view.FindControl<ToggleButton>("ResponsesApiToggleButton")
-            ?? throw new InvalidOperationException("Responses toggle missing.");
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var toggle = settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!;
 
         viewModel.IsResponsesApiEnabled = true;
 
@@ -119,24 +83,22 @@ public sealed class ResponsesApiControlTests
     public void ResponsesApiShouldHaveMatchingAccessibleName()
     {
         using var viewModel = new ChatViewModel();
-        var view = new ChatView { DataContext = viewModel };
-        var toggle = view.FindControl<ToggleButton>("ResponsesApiToggleButton")
-            ?? throw new InvalidOperationException("Responses toggle missing.");
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var toggle = settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!;
 
-        Assert.AreEqual(toggle.Content?.ToString(), AutomationProperties.GetName(toggle));
+        Assert.AreEqual(Lang.Current.ResponsesApiText, AutomationProperties.GetName(toggle));
     }
 
     [TestMethod]
     public void ResponsesApiShouldAcceptKeyboardNavigationFocus()
     {
         using var viewModel = new ChatViewModel();
-        var view = new ChatView { DataContext = viewModel };
-        var window = new Window { Width = 1016, Height = 620, Content = view };
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var window = new Window { Width = 1016, Height = 620, Content = settings };
         try
         {
             window.Show();
-            var toggle = view.FindControl<ToggleButton>("ResponsesApiToggleButton")
-                ?? throw new InvalidOperationException("Responses toggle missing.");
+            var toggle = settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!;
 
             toggle.Focus(NavigationMethod.Tab);
 
@@ -146,10 +108,72 @@ public sealed class ResponsesApiControlTests
     }
 
     [TestMethod]
+    [DataRow("ChatAutomaticCompressionToggle", nameof(ChatViewModel.IsAutomaticCompressionEnabled))]
+    [DataRow("ChatDotNetRunToggle", nameof(ChatViewModel.IsDotNetRunEnabled))]
+    [DataRow("ChatResponsesApiToggle", nameof(ChatViewModel.IsResponsesApiEnabled))]
+    public void ChatSettingsOptionShouldBindBothWays(string name, string propertyName)
+    {
+        using var viewModel = new ChatViewModel();
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var toggle = settings.FindControl<ToggleSwitch>(name);
+        Assert.IsNotNull(toggle);
+        var property = typeof(ChatViewModel).GetProperty(propertyName)!;
+
+        toggle.IsChecked = true;
+        Assert.IsTrue((bool)property.GetValue(viewModel)!);
+        property.SetValue(viewModel, false);
+        Assert.IsFalse(toggle.IsChecked);
+    }
+
+    [TestMethod]
+    public void LoopIterationCheckBoxShouldBindBothWays()
+    {
+        using var viewModel = new ChatViewModel();
+        var chat = new ChatView { DataContext = viewModel };
+        var loop = chat.FindControl<CheckBox>("LoopIterationCheckBox");
+        Assert.IsNotNull(loop);
+
+        loop.IsChecked = true;
+        Assert.IsTrue(viewModel.IsLoopIterationEnabled);
+        viewModel.IsLoopIterationEnabled = false;
+        Assert.IsFalse(loop.IsChecked);
+    }
+
+    [TestMethod]
     [DataRow(640)]
     [DataRow(760)]
     [DataRow(1016)]
-    public void RunOptionsShouldStayInsideTheirColumn(int width)
+    public void ChatSettingsOptionsShouldAlignVerticallyWithoutOverlap(int width)
+    {
+        using var viewModel = new ChatViewModel();
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var window = new Window { Width = width, Height = 620, Content = settings };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" }
+                .Select(name => settings.FindControl<ToggleSwitch>(name)).ToArray();
+            CollectionAssert.DoesNotContain(toggles, null);
+            CollectionAssert.AreEquivalent(toggles, settings.GetVisualDescendants().OfType<ToggleSwitch>().ToArray());
+            var bounds = toggles.Select(toggle =>
+            {
+                Assert.IsNotNull(toggle);
+                return new Rect(toggle.TranslatePoint(default, settings)!.Value, toggle.Bounds.Size);
+            }).ToArray();
+
+            Assert.IsTrue(bounds.All(rect => new Rect(settings.Bounds.Size).Contains(rect)));
+            Assert.IsTrue(bounds.Zip(bounds.Skip(1), (previous, next) =>
+                previous.Bottom <= next.Top && Math.Abs(previous.Left - next.Left) <= 0.5).All(aligned => aligned));
+        }
+        finally { window.Close(); }
+    }
+
+    [TestMethod]
+    [DataRow(640)]
+    [DataRow(760)]
+    [DataRow(1016)]
+    public void ChatSettingsEntryShouldStayLeftOfComposerActions(int width)
     {
         using var viewModel = new ChatViewModel();
         var view = new ChatView { DataContext = viewModel };
@@ -158,10 +182,20 @@ public sealed class ResponsesApiControlTests
         {
             window.Show();
             window.UpdateLayout();
-            var options = view.FindControl<WrapPanel>("RunOptionsPanel")
-                ?? throw new InvalidOperationException("Run options missing.");
+            var entry = view.FindControl<Button>("OpenChatSettingsButton")!;
+            var loop = view.FindControl<CheckBox>("LoopIterationCheckBox")!;
+            var runOptions = view.FindControl<WrapPanel>("RunOptionsPanel")!;
+            CollectionAssert.AreEqual(new Control[] { loop, entry }, runOptions.Children.ToArray());
+            var compress = view.FindControl<Button>("CompressConversationButton")!;
+            var entryOrigin = entry.TranslatePoint(default, view)!.Value;
+            var compressOrigin = compress.TranslatePoint(default, view)!.Value;
+            var loopOrigin = loop.TranslatePoint(default, view)!.Value;
+            var runOptionsOrigin = runOptions.TranslatePoint(default, view)!.Value;
 
-            Assert.IsTrue(options.Children.All(child => new Rect(options.Bounds.Size).Contains(child.Bounds.BottomRight)));
+            Assert.IsTrue(loopOrigin.X >= 0 && loopOrigin.X + loop.Bounds.Width <= entryOrigin.X);
+            Assert.IsLessThanOrEqualTo(compressOrigin.X, runOptionsOrigin.X + runOptions.Bounds.Width);
+            Assert.IsTrue(entryOrigin.X >= 0 && entryOrigin.X + entry.Bounds.Width <= compressOrigin.X);
+            Assert.AreEqual(compressOrigin.Y + compress.Bounds.Height / 2, entryOrigin.Y + entry.Bounds.Height / 2, 0.5);
         }
         finally { window.Close(); }
     }

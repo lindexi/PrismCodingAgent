@@ -7,6 +7,8 @@ using Avalonia.VisualTree;
 using PrismCodingAgent.CodingShell.Converters;
 using PrismCodingAgent.CodingShell.ViewModels;
 using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using ChatSettingsView = PrismCodingAgent.CodingShell.Views.ChatSettingsView;
+using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -32,7 +34,7 @@ public sealed class ShellControlStyleTests
     }
 
     [TestMethod]
-    public void NewSessionShouldFollowLanguageServerButton()
+    public void NewSessionShouldFollowCompressConversationButton()
     {
         var view = new ChatView { DataContext = new ChatViewModel() };
         var window = new Window { Width = 980, Height = 620, Content = view };
@@ -41,10 +43,37 @@ public sealed class ShellControlStyleTests
             window.Show();
             window.UpdateLayout();
             var create = view.FindControl<Button>("NewSessionButton") ?? throw new InvalidOperationException("New session missing.");
-            var lsp = view.FindControl<Button>("StopLanguageServerButton") ?? throw new InvalidOperationException("LSP missing.");
-            Assert.IsGreaterThanOrEqualTo(lsp.Bounds.Right, create.Bounds.Left);
+            var compress = view.FindControl<Button>("CompressConversationButton") ?? throw new InvalidOperationException("Compress missing.");
+            var actions = (StackPanel)create.Parent!;
+            CollectionAssert.AreEqual(new Control[] { compress, create }, actions.Children.ToArray());
+            var compressPosition = compress.TranslatePoint(default, view)!.Value;
+            var createPosition = create.TranslatePoint(default, view)!.Value;
+            Assert.IsGreaterThanOrEqualTo(compressPosition.X + compress.Bounds.Width, createPosition.X);
+            Assert.AreEqual(compressPosition.Y, createPosition.Y, 0.5);
         }
         finally { window.Close(); }
+    }
+
+    [TestMethod]
+    public void StopLanguageServerButtonShouldKeepCommandInChatSettings()
+    {
+        using var viewModel = new ChatViewModel();
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var button = settings.FindControl<Button>("StopLanguageServerButton");
+
+        Assert.IsNotNull(button);
+        Assert.AreSame(viewModel.StopLanguageServerCommand, button.Command);
+    }
+
+    [TestMethod]
+    public void StopLanguageServerButtonShouldKeepToolTipInChatSettings()
+    {
+        using var viewModel = new ChatViewModel();
+        var settings = new ChatSettingsView { DataContext = viewModel };
+        var button = settings.FindControl<Button>("StopLanguageServerButton");
+
+        Assert.IsNotNull(button);
+        Assert.AreEqual(Lang.Current.StopLanguageServerToolTip, ToolTip.GetTip(button));
     }
 
     [TestMethod]
@@ -169,11 +198,11 @@ public sealed class ShellControlStyleTests
         {
             window.Show();
             window.UpdateLayout();
-            var checkbox = view.FindControl<CheckBox>("EnableDotNetRunCheckBox") ?? throw new InvalidOperationException("Checkbox missing.");
+            var settings = view.FindControl<Button>("OpenChatSettingsButton") ?? throw new InvalidOperationException("Chat settings entry missing.");
             var button = view.FindControl<Button>("CompressConversationButton") ?? throw new InvalidOperationException("Button missing.");
-            Point checkboxOrigin = checkbox.TranslatePoint(default, view) ?? throw new InvalidOperationException("Checkbox position missing.");
+            Point settingsOrigin = settings.TranslatePoint(default, view) ?? throw new InvalidOperationException("Chat settings entry position missing.");
             Point buttonOrigin = button.TranslatePoint(default, view) ?? throw new InvalidOperationException("Button position missing.");
-            Assert.IsLessThanOrEqualTo(buttonOrigin.X, checkboxOrigin.X + checkbox.Bounds.Width);
+            Assert.IsLessThanOrEqualTo(buttonOrigin.X, settingsOrigin.X + settings.Bounds.Width);
         }
         finally { window.Close(); }
     }

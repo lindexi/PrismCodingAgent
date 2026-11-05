@@ -3,6 +3,7 @@ using System.Reflection;
 using PrismCodingAgent.CodingShell.Converters;
 using PrismCodingAgent.CodingShell.ViewModels;
 using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
+using ChatSettingsView = PrismCodingAgent.CodingShell.Views.ChatSettingsView;
 using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
@@ -80,7 +81,22 @@ public sealed class ShellStructureTests
         Assert.IsNotNull(buttonField);
     }
 
-    [TestMethod(DisplayName = "聊天视图应包含循环迭代勾选框")]
+    [TestMethod(DisplayName = "聊天设置视图应包含三个选项开关")]
+    [DataRow("ChatAutomaticCompressionToggle")]
+    [DataRow("ChatDotNetRunToggle")]
+    [DataRow("ChatResponsesApiToggle")]
+    [Timeout(5000)]
+    public void ChatSettingsViewShouldContainOptionToggle(string name)
+    {
+        FieldInfo? toggleField = typeof(ChatSettingsView).GetField(
+            name,
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+        Assert.IsNotNull(toggleField);
+        Assert.AreEqual(typeof(Avalonia.Controls.ToggleSwitch), toggleField.FieldType);
+    }
+
+    [TestMethod(DisplayName = "聊天视图应保留循环迭代复选框")]
     [Timeout(5000)]
     public void ChatViewShouldContainLoopIterationCheckBox()
     {
@@ -89,6 +105,7 @@ public sealed class ShellStructureTests
             BindingFlags.Instance | BindingFlags.NonPublic);
 
         Assert.IsNotNull(checkBoxField);
+        Assert.AreEqual(typeof(Avalonia.Controls.CheckBox), checkBoxField.FieldType);
     }
 
     [TestMethod(DisplayName = "聊天视图应包含模型选择下拉框")]
@@ -113,15 +130,15 @@ public sealed class ShellStructureTests
         Assert.IsNotNull(comboBoxField);
     }
 
-    [TestMethod(DisplayName = "聊天视图应包含自动压缩勾选框")]
+    [TestMethod(DisplayName = "聊天视图应包含聊天设置入口")]
     [Timeout(5000)]
-    public void ChatViewShouldContainAutomaticCompressionCheckBox()
+    public void ChatViewShouldContainChatSettingsEntry()
     {
-        FieldInfo? checkBoxField = typeof(ChatView).GetField(
-            "AutomaticCompressionCheckBox",
+        FieldInfo? buttonField = typeof(ChatView).GetField(
+            "OpenChatSettingsButton",
             BindingFlags.Instance | BindingFlags.NonPublic);
 
-        Assert.IsNotNull(checkBoxField);
+        Assert.IsNotNull(buttonField);
     }
 
     [TestMethod(DisplayName = "聊天视图模型默认不应启用自动压缩")]

@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
+             xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
+             x:Class="PrismCodingAgent.CodingShell.Views.ChatSettingsView"
+             x:DataType="vm:ChatViewModel">
+    <UserControl.Styles>
+        <Style Selector="ToggleSwitch">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="44" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border x:Name="SwitchTrack" Height="24" CornerRadius="12" Background="#D7DEE7">
+                        <Grid x:Name="PART_MovingKnobs">
+                            <Ellipse x:Name="SwitchKnob" Width="18" Height="18" Margin="3"
+                                     HorizontalAlignment="Left" Fill="White" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleSwitch:checked /template/ Border#SwitchTrack">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+        </Style>
+        <Style Selector="ToggleSwitch:checked /template/ Ellipse#SwitchKnob">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+        <Style Selector="ToggleSwitch:pointerover /template/ Border#SwitchTrack">
+            <Setter Property="Opacity" Value="0.85" />
+        </Style>
+        <Style Selector="ToggleSwitch:focus-visible /template/ Border#SwitchTrack">
+            <Setter Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="TextBlock.OptionTitle">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Styles>
+    <Grid RowDefinitions="Auto,*" Margin="32,24" RowSpacing="16">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding ChatSettingsTitle, Source={x:Static localizations:Lang.Current}}"
+                           FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Button x:Name="CloseChatSettingsButton" Grid.Column="1" Classes="Flat"
+                        Width="32" Height="32" Padding="8" Command="{Binding ToggleChatSettingsCommand}"
+                        ToolTip.Tip="{Binding CloseChatSettingsText, Source={x:Static localizations:Lang.Current}}"
+                        AutomationProperties.Name="{Binding CloseChatSettingsText, Source={x:Static localizations:Lang.Current}}">
+                    <Path Width="14" Height="14" Stretch="Uniform" Stroke="#50555C"
+                          StrokeThickness="1.8" StrokeLineCap="Round"
+                          Data="M1,1 L13,13 M13,1 L1,13" />
+                </Button>
+            </Grid>
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Width="520" MaxWidth="{Binding $parent[ScrollViewer].Bounds.Width}"
+                            HorizontalAlignment="Left">
+                    <Grid ColumnDefinitions="*,44" ColumnSpacing="24" MinHeight="48">
+                        <TextBlock Classes="OptionTitle" Text="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatAutomaticCompressionToggle" Grid.Column="1"
+                                      IsChecked="{Binding IsAutomaticCompressionEnabled, Mode=TwoWay}"
+                                      AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}" />
+                    </Grid>
+                    <Border Height="1" Background="#ECEDEF" />
+                    <Grid ColumnDefinitions="*,44" ColumnSpacing="24" MinHeight="48">
+                        <TextBlock Classes="OptionTitle" Text="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatDotNetRunToggle" Grid.Column="1"
+                                      IsChecked="{Binding IsDotNetRunEnabled, Mode=TwoWay}"
+                                      AutomationProperties.Name="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}" />
+                    </Grid>
+                    <Border Height="1" Background="#ECEDEF" />
+                    <Grid ColumnDefinitions="*,44" ColumnSpacing="24" MinHeight="48">
+                        <TextBlock Classes="OptionTitle" Text="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatResponsesApiToggle" Grid.Column="1"
+                                      IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}"
+                                      AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
+                    </Grid>
+                    <Border Height="1" Background="#ECEDEF" Margin="0,16,0,8" />
+                    <Button x:Name="StopLanguageServerButton" Classes="Secondary"
+                            HorizontalAlignment="Left" Margin="0,8,0,0"
+                            Content="{Binding StopLanguageServerText, Source={x:Static localizations:Lang.Current}}"
+                            Command="{Binding StopLanguageServerCommand}"
+                            ToolTip.Tip="{Binding StopLanguageServerToolTip, Source={x:Static localizations:Lang.Current}}" />
+                </StackPanel>
+            </ScrollViewer>
+    </Grid>
+</UserControl>

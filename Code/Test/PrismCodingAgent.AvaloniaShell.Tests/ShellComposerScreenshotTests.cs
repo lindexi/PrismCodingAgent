@@ -8,6 +8,7 @@ using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.ViewModels;
 using ChatView = PrismCodingAgent.CodingShell.Views.ChatView;
 using SettingsView = PrismCodingAgent.CodingShell.Views.SettingsView;
+using ChatSettingsView = PrismCodingAgent.CodingShell.Views.ChatSettingsView;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -43,12 +44,18 @@ public sealed class ShellComposerScreenshotTests
             Press(PhysicalKey.Enter);
             Assert.AreEqual(0, selector.SelectedIndex);
         }
-        foreach (string name in new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton" })
+        var loop = chat.FindControl<CheckBox>("LoopIterationCheckBox")!;
+        if (loop.IsChecked == true) session.Click(loop);
+        Assert.IsFalse(loop.IsChecked.GetValueOrDefault());
+        var chatSettings = chat.FindControl<ChatSettingsView>("ChatSettingsPanel")!;
+        session.Click(chat.FindControl<Button>("OpenChatSettingsButton")!);
+        foreach (string name in new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" })
         {
-            var toggle = chat.FindControl<ToggleButton>(name)!;
+            var toggle = chatSettings.FindControl<ToggleSwitch>(name)!;
             if (toggle.IsChecked == true) session.Click(toggle);
             Assert.IsFalse(toggle.IsChecked.GetValueOrDefault());
         }
+        session.Click(chatSettings.FindControl<Button>("CloseChatSettingsButton")!);
         Assert.AreEqual(1440d, session.Window.ClientSize.Width);
         Assert.AreEqual(900d, session.Window.ClientSize.Height);
         Assert.AreEqual(1d, session.Window.RenderScaling);
@@ -122,14 +129,24 @@ public sealed class ShellComposerScreenshotTests
             Assert.AreEqual(selector.ItemCount - 1, selector.SelectedIndex);
             session.Capture($"{name}-selected");
         }
-        foreach (string name in new[] { "LoopIterationCheckBox", "AutomaticCompressionCheckBox", "EnableDotNetRunCheckBox", "ResponsesApiToggleButton" })
+        session.Click(loop);
+        Assert.IsTrue(loop.IsChecked.GetValueOrDefault());
+        Assert.IsTrue(loop.IsPointerOver);
+        session.Capture("LoopIterationCheckBox-checked-hover");
+        session.Click(chat.FindControl<Button>("OpenChatSettingsButton")!);
+        foreach (string name in new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" })
         {
-            var toggle = chat.FindControl<ToggleButton>(name)!;
+            var toggle = chatSettings.FindControl<ToggleSwitch>(name)!;
             session.Click(toggle);
             Assert.IsTrue(toggle.IsChecked.GetValueOrDefault());
             Assert.IsTrue(toggle.IsPointerOver);
             session.Capture($"{name}-checked-hover");
         }
+        Assert.IsTrue(model.IsLoopIterationEnabled);
+        Assert.IsTrue(model.IsAutomaticCompressionEnabled);
+        Assert.IsTrue(model.IsDotNetRunEnabled);
+        Assert.IsTrue(model.IsResponsesApiEnabled);
+        session.Click(chatSettings.FindControl<Button>("CloseChatSettingsButton")!);
         session.Click(input);
         session.Capture("composer-all-options-checked");
     }
@@ -144,8 +161,9 @@ public sealed class ShellComposerScreenshotTests
         var initialMessages = chatModel.Messages.ToArray();
         var input = chat.FindControl<TextBox>("MessageInputTextBox")!;
         var send = chat.FindControl<Button>("SendButton")!;
-        var responses = chat.FindControl<ToggleButton>("ResponsesApiToggleButton")!;
-        var compression = chat.FindControl<CheckBox>("AutomaticCompressionCheckBox")!;
+        var chatSettings = chat.FindControl<ChatSettingsView>("ChatSettingsPanel")!;
+        var responses = chatSettings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!;
+        var compression = chatSettings.FindControl<ToggleSwitch>("ChatAutomaticCompressionToggle")!;
         var loop = chat.FindControl<CheckBox>("LoopIterationCheckBox")!;
         var reasoning = chat.FindControl<ComboBox>("ReasoningEffortSelector")!;
         Assert.IsTrue(input.IsEffectivelyVisible);
@@ -172,6 +190,7 @@ public sealed class ShellComposerScreenshotTests
         Assert.AreEqual(draft, input.Text?.Replace("\r\n", "\n"));
         Assert.IsTrue(send.IsEffectivelyEnabled);
 
+        session.Click(chat.FindControl<Button>("OpenChatSettingsButton")!);
         bool? originalResponses = responses.IsChecked;
         session.Click(responses);
         session.Capture("responses-toggled");
@@ -180,6 +199,7 @@ public sealed class ShellComposerScreenshotTests
         session.Click(compression);
         session.Capture("automatic-compression-toggled");
         Assert.AreEqual(!originalCompression.GetValueOrDefault(), compression.IsChecked);
+        session.Click(chatSettings.FindControl<Button>("CloseChatSettingsButton")!);
         bool? originalLoop = loop.IsChecked;
         session.Click(loop);
         session.Capture("loop-toggled");

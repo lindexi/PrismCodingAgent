@@ -65,13 +65,10 @@
         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <WrapPanel x:Name="RunOptionsPanel" Margin="0,0,12,0" MaxWidth="600" HorizontalAlignment="Left" VerticalAlignment="Center" TextElement.FontSize="13">
                 <CheckBox x:Name="LoopIterationCheckBox" Margin="0,0,16,0" MinHeight="32" Content="{Binding LoopIterationText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsLoopIterationEnabled}"/>
-                <CheckBox x:Name="AutomaticCompressionCheckBox" Margin="0,0,16,0" MinHeight="32" Content="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsAutomaticCompressionEnabled}"/>
-                <CheckBox x:Name="EnableDotNetRunCheckBox" Margin="0,0,16,0" MinHeight="32" Content="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsDotNetRunEnabled}" ToolTip="{Binding EnableDotNetRunToolTip, Source={x:Static l:Lang.Current}}"/>
-                <CheckBox x:Name="ResponsesApiToggleButton" MinHeight="32" Content="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" ToolTip="{Binding ResponsesApiToolTip, Source={x:Static l:Lang.Current}}"/>
+                <Button x:Name="OpenChatSettingsButton" Content="{Binding ChatSettingsTitle, Source={x:Static l:Lang.Current}}" Command="{Binding ToggleChatSettingsCommand}"/>
             </WrapPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button x:Name="CompressConversationButton" Margin="0,0,8,4" Content="{Binding CompressConversationText, Source={x:Static l:Lang.Current}}" Command="{Binding CompressConversationCommand}" IsEnabled="{Binding CanCompressConversation}"/>
-                <Button x:Name="StopLanguageServerButton" Margin="0,0,0,4" Content="{Binding StopLanguageServerText, Source={x:Static l:Lang.Current}}" Command="{Binding StopLanguageServerCommand}" ToolTip="{Binding StopLanguageServerToolTip, Source={x:Static l:Lang.Current}}"/>
                 <Button x:Name="NewSessionButton" Margin="4,0,0,4" Content="{Binding NewSessionText, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.SessionListViewModel.CreateNewSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
             </StackPanel>
     </Grid>

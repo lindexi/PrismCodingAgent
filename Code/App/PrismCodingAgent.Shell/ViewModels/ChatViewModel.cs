@@ -41,6 +41,20 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private bool _isAutomaticCompressionEnabled;
     private bool _isDotNetRunEnabled;
     private bool _isResponsesApiEnabled;
+    private bool _isChatSettingsOpen;
+    private SimpleCommand? _toggleChatSettingsCommand;
+
+    /// <summary>获取或设置聊天设置是否显示。</summary>
+    public bool IsChatSettingsOpen
+    {
+        get => _isChatSettingsOpen;
+        set => SetField(ref _isChatSettingsOpen, value);
+    }
+
+    /// <summary>获取打开或关闭聊天设置的命令。</summary>
+    public ICommand ToggleChatSettingsCommand => _toggleChatSettingsCommand ??= new SimpleCommand(
+        () => IsChatSettingsOpen = !IsChatSettingsOpen);
+
     private bool _isDisposed;
     private SimpleAsyncCommand<CopilotChatNotice>? _retryChatCommand;
 

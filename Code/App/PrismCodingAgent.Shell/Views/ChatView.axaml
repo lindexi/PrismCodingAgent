@@ -490,33 +490,24 @@
                     <CheckBox x:Name="LoopIterationCheckBox" MinHeight="32"
                               Content="{Binding LoopIterationText, Source={x:Static localizations:Lang.Current}}"
                               IsChecked="{Binding IsLoopIterationEnabled}" />
-                    <CheckBox x:Name="AutomaticCompressionCheckBox" MinHeight="32"
-                              Content="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}"
-                              IsChecked="{Binding IsAutomaticCompressionEnabled}" />
-                    <CheckBox x:Name="EnableDotNetRunCheckBox" MinHeight="32"
-                              Content="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}"
-                              IsChecked="{Binding IsDotNetRunEnabled}"
-                              ToolTip.Tip="{Binding EnableDotNetRunToolTip, Source={x:Static localizations:Lang.Current}}" />
-                    <ToggleButton x:Name="ResponsesApiToggleButton" Classes="ApiMode"
-                                  Content="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}"
-                                  IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}"
-                                  ToolTip.Tip="{Binding ResponsesApiToolTip, Source={x:Static localizations:Lang.Current}}"
-                                  AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
+                    <Button x:Name="OpenChatSettingsButton" Classes="Secondary"
+                            Content="{Binding ChatSettingsTitle, Source={x:Static localizations:Lang.Current}}"
+                            Command="{Binding ToggleChatSettingsCommand}" />
                 </WrapPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                     <Button x:Name="CompressConversationButton" Classes="Secondary"
                             Content="{Binding CompressConversationText, Source={x:Static localizations:Lang.Current}}"
                             Command="{Binding CompressConversationCommand}"
                             IsEnabled="{Binding CanCompressConversation}" />
-                    <Button x:Name="StopLanguageServerButton" Classes="Secondary"
-                            Content="{Binding StopLanguageServerText, Source={x:Static localizations:Lang.Current}}"
-                            Command="{Binding StopLanguageServerCommand}"
-                            ToolTip.Tip="{Binding StopLanguageServerToolTip, Source={x:Static localizations:Lang.Current}}" />
                     <Button x:Name="NewSessionButton" Classes="Secondary"
                             Content="{Binding NewSessionText, Source={x:Static localizations:Lang.Current}}"
                             Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).SessionListViewModel.CreateNewSessionCommand}" />
                 </StackPanel>
             </Grid>
         </Grid>
+        <Border x:Name="ChatSettingsOverlay" Grid.Row="1" Grid.RowSpan="2"
+                IsVisible="{Binding IsChatSettingsOpen}" Background="{StaticResource BackgroundBrush}" ClipToBounds="True">
+            <views:ChatSettingsView x:Name="ChatSettingsPanel" />
+        </Border>
     </Grid>
 </UserControl>
