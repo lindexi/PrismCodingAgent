@@ -147,7 +147,7 @@ public sealed class ShellStructureTests
     {
         var viewModel = new ChatViewModel();
 
-        Assert.IsFalse(viewModel.IsAutomaticCompressionEnabled);
+        Assert.IsFalse(viewModel.RunOptions.EnableAutomaticCompression);
     }
 
     [TestMethod(DisplayName = "聊天视图模型应允许手动启用自动压缩")]
@@ -155,9 +155,9 @@ public sealed class ShellStructureTests
     {
         var viewModel = new ChatViewModel();
 
-        viewModel.IsAutomaticCompressionEnabled = true;
+        viewModel.RunOptions.EnableAutomaticCompression = true;
 
-        Assert.IsTrue(viewModel.IsAutomaticCompressionEnabled);
+        Assert.IsTrue(viewModel.RunOptions.EnableAutomaticCompression);
     }
 
     [TestMethod(DisplayName = "聊天视图模型应提供固定思考强度并默认使用模型设置")]

@@ -265,7 +265,7 @@ public sealed class CodingWorkTaskControllerTests
 
         Task loopTask = application.RunLoopIterationAsync(
             "继续处理",
-            new CodingChatRunOptions(enableAutomaticCompression, false, null) { LanguageTag = "en" });
+            new CodingChatRunOptions { EnableAutomaticCompression = enableAutomaticCompression, LanguageTag = "en" });
         await runner.Started.Task;
         application.IsLoopIterationEnabled = false;
         runner.Complete();
@@ -290,7 +290,7 @@ public sealed class CodingWorkTaskControllerTests
 
         await application.RunLoopIterationAsync(
             "继续处理",
-            new CodingChatRunOptions(false, false, null) { LanguageTag = "en" });
+            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
 
         CollectionAssert.AreEqual(new[] { 1, 1 }, runner.HistoryCountsBeforeRun);
         Assert.AreEqual(sessionId, application.SelectedSessionId);

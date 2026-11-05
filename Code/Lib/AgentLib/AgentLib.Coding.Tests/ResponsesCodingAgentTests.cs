@@ -46,7 +46,7 @@ public sealed class ResponsesCodingAgentTests
         var context = await manager.CreateManualSendMessageContextAsync();
 
         var run = await agent.RunAsync(context, [new TextContent("calculate")],
-            manager.SelectedSession.ResponsesSession, workspace, new CodingChatRunOptions(true, false, null) { LanguageTag = "en" });
+            manager.SelectedSession.ResponsesSession, workspace, new CodingChatRunOptions { LanguageTag = "en" });
         await run.CompletionTask;
         await agent.TryCompactConversationAsync(context.LanguageModel, manager.SelectedSession.ResponsesSession);
 
@@ -76,7 +76,7 @@ public sealed class ResponsesCodingAgentTests
         var agent = new ResponsesCodingAgent(runtime);
         var state = manager.SelectedSession.ResponsesSession;
         var first = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new Microsoft.Extensions.AI.TextContent("first")], state, null, new CodingChatRunOptions(false, false, ReasoningEffort.High) { LanguageTag = "en" });
+            [new Microsoft.Extensions.AI.TextContent("first")], state, null, new CodingChatRunOptions { EnableAutomaticCompression = false, ReasoningEffort = ReasoningEffort.High, LanguageTag = "en" });
         await first.CompletionTask;
         var second = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
             [new Microsoft.Extensions.AI.TextContent("second")], state, null);
@@ -116,7 +116,7 @@ public sealed class ResponsesCodingAgentTests
 
         var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
             [new TextContent("calculate")], manager.SelectedSession.ResponsesSession, path,
-            new CodingChatRunOptions(automaticCompression, false, null) { LanguageTag = "en" });
+            new CodingChatRunOptions { EnableAutomaticCompression = automaticCompression, LanguageTag = "en" });
         await run.CompletionTask;
 
         Assert.HasCount(expectedCompactions, handler.CompactRequests);

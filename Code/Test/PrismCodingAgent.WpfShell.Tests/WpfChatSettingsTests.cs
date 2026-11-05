@@ -12,8 +12,8 @@ namespace PrismCodingAgent.WpfShell.Tests;
 public sealed class WpfChatSettingsTests
 {
     [TestMethod]
-    [DataRow("ChatAutomaticCompressionToggle", nameof(ChatViewModel.IsAutomaticCompressionEnabled))]
-    [DataRow("ChatDotNetRunToggle", nameof(ChatViewModel.IsDotNetRunEnabled))]
+    [DataRow("ChatAutomaticCompressionToggle", "EnableAutomaticCompression")]
+    [DataRow("ChatDotNetRunToggle", "EnableDotNetRun")]
     [DataRow("ChatResponsesApiToggle", nameof(ChatViewModel.IsResponsesApiEnabled))]
     public async Task SettingsToggleUpdatesViewModelAndReflectsViewModelAsync(string name, string propertyName)
         => await WpfTestClassAttribute.RunUiAsync(async () =>
@@ -25,7 +25,8 @@ public sealed class WpfChatSettingsTests
             {
                 var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
                 var toggle = (CheckBox)settings.FindName(name);
-                var property = typeof(ChatViewModel).GetProperty(propertyName)!;
+                object settingsSource = propertyName == nameof(ChatViewModel.IsResponsesApiEnabled) ? model.ChatViewModel : model.ChatViewModel.RunOptions;
+                var property = settingsSource.GetType().GetProperty(propertyName)!;
                 model.ChatViewModel.IsChatSettingsOpen = true;
                 window.Measure(new Size(1440, 900));
                 window.Arrange(new Rect(0, 0, 1440, 900));
@@ -35,13 +36,13 @@ public sealed class WpfChatSettingsTests
                 toggle.SetCurrentValue(CheckBox.IsCheckedProperty, false);
                 toggle.SetCurrentValue(CheckBox.IsCheckedProperty, true);
                 await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
-                Assert.IsTrue((bool)property.GetValue(model.ChatViewModel)!);
+                Assert.IsTrue((bool)property.GetValue(settingsSource)!);
                 toggle.ApplyTemplate();
                 var track = (Border)toggle.Template.FindName("Track", toggle);
                 var knob = (FrameworkElement)toggle.Template.FindName("Knob", toggle);
                 Assert.AreEqual(44d, track.Width);
                 Assert.AreEqual(HorizontalAlignment.Right, knob.HorizontalAlignment);
-                property.SetValue(model.ChatViewModel, false);
+                property.SetValue(settingsSource, false);
                 await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
                 Assert.IsFalse(toggle.IsChecked);
                 Assert.AreEqual(HorizontalAlignment.Left, knob.HorizontalAlignment);

@@ -143,8 +143,8 @@ public sealed class ShellComposerScreenshotTests
             session.Capture($"{name}-checked-hover");
         }
         Assert.IsTrue(model.IsLoopIterationEnabled);
-        Assert.IsTrue(model.IsAutomaticCompressionEnabled);
-        Assert.IsTrue(model.IsDotNetRunEnabled);
+        Assert.IsTrue(model.RunOptions.EnableAutomaticCompression);
+        Assert.IsTrue(model.RunOptions.EnableDotNetRun);
         Assert.IsTrue(model.IsResponsesApiEnabled);
         session.Click(chatSettings.FindControl<Button>("CloseChatSettingsButton")!);
         session.Click(input);

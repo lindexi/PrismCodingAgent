@@ -108,8 +108,8 @@ public sealed class ResponsesApiControlTests
     }
 
     [TestMethod]
-    [DataRow("ChatAutomaticCompressionToggle", nameof(ChatViewModel.IsAutomaticCompressionEnabled))]
-    [DataRow("ChatDotNetRunToggle", nameof(ChatViewModel.IsDotNetRunEnabled))]
+    [DataRow("ChatAutomaticCompressionToggle", "EnableAutomaticCompression")]
+    [DataRow("ChatDotNetRunToggle", "EnableDotNetRun")]
     [DataRow("ChatResponsesApiToggle", nameof(ChatViewModel.IsResponsesApiEnabled))]
     public void ChatSettingsOptionShouldBindBothWays(string name, string propertyName)
     {
@@ -117,11 +117,12 @@ public sealed class ResponsesApiControlTests
         var settings = new ChatSettingsView { DataContext = viewModel };
         var toggle = settings.FindControl<ToggleSwitch>(name);
         Assert.IsNotNull(toggle);
-        var property = typeof(ChatViewModel).GetProperty(propertyName)!;
+        object settingsSource = propertyName == nameof(ChatViewModel.IsResponsesApiEnabled) ? viewModel : viewModel.RunOptions;
+        var property = settingsSource.GetType().GetProperty(propertyName)!;
 
         toggle.IsChecked = true;
-        Assert.IsTrue((bool)property.GetValue(viewModel)!);
-        property.SetValue(viewModel, false);
+        Assert.IsTrue((bool)property.GetValue(settingsSource)!);
+        property.SetValue(settingsSource, false);
         Assert.IsFalse(toggle.IsChecked);
     }
 

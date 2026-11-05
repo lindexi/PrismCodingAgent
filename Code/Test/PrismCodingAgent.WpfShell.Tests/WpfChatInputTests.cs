@@ -244,8 +244,8 @@ public sealed class WpfChatInputTests
             }
             await WpfInput.WaitAsync(() => toggles.Select(toggle => toggle.IsChecked).SequenceEqual(originalOptions.Select(value => !value)), "Run options did not toggle.");
             Assert.AreEqual(loop.IsChecked, model.ChatViewModel.IsLoopIterationEnabled);
-            Assert.AreEqual(toggles[0].IsChecked, model.ChatViewModel.IsAutomaticCompressionEnabled);
-            Assert.AreEqual(toggles[1].IsChecked, model.ChatViewModel.IsDotNetRunEnabled);
+            Assert.AreEqual(toggles[0].IsChecked, model.ChatViewModel.RunOptions.EnableAutomaticCompression);
+            Assert.AreEqual(toggles[1].IsChecked, model.ChatViewModel.RunOptions.EnableDotNetRun);
             Assert.AreEqual(toggles[2].IsChecked, model.ChatViewModel.IsResponsesApiEnabled);
             await WpfInput.ClickAsync((Button)settings.FindName("CloseChatSettingsButton"));
             await WpfInput.WaitAsync(() => !model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not close.");

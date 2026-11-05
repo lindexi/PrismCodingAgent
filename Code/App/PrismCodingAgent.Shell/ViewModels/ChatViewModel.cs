@@ -33,13 +33,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private string _modelStatusText;
     private CopilotChatSession? _subscribedSession;
     private LanguageModelOptionViewModel? _selectedModel;
-    private ReasoningEffortOptionViewModel? _selectedReasoningEffort;
     private AbilityOptionViewModel? _selectedAbility;
     private string _inputText = string.Empty;
     private string? _runStatusText;
     private bool _isLoopIterationEnabled;
-    private bool _isAutomaticCompressionEnabled;
-    private bool _isDotNetRunEnabled;
     private bool _isResponsesApiEnabled;
     private bool _isChatSettingsOpen;
     private SimpleCommand? _toggleChatSettingsCommand;
@@ -181,12 +178,16 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ReasoningEffortOptionViewModel? SelectedReasoningEffort
     {
-        get => _selectedReasoningEffort;
+        get => AvailableReasoningEfforts.FirstOrDefault(option => option.Value == RunOptions.ReasoningEffort);
         set
         {
             if (value is not null && AvailableReasoningEfforts.Contains(value))
             {
-                SetField(ref _selectedReasoningEffort, value);
+                if (RunOptions.ReasoningEffort != value.Value)
+                {
+                    RunOptions.ReasoningEffort = value.Value;
+                    OnPropertyChanged();
+                }
             }
         }
     }
@@ -283,23 +284,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>
-    /// 获取或设置发送消息时是否自动压缩对话历史。
-    /// </summary>
-    public bool IsAutomaticCompressionEnabled
-    {
-        get => _isAutomaticCompressionEnabled;
-        set => SetField(ref _isAutomaticCompressionEnabled, value);
-    }
-
-    /// <summary>
-    /// 获取或设置下一次新运行是否提供 <c>dotnet run</c> 工具。
-    /// </summary>
-    public bool IsDotNetRunEnabled
-    {
-        get => _isDotNetRunEnabled;
-        set => SetField(ref _isDotNetRunEnabled, value);
-    }
+    /// <summary>获取界面与执行共享的运行设置。</summary>
+    public CodingChatRunOptions RunOptions { get; } = new() { EnableAutomaticCompression = false };
 
     /// <summary>
     /// 获取或设置下一次新运行是否选择 Responses API；当前仅用于界面选择。
@@ -425,13 +411,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     private void RebuildReasoningEfforts()
     {
-        ReasoningEffort? selectedValue = _selectedReasoningEffort?.Value;
         AvailableReasoningEfforts.Clear();
         AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningDefault, null));
         AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningLow, ReasoningEffort.Low));
         AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningMedium, ReasoningEffort.Medium));
         AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningHigh, ReasoningEffort.High));
-        _selectedReasoningEffort = AvailableReasoningEfforts.First(option => option.Value == selectedValue);
         OnPropertyChanged(nameof(SelectedReasoningEffort));
     }
 
@@ -739,25 +723,20 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         SelectProgrammingAbility();
         _runStatusText = isInterruption ? Lang.Current.InterruptSubmitting : Lang.Current.Running;
         OnPropertyChanged(nameof(StatusText));
-        var runOptions = new CodingChatRunOptions(
-            IsAutomaticCompressionEnabled,
-            IsDotNetRunEnabled,
-            SelectedReasoningEffort?.Value)
-        {
-            LanguageTag = Lang.Current.IetfLanguageTag,
-        };
+        RunOptions.LanguageTag = Lang.Current.IetfLanguageTag;
         try
         {
             if (runLoopIteration)
             {
+                _workTaskController.IsLoopIterationEnabled = true;
                 await _workTaskController
-                    .RunLoopIterationAsync(loopPrompt, runOptions, runner: runner)
+                    .RunLoopIterationAsync(loopPrompt, RunOptions, runner: runner)
                     .ConfigureAwait(true);
             }
             else
             {
                 await _workTaskController
-                    .SendMessageAsync(contents, runOptions, runner: runner)
+                    .SendMessageAsync(contents, RunOptions, runner: runner)
                     .ConfigureAwait(true);
             }
 

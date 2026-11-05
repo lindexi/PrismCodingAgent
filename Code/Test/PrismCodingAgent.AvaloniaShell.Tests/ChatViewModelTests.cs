@@ -302,7 +302,7 @@ public sealed class ChatViewModelTests
         {
             InputText = "继续处理",
             IsLoopIterationEnabled = true,
-            IsAutomaticCompressionEnabled = false,
+            RunOptions = { EnableAutomaticCompression = false },
         };
 
         viewModel.SendCommand.Execute(null);
@@ -647,7 +647,7 @@ public sealed class ChatViewModelTests
         using var chat = new ChatViewModel(manager, controller, "test")
         {
             IsResponsesApiEnabled = false,
-            IsAutomaticCompressionEnabled = true,
+            RunOptions = { EnableAutomaticCompression = true },
             IsLoopIterationEnabled = true,
             InputText = "Continue the coding task",
         };
@@ -727,6 +727,87 @@ public sealed class ChatViewModelTests
         public Task<T> InvokeAsync<T>(Func<Task<T>> action) => action();
 
         public bool CheckAccess() => true;
+    }
+
+    [TestMethod]
+    [Timeout(10000)]
+    public async Task SendShouldPassSharedSettingsInstance()
+    {
+        var manager = new CopilotChatManager();
+        var runner = new SettingsRunner(manager);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
+        await controller.InitializeAsync();
+        using var chat = new ChatViewModel(manager, controller, "test") { InputText = "task" };
+
+        await ((SimpleAsyncCommand)chat.SendCommand).ExecuteAsync();
+
+        Assert.AreSame(chat.RunOptions, runner.Options.Single());
+    }
+
+    [TestMethod]
+    [Timeout(10000)]
+    public async Task LoopShouldConsumeLatestSettingsOnNextIteration()
+    {
+        var manager = new CopilotChatManager();
+        var runner = new SettingsRunner(manager);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
+        await controller.InitializeAsync();
+        using var chat = new ChatViewModel(manager, controller, "test")
+        {
+            InputText = "task",
+            IsLoopIterationEnabled = true,
+        };
+        runner.AfterRun = count =>
+        {
+            chat.RunOptions.EnableAutomaticCompression = true;
+            chat.RunOptions.EnableDotNetRun = true;
+            chat.SelectedReasoningEffort = chat.AvailableReasoningEfforts.Last();
+            controller.IsLoopIterationEnabled = count < 2;
+        };
+
+        await ((SimpleAsyncCommand)chat.SendCommand).ExecuteAsync();
+
+        CollectionAssert.AreEqual(new[] { (false, false, (ReasoningEffort?)null), (true, true, (ReasoningEffort?)ReasoningEffort.High) }, runner.Values);
+    }
+
+    [TestMethod]
+    [Timeout(10000)]
+    public async Task NewLoopShouldInitializeCurrentStateWithoutChangingNextRunPreference()
+    {
+        var manager = new CopilotChatManager();
+        var runner = new SettingsRunner(manager);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
+        await controller.InitializeAsync();
+        using var chat = new ChatViewModel(manager, controller, "test")
+        {
+            InputText = "task",
+            IsLoopIterationEnabled = true,
+        };
+        controller.IsLoopIterationEnabled = false;
+        runner.AfterRun = _ => controller.IsLoopIterationEnabled = false;
+
+        await ((SimpleAsyncCommand)chat.SendCommand).ExecuteAsync();
+
+        Assert.IsTrue(runner.Options.Count == 1 && chat.IsLoopIterationEnabled);
+    }
+
+    private sealed class SettingsRunner(CopilotChatManager manager) : ICodingChatRunner
+    {
+        public List<CodingChatRunOptions> Options { get; } = [];
+        public List<(bool, bool, ReasoningEffort?)> Values { get; } = [];
+        public Action<int>? AfterRun { get; set; }
+
+        public async Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents,
+            string? workspacePath, CodingChatRunOptions options, CancellationToken cancellationToken)
+        {
+            Options.Add(options);
+            Values.Add((options.EnableAutomaticCompression, options.EnableDotNetRun, options.ReasoningEffort));
+            await manager.AppendMessageAsync(CopilotChatMessage.CreateUser(contents), cancellationToken);
+            var message = CopilotChatMessage.CreateAssistant("done", isPresetInfo: false);
+            await manager.SelectedSession.AddMessageAsync(message);
+            AfterRun?.Invoke(Options.Count);
+            return new CompletedCodingAgentRunResult(message, Task.FromResult<string?>("done"));
+        }
     }
 
     private sealed class ImmediateRunner(CopilotChatManager manager) : ICodingChatRunner

@@ -29,7 +29,7 @@ public sealed class CodingChatSendingTests
 
         var expected = useResponses ? responsesRunner : codingRunner;
         Task sending = application.SendMessageAsync([new TextContent("check")],
-            new CodingChatRunOptions(false, false, null) { LanguageTag = "en" }, runner: expected);
+            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, runner: expected);
         await expected.Started.Task;
         Assert.IsFalse((useResponses ? codingRunner : responsesRunner).Started.Task.IsCompleted);
         expected.Complete("done");
@@ -88,7 +88,7 @@ public sealed class CodingChatSendingTests
 
         Task sendTask = application.SendMessageAsync(
             "检查代码",
-            new CodingChatRunOptions(false, false, null) { LanguageTag = "en" });
+            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
         await runner.Started.Task;
 
         Assert.IsFalse(runner.ObservedAutomaticCompressionEnabled);
@@ -107,7 +107,7 @@ public sealed class CodingChatSendingTests
 
         Task sendTask = application.SendMessageAsync(
             "运行应用",
-            new CodingChatRunOptions(true, true, null) { LanguageTag = "en" });
+            new CodingChatRunOptions { EnableDotNetRun = true, LanguageTag = "en" });
         await runner.Started.Task;
 
         Assert.IsTrue(runner.ObservedDotNetRunEnabled);
@@ -126,7 +126,7 @@ public sealed class CodingChatSendingTests
 
         Task sendTask = application.SendMessageAsync(
             "深入检查代码",
-            new CodingChatRunOptions(true, false, ReasoningEffort.High) { LanguageTag = "en" });
+            new CodingChatRunOptions { ReasoningEffort = ReasoningEffort.High, LanguageTag = "en" });
         await runner.Started.Task;
 
         Assert.AreEqual(ReasoningEffort.High, runner.ObservedReasoningEffort);
@@ -249,7 +249,7 @@ public sealed class CodingChatSendingTests
         var application = CodingChatApplicationTestFactory.CreateApplication(
             manager, new TestSessionStore(), codingAgent: codingAgent);
         await application.InitializeAsync();
-        var options = new CodingChatRunOptions(false, false, null) { LanguageTag = "en" };
+        var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
         Task first = application.SendMessageAsync([new TextContent("first")], options, runner);
         await handler.WaitingForCancellation.Task.WaitAsync(TimeSpan.FromSeconds(5));
 

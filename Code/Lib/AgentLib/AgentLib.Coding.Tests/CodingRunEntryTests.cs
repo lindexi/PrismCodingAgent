@@ -124,7 +124,7 @@ public sealed class CodingRunEntryTests
         await using var agent = new CodingAgent();
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
         var context = new CodingRunContext(client, message, new CopilotChatSession());
-        var options = new CodingChatRunOptions(false, false, null) { LanguageTag = "en" };
+        var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
         ICodingAgentRunResult first = await agent.RunAsync(context, [new TextContent("task")], null, options);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => first.CompletionTask);
         Assert.HasCount(1, requests);

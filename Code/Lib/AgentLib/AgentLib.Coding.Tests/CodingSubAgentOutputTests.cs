@@ -212,7 +212,7 @@ public sealed class CodingSubAgentOutputTests
         {
             var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
             return agent.RunAsync(new CodingRunContext(client, Message, new CopilotChatSession { MainThreadDispatcher = dispatcher }),
-                [new TextContent("parent task")], null, new CodingChatRunOptions(false, false, null) { LanguageTag = "en" }, cancellationToken);
+                [new TextContent("parent task")], null, new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
         }
 
         private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages,

@@ -8,7 +8,7 @@ public sealed class CodingPromptProviderTests
     [DataRow("en")]
     public async Task BuildAsyncShouldPlaceLanguageImmediatelyBeforePreamble(string languageTag)
     {
-        var options = CodingChatRunOptions.Default with { LanguageTag = languageTag };
+        var options = new CodingChatRunOptions { LanguageTag = languageTag };
 
         IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync(null, options, CancellationToken.None);
 

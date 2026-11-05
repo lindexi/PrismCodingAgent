@@ -196,7 +196,7 @@ public sealed class ResponsesWorkflowLiveTests
             Runtime = runtime;
             Recorder = recorder;
             DirectoryPath = directory;
-            Chat = new ChatViewModel(runtime) { IsResponsesApiEnabled = true, IsAutomaticCompressionEnabled = false };
+            Chat = new ChatViewModel(runtime) { IsResponsesApiEnabled = true, RunOptions = { EnableAutomaticCompression = false } };
         }
         public CodingWorkTaskRuntime Runtime { get; }
         public ChatViewModel Chat { get; }

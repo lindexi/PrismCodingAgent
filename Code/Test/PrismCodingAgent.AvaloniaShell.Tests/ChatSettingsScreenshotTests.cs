@@ -28,7 +28,7 @@ public sealed class ChatSettingsScreenshotTests
 
         session.Click(settings.FindControl<ToggleSwitch>("ChatAutomaticCompressionToggle")!);
         Assert.IsTrue(settings.FindControl<ToggleSwitch>("ChatAutomaticCompressionToggle")!.IsChecked);
-        Assert.IsTrue(session.Model.ChatViewModel.IsAutomaticCompressionEnabled);
+        Assert.IsTrue(session.Model.ChatViewModel.RunOptions.EnableAutomaticCompression);
         session.Capture("chat-settings-option-selected");
 
         session.Window.Width = 1280;
@@ -55,7 +55,7 @@ public sealed class ChatSettingsScreenshotTests
         Assert.IsTrue(settings.FindControl<ToggleSwitch>("ChatDotNetRunToggle")!.IsChecked);
         session.Click(settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!);
         Assert.IsTrue(settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!.IsChecked);
-        Assert.IsTrue(session.Model.ChatViewModel.IsDotNetRunEnabled);
+        Assert.IsTrue(session.Model.ChatViewModel.RunOptions.EnableDotNetRun);
         Assert.IsTrue(session.Model.ChatViewModel.IsResponsesApiEnabled);
         session.Click(close);
         Assert.IsTrue(overlay.IsVisible);
