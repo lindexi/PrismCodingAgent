@@ -78,10 +78,12 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         RebuildAbilities();
     }
 
-    internal ChatViewModel(
+    internal ChatViewModel
+    (
         CopilotChatManager chatManager,
         CodingWorkTaskController workTaskController,
-        string statusText)
+        string statusText
+    )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
         ArgumentNullException.ThrowIfNull(workTaskController);
@@ -102,12 +104,14 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         AttachSession(_chatManager.SelectedSession);
     }
 
-    internal ChatViewModel(
+    internal ChatViewModel
+    (
         CopilotChatManager chatManager,
         CodingWorkTaskController workTaskController,
         CodingWorkspaceController workspaceController,
         string statusText,
-        AbilityCatalog? abilityCatalog = null)
+        AbilityCatalog? abilityCatalog = null
+    )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
         ArgumentNullException.ThrowIfNull(workTaskController);

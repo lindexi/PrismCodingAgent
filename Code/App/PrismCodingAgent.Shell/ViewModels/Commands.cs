@@ -61,14 +61,14 @@ public sealed class SimpleCommand<T> : ICommand
 
     /// <inheritdoc />
     public bool CanExecute(object? parameter)
-        => parameter is T or null && (_canExecute?.Invoke((T?) parameter) ?? true);
+        => parameter is T or null && (_canExecute?.Invoke((T?)parameter) ?? true);
 
     /// <inheritdoc />
     public void Execute(object? parameter)
     {
         if (CanExecute(parameter))
         {
-            _execute((T?) parameter);
+            _execute((T?)parameter);
         }
     }
 
@@ -92,11 +92,13 @@ public sealed class SimpleAsyncCommand : ICommand
     /// <summary>
     /// 使用指定异步执行委托创建命令。
     /// </summary>
-    public SimpleAsyncCommand(
+    public SimpleAsyncCommand
+    (
         Func<Task> execute,
         Func<bool>? canExecute = null,
         bool allowConcurrentExecutions = false,
-        Action<Exception>? exceptionHandler = null)
+        Action<Exception>? exceptionHandler = null
+    )
     {
         ArgumentNullException.ThrowIfNull(execute);
         _execute = execute;
@@ -174,10 +176,12 @@ public sealed class SimpleAsyncCommand<T> : ICommand
     /// <summary>
     /// 使用指定异步执行委托创建命令。
     /// </summary>
-    public SimpleAsyncCommand(
+    public SimpleAsyncCommand
+    (
         Func<T?, Task> execute,
         Func<T?, bool>? canExecute = null,
-        Action<Exception>? exceptionHandler = null)
+        Action<Exception>? exceptionHandler = null
+    )
     {
         ArgumentNullException.ThrowIfNull(execute);
         _execute = execute;
@@ -190,7 +194,7 @@ public sealed class SimpleAsyncCommand<T> : ICommand
 
     /// <inheritdoc />
     public bool CanExecute(object? parameter)
-        => parameter is T or null && !_isExecuting && (_canExecute?.Invoke((T?) parameter) ?? true);
+        => parameter is T or null && !_isExecuting && (_canExecute?.Invoke((T?)parameter) ?? true);
 
     /// <inheritdoc />
     public async void Execute(object? parameter) => await ExecuteAsync(parameter).ConfigureAwait(true);
@@ -206,7 +210,7 @@ public sealed class SimpleAsyncCommand<T> : ICommand
         RaiseCanExecuteChanged();
         try
         {
-            await _execute((T?) parameter).ConfigureAwait(true);
+            await _execute((T?)parameter).ConfigureAwait(true);
         }
         catch (Exception exception)
         {

@@ -75,15 +75,19 @@ public sealed class BinaryImage : Control
         double scale = Math.Min(Bounds.Width / pixelSize.Width, Bounds.Height / pixelSize.Height);
         double width = pixelSize.Width * scale;
         double height = pixelSize.Height * scale;
-        var destinationRect = new Rect(
+        var destinationRect = new Rect
+        (
             (Bounds.Width - width) / 2,
             (Bounds.Height - height) / 2,
             width,
-            height);
-        context.DrawImage(
+            height
+        );
+        context.DrawImage
+        (
             _bitmap,
             new Rect(0, 0, pixelSize.Width, pixelSize.Height),
-            destinationRect);
+            destinationRect
+        );
     }
 
     private void ReloadBitmap(BinaryData? data)

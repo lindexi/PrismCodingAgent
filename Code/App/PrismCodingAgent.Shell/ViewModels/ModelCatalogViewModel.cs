@@ -64,7 +64,10 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
             if (_request != request || request.IsCancellationRequested) return;
             foreach (string id in result.ModelIds.Where(id => !string.IsNullOrWhiteSpace(id))
                          .Select(id => id.Trim()).Distinct(StringComparer.Ordinal).Where(id => !IsModelAdded(id)))
+            {
                 Models.Add(id);
+            }
+
             Status = result.IsSuccessful
                 ? (Models.Count == 0 ? Lang.Current.SetupCatalogEmpty : Lang.Current.SetupCatalogReady)
                 : Lang.Current.SetupCatalogFailed;

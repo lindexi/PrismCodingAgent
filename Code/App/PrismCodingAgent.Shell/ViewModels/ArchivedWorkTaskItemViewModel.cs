@@ -13,10 +13,13 @@ public sealed class ArchivedWorkTaskItemViewModel
 
     /// <summary>获取任务标识。</summary>
     public Guid Id => Record.Id;
+
     /// <summary>获取任务名称。</summary>
     public string DisplayName => Record.DisplayName;
+
     /// <summary>获取工作目录。</summary>
     public string WorkspacePath => Record.WorkspacePath ?? string.Empty;
+
     /// <summary>获取模型名称。</summary>
     public string ModelReference => Record.ModelReference ?? string.Empty;
 
