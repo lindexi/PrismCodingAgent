@@ -59,7 +59,7 @@ public sealed class ShellComposerScreenshotTests
         Assert.AreEqual(1440d, session.Window.ClientSize.Width);
         Assert.AreEqual(900d, session.Window.ClientSize.Height);
         Assert.AreEqual(1d, session.Window.RenderScaling);
-        Assert.AreEqual(0, model.PendingImages.Count);
+        Assert.IsEmpty(model.PendingImages);
         Assert.IsNotNull(model.SelectedModel);
         TestContext.WriteLine($"Composer state: language={Lang.Current.IetfLanguageTag}; client=1440x900; dpi=96; model={model.SelectedModel.DisplayName}; reasoning={model.SelectedReasoningEffort?.DisplayName}; ability={model.SelectedAbility?.Id}; switches=false,false,false,false; attachments=0");
         var input = chat.FindControl<TextBox>("MessageInputTextBox")!;
@@ -70,7 +70,7 @@ public sealed class ShellComposerScreenshotTests
         Press(PhysicalKey.Enter);
         session.Window.KeyTextInput("Second line - no request");
         Assert.AreEqual("Offline composer draft\nSecond line - no request", input.Text?.Replace("\r\n", "\n"));
-        Assert.AreEqual(0, model.PendingImages.Count);
+        Assert.IsEmpty(model.PendingImages);
         session.Capture("composer-multiline-draft");
         var ability = chat.FindControl<ComboBox>("AbilitySelector")!;
         session.Click(ability);

@@ -34,7 +34,7 @@ public class CopilotChatMessageProjectionTests
         Assert.IsEmpty(changes);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(0, 0)]
     [DataRow(2, 1)]
     [DataRow(4, 2)]
@@ -61,7 +61,7 @@ public class CopilotChatMessageProjectionTests
             (change.Action, change.OldStartingIndex, change.OldItems![0]));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false, true, NotifyCollectionChangedAction.Add)]
     [DataRow(true, false, NotifyCollectionChangedAction.Remove)]
     [DataRow(true, true, NotifyCollectionChangedAction.Replace)]
@@ -75,7 +75,7 @@ public class CopilotChatMessageProjectionTests
         Assert.AreEqual((action, 1), (change.Action, Math.Max(change.OldStartingIndex, change.NewStartingIndex)));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1, 4, 0, 1)]
     [DataRow(3, 0, 1, 0)]
     public void MoveUsesFilteredIndices(int from, int to, int oldIndex, int newIndex)
@@ -172,7 +172,7 @@ public class CopilotChatMessageProjectionTests
         Assert.AreEqual((1, 0, true, message), (projection.Count, projection.IndexOf(message), projection.Contains(message), projection.Single()));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1, 0, 0, 0)]
     [DataRow(1, 1, 0, 0)]
     [DataRow(1, 2, 0, 0)]
@@ -321,7 +321,7 @@ public class CopilotChatMessageProjectionTests
         Assert.AreSame(message, session.ChatMessages.Single());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void EventCallbacksReadUpdatedProjection(bool propertyEvents)
@@ -366,7 +366,7 @@ public class CopilotChatMessageProjectionTests
         CollectionAssert.AreEqual(expected, actual);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1, 5, 4)]
     [DataRow(5, 1, 4)]
     [DataRow(3, 0, 4)]
@@ -417,7 +417,7 @@ public class CopilotChatMessageProjectionTests
             (changes.Single().NewStartingIndex, session.ChatMessages.Count, session.ChatMessages[256]));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1, 5)]
     [DataRow(5, 1)]
     public void DuplicateMovesKeepAllOccurrencesInSourceOrder(int from, int to)

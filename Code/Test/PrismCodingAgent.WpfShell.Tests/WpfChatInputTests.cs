@@ -62,7 +62,7 @@ public sealed class WpfChatInputTests
         Assert.AreEqual(900d, content.ActualHeight);
         Assert.AreEqual(96d, VisualTreeHelper.GetDpi(content).PixelsPerInchX);
         Assert.AreEqual(96d, VisualTreeHelper.GetDpi(content).PixelsPerInchY);
-        Assert.AreEqual(0, model.PendingImages.Count);
+        Assert.IsEmpty(model.PendingImages);
         var card = (Border)chat.FindName("ComposerPanel");
         Assert.IsTrue(card.ActualHeight >= 110 && card.ActualHeight <= 140, $"Composer card height: {card.ActualHeight}");
         double cardTop = card.TranslatePoint(new Point(), content).Y;
@@ -77,9 +77,9 @@ public sealed class WpfChatInputTests
         var openSettings = (Button)chat.FindName("OpenChatSettingsButton");
         CollectionAssert.AreEqual(new UIElement[] { loop, openSettings }, runOptions.Children.Cast<UIElement>().ToArray());
         Assert.AreSame(model.ToggleChatSettingsCommand, openSettings.Command);
-        Assert.IsTrue(openSettings.TranslatePoint(new Point(), runOptions).X >= loop.ActualWidth);
-        Assert.IsTrue(Math.Abs(openSettings.TranslatePoint(new Point(0, openSettings.ActualHeight / 2), runOptions).Y
-            - loop.TranslatePoint(new Point(0, loop.ActualHeight / 2), runOptions).Y) <= 1, "Loop and settings entry must share one row.");
+        Assert.IsGreaterThanOrEqualTo(loop.ActualWidth, openSettings.TranslatePoint(new Point(), runOptions).X);
+        Assert.IsLessThanOrEqualTo(1, Math.Abs(openSettings.TranslatePoint(new Point(0, openSettings.ActualHeight / 2), runOptions).Y
+            - loop.TranslatePoint(new Point(0, loop.ActualHeight / 2), runOptions).Y), "Loop and settings entry must share one row.");
         var auxiliary = (StackPanel)((Button)chat.FindName("CompressConversationButton")).Parent;
         CollectionAssert.AreEqual(new[] { "CompressConversationButton", "NewSessionButton" },
             auxiliary.Children.Cast<FrameworkElement>().Select(entry => entry.Name).ToArray());
@@ -87,7 +87,7 @@ public sealed class WpfChatInputTests
         {
             var entry = (FrameworkElement)window.FindName(name);
             Assert.IsTrue(entry.IsVisible && entry.ActualWidth > 0 && entry.ActualHeight > 0, name);
-            Assert.IsTrue(entry.TranslatePoint(new Point(0, entry.ActualHeight), content).Y < cardTop, name);
+            Assert.IsLessThan(cardTop, entry.TranslatePoint(new Point(0, entry.ActualHeight), content).Y, name);
         }
         foreach (string name in new[] { "AbilitySelector", "AddImageButton", "SendButton" })
         {
@@ -101,8 +101,8 @@ public sealed class WpfChatInputTests
             var entry = (FrameworkElement)chat.FindName(name);
             Assert.IsTrue(entry.IsVisible && entry.ActualWidth > 0 && entry.ActualHeight > 0, name);
             double top = entry.TranslatePoint(new Point(), card).Y;
-            Assert.IsTrue(top >= card.ActualHeight, name);
-            Assert.IsTrue(entry.TranslatePoint(new Point(entry.ActualWidth, entry.ActualHeight), content).Y <= content.ActualHeight, name);
+            Assert.IsGreaterThanOrEqualTo(card.ActualHeight, top, name);
+            Assert.IsLessThanOrEqualTo(content.ActualHeight, entry.TranslatePoint(new Point(entry.ActualWidth, entry.ActualHeight), content).Y, name);
         }
         Assert.IsNotNull(model.SelectedModel);
         TestContext.WriteLine($"Composer state: language={Lang.Current.IetfLanguageTag}; client=1440x900; dpi=96; model={model.SelectedModel.DisplayName}; reasoning={model.SelectedReasoningEffort?.DisplayName}; ability={model.SelectedAbility?.Id}; switches=false,false,false,false; attachments=0");
@@ -114,7 +114,7 @@ public sealed class WpfChatInputTests
         WpfInput.Key(0x0D);
         WpfInput.Text("Second line - no request");
         await WpfInput.WaitAsync(() => input.Text.Replace("\r\n", "\n") == "Offline composer draft\nSecond line - no request", "Composer draft input failed.");
-        Assert.AreEqual(0, model.PendingImages.Count);
+        Assert.IsEmpty(model.PendingImages);
         await screenshots.CaptureAsync("composer-multiline-draft");
         var ability = (ComboBox)chat.FindName("AbilitySelector");
         await WpfInput.ClickAsync(ability);
@@ -202,7 +202,7 @@ public sealed class WpfChatInputTests
             WpfInput.Text("second line");
             await WpfInput.WaitAsync(() => model.ChatViewModel.InputText.Contains("second line"), "Multiline draft did not reach runtime.");
             string draft = model.ChatViewModel.InputText;
-            Assert.IsTrue(draft.Contains('\n'));
+            Assert.Contains('\n', draft);
             var reasoning = (ComboBox)window.FindName("ReasoningEffortSelector");
             await WpfInput.ClickAsync(reasoning);
             WpfInput.Key(0x23);
@@ -278,7 +278,7 @@ public sealed class WpfChatInputTests
             await WpfInput.ClickAsync((Button)window.FindName("NewTaskButton"));
             await WpfInput.WaitAsync(() => model.WorkTasks.Count == 2 && model.ActiveWorkTask!.Id != original, "Second task did not activate.");
             Assert.AreEqual(string.Empty, input.Text);
-            Assert.AreEqual(0, model.ChatViewModel.PendingImages.Count);
+            Assert.IsEmpty(model.ChatViewModel.PendingImages);
             await WpfInput.ClickAsync(input);
             WpfInput.Text("Other task draft");
             await WpfInput.WaitAsync(() => model.ChatViewModel.InputText == "Other task draft", "Second task draft missing.");
@@ -409,7 +409,7 @@ public sealed class WpfChatInputTests
             await WpfInput.WaitAsync(() => !model.ChatViewModel.IsRunning && !model.ChatViewModel.IsFinalizing
                 && Descendants((ItemsControl)window.FindName("HistoryMessages")).OfType<TextBox>().Any(text => text.Text.Contains("Controlled local answer")), "Real HTTP response did not reach conversation.");
             Assert.AreEqual(string.Empty, input.Text);
-            Assert.AreEqual(0, model.ChatViewModel.PendingImages.Count);
+            Assert.IsEmpty(model.ChatViewModel.PendingImages);
             window.Width = 1440;
             window.Height = 900;
             var history = (ItemsControl)window.FindName("HistoryMessages");

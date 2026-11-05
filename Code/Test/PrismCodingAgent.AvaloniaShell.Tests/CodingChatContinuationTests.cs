@@ -119,7 +119,7 @@ public sealed class CodingChatContinuationTests
         Assert.AreEqual("AB", assistant.Content);
         Assert.AreSame(originalSession, session.AgentSession);
         CollectionAssert.AreEqual(originalEntries, session.Entries.Take(originalEntries.Length).ToArray());
-        Assert.AreEqual(originalEntries.Length + (failContinuation ? 1 : 0), session.Entries.Count);
+        Assert.HasCount(originalEntries.Length + (failContinuation ? 1 : 0), session.Entries);
         var latestNotice = (NoticeItemViewModel)viewModel.Messages.Last();
         Assert.AreEqual(failContinuation, latestNotice.HasContinuation);
         Assert.IsNotNull(latestNotice.RetryCommand);

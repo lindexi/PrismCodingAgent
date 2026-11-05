@@ -255,7 +255,7 @@ public sealed class WpfInfrastructureTests
             await WpfInput.ClickAsync(menuButton);
             await WpfInput.WaitAsync(() => menu.IsOpen && menu.ActualWidth > 0, "Mouse did not open menu.");
             Assert.IsNotNull(menu.Template);
-            Assert.IsTrue(menuItem.ActualHeight >= 36);
+            Assert.IsGreaterThanOrEqualTo(36, menuItem.ActualHeight);
             Assert.AreEqual(Color.FromRgb(250, 250, 250), ((SolidColorBrush)menu.Background).Color);
             VerifyPng(await screenshots.CaptureSurfaceAsync(menu, "menu-surface"));
             WpfInput.Key(0x1B);

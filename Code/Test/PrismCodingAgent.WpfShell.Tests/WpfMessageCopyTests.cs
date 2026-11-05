@@ -43,7 +43,7 @@ public sealed class WpfMessageCopyTests
             Assert.IsTrue(text.AcceptsReturn);
             Assert.AreEqual(TextWrapping.Wrap, text.TextWrapping);
             Assert.AreEqual(body, text.Text);
-            Assert.IsTrue(text.LineCount > 3, $"Expected wrapping, actual lines: {text.LineCount}.");
+            Assert.IsGreaterThan(3, text.LineCount, $"Expected wrapping, actual lines: {text.LineCount}.");
             await WpfInput.ClickAsync(text);
             WpfInput.ControlKey(0x41);
             await WpfInput.WaitAsync(() => text.SelectedText == body, "Real Ctrl+A did not select the body.");

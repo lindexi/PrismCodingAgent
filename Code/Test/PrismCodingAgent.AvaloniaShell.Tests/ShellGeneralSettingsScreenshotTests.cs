@@ -44,7 +44,7 @@ public sealed class ShellGeneralSettingsScreenshotTests
         session.Capture("proxy-disabled");
         session.Click(toggles[1]);
         Dispatcher.UIThread.RunJobs();
-        var proxy = settings.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark?.ToString()?.Contains("7890") == true);
+        var proxy = settings.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText?.ToString()?.Contains("7890") == true);
         ScrollTo(proxy);
         session.Click(proxy);
         session.Window.KeyTextInput("http://127.0.0.1:18888");

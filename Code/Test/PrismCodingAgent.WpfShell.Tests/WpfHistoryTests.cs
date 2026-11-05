@@ -47,7 +47,7 @@ public sealed class WpfHistoryTests
             Assert.AreEqual(96d, VisualTreeHelper.GetDpi(content).PixelsPerInchY);
             await WpfInput.ClickAsync((Button)window.FindName("HistoryButton"));
             await WpfInput.WaitAsync(() => model.IsHistoryOpen && !model.SessionListViewModel.IsLoading, "History did not load.");
-            Assert.AreEqual(1, model.SessionListViewModel.Sessions.Count);
+            Assert.HasCount(1, model.SessionListViewModel.Sessions);
             var initial = model.SessionListViewModel.Sessions.Single();
             await screenshots.CaptureAsync("all-history-initial-session");
             var historyPage = (UserControl)window.FindName("HistoryPage");

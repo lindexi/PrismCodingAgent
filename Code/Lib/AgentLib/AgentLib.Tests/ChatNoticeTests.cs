@@ -10,6 +10,8 @@ namespace AgentLib.Tests;
 [TestClass]
 public class ChatNoticeTests
 {
+    public TestContext TestContext { get; set; } = null!;
+
     [TestMethod]
     public async Task NoticesDoNotAffectMessageProjectionOrTitle()
     {
@@ -32,7 +34,7 @@ public class ChatNoticeTests
             restored.Entries.Select(e => e.GetType()).ToArray());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(CopilotChatNoticeLevel.Information)]
     [DataRow(CopilotChatNoticeLevel.Warning)]
     [DataRow(CopilotChatNoticeLevel.Error)]
@@ -45,7 +47,7 @@ public class ChatNoticeTests
         Assert.AreEqual((notice.Content, time, level), (restored.Content, restored.CreatedTime, restored.Level));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1)]
     [DataRow(2)]
     [DataRow(3)]
@@ -56,7 +58,7 @@ public class ChatNoticeTests
         Assert.IsInstanceOfType<CopilotChatNotice>(RoundTrip([message], version).Entries.Single());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1)]
     [DataRow(2)]
     [DataRow(3)]
@@ -68,7 +70,7 @@ public class ChatNoticeTests
         Assert.IsInstanceOfType<CopilotChatMessage>(RoundTrip([message], version).Entries.Single());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(1)]
     [DataRow(3)]
     [DataRow(4)]
@@ -98,42 +100,46 @@ public class ChatNoticeTests
     }
 
     [TestMethod]
-    [Timeout(5000)]
+    [Timeout(5000, CooperativeCancellation = true)]
     public async Task NoticesAreNotSentToModelContext()
     {
         var observed = new List<ChatMessage>();
         var client = new AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes.FakeChatClient
         {
-            OnGetStreamingResponseAsync = (messages, _, _) => CaptureAsync(messages),
+            OnGetStreamingResponseAsync = (messages, _, cancellationToken) => CaptureAsync(messages, cancellationToken),
         };
         var manager = AgentLib.Tests.Fakes.CopilotChatManagerTestContext.Create(client).ChatManager;
         await manager.SelectedSession.AddEntryAsync(new CopilotChatNotice("private notice"));
-        await manager.SendMessageAsync(contents: [new TextContent("question")], withHistory: true);
+        await manager.SendMessageAsync(contents: [new TextContent("question")], withHistory: true,
+            cancellationToken: TestContext.CancellationToken);
 
         Assert.IsFalse(observed.Any(message => message.Text.Contains("private notice", StringComparison.Ordinal)));
 
-        async IAsyncEnumerable<ChatResponseUpdate> CaptureAsync(IEnumerable<ChatMessage> messages)
+        async IAsyncEnumerable<ChatResponseUpdate> CaptureAsync(IEnumerable<ChatMessage> messages,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             observed.AddRange(messages);
             await Task.Yield();
+            cancellationToken.ThrowIfCancellationRequested();
             yield return new ChatResponseUpdate(ChatRole.Assistant, "answer");
         }
     }
 
     [TestMethod]
-    [Timeout(5000)]
+    [Timeout(5000, CooperativeCancellation = true)]
     public async Task StreamingFailurePreservesPartialOutputAndNotifiesOriginalSession()
     {
         var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var client = new AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes.FakeChatClient
         {
-            OnGetStreamingResponseAsync = (_, _, _) => FailAsync(),
+            OnGetStreamingResponseAsync = (_, _, cancellationToken) => FailAsync(cancellationToken),
         };
         var manager = AgentLib.Tests.Fakes.CopilotChatManagerTestContext.Create(client).ChatManager;
         CopilotChatSession original = manager.SelectedSession;
-        Task sending = manager.SendMessageAsync(contents: [new TextContent("question")]);
-        await started.Task;
+        Task sending = manager.SendMessageAsync(contents: [new TextContent("question")],
+            cancellationToken: TestContext.CancellationToken);
+        await started.Task.WaitAsync(TestContext.CancellationToken);
         manager.CreateNewSession();
         release.SetResult(true);
         await sending;
@@ -142,11 +148,12 @@ public class ChatNoticeTests
             (original.ChatMessages.Last().Content, original.Entries.OfType<CopilotChatNotice>().Count(),
                 manager.SelectedSession.Entries.OfType<CopilotChatNotice>().Count()));
 
-        async IAsyncEnumerable<ChatResponseUpdate> FailAsync()
+        async IAsyncEnumerable<ChatResponseUpdate> FailAsync(
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             yield return new ChatResponseUpdate(ChatRole.Assistant, "partial");
             started.SetResult(true);
-            await release.Task;
+            await release.Task.WaitAsync(cancellationToken);
             throw new InvalidOperationException("stream failed");
         }
     }

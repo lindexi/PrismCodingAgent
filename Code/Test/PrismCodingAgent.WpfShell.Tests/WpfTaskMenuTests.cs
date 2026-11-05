@@ -84,7 +84,7 @@ public sealed class WpfTaskMenuTests
             await screenshots.CaptureAsync("archive-list");
             await WpfInput.ClickAsync((Button)((UserControl)window.FindName("ArchivePage")).FindName("ArchiveBack"));
             await WpfInput.WaitAsync(() => model.IsChatOpen, "Archive back did not return to chat.");
-            Assert.AreEqual(1, model.ArchivedWorkTasks.Count);
+            Assert.HasCount(1, model.ArchivedWorkTasks);
             await screenshots.CaptureAsync("chat-after-archive-back");
             await WpfInput.ClickAsync((Button)window.FindName("ArchiveButton"));
             await WpfInput.WaitAsync(() => model.IsArchiveOpen, "Archive did not reopen.");
@@ -206,7 +206,7 @@ public sealed class WpfTaskMenuTests
         {
             string expected = Lang.Current.IetfLanguageTag == "en" ? "Renamed task" : "重命名后的任务";
             Assert.AreEqual(expected, restored.WorkTasks[0].DisplayName);
-            Assert.AreEqual(2, restored.WorkTasks.Count);
+            Assert.HasCount(2, restored.WorkTasks);
             Assert.IsTrue(restored.IsArchiveEmpty);
             await reopenedScreenshots.CaptureAsync("saved-tasks-reopened");
             WorkTaskItemViewModel target = restored.WorkTasks[0];

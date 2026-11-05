@@ -81,8 +81,8 @@ public sealed class WpfBasicControlsTests
     public async Task ConvertersPreserveReferenceSemanticsAsync() => await WpfTestClassAttribute.RunUiAsync(() =>
     {
         var inverse = (InverseBoolConverter)Application.Current.FindResource("InverseBoolConverter");
-        Assert.AreEqual(false, inverse.Convert(true, typeof(bool), null, CultureInfo.InvariantCulture));
-        Assert.AreEqual(true, inverse.ConvertBack(false, typeof(bool), null, CultureInfo.InvariantCulture));
+        Assert.IsFalse((bool)inverse.Convert(true, typeof(bool), null, CultureInfo.InvariantCulture));
+        Assert.IsTrue((bool)inverse.ConvertBack(false, typeof(bool), null, CultureInfo.InvariantCulture));
         var title = (WorkspaceTitleConverter)Application.Current.FindResource("WorkspaceTitleConverter");
         Assert.AreEqual("App - Task - C:\\Work - Session", title.Convert(["C:\\Work", "Session", "Task", "App"], typeof(string), "", CultureInfo.InvariantCulture));
         Assert.AreEqual("App", title.Convert([null!, " ", "", "App"], typeof(string), "", CultureInfo.InvariantCulture));

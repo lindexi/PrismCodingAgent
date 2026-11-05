@@ -37,7 +37,7 @@ public sealed class WpfChatOutputTests
         Rect bounds = answer.TransformToAncestor(window).TransformBounds(new Rect(answer.RenderSize));
         Assert.IsTrue(bounds.Left >= 24 && bounds.Right <= window.ActualWidth - 24 && bounds.Top >= 0 && bounds.Bottom <= window.ActualHeight,
             $"Long text layout was clipped: {bounds}; window={window.ActualWidth}x{window.ActualHeight}.");
-        Assert.IsTrue(answer.ActualHeight >= answer.FontSize * 3);
+        Assert.IsGreaterThanOrEqualTo(answer.FontSize * 3, answer.ActualHeight);
         await screenshots.CaptureAsync("reasoning-expanded-bilingual");
         Assert.IsTrue(Descendants(expander).OfType<TextBlock>().Any(text => text.IsVisible && text.Text.Contains("Check each condition")));
         resources.Close();
@@ -114,7 +114,7 @@ public sealed class WpfChatOutputTests
         window.Show();
         using var screenshots = new WpfScreenshotSession(window, TestContext);
         var expanders = Descendants(content).OfType<Expander>().ToArray();
-        Assert.AreEqual(3, expanders.Length);
+        Assert.HasCount(3, expanders);
         Assert.IsTrue(expanders[0].IsExpanded && expanders[1].IsExpanded && !expanders[2].IsExpanded);
         Assert.IsTrue(Descendants(expanders[1]).OfType<TextBox>().Any(text => text.IsVisible && text.Text == "Nested text 嵌套正文"));
         await WpfInput.ClickAsync(Descendants(expanders[2]).OfType<ToggleButton>().First());

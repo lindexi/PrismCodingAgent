@@ -11,7 +11,7 @@ namespace PrismCodingAgent.WpfShell.Tests;
 [WpfTestClass]
 public sealed class WpfChatSettingsTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("ChatAutomaticCompressionToggle", nameof(ChatViewModel.IsAutomaticCompressionEnabled))]
     [DataRow("ChatDotNetRunToggle", nameof(ChatViewModel.IsDotNetRunEnabled))]
     [DataRow("ChatResponsesApiToggle", nameof(ChatViewModel.IsResponsesApiEnabled))]

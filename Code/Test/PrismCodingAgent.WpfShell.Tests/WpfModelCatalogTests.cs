@@ -62,7 +62,7 @@ public sealed class WpfModelCatalogTests
 
             await ReplaceAsync(endpoint, address + "/changed");
             await WpfInput.WaitAsync(() => !vm.IsBusy && discover.IsEnabled && !progress.IsVisible && string.IsNullOrEmpty(status.Text), "Connection change did not cancel loading.");
-            Assert.AreEqual(0, vm.Models.Count);
+            Assert.IsEmpty(vm.Models);
             pending.Dispose();
 
             discover.BringIntoView();
@@ -73,7 +73,7 @@ public sealed class WpfModelCatalogTests
                 await RespondAsync(failure, "401 Unauthorized", "{\"error\":{\"message\":\"controlled failure\",\"type\":\"invalid_request_error\"}}");
             }
             await WpfInput.WaitAsync(() => !vm.IsBusy && status.Text == Lang.Current.SetupCatalogFailed && discover.IsEnabled, "Failure feedback missing.");
-            Assert.AreEqual(0, vm.Models.Count);
+            Assert.IsEmpty(vm.Models);
             await screenshots.CaptureAsync("catalog-failed");
 
             await WpfInput.ClickAsync(discover);

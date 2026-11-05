@@ -53,7 +53,7 @@ public sealed class WpfStartupTests
             Assert.AreEqual(96d, System.Windows.Media.VisualTreeHelper.GetDpi(content).PixelsPerInchX);
             Assert.AreEqual(96d, System.Windows.Media.VisualTreeHelper.GetDpi(content).PixelsPerInchY);
             Assert.AreEqual(language, Lang.Current.IetfLanguageTag);
-            Assert.AreEqual(1, model.WorkTasks.Count);
+            Assert.HasCount(1, model.WorkTasks);
             Assert.IsTrue(File.Exists(Path.Combine(root, "WorkTasks.json")));
             Assert.IsTrue(Directory.EnumerateFileSystemEntries(Path.Combine(root, "Abilities")).Any());
             Guid id = model.ActiveWorkTask!.Id;
@@ -191,7 +191,7 @@ public sealed class WpfStartupTests
             await WpfInput.WaitAsync(() => !window.IsVisible, "Running shutdown did not finish.");
             await model.DisposeAsync();
             await model.DisposeAsync();
-            Assert.IsFalse(model.ActiveWorkTask?.IsWorking == true);
+            Assert.AreNotEqual(true, model.ActiveWorkTask?.IsWorking);
             File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "running-task-shutdown-evidence.txt"),
                 $"language={Lang.Current.IetfLanguageTag}; confirmWhileRunning={confirmWhileRunning}; requestReceived=True; cancelExitKeptRunning=True; confirmedClosed=True; repeatedDispose=True; root={root}{Environment.NewLine}");
         }

@@ -58,7 +58,7 @@ public sealed class WpfMainLayoutTests
             await screenshots.CaptureAsync("main-1280x720");
             Assert.AreEqual(1280d, content.ActualWidth, 1d);
             Assert.AreEqual(720d, content.ActualHeight, 1d);
-            Assert.IsTrue(surface.ActualWidth >= 990);
+            Assert.IsGreaterThanOrEqualTo(990, surface.ActualWidth);
 
             Guid original = model.ActiveWorkTask!.Id;
             await WpfInput.ClickAsync((Button)window.FindName("NewTaskButton"));
@@ -155,7 +155,7 @@ public sealed class WpfMainLayoutTests
         }
     });
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("WorkspaceInput")]
     [DataRow("TaskSearch")]
     public async Task SingleLineInputDoesNotClipTextAsync(string inputName) => await WpfTestClassAttribute.RunUiAsync(() =>

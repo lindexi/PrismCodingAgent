@@ -57,7 +57,7 @@ public sealed class WpfApprovalTests
             Rect bounds = card.TransformToAncestor(surface).TransformBounds(new Rect(card.RenderSize));
             Assert.IsTrue(bounds.Left >= 24 && bounds.Right <= surface.ActualWidth - 24 && bounds.Bottom <= surface.ActualHeight - 24, $"Approval card clipped: {bounds}.");
             Assert.AreEqual(752d, card.ActualWidth, 1d);
-            Assert.AreEqual(2, buttons.Length);
+            Assert.HasCount(2, buttons);
             Assert.IsTrue(buttons.All(button => button.IsVisible && button.IsEnabled));
             Assert.IsTrue(Descendants(content).OfType<TextBlock>().Any(text => text.IsVisible && text.Text == approval.InputText));
             await WpfInput.ClickAsync(approve ? approveButton : rejectButton);

@@ -5,6 +5,8 @@ namespace AgentLib.Coding.Tests;
 [TestClass]
 public sealed class CodingWorkspaceContentToolsTests
 {
+    public TestContext TestContext { get; set; } = null!;
+
     private static readonly byte[] PngBytes =
     [
         0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
@@ -19,44 +21,44 @@ public sealed class CodingWorkspaceContentToolsTests
     ];
 
     [TestMethod(DisplayName = "加载工作区图片应返回图片 DataContent")]
-    [Timeout(5000)]
+    [Timeout(5000, CooperativeCancellation = true)]
     public async Task LoadImageAsync_WhenImageIsInsideWorkspace_ReturnsDataContent()
     {
         string workspacePath = CreateTestDirectory();
         string imagePath = Path.Join(workspacePath, "sample.png");
-        await File.WriteAllBytesAsync(imagePath, PngBytes);
+        await File.WriteAllBytesAsync(imagePath, PngBytes, TestContext.CancellationToken);
         var tools = new CodingWorkspaceContentTools(workspacePath);
 
-        DataContent content = await tools.LoadImageAsync("sample.png");
+        DataContent content = await tools.LoadImageAsync("sample.png", TestContext.CancellationToken);
 
         Assert.AreEqual("image/png", content.MediaType);
     }
 
     [TestMethod(DisplayName = "加载工作区外图片应拒绝访问")]
-    [Timeout(5000)]
+    [Timeout(5000, CooperativeCancellation = true)]
     public async Task LoadImageAsync_WhenImageIsOutsideWorkspace_ThrowsUnauthorizedAccessException()
     {
         string testRoot = CreateTestDirectory();
         string workspacePath = Path.Join(testRoot, "workspace");
         string imagePath = Path.Join(testRoot, "outside.png");
         Directory.CreateDirectory(workspacePath);
-        await File.WriteAllBytesAsync(imagePath, PngBytes);
+        await File.WriteAllBytesAsync(imagePath, PngBytes, TestContext.CancellationToken);
         var tools = new CodingWorkspaceContentTools(workspacePath);
 
         await Assert.ThrowsExactlyAsync<UnauthorizedAccessException>(
-            () => tools.LoadImageAsync(imagePath));
+            () => tools.LoadImageAsync(imagePath, TestContext.CancellationToken));
     }
 
     [TestMethod(DisplayName = "加载非图片文件应拒绝返回内容")]
-    [Timeout(5000)]
+    [Timeout(5000, CooperativeCancellation = true)]
     public async Task LoadImageAsync_WhenFileIsNotImage_ThrowsInvalidDataException()
     {
         string workspacePath = CreateTestDirectory();
-        await File.WriteAllTextAsync(Path.Join(workspacePath, "sample.txt"), "content");
+        await File.WriteAllTextAsync(Path.Join(workspacePath, "sample.txt"), "content", TestContext.CancellationToken);
         var tools = new CodingWorkspaceContentTools(workspacePath);
 
         await Assert.ThrowsExactlyAsync<InvalidDataException>(
-            () => tools.LoadImageAsync("sample.txt"));
+            () => tools.LoadImageAsync("sample.txt", TestContext.CancellationToken));
     }
 
     private static string CreateTestDirectory()

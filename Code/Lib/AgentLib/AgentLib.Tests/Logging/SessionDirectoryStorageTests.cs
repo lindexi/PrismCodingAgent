@@ -28,7 +28,7 @@ public sealed class SessionDirectoryStorageTests
         string directory = Path.GetDirectoryName(entry)!;
         Assert.IsNull(XDocument.Load(entry).Root!.Element("Messages"));
         Assert.HasCount(1, Directory.GetFiles(Path.Join(directory, "Resources")));
-        Assert.IsFalse(File.ReadAllText(Path.Join(directory, "History.xml")).Contains("AQID"));
+        Assert.DoesNotContain("AQID", File.ReadAllText(Path.Join(directory, "History.xml")));
         var loaded = await store.LoadSessionAsync(session.SessionId);
         CollectionAssert.AreEqual(image, loaded.Entries.OfType<CopilotChatMessage>().Single().MessageItems.OfType<CopilotChatImageItem>().First().Data.ToArray());
     }
@@ -85,7 +85,7 @@ public sealed class SessionDirectoryStorageTests
         await store.SaveSessionAsync(session, json.RootElement);
 
         string statePath = Directory.GetFiles(root, "AgentSession.json", SearchOption.AllDirectories).Single();
-        Assert.IsFalse(File.ReadAllText(statePath).Contains("AQID"));
+        Assert.DoesNotContain("AQID", File.ReadAllText(statePath));
         var loaded = await store.LoadSessionAsync(session.SessionId);
         Assert.AreEqual(json.RootElement.ToString(), loaded.AgentSessionState!.Value.ToString());
     }

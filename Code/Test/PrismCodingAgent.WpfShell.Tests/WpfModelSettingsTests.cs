@@ -99,7 +99,7 @@ public sealed class WpfModelSettingsTests
         try
         {
             SetContentSize(restored);
-            Assert.AreEqual(1, restoredModel.ChatViewModel.AvailableModels.Count);
+            Assert.HasCount(1, restoredModel.ChatViewModel.AvailableModels);
             await WpfInput.ClickAsync((Button)restored.FindName("SettingsButton"));
             await WpfInput.WaitAsync(() => restoredModel.IsSettingsOpen, "Restored settings did not open.");
             var provider = restoredModel.SettingsViewModel!.Providers.Single();
@@ -130,10 +130,10 @@ public sealed class WpfModelSettingsTests
         try
         {
             SetContentSize(deleted);
-            Assert.AreEqual(0, deletedModel.ChatViewModel.AvailableModels.Count);
+            Assert.IsEmpty(deletedModel.ChatViewModel.AvailableModels);
             Assert.IsTrue(((UserControl)deleted.FindName("ModelGuide")).IsVisible);
             var provider = deletedModel.SettingsViewModel!.Providers.Single();
-            Assert.AreEqual(0, provider.Models.Count);
+            Assert.IsEmpty(provider.Models);
             using var savedConfiguration = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(root, "AgentConfiguration.json")));
             Assert.AreEqual(0, savedConfiguration.RootElement.GetProperty("OpenAIConfigurationList").GetArrayLength());
             await deletedScreenshots.CaptureAsync("deleted-restarted-without-model");
@@ -233,7 +233,7 @@ public sealed class WpfModelSettingsTests
             var settings = Descendants(restored).OfType<SettingsView>().Single();
             var editor = Descendants(settings).OfType<ModelSettingsView>().Single();
             var providers = restoredMain.SettingsViewModel!.Providers;
-            Assert.AreEqual(2, providers.Count);
+            Assert.HasCount(2, providers);
             Assert.AreEqual("https://alpha.invalid/v1", providers[0].EndPoint);
             Assert.AreEqual("https://beta.invalid/v1", providers[1].EndPoint);
             Assert.IsTrue(providers[0].ApiKey == "key-alpha-offline" && providers[1].ApiKey == "key-beta-offline", "Restored service keys differ.");
@@ -256,7 +256,7 @@ public sealed class WpfModelSettingsTests
         var emptyMain = (MainViewModel)empty.DataContext;
         try
         {
-            Assert.AreEqual(0, emptyMain.ChatViewModel.AvailableModels.Count);
+            Assert.IsEmpty(emptyMain.ChatViewModel.AvailableModels);
             Assert.IsNull(emptyMain.SettingsViewModel!.PrimaryModel);
         }
         finally { await CloseAsync(empty, emptyMain); }

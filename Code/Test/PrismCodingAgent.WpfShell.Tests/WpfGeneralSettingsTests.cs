@@ -60,7 +60,7 @@ public sealed class WpfGeneralSettingsTests
                 if (pass > 0)
                 {
                     Assert.AreEqual("http://127.0.0.1:18888", address.Text);
-                    Assert.AreEqual(false, bypass.IsChecked);
+                    Assert.IsFalse(bypass.IsChecked);
                     Assert.AreEqual("C:\\Offline\\WinRemoteShell.exe", path.Text);
                     Assert.AreEqual("127.0.0.1:12398", server.Text);
                 }
@@ -314,7 +314,7 @@ public sealed class WpfGeneralSettingsTests
                 await screenshots.CaptureAsync(shot);
             }
             await VerifyEmptyAsync(proxy, Lang.Current.NetworkProxyAddressPlaceholder, "empty-proxy-disabled");
-            Assert.AreEqual(true, bypass.IsChecked);
+            Assert.IsTrue(bypass.IsChecked);
             Assert.IsFalse(bypass.IsEnabled);
             await WpfInput.ClickAsync((CheckBox)settings.FindName("ProxyEnabled"));
             await ReplaceAsync(proxy, "http://127.0.0.1:18888");
