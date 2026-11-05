@@ -785,10 +785,11 @@
                         <StackPanel Grid.Row="3">
                             <views:ChatView x:Name="ChatComposer" DataContext="{Binding ChatViewModel}" />
                         </StackPanel>
-                        <Border x:Name="ChatSettingsOverlay" Grid.Row="2" Grid.RowSpan="2" Background="{StaticResource BackgroundBrush}"
-                                Visibility="{Binding ChatViewModel.IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}">
-                            <views:ChatSettingsView DataContext="{Binding ChatViewModel}"/>
-                        </Border>
+                        <Grid x:Name="ChatOverlayLayer" Grid.Row="2" Grid.RowSpan="2">
+                            <views:ChatSettingsView x:Name="ChatSettingsPanel" DataContext="{Binding ChatViewModel}"
+                                                    Background="{StaticResource BackgroundBrush}"
+                                                    Visibility="{Binding IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}" />
+                        </Grid>
                     </Grid>
                     <views:ModelSetupView x:Name="ModelGuide" DataContext="{Binding SettingsViewModel}">
                         <views:ModelSetupView.Style>

@@ -18,7 +18,7 @@ public sealed class ChatSettingsScreenshotTests
         const string configuration = """{"PrimaryModel":"Preview model","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"Preview model","ModelId":"preview","Provider":"openai"}]}]}""";
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext, configuration);
         var chat = session.Window.GetVisualDescendants().OfType<ChatView>().Single();
-        var overlay = chat.FindControl<Border>("ChatSettingsOverlay")!;
+        var overlay = chat.FindControl<Grid>("ChatOverlayLayer")!;
         var settings = chat.GetVisualDescendants().OfType<ChatSettingsView>().Single();
         session.Model.ChatViewModel.InputText = "保留当前草稿 / Keep this draft";
 
@@ -58,7 +58,8 @@ public sealed class ChatSettingsScreenshotTests
         Assert.IsTrue(session.Model.ChatViewModel.IsDotNetRunEnabled);
         Assert.IsTrue(session.Model.ChatViewModel.IsResponsesApiEnabled);
         session.Click(close);
-        Assert.IsFalse(overlay.IsVisible);
+        Assert.IsTrue(overlay.IsVisible);
+        Assert.IsFalse(settings.IsVisible);
         Assert.AreEqual("保留当前草稿 / Keep this draft", session.Model.ChatViewModel.InputText);
         session.Window.Width = 1440;
         session.Window.Height = 900;

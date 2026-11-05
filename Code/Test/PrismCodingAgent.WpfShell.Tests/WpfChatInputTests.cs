@@ -49,7 +49,7 @@ public sealed class WpfChatInputTests
         Assert.IsFalse(loop.IsChecked.GetValueOrDefault());
         await WpfInput.ClickAsync((Button)chat.FindName("OpenChatSettingsButton"));
         await WpfInput.WaitAsync(() => model.IsChatSettingsOpen, "Chat settings did not open.");
-        var settings = (ChatSettingsView)((Border)window.FindName("ChatSettingsOverlay")).Child;
+        var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
         foreach (string name in new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" })
         {
             var toggle = (CheckBox)settings.FindName(name);
@@ -234,7 +234,7 @@ public sealed class WpfChatInputTests
             await WpfInput.WaitAsync(() => loop.IsChecked == !originalLoop, "Loop option did not toggle.");
             await WpfInput.ClickAsync((Button)composer.FindName("OpenChatSettingsButton"));
             await WpfInput.WaitAsync(() => model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not open.");
-            var settings = (ChatSettingsView)((Border)window.FindName("ChatSettingsOverlay")).Child;
+            var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
             var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" }
                 .Select(name => (CheckBox)settings.FindName(name)).ToArray();
             bool?[] originalOptions = toggles.Select(toggle => toggle.IsChecked).ToArray();
@@ -345,7 +345,7 @@ public sealed class WpfChatInputTests
             var compact = (Button)composer.FindName("CompressConversationButton");
             await WpfInput.ClickAsync((Button)composer.FindName("OpenChatSettingsButton"));
             await WpfInput.WaitAsync(() => model.ChatViewModel.IsChatSettingsOpen, "Chat settings did not open.");
-            var settings = (ChatSettingsView)((Border)window.FindName("ChatSettingsOverlay")).Child;
+            var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
             var stopLsp = (Button)settings.FindName("StopLanguageServerButton");
             Assert.AreSame(model.ChatViewModel.CompressConversationCommand, compact.Command);
             Assert.AreSame(model.ChatViewModel.StopLanguageServerCommand, stopLsp.Command);

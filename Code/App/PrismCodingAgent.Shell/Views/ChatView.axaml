@@ -505,9 +505,9 @@
                 </StackPanel>
             </Grid>
         </Grid>
-        <Border x:Name="ChatSettingsOverlay" Grid.Row="1" Grid.RowSpan="2"
-                IsVisible="{Binding IsChatSettingsOpen}" Background="{StaticResource BackgroundBrush}" ClipToBounds="True">
-            <views:ChatSettingsView x:Name="ChatSettingsPanel" />
-        </Border>
+        <Grid x:Name="ChatOverlayLayer" Grid.Row="1" Grid.RowSpan="2" ClipToBounds="True">
+            <views:ChatSettingsView x:Name="ChatSettingsPanel"
+                                    IsVisible="{Binding IsChatSettingsOpen}" Background="{StaticResource BackgroundBrush}" />
+        </Grid>
     </Grid>
 </UserControl>

@@ -23,8 +23,7 @@ public sealed class WpfChatSettingsTests
             window.Closing += (_, args) => args.Cancel = false;
             try
             {
-                var overlay = (Border)window.FindName("ChatSettingsOverlay");
-                var settings = (ChatSettingsView)overlay.Child;
+                var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
                 var toggle = (CheckBox)settings.FindName(name);
                 var property = typeof(ChatViewModel).GetProperty(propertyName)!;
                 model.ChatViewModel.IsChatSettingsOpen = true;
@@ -64,26 +63,28 @@ public sealed class WpfChatSettingsTests
         {
             var composer = (ChatView)window.FindName("ChatComposer");
             var input = (TextBox)composer.FindName("MessageInputTextBox");
-            var overlay = (Border)window.FindName("ChatSettingsOverlay");
-            var settings = (ChatSettingsView)overlay.Child;
+            var overlay = (Grid)window.FindName("ChatOverlayLayer");
+            var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
             var open = (Button)composer.FindName("OpenChatSettingsButton");
             var close = (Button)settings.FindName("CloseChatSettingsButton");
             const string draft = "First draft line\nSecond draft line";
             model.ChatViewModel.InputText = draft;
             await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
-            Assert.AreEqual(Visibility.Collapsed, overlay.Visibility);
+            Assert.AreEqual(Visibility.Collapsed, settings.Visibility);
+            Assert.IsNull(overlay.Background);
+            Assert.AreEqual(Visibility.Visible, overlay.Visibility);
             Assert.AreSame(model.ChatViewModel.ToggleChatSettingsCommand, open.Command);
             open.Command.Execute(open.CommandParameter);
             await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
             Assert.IsTrue(model.ChatViewModel.IsChatSettingsOpen);
-            Assert.AreEqual(Visibility.Visible, overlay.Visibility);
+            Assert.AreEqual(Visibility.Visible, settings.Visibility);
             Assert.AreEqual(2, Grid.GetRow(overlay));
             Assert.AreEqual(2, Grid.GetRowSpan(overlay));
             Assert.AreSame(open.Command, close.Command);
             close.Command.Execute(close.CommandParameter);
             await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
             Assert.IsFalse(model.ChatViewModel.IsChatSettingsOpen);
-            Assert.AreEqual(Visibility.Collapsed, overlay.Visibility);
+            Assert.AreEqual(Visibility.Collapsed, settings.Visibility);
             Assert.AreEqual(draft, input.Text);
             Assert.AreEqual(draft, model.ChatViewModel.InputText);
         }
