@@ -475,21 +475,23 @@
                     <Button Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Classes="Danger"
                             Content="{Binding StopText, Source={x:Static localizations:Lang.Current}}"
                             Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
-                    <Button Grid.Row="2" Grid.Column="2" x:Name="SendButton" Classes="Primary accent" MinWidth="88"
+                    <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Spacing="16">
+                        <CheckBox x:Name="LoopIterationCheckBox" MinHeight="32" VerticalAlignment="Center"
+                                  Content="{Binding LoopIterationText, Source={x:Static localizations:Lang.Current}}"
+                                  IsChecked="{Binding IsLoopIterationEnabled}" />
+                    <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
                             Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <PathIcon Width="14" Height="14" Data="M2,3 L22,12 L2,21 L6,13 L15,12 L6,11 Z" />
                             <TextBlock Text="{Binding SendButtonText}" />
                         </StackPanel>
                     </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                 <WrapPanel x:Name="RunOptionsPanel" Orientation="Horizontal" ItemSpacing="16" LineSpacing="8"
                            VerticalAlignment="Center">
-                    <CheckBox x:Name="LoopIterationCheckBox" MinHeight="32"
-                              Content="{Binding LoopIterationText, Source={x:Static localizations:Lang.Current}}"
-                              IsChecked="{Binding IsLoopIterationEnabled}" />
                     <Button x:Name="OpenChatSettingsButton" Classes="Secondary"
                             Content="{Binding ChatSettingsTitle, Source={x:Static localizations:Lang.Current}}"
                             Command="{Binding ToggleChatSettingsCommand}" />
