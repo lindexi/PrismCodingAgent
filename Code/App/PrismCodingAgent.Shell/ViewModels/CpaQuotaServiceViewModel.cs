@@ -30,7 +30,7 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         _selectPrimary = selectPrimary;
         _changed = changed;
         _client = client ?? Client;
-        RefreshCommand = new SimpleAsyncCommand(RefreshAsync);
+        RefreshCommand = new SimpleAsyncCommand(() => RefreshAsync());
     }
 
     public string Address
@@ -104,9 +104,11 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         Publish();
     }
 
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
-        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        if (_request is not null) return;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cancellation.CancelAfter(TimeSpan.FromSeconds(30));
         _request = cancellation;
         Status = "查询中…";
         _changed();

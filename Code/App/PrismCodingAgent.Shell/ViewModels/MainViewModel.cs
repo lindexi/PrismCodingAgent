@@ -889,7 +889,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         if (_settingsViewModel is not null && !_settingsDisposed)
         {
             _settingsViewModel.SettingsSaved -= OnSettingsSaved;
-            _settingsViewModel.Dispose();
+            await _settingsViewModel.DisposeAsync();
             _settingsDisposed = true;
         }
 

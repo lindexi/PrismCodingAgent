@@ -16,9 +16,41 @@ using PrismCodingAgent.CodingShell.Services.Settings;
 
 namespace PrismCodingAgent.CodingShell.ViewModels;
 
-public sealed class SettingsViewModel : ViewModelBase, IDisposable
+public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDisposable
 {
+    private readonly CancellationTokenSource _quotaRefreshCancellation = new();
+    private Task? _quotaRefreshTask;
     public ObservableCollection<CpaQuotaServiceViewModel> CpaServices { get; } = [];
+
+    internal async Task RunQuotaRefreshAsync(TimeProvider timeProvider, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (true)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), timeProvider, cancellationToken);
+                foreach (var service in CpaServices.ToArray())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!CpaServices.Contains(service)
+                        || string.IsNullOrWhiteSpace(service.Address)
+                        || string.IsNullOrWhiteSpace(service.ManagementKey)) continue;
+                    await service.RefreshAsync(cancellationToken);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // 结束此设置实例拥有的刷新循环。
+        }
+    }
+
+    /// <summary>取消并等待额度自动刷新结束。</summary>
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+        if (_quotaRefreshTask is not null) await _quotaRefreshTask;
+    }
     public SimpleCommand AddCpaServiceCommand => _addCpaServiceCommand ??= new SimpleCommand(AddCpaService);
     public SimpleCommand<CpaQuotaServiceViewModel> RemoveCpaServiceCommand => _removeCpaServiceCommand ??= new SimpleCommand<CpaQuotaServiceViewModel>(RemoveCpaService);
     private SimpleCommand? _addCpaServiceCommand;
@@ -298,6 +330,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
         {
             CodingChatSettingsSnapshot snapshot = await _settingsService.LoadAsync().ConfigureAwait(true);
             Load(snapshot);
+            _quotaRefreshTask ??= RunQuotaRefreshAsync(TimeProvider.System, _quotaRefreshCancellation.Token);
         }
         finally
         {
@@ -560,6 +593,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     {
         if (_isDisposed) return;
         _isDisposed = true;
+        _quotaRefreshCancellation.Cancel();
         foreach (var service in CpaServices) service.Dispose();
         Providers.CollectionChanged -= OnProvidersChanged;
         foreach (var provider in _subscribedProviders)
