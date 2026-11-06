@@ -114,10 +114,10 @@ public sealed class CpaQuotaTests
     }
 
     [TestMethod]
-    public async Task ExistingAliasConfigurationLoadsAsNameAsync()
+    public async Task ConfigurationLoadsServiceNameAsync()
     {
         var configuration = System.Text.Json.JsonSerializer.Deserialize<PrismCodingAgent.CodingShell.Services.Settings.CpaQuotaConfiguration>(
-            """{"Address":"https://example.com","ManagementKey":"offline","Alias":"saved-name","IsPrimary":true}""")!;
+            """{"Address":"https://example.com","ManagementKey":"offline","Name":"saved-name","IsPrimary":true}""")!;
         await using var model = new QuotaSettingsViewModel();
         model.Load([configuration]);
         Assert.AreEqual("saved-name", model.Services.Single().Name);
