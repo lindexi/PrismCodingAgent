@@ -236,11 +236,11 @@
                     </Button>
                             <TextBlock x:Name="PrimaryQuotaLabel" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
                                        FontWeight="Normal" FontFamily="{Binding #SettingsButton.FontFamily}" FontSize="{Binding #SettingsButton.FontSize}" Foreground="{StaticResource TextSecondaryBrush}"
-                                       Text="{Binding SettingsViewModel.PrimaryQuotaText}"
-                                       IsVisible="{Binding SettingsViewModel.HasPrimaryQuota}">
+                                       Text="{Binding SettingsViewModel.Quotas.PrimaryQuotaText}"
+                                       IsVisible="{Binding SettingsViewModel.Quotas.HasPrimaryQuota}">
                                 <ToolTip.Tip>
                                     <Border Padding="12" MinWidth="260" MaxWidth="460">
-                                        <TextBlock Text="{Binding SettingsViewModel.AllQuotaDetails}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding SettingsViewModel.Quotas.AllQuotaDetails}" TextWrapping="Wrap" />
                                     </Border>
                                 </ToolTip.Tip>
                             </TextBlock>

@@ -20,23 +20,23 @@ public sealed class CpaQuotaScreenshotTests
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext,
             """{"PrimaryModel":"Preview","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline","ModelDefinitions":[{"ModelName":"Preview","ModelId":"preview","Provider":"openai"}]}]}""");
         var model = session.Model.SettingsViewModel!;
-        Assert.IsFalse(model.HasCpaServices);
-        model.AddCpaServiceCommand.Execute(null);
-        model.CpaServices[0].Address = "https://aabbcc.xx.com";
-        model.CpaServices[0].ManagementKey = "offline-test-secret";
-        model.CpaServices[0].IsPrimary = true;
-        model.AddCpaServiceCommand.Execute(null);
-        model.CpaServices[1].Address = "https://monitor.example.com";
-        model.CpaServices[1].ManagementKey = "another-offline-secret";
+        var quotas = model.Quotas;
+        Assert.IsFalse(quotas.HasServices);
+        quotas.AddServiceCommand.Execute(null);
+        quotas.Services[0].Address = "https://aabbcc.xx.com";
+        quotas.Services[0].ManagementKey = "offline-test-secret";
+        quotas.Services[0].IsPrimary = true;
+        quotas.AddServiceCommand.Execute(null);
+        quotas.Services[1].Address = "https://monitor.example.com";
+        quotas.Services[1].ManagementKey = "another-offline-secret";
         using var client = new System.Net.Http.HttpClient(new QuotaResponseHandler());
-        using var populated = new PrismCodingAgent.CodingShell.ViewModels.CpaQuotaServiceViewModel(_ => { }, () => { }, client)
+        using var populated = new PrismCodingAgent.CodingShell.ViewModels.CpaQuotaServiceViewModel(client)
         {
             Address = "https://aabbcc.xx.com", ManagementKey = "offline-test-secret", IsPrimary = true,
         };
         await populated.RefreshAsync();
-        model.CpaServices[0].Dispose();
-        model.CpaServices[0] = populated;
-        model.CpaServices[1].Alias = "example";
+        quotas.Services[0] = populated;
+        quotas.Services[1].Name = "example";
         session.Model.OpenSettingsCommand.Execute(null);
         Dispatcher.UIThread.RunJobs();
         session.Window.UpdateLayout();
@@ -78,13 +78,13 @@ public sealed class CpaQuotaScreenshotTests
         string path = Path.Combine(directory, "settings.png");
         frame.Save(path, new Avalonia.Media.Imaging.PngBitmapEncoderOptions());
         TestContext.AddResultFile(path);
-        Assert.IsTrue(model.HasCpaServices);
-        Assert.AreEqual("xx", model.CpaServices[0].Alias);
+        Assert.IsTrue(quotas.HasServices);
+        Assert.AreEqual("xx", quotas.Services[0].Name);
         await ((PrismCodingAgent.CodingShell.ViewModels.SimpleAsyncCommand)model.SaveCommand).ExecuteAsync();
         await model.LoadAsync();
-        Assert.AreEqual(2, model.CpaServices.Count);
-        Assert.AreEqual("offline-test-secret", model.CpaServices[0].ManagementKey);
-        Assert.IsTrue(model.CpaServices[0].IsPrimary);
+        Assert.AreEqual(2, quotas.Services.Count);
+        Assert.AreEqual("offline-test-secret", quotas.Services[0].ManagementKey);
+        Assert.IsTrue(quotas.Services[0].IsPrimary);
     }
 
     private sealed class QuotaResponseHandler : System.Net.Http.HttpMessageHandler

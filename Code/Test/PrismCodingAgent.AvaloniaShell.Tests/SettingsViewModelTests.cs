@@ -29,7 +29,7 @@ public sealed class SettingsViewModelTests
         await settingsService.SaveAsync(new AgentApiManagerConfiguration(), shellSettings);
         CodingChatShellSettings loaded = await settingsService.LoadShellSettingsAsync();
 
-        Assert.AreEqual(shellSettings, loaded);
+        Assert.AreEqual(shellSettings, loaded with { CpaQuotaServices = shellSettings.CpaQuotaServices });
     }
 
     [TestMethod(DisplayName = "启用网络代理时应创建对应 WebProxy")]

@@ -11,7 +11,7 @@ public sealed class CpaQuotaRefreshTests
     [TestMethod]
     public async Task RefreshWaitsTenSecondsThenQueriesServicesSequentiallyAsync()
     {
-        await using var model = new SettingsViewModel();
+        await using var model = new QuotaSettingsViewModel();
         using var cancellation = new CancellationTokenSource();
         var timer = new Mock<ITimer>();
         var clock = new Mock<TimeProvider>();
@@ -41,9 +41,9 @@ public sealed class CpaQuotaRefreshTests
         }));
         using var first = CreateService(firstClient);
         using var second = CreateService(secondClient);
-        model.CpaServices.Add(first);
-        model.CpaServices.Add(second);
-        Task refresh = model.RunQuotaRefreshAsync(clock.Object, cancellation.Token);
+        model.Services.Add(first);
+        model.Services.Add(second);
+        Task refresh = model.RunRefreshAsync(clock.Object, cancellation.Token);
         Assert.IsEmpty(order);
         Assert.IsNotNull(tick);
         tick(tickState);
@@ -55,7 +55,7 @@ public sealed class CpaQuotaRefreshTests
     }
 
     private static CpaQuotaServiceViewModel CreateService(HttpClient client)
-        => new(_ => { }, () => { }, client) { Address = "https://example.com", ManagementKey = "offline" };
+        => new(client) { Address = "https://example.com", ManagementKey = "offline" };
 
     private static HttpResponseMessage Response()
         => new(HttpStatusCode.OK) { Content = new StringContent("{\"files\":[]}") };

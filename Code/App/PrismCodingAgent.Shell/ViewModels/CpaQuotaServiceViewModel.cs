@@ -13,23 +13,18 @@ namespace PrismCodingAgent.CodingShell.ViewModels;
 
 public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
 {
-    private static readonly HttpClient Client = new() { Timeout = Timeout.InfiniteTimeSpan };
-    private readonly Action<CpaQuotaServiceViewModel> _selectPrimary;
-    private readonly Action _changed;
     private readonly HttpClient _client;
     private CancellationTokenSource? _request;
     private string _address = "";
     private string _managementKey = "";
-    private string _alias = "";
+    private string _name = "";
     private bool _isPrimary;
     private string _status = "尚未查询";
     private IReadOnlyList<CpaQuotaWindow> _windows = [];
 
-    internal CpaQuotaServiceViewModel(Action<CpaQuotaServiceViewModel> selectPrimary, Action changed, HttpClient? client = null)
+    internal CpaQuotaServiceViewModel(HttpClient client)
     {
-        _selectPrimary = selectPrimary;
-        _changed = changed;
-        _client = client ?? Client;
+        _client = client;
         RefreshCommand = new SimpleAsyncCommand(() => RefreshAsync());
     }
 
@@ -40,10 +35,10 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         {
             if (!SetField(ref _address, value)) return;
             InvalidateResult();
-            if (string.IsNullOrWhiteSpace(Alias) && Uri.TryCreate(value, UriKind.Absolute, out var uri))
+            if (string.IsNullOrWhiteSpace(Name) && Uri.TryCreate(value, UriKind.Absolute, out var uri))
             {
                 string[] parts = uri.Host.Split('.');
-                Alias = parts.Length >= 2 ? parts[^2] : uri.Host;
+                Name = parts.Length >= 2 ? parts[^2] : uri.Host;
             }
         }
     }
@@ -52,20 +47,15 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         get => _managementKey;
         set { if (SetField(ref _managementKey, value)) InvalidateResult(); }
     }
-    public string Alias
+    public string Name
     {
-        get => _alias;
-        set { if (SetField(ref _alias, value)) _changed(); }
+        get => _name;
+        set => SetField(ref _name, value);
     }
     public bool IsPrimary
     {
         get => _isPrimary;
-        set
-        {
-            if (!SetField(ref _isPrimary, value)) return;
-            if (value) _selectPrimary(this);
-            _changed();
-        }
+        set => SetField(ref _isPrimary, value);
     }
     public string Status
     {
@@ -82,17 +72,17 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     public string DetailText => string.Join(Environment.NewLine, _windows.Select(window =>
         $"{window.Account} · {window.Window}：{window.RemainingPercent:0.##}%　重置：{Format(window.ResetAt)}"));
     public string TooltipText => string.Join(Environment.NewLine + Environment.NewLine, _windows.Select(window =>
-        $"{Alias} 剩余额度：{window.RemainingPercent:0.##}%\n重置：{Format(window.ResetAt)}"));
+        $"{Name} 剩余额度：{window.RemainingPercent:0.##}%\n重置：{Format(window.ResetAt)}"));
     public string ObservedText => string.Join(" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
 
     private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "未知";
 
-    internal CpaQuotaConfiguration ToConfiguration() => new(Address, ManagementKey, Alias, IsPrimary);
+    internal CpaQuotaConfiguration ToConfiguration() => new(Address, ManagementKey, Name, IsPrimary);
     internal void Load(CpaQuotaConfiguration configuration)
     {
         _address = configuration.Address;
         _managementKey = configuration.ManagementKey;
-        _alias = configuration.Alias;
+        _name = configuration.Name;
         IsPrimary = configuration.IsPrimary;
     }
 
@@ -111,7 +101,6 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         cancellation.CancelAfter(TimeSpan.FromSeconds(30));
         _request = cancellation;
         Status = "查询中…";
-        _changed();
         try
         {
             var result = await CpaQuotaClient.QueryAsync(_client, Address, ManagementKey, cancellation.Token);
@@ -140,7 +129,6 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         finally
         {
             _request = null;
-            _changed();
         }
     }
 
@@ -151,7 +139,6 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(DetailText));
         OnPropertyChanged(nameof(TooltipText));
         OnPropertyChanged(nameof(ObservedText));
-        _changed();
     }
 
     public void Dispose() => _request?.Cancel();
