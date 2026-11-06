@@ -55,10 +55,10 @@ internal sealed class CodingWorkTaskController
     private readonly ICodingChatRunner _chatRunner;
     private readonly CodingWorkspaceController _workspaceController;
     private readonly CodingAgent _codingAgent;
+    private readonly TimeProvider _timeProvider;
     private Guid? _workTaskId;
     private string? _workTaskName;
     private CancellationTokenSource? _activeOperationCancellationTokenSource;
-    private volatile bool _isLoopIterationEnabled;
     private CodingWorkTaskOperationState _operationState;
     private TaskCompletionSource? _operationCompletion;
     private FailedChatRun? _failedChatRun;
@@ -73,7 +73,8 @@ internal sealed class CodingWorkTaskController
         ICodingChatSessionStore sessionStore,
         ICodingChatRunner chatRunner,
         CodingWorkspaceController workspaceController,
-        CodingAgent codingAgent
+        CodingAgent codingAgent,
+        TimeProvider? timeProvider = null
     )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
@@ -86,6 +87,7 @@ internal sealed class CodingWorkTaskController
         _chatRunner = chatRunner;
         _workspaceController = workspaceController;
         _codingAgent = codingAgent;
+        _timeProvider = timeProvider ?? TimeProvider.System;
         AddOrUpdateSummary(_chatManager.SelectedSession, insertAtTop: true);
     }
 
@@ -105,12 +107,6 @@ internal sealed class CodingWorkTaskController
 
     public bool IsCompressionActive => _operationState is CodingWorkTaskOperationState.Compressing
         or CodingWorkTaskOperationState.LoopCompressing;
-
-    public bool IsLoopIterationEnabled
-    {
-        get => _isLoopIterationEnabled;
-        set => _isLoopIterationEnabled = value;
-    }
 
     public bool IsRunActive => _operationState is CodingWorkTaskOperationState.Running
         or CodingWorkTaskOperationState.LoopRunning;
@@ -491,10 +487,12 @@ internal sealed class CodingWorkTaskController
     (
         string prompt,
         CodingChatRunOptions options,
+        CodingLoopOptions loopOptions,
         ICodingChatRunner? runner = null,
         CancellationToken cancellationToken = default
     )
     {
+        ArgumentNullException.ThrowIfNull(loopOptions);
         if (string.IsNullOrWhiteSpace(prompt))
         {
             throw new ArgumentException("消息内容不能为空。", nameof(prompt));
@@ -505,57 +503,58 @@ internal sealed class CodingWorkTaskController
             throw new InvalidOperationException("当前任务已有活动操作。");
         }
 
+        using var timeoutCancellation = new CancellationTokenSource(
+            loopOptions.MaximumDurationMinutes > 0
+                ? TimeSpan.FromMinutes(loopOptions.MaximumDurationMinutes)
+                : Timeout.InfiniteTimeSpan, _timeProvider);
         using CancellationTokenSource operationCancellationTokenSource =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellation.Token);
         _activeOperationCancellationTokenSource = operationCancellationTokenSource;
         ICodingChatRunner chatRunner = runner ?? _chatRunner;
         UpdateOperationState(CodingWorkTaskOperationState.LoopRunning);
         try
         {
-            while (IsLoopIterationEnabled)
+            long attempts = 0;
+            bool HasNextIteration() => loopOptions.MaximumIterations == 0
+                || attempts < loopOptions.MaximumIterations;
+            while (HasNextIteration())
             {
+                operationCancellationTokenSource.Token.ThrowIfCancellationRequested();
+                attempts++;
                 try
                 {
-                    await RunSingleMessageAsync
-                    (
-                        chatRunner,
-                        [new TextContent(prompt)],
-                        options,
-                        operationCancellationTokenSource.Token
-                    );
-                    if (options.EnableAutomaticCompression)
-                    {
-                        await CompressConversationCoreAsync(chatRunner, operationCancellationTokenSource.Token);
-                    }
-                    else if (IsLoopIterationEnabled)
-                    {
-                        await _chatManager.ReduceAgentSessionOnlyAsync
-                        (
-                            chatReducer: LoopIterationChatReducer.Instance,
-                            cancellationToken: operationCancellationTokenSource.Token
-                        );
-                    }
+                    await RunSingleMessageAsync(chatRunner, [new TextContent(prompt)], options,
+                        operationCancellationTokenSource.Token);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (operationCancellationTokenSource.IsCancellationRequested)
                 {
-                    return;
+                    throw;
                 }
-                catch
+                catch (Exception) when (HasNextIteration())
                 {
-                    if (!IsLoopIterationEnabled)
-                    {
-                        return;
-                    }
+                    UpdateOperationState(CodingWorkTaskOperationState.LoopWaitingToRetry);
+                    await Task.Delay(TimeSpan.FromSeconds(10), operationCancellationTokenSource.Token);
+                }
 
-                    try
-                    {
-                        UpdateOperationState(CodingWorkTaskOperationState.LoopWaitingToRetry);
-                        await Task.Delay(TimeSpan.FromSeconds(10), operationCancellationTokenSource.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return;
-                    }
+                if (!HasNextIteration()) break;
+                operationCancellationTokenSource.Token.ThrowIfCancellationRequested();
+                switch (loopOptions.ConversationMode)
+                {
+                    case LoopConversationMode.Compress:
+                        if (!await CompressConversationCoreAsync(chatRunner, operationCancellationTokenSource.Token))
+                        {
+                            throw new InvalidOperationException(Lang.Current.LoopCompressionUnavailable);
+                        }
+                        break;
+                    case LoopConversationMode.Restart:
+                        var session = _chatManager.SelectedSession;
+                        session.ResetModelContext();
+                        await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
+                        break;
+                    case LoopConversationMode.Append:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(loopOptions.ConversationMode));
                 }
             }
         }
@@ -667,7 +666,6 @@ internal sealed class CodingWorkTaskController
 
     public void StopActiveRun()
     {
-        IsLoopIterationEnabled = false;
         _activeOperationCancellationTokenSource?.Cancel();
     }
 

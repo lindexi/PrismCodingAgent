@@ -4,11 +4,78 @@ using AgentLib.Model;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
+#pragma warning disable OPENAI001
+
 namespace AgentLib.Tests.Model;
 
 [TestClass]
 public class CopilotChatSessionTests
 {
+    [TestMethod]
+    public async Task ResetModelContext_WhenBothBackendsHaveHistory_ClearsBoth()
+    {
+        var session = new CopilotChatSession();
+        using var client = new AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes.FakeChatClient();
+        var agent = client.AsAIAgent();
+        var agentSession = await agent.CreateSessionAsync();
+        agentSession.SetInMemoryChatHistory([new ChatMessage(ChatRole.User, "previous-user")]);
+        session.SetAgentSession(agentSession);
+        var responses = session.ResponsesSession;
+        responses.AppendItem(OpenAI.Responses.ResponseItem.CreateUserMessageItem("previous-user"));
+
+        session.ResetModelContext();
+
+        Assert.IsNull(session.AgentSession);
+        Assert.IsEmpty(responses.Items);
+        Assert.AreSame(responses, session.ResponsesSession);
+    }
+
+    [TestMethod]
+    public void ResetModelContext_WhenUninitialized_DoesNotCreateContext()
+    {
+        var session = new CopilotChatSession();
+
+        session.ResetModelContext();
+        session.ResetModelContext();
+
+        Assert.IsNull(session.AgentSession);
+        Assert.IsNull(session.ExistingResponsesSession);
+    }
+
+    [TestMethod]
+    public async Task ResetModelContext_WhenTimelineExists_PreservesEntriesAndMetadata()
+    {
+        var session = new CopilotChatSession
+        {
+            WorkspacePath = "workspace",
+            WorkTaskId = Guid.NewGuid(),
+            WorkTaskName = "task",
+        };
+        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "visible-user"));
+        var entries = session.Entries.ToArray();
+        var metadata = (session.SessionId, session.StartedTime, session.Title, session.WorkspacePath,
+            session.WorkTaskId, session.WorkTaskName, session.Logger, session.ParentSession);
+
+        session.ResetModelContext();
+
+        CollectionAssert.AreEqual(entries, session.Entries.ToArray());
+        Assert.AreEqual(metadata, (session.SessionId, session.StartedTime, session.Title, session.WorkspacePath,
+            session.WorkTaskId, session.WorkTaskName, session.Logger, session.ParentSession));
+    }
+
+    [TestMethod]
+    public void ResponsesClear_WhenHistoryExists_AllowsOnlyNewHistory()
+    {
+        var session = new CopilotResponsesSession();
+        session.AppendItem(OpenAI.Responses.ResponseItem.CreateUserMessageItem("previous-user"));
+        var next = OpenAI.Responses.ResponseItem.CreateUserMessageItem("next-user");
+
+        session.Clear();
+        session.AppendItem(next);
+
+        CollectionAssert.AreEqual(new[] { next }, session.Items.ToArray());
+    }
+
     [TestMethod]
     [Description("添加首条用户消息后应根据内容自动生成会话标题")]
     public async Task AddMessage_WhenFirstUserMessageAdded_UpdatesTitleFromContent()

@@ -273,7 +273,7 @@ public sealed class ChatViewModelTests
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型")
         {
             InputText = "开始循环任务",
-            IsLoopIterationEnabled = true,
+            LoopOptions = { IsEnabled = true },
         };
         viewModel.SendCommand.Execute(null);
         await runner.Started.Task;
@@ -284,7 +284,7 @@ public sealed class ChatViewModelTests
         await WaitUntilAsync(() => viewModel.StatusText == "插话已提交，等待 Agent 处理");
 
         Assert.AreEqual("只处理这条插话", runner.InjectedText);
-        viewModel.IsLoopIterationEnabled = false;
+        viewModel.LoopOptions.IsEnabled = false;
         viewModel.StopCommand.Execute(null);
         await runner.Canceled.Task;
         await application.StopAndWaitAsync();
@@ -301,13 +301,13 @@ public sealed class ChatViewModelTests
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型")
         {
             InputText = "继续处理",
-            IsLoopIterationEnabled = true,
+            LoopOptions = { IsEnabled = true, MaximumIterations = 1 },
             RunOptions = { EnableAutomaticCompression = false },
         };
 
         viewModel.SendCommand.Execute(null);
         await runner.Started.Task;
-        viewModel.IsLoopIterationEnabled = false;
+        viewModel.LoopOptions.IsEnabled = false;
         runner.Complete();
         await WaitUntilAsync(() => !viewModel.IsRunning);
 
@@ -325,14 +325,14 @@ public sealed class ChatViewModelTests
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型")
         {
             InputText = "继续处理交接文档",
-            IsLoopIterationEnabled = true,
+            LoopOptions = { IsEnabled = true, MaximumIterations = 1 },
         };
 
         viewModel.SendCommand.Execute(null);
         await runner.Started.Task;
 
-        Assert.IsTrue(viewModel.IsLoopIterationEnabled);
-        viewModel.IsLoopIterationEnabled = false;
+        Assert.IsTrue(viewModel.LoopOptions.IsEnabled);
+        viewModel.LoopOptions.IsEnabled = false;
         Assert.IsFalse(runner.CancellationToken.IsCancellationRequested);
         runner.Complete();
         await WaitUntilAsync(() => !viewModel.IsRunning);
@@ -350,7 +350,7 @@ public sealed class ChatViewModelTests
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型");
         Assert.IsTrue(viewModel.TryAddImageAttachment("sample.png", new byte[] { 1, 2, 3 }));
 
-        viewModel.IsLoopIterationEnabled = true;
+        viewModel.LoopOptions.IsEnabled = true;
 
         Assert.IsFalse(viewModel.SendCommand.CanExecute(null));
     }
@@ -617,7 +617,7 @@ public sealed class ChatViewModelTests
 
     [TestMethod]
     [Timeout(15000)]
-    public async Task DisablingLoopDuringSecondRunShouldRefreshUiAfterFinalCompression()
+    public async Task LimitingLoopDuringSecondRunShouldRefreshUiWithoutFinalCompression()
     {
         var secondStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseSecond = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -648,7 +648,7 @@ public sealed class ChatViewModelTests
         {
             IsResponsesApiEnabled = false,
             RunOptions = { EnableAutomaticCompression = true },
-            IsLoopIterationEnabled = true,
+            LoopOptions = { IsEnabled = true, MaximumIterations = 3 },
             InputText = "Continue the coding task",
         };
         bool observedRunning = chat.IsRunning;
@@ -665,11 +665,11 @@ public sealed class ChatViewModelTests
         try
         {
             await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            chat.IsLoopIterationEnabled = false;
+            chat.LoopOptions.IsEnabled = false;
+            chat.LoopOptions.MaximumIterations = 2;
             releaseSecond.TrySetResult();
-            await secondCompressionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            releaseCompression.TrySetResult();
             await sending.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.AreEqual(1, compressionCount);
             Console.WriteLine($"Runs={runCount}, compressions={compressionCount}, loop={controller.IsLoopActive}, running={chat.IsRunning}, notifiedRunning={observedRunning}, button={chat.SendButtonText}, notifiedButton={observedButtonText}, newSession={sessions.CreateNewSessionCommand.CanExecute(null)}, notifiedNewSession={notifiedNewSession}, stop={chat.StopCommand.CanExecute(null)}");
             Assert.IsTrue(!observedRunning && observedButtonText == "发送"
                 && sessions.CreateNewSessionCommand.CanExecute(null) && !chat.StopCommand.CanExecute(null),
@@ -755,14 +755,14 @@ public sealed class ChatViewModelTests
         using var chat = new ChatViewModel(manager, controller, "test")
         {
             InputText = "task",
-            IsLoopIterationEnabled = true,
+            LoopOptions = { IsEnabled = true, ConversationMode = LoopConversationMode.Append },
         };
         runner.AfterRun = count =>
         {
             chat.RunOptions.EnableAutomaticCompression = true;
             chat.RunOptions.EnableDotNetRun = true;
             chat.SelectedReasoningEffort = chat.AvailableReasoningEfforts.Last();
-            controller.IsLoopIterationEnabled = count < 2;
+            chat.LoopOptions.MaximumIterations = 2;
         };
 
         await ((SimpleAsyncCommand)chat.SendCommand).ExecuteAsync();
@@ -781,14 +781,13 @@ public sealed class ChatViewModelTests
         using var chat = new ChatViewModel(manager, controller, "test")
         {
             InputText = "task",
-            IsLoopIterationEnabled = true,
+            LoopOptions = { IsEnabled = true },
         };
-        controller.IsLoopIterationEnabled = false;
-        runner.AfterRun = _ => controller.IsLoopIterationEnabled = false;
+        chat.LoopOptions.MaximumIterations = 1;
 
         await ((SimpleAsyncCommand)chat.SendCommand).ExecuteAsync();
 
-        Assert.IsTrue(runner.Options.Count == 1 && chat.IsLoopIterationEnabled);
+        Assert.IsTrue(runner.Options.Count == 1 && chat.LoopOptions.IsEnabled);
     }
 
     private sealed class SettingsRunner(CopilotChatManager manager) : ICodingChatRunner

@@ -27,6 +27,9 @@ public sealed class CopilotResponsesSession
         _items.Add(item);
     }
 
+    /// <summary>清除全部原生请求历史。</summary>
+    public void Clear() => _items.Clear();
+
     /// <summary>用服务端压缩返回的完整原生输出替换请求历史。</summary>
     public void ApplyCompaction(IReadOnlyList<ResponseItem> output)
     {

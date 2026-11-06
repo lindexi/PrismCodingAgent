@@ -142,7 +142,7 @@ public sealed class ShellComposerScreenshotTests
             Assert.IsTrue(toggle.IsPointerOver);
             session.Capture($"{name}-checked-hover");
         }
-        Assert.IsTrue(model.IsLoopIterationEnabled);
+        Assert.IsTrue(model.LoopOptions.IsEnabled);
         Assert.IsTrue(model.RunOptions.EnableAutomaticCompression);
         Assert.IsTrue(model.RunOptions.EnableDotNetRun);
         Assert.IsTrue(model.IsResponsesApiEnabled);

@@ -9,24 +9,30 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 
 internal static class CodingWorkTaskControllerTestFactory
 {
-    public static CodingWorkTaskController CreateApplication(
+    public static CodingWorkTaskController CreateApplication
+    (
         CopilotChatManager chatManager,
         ICodingChatSessionStore sessionStore,
         ICodingChatRunner? chatRunner = null,
         CodingWorkspaceController? workspaceController = null,
-        CodingAgent? codingAgent = null)
+        CodingAgent? codingAgent = null,
+        TimeProvider? timeProvider = null
+    )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
         ArgumentNullException.ThrowIfNull(sessionStore);
         codingAgent ??= new CodingAgent();
         chatRunner ??= new CodingAgentChatRunner(chatManager, codingAgent);
         workspaceController ??= new CodingWorkspaceController(new ImmediateMainThreadDispatcher());
-        return new CodingWorkTaskController(
+        return new CodingWorkTaskController
+        (
             chatManager,
             sessionStore,
             chatRunner,
             workspaceController,
-            codingAgent);
+            codingAgent,
+            timeProvider
+        );
     }
 
     private sealed class ImmediateMainThreadDispatcher : IMainThreadDispatcher

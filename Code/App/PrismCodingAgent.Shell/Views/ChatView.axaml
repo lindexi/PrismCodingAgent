@@ -478,7 +478,7 @@
                     <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Spacing="16">
                         <CheckBox x:Name="LoopIterationCheckBox" MinHeight="32" VerticalAlignment="Center"
                                   Content="{Binding LoopIterationText, Source={x:Static localizations:Lang.Current}}"
-                                  IsChecked="{Binding IsLoopIterationEnabled}" />
+                                  IsChecked="{Binding LoopOptions.IsEnabled}" ToolTip.Tip="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}" />
                     <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
                             Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
                         <StackPanel Orientation="Horizontal" Spacing="8">

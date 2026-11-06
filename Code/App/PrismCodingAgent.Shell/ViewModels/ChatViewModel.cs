@@ -36,7 +36,6 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private AbilityOptionViewModel? _selectedAbility;
     private string _inputText = string.Empty;
     private string? _runStatusText;
-    private bool _isLoopIterationEnabled;
     private bool _isResponsesApiEnabled;
     private bool _isChatSettingsOpen;
     private SimpleCommand? _toggleChatSettingsCommand;
@@ -266,23 +265,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// <summary>
     /// 获取或设置下一次发送是否启用循环迭代。
     /// </summary>
-    public bool IsLoopIterationEnabled
-    {
-        get => _isLoopIterationEnabled;
-        set
-        {
-            if (SetField(ref _isLoopIterationEnabled, value))
-            {
-                if (_workTaskController is not null)
-                {
-                    _workTaskController.IsLoopIterationEnabled = value;
-                }
-
-                OnPropertyChanged(nameof(CanSend));
-                RaiseCommandCanExecuteChanged();
-            }
-        }
-    }
+    public CodingLoopOptions LoopOptions { get; } = new();
 
     /// <summary>获取界面与执行共享的运行设置。</summary>
     public CodingChatRunOptions RunOptions { get; } = new() { EnableAutomaticCompression = false };
@@ -334,7 +317,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             }
 
             return _workTaskController?.CanSend == true
-                   && (IsLoopIterationEnabled
+                   && (LoopOptions.IsEnabled
                        ? !string.IsNullOrWhiteSpace(InputText)
                        : !string.IsNullOrWhiteSpace(InputText) || PendingImages.Count > 0);
         }
@@ -661,7 +644,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                 : _runtime?.CodingRunner ?? _workTaskController.CodingRunner;
             if (!await _workTaskController.CompressConversationAsync(compressionRequest, runner).ConfigureAwait(true))
             {
-                _runStatusText = null;
+                _runStatusText = Lang.Current.CompactUnavailable;
                 return;
             }
             _runStatusText = Lang.Current.Compacted;
@@ -713,7 +696,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         CopilotChatSession? session = _subscribedSession;
         string loopPrompt = expandedInput;
         bool isInterruption = IsRunning;
-        bool runLoopIteration = IsLoopIterationEnabled && !isInterruption;
+        bool runLoopIteration = LoopOptions.IsEnabled && !isInterruption;
 
         ICodingChatRunner runner = IsResponsesApiEnabled
             ? (_runtime ?? throw new InvalidOperationException("任务运行时尚未初始化。")).ResponsesRunner
@@ -728,9 +711,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             if (runLoopIteration)
             {
-                _workTaskController.IsLoopIterationEnabled = true;
                 await _workTaskController
-                    .RunLoopIterationAsync(loopPrompt, RunOptions, runner: runner)
+                    .RunLoopIterationAsync(loopPrompt, RunOptions, LoopOptions, runner: runner)
                     .ConfigureAwait(true);
             }
             else

@@ -135,8 +135,8 @@ public sealed class ResponsesApiControlTests
         Assert.IsNotNull(loop);
 
         loop.IsChecked = true;
-        Assert.IsTrue(viewModel.IsLoopIterationEnabled);
-        viewModel.IsLoopIterationEnabled = false;
+        Assert.IsTrue(viewModel.LoopOptions.IsEnabled);
+        viewModel.LoopOptions.IsEnabled = false;
         Assert.IsFalse(loop.IsChecked);
     }
 
@@ -186,14 +186,18 @@ public sealed class ResponsesApiControlTests
             var entry = view.FindControl<Button>("OpenChatSettingsButton")!;
             var loop = view.FindControl<CheckBox>("LoopIterationCheckBox")!;
             var runOptions = view.FindControl<WrapPanel>("RunOptionsPanel")!;
-            CollectionAssert.AreEqual(new Control[] { loop, entry }, runOptions.Children.ToArray());
+            CollectionAssert.AreEqual(new Control[] { entry }, runOptions.Children.ToArray());
+            var send = view.FindControl<Button>("SendButton")!;
+            Assert.AreSame(loop.Parent, send.Parent);
             var compress = view.FindControl<Button>("CompressConversationButton")!;
             var entryOrigin = entry.TranslatePoint(default, view)!.Value;
             var compressOrigin = compress.TranslatePoint(default, view)!.Value;
             var loopOrigin = loop.TranslatePoint(default, view)!.Value;
             var runOptionsOrigin = runOptions.TranslatePoint(default, view)!.Value;
 
-            Assert.IsTrue(loopOrigin.X >= 0 && loopOrigin.X + loop.Bounds.Width <= entryOrigin.X);
+            var sendOrigin = send.TranslatePoint(default, view)!.Value;
+            Assert.IsTrue(loopOrigin.X >= 0 && loopOrigin.X + loop.Bounds.Width <= sendOrigin.X);
+            Assert.AreEqual(sendOrigin.Y + send.Bounds.Height / 2, loopOrigin.Y + loop.Bounds.Height / 2, 0.5);
             Assert.IsLessThanOrEqualTo(compressOrigin.X, runOptionsOrigin.X + runOptions.Bounds.Width);
             Assert.IsTrue(entryOrigin.X >= 0 && entryOrigin.X + entry.Bounds.Width <= compressOrigin.X);
             Assert.AreEqual(compressOrigin.Y + compress.Bounds.Height / 2, entryOrigin.Y + entry.Bounds.Height / 2, 0.5);

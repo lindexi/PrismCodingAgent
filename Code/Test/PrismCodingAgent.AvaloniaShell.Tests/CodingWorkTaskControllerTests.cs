@@ -14,6 +14,8 @@ using PrismCodingAgent.CodingShell.Services.WorkTasks;
 using PrismCodingAgent.CodingShell.ViewModels;
 using CodingChatApplicationTestFactory = global::PrismCodingAgent.AvaloniaShell.Tests.CodingWorkTaskControllerTestFactory;
 
+#pragma warning disable OPENAI001
+
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
 [TestClass]
@@ -234,7 +236,7 @@ public sealed class CodingWorkTaskControllerTests
 
     [TestMethod(DisplayName = "循环迭代只应在启用自动压缩时执行轮末总结")]
     [DataRow(false, 0)]
-    [DataRow(true, 1)]
+    [DataRow(true, 0)]
     [Timeout(5000)]
     public async Task RunLoopIterationAsyncShouldConditionallyCompressConversation(
         bool enableAutomaticCompression,
@@ -261,22 +263,21 @@ public sealed class CodingWorkTaskControllerTests
         await using var codingAgent = new CodingAgent();
         var runner = new ControllableRunner { CompressionRunner = new CodingAgentChatRunner(manager, codingAgent) };
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
-        application.IsLoopIterationEnabled = true;
+        var loopOptions = new CodingLoopOptions { MaximumIterations = 1 };
 
         Task loopTask = application.RunLoopIterationAsync(
             "继续处理",
-            new CodingChatRunOptions { EnableAutomaticCompression = enableAutomaticCompression, LanguageTag = "en" });
+            new CodingChatRunOptions { EnableAutomaticCompression = enableAutomaticCompression, LanguageTag = "en" }, loopOptions);
         await runner.Started.Task;
-        application.IsLoopIterationEnabled = false;
         runner.Complete();
         await loopTask;
 
         Assert.AreEqual(expectedCompressionCount, compressionCount);
     }
 
-    [TestMethod(DisplayName = "循环迭代关闭自动压缩时下一轮应移除上一轮模型历史")]
+    [TestMethod(DisplayName = "追加模式应保留前轮模型历史")]
     [Timeout(5000)]
-    public async Task RunLoopIterationAsyncWithoutCompressionShouldRemovePreviousIterationHistory()
+    public async Task RunLoopIterationAsyncInAppendModeShouldKeepPreviousIterationHistory()
     {
         CopilotChatManager manager = CreateChatManager(new FakeChatClient());
         IManualSendMessageContext context = await manager.CreateManualSendMessageContextAsync();
@@ -284,15 +285,15 @@ public sealed class CodingWorkTaskControllerTests
         agentSession.SetInMemoryChatHistory([new ChatMessage(ChatRole.System, "系统提示")]);
         Guid sessionId = manager.SelectedSession.SessionId;
         CodingWorkTaskController? application = null;
-        var runner = new LoopHistoryRunner(agentSession, () => application!.IsLoopIterationEnabled = false);
+        var runner = new LoopHistoryRunner(agentSession, () => { });
         application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
-        application.IsLoopIterationEnabled = true;
 
         await application.RunLoopIterationAsync(
             "继续处理",
-            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
+            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+            new CodingLoopOptions { MaximumIterations = 2, ConversationMode = LoopConversationMode.Append });
 
-        CollectionAssert.AreEqual(new[] { 1, 1 }, runner.HistoryCountsBeforeRun);
+        CollectionAssert.AreEqual(new[] { 1, 3 }, runner.HistoryCountsBeforeRun);
         Assert.AreEqual(sessionId, application.SelectedSessionId);
         Assert.HasCount(1, application.Sessions);
     }
@@ -306,7 +307,6 @@ public sealed class CodingWorkTaskControllerTests
             new CopilotChatManager(),
             new TestSessionStore(),
             runner);
-        application.IsLoopIterationEnabled = true;
         var retryDelayStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         application.StateChanged += (_, _) =>
         {
@@ -318,13 +318,13 @@ public sealed class CodingWorkTaskControllerTests
 
         Task loopTask = application.RunLoopIterationAsync(
             "继续处理",
-            CodingChatRunOptions.Default);
+            CodingChatRunOptions.Default, new CodingLoopOptions());
         await runner.Started.Task;
         runner.Fail(new InvalidOperationException("模拟失败"));
         await retryDelayStarted.Task;
 
         application.StopActiveRun();
-        await loopTask;
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => loopTask);
 
         Assert.IsFalse(application.IsLoopActive);
     }
@@ -564,6 +564,288 @@ public sealed class CodingWorkTaskControllerTests
             LastSavedSession = session;
             return Task.CompletedTask;
         }
+    }
+
+    [TestMethod]
+    [DataRow(LoopConversationMode.Compress, 1, 0)]
+    [DataRow(LoopConversationMode.Restart, 0, 1)]
+    [DataRow(LoopConversationMode.Append, 0, 0)]
+    public async Task LoopShouldProcessContextOnlyBetweenAttempts(LoopConversationMode mode, int compactions, int resets)
+    {
+        var manager = new CopilotChatManager();
+        var session = manager.SelectedSession;
+        var historyCounts = new List<int>();
+        var runner = new LoopRunner
+        {
+            OnRun = () =>
+            {
+                historyCounts.Add(session.ResponsesSession.Items.Count);
+                session.ResponsesSession.AppendItem(OpenAI.Responses.ResponseItem.CreateUserMessageItem("iteration"));
+            },
+        };
+        var store = new TestSessionStore();
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+
+        await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumIterations = 2, ConversationMode = mode });
+
+        CollectionAssert.AreEqual(new[] { 0, 1 - resets }, historyCounts.ToArray());
+        CollectionAssert.AreEqual(new[] { 2, compactions, 2 + compactions + resets },
+            new[] { runner.Attempts, runner.Compactions, store.SaveCount });
+        Assert.AreSame(session, store.LastSavedSession);
+        Assert.HasCount(2 - resets, session.ResponsesSession.Items);
+    }
+
+    [TestMethod]
+    public async Task FailedAttemptShouldConsumeLastIteration()
+    {
+        var runner = new LoopRunner { Failure = new InvalidOperationException("Run failed") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.RunLoopIterationAsync(
+            "Continue", CodingChatRunOptions.Default, new CodingLoopOptions { MaximumIterations = 1 }));
+
+        Assert.AreEqual(1, runner.Attempts);
+    }
+
+    [TestMethod]
+    public async Task UnavailableLoopCompactionShouldStopBeforeNextAttempt()
+    {
+        var runner = new LoopRunner { CanCompact = false };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.RunLoopIterationAsync(
+            "Continue", CodingChatRunOptions.Default, new CodingLoopOptions { MaximumIterations = 2 }));
+
+        Assert.AreEqual(1, runner.Attempts);
+    }
+
+    [TestMethod]
+    public async Task LoopShouldConsumeLatestModeAndAttemptLimit()
+    {
+        var settings = new CodingLoopOptions { MaximumIterations = 3 };
+        var manager = new CopilotChatManager();
+        var historyCounts = new List<int>();
+        var store = new TestSessionStore();
+        var runner = new LoopRunner
+        {
+            OnRun = () =>
+            {
+                historyCounts.Add(manager.SelectedSession.ResponsesSession.Items.Count);
+                manager.SelectedSession.ResponsesSession.AppendItem(
+                    OpenAI.Responses.ResponseItem.CreateUserMessageItem("iteration"));
+                settings.ConversationMode = LoopConversationMode.Restart;
+                settings.MaximumIterations = 2;
+            },
+        };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+
+        await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default, settings);
+
+        CollectionAssert.AreEqual(new[] { 2, 0, 3 }, new[] { runner.Attempts, runner.Compactions, store.SaveCount });
+        CollectionAssert.AreEqual(new[] { 0, 0 }, historyCounts.ToArray());
+    }
+
+    [TestMethod]
+    public async Task CancelledLoopShouldNotStartAnyAttempt()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var runner = new LoopRunner();
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => controller.RunLoopIterationAsync(
+            "Continue", CodingChatRunOptions.Default, new CodingLoopOptions(), cancellationToken: cancellation.Token));
+
+        Assert.AreEqual(0, runner.Attempts);
+    }
+
+    [TestMethod]
+    [DataRow(-1)]
+    [DataRow(71583)]
+    public void LoopShouldIgnoreInvalidDuration(int duration)
+    {
+        var options = new CodingLoopOptions { MaximumDurationMinutes = 12 };
+        options.MaximumDurationMinutes = duration;
+        Assert.AreEqual(12, options.MaximumDurationMinutes);
+    }
+
+    [TestMethod]
+    public void LoopShouldIgnoreInvalidMode()
+    {
+        var options = new CodingLoopOptions { ConversationMode = LoopConversationMode.Append };
+        options.ConversationMode = (LoopConversationMode)99;
+        Assert.AreEqual(LoopConversationMode.Append, options.ConversationMode);
+    }
+
+    [TestMethod]
+    public void LoopShouldIgnoreNegativeIterationLimit()
+    {
+        var options = new CodingLoopOptions { MaximumIterations = 4 };
+        options.MaximumIterations = -1;
+        Assert.AreEqual(4, options.MaximumIterations);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(71582)]
+    public void LoopShouldAcceptDurationBoundary(int duration)
+    {
+        var options = new CodingLoopOptions { MaximumDurationMinutes = duration };
+        Assert.AreEqual(duration, options.MaximumDurationMinutes);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task TotalTimeoutShouldCancelRunningAttemptAndClearOperation()
+    {
+        var clock = new LoopClock();
+        var runner = new LoopRunner { Completion = async token =>
+        {
+            await Task.Delay(Timeout.Infinite, token);
+            return null;
+        } };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
+        var settings = new CodingLoopOptions { MaximumDurationMinutes = 1 };
+
+        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default, settings);
+        settings.MaximumDurationMinutes = 0;
+        clock.Expire();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => run);
+
+        Assert.IsTrue(controller.CanChangeSession);
+        Assert.AreEqual(TimeSpan.FromMinutes(1), clock.DueTime);
+        Assert.AreEqual(1, runner.Attempts);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task TotalTimeoutShouldCancelRetryWaitWithoutAnotherAttempt()
+    {
+        var clock = new LoopClock();
+        var runner = new LoopRunner { Failure = new InvalidOperationException("Retry") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
+
+        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumDurationMinutes = 1 });
+        clock.Expire();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => run);
+
+        Assert.AreEqual(1, runner.Attempts);
+        Assert.IsTrue(controller.CanChangeSession);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task ExternalCancellationShouldCancelRetryWait()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var runner = new LoopRunner { Failure = new InvalidOperationException("Retry") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+
+        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions(), cancellationToken: cancellation.Token);
+        cancellation.Cancel();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => run);
+
+        Assert.IsTrue(controller.CanChangeSession);
+        Assert.AreEqual(1, runner.Attempts);
+    }
+
+    [TestMethod]
+    public async Task UnlimitedDurationShouldNotScheduleTimeout()
+    {
+        var clock = new LoopClock();
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), new LoopRunner(), timeProvider: clock.Provider);
+
+        await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumIterations = 1 });
+
+        Assert.AreEqual(Timeout.InfiniteTimeSpan, clock.DueTime);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task TotalTimeoutShouldCancelBetweenAttemptCompaction()
+    {
+        var clock = new LoopClock();
+        var runner = new LoopRunner
+        {
+            Compact = async token =>
+            {
+                await Task.Delay(Timeout.Infinite, token);
+                return true;
+            },
+        };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
+
+        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumDurationMinutes = 1, MaximumIterations = 2 });
+        clock.Expire();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => run);
+
+        Assert.AreEqual(1, runner.Compactions);
+        Assert.AreEqual(1, runner.Attempts);
+        Assert.IsTrue(controller.CanChangeSession);
+    }
+
+    private sealed class LoopClock
+    {
+        private TimerCallback? _callback;
+        private object? _state;
+        public TimeSpan? DueTime { get; private set; }
+        public TimeProvider Provider { get; }
+
+        public LoopClock()
+        {
+            var provider = new Moq.Mock<TimeProvider>();
+            provider.Setup(value => value.CreateTimer(Moq.It.IsAny<TimerCallback>(), Moq.It.IsAny<object?>(),
+                    Moq.It.IsAny<TimeSpan>(), Moq.It.IsAny<TimeSpan>()))
+                .Returns((TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
+                {
+                    _callback = callback;
+                    _state = state;
+                    DueTime = dueTime;
+                    return Moq.Mock.Of<ITimer>();
+                });
+            Provider = provider.Object;
+        }
+
+        public void Expire() => _callback!(_state);
+    }
+
+    private sealed class LoopRunner : ICodingChatRunner
+    {
+        public int Attempts { get; private set; }
+        public int Compactions { get; private set; }
+        public bool CanCompact { get; init; } = true;
+        public Exception? Failure { get; init; }
+        public Action? OnRun { get; init; }
+        public Func<CancellationToken, Task<string?>>? Completion { get; init; }
+        public Func<CancellationToken, Task<bool>>? Compact { get; init; }
+
+        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, string? workspacePath,
+            CodingChatRunOptions options, CancellationToken cancellationToken)
+        {
+            Attempts++;
+            OnRun?.Invoke();
+            return Task.FromResult<ICodingAgentRunResult>(new CompletedCodingAgentRunResult(
+                CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false),
+                Completion?.Invoke(cancellationToken) ?? (Failure is null
+                    ? Task.FromResult<string?>(string.Empty) : Task.FromException<string?>(Failure))));
+        }
+
+        public Task<bool> TryCompactConversationAsync(CopilotChatSession session, string? instructions,
+            CancellationToken cancellationToken)
+        {
+            Compactions++;
+            return Compact?.Invoke(cancellationToken) ?? Task.FromResult(CanCompact);
+        }
+
     }
 
     private sealed class LoopHistoryRunner(AgentSession agentSession, Action stopLoop) : ICodingChatRunner

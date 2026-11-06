@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
+             xmlns:chat="clr-namespace:PrismCodingAgent.CodingShell.Services.Chat"
              x:Class="PrismCodingAgent.CodingShell.Views.ChatSettingsView"
              x:DataType="vm:ChatViewModel">
     <UserControl.Styles>
@@ -58,6 +59,23 @@
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Width="520" MaxWidth="{Binding $parent[ScrollViewer].Bounds.Width}"
                             HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                    <Grid ColumnDefinitions="*,180" MinHeight="48">
+                        <TextBlock Classes="OptionTitle" Text="{Binding LoopMaximumIterations, Source={x:Static localizations:Lang.Current}}" />
+                        <NumericUpDown x:Name="LoopMaximumIterationsInput" Grid.Column="1" Minimum="0" Maximum="2147483647" FormatString="0" Value="{Binding LoopOptions.MaximumIterations, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,180" MinHeight="48">
+                        <TextBlock Classes="OptionTitle" Text="{Binding LoopMaximumDuration, Source={x:Static localizations:Lang.Current}}" />
+                        <NumericUpDown x:Name="LoopMaximumDurationInput" Grid.Column="1" Minimum="0" Maximum="71582" FormatString="0" Value="{Binding LoopOptions.MaximumDurationMinutes, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,180" MinHeight="48">
+                        <TextBlock Classes="OptionTitle" Text="{Binding LoopConversation, Source={x:Static localizations:Lang.Current}}" />
+                        <ComboBox x:Name="LoopConversationSelector" Grid.Column="1" HorizontalAlignment="Stretch" SelectedValueBinding="{ReflectionBinding Tag}" SelectedValue="{Binding LoopOptions.ConversationMode, Mode=TwoWay}">
+                            <ComboBoxItem Tag="{x:Static chat:LoopConversationMode.Compress}" Content="{Binding LoopCompress, Source={x:Static localizations:Lang.Current}}" />
+                            <ComboBoxItem Tag="{x:Static chat:LoopConversationMode.Restart}" Content="{Binding LoopRestart, Source={x:Static localizations:Lang.Current}}" />
+                            <ComboBoxItem Tag="{x:Static chat:LoopConversationMode.Append}" Content="{Binding LoopAppend, Source={x:Static localizations:Lang.Current}}" />
+                        </ComboBox>
+                    </Grid>
                     <Grid ColumnDefinitions="*,44" ColumnSpacing="24" MinHeight="48">
                         <TextBlock Classes="OptionTitle" Text="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatAutomaticCompressionToggle" Grid.Column="1"

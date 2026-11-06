@@ -228,6 +228,13 @@ public sealed class CopilotChatSession : NotifyBase
         AgentSession = agentSession;
     }
 
+    /// <summary>清除模型上下文</summary>
+    public void ResetModelContext()
+    {
+        SetAgentSession(null);
+        _responsesSession?.Clear();
+    }
+
     /// <summary>
     /// 设置会话标题并标记来源。设置后 <see cref="TryUpdateTitle"/> 将不再自动覆盖。
     /// </summary>
