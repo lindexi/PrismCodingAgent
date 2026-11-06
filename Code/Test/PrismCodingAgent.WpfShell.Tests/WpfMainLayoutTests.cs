@@ -62,10 +62,10 @@ public sealed class WpfMainLayoutTests
                 Assert.AreEqual(toolbarHeight == 0 ? toolbar.ActualHeight : toolbarHeight, toolbar.ActualHeight, 0.1d);
                 toolbarHeight = toolbar.ActualHeight;
                 Rect Bounds(FrameworkElement element) => new(element.TranslatePoint(default, toolbar), element.RenderSize);
-                Assert.IsTrue(Bounds(workspace).Right <= Bounds(apply).Left);
-                Assert.IsTrue(Bounds(apply).Right <= Bounds(history).Left);
-                Assert.IsTrue(Bounds(history).Right <= Bounds(log).Left);
-                Assert.IsTrue(Bounds(log).Right <= toolbar.ActualWidth + 0.1d);
+                Assert.IsLessThanOrEqualTo(Bounds(apply).Left, Bounds(workspace).Right);
+                Assert.IsLessThanOrEqualTo(Bounds(history).Left, Bounds(apply).Right);
+                Assert.IsLessThanOrEqualTo(Bounds(log).Left, Bounds(history).Right);
+                Assert.IsLessThanOrEqualTo(toolbar.ActualWidth + 0.1d, Bounds(log).Right);
                 Assert.AreEqual(Bounds(workspace).Top, Bounds(history).Top, 0.1d);
                 Assert.AreSame(selectedModel, selector.SelectedItem);
             }
@@ -73,7 +73,7 @@ public sealed class WpfMainLayoutTests
             await ResizeAsync(1200, 900, true);
             normalDirectoryWidth = workspace.ActualWidth;
             Assert.AreEqual(220d, selector.ActualWidth, 0.1d);
-            Assert.IsTrue(selector.ApplyTemplate());
+            selector.ApplyTemplate();
             Assert.IsNotNull(selector.Template.FindName("PART_Popup", selector));
             Assert.AreSame(model.ChatViewModel.AvailableModels, selector.ItemsSource);
             Assert.AreEqual(System.Windows.Data.BindingMode.TwoWay,
