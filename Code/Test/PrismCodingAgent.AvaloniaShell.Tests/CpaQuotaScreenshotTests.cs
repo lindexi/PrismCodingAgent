@@ -68,7 +68,7 @@ public sealed class CpaQuotaScreenshotTests
             TestContext.WriteLine($"Text={text.Text}, MatchedTypeface={matched.FontFamily}/{matched.Weight}, Rendering={Avalonia.Media.TextOptions.GetTextOptions(text)}, Transform={text.RenderTransform}, Opacity={text.Opacity}");
         }
         TestContext.WriteLine($"Quota TextBlockCount={main.GetVisualDescendants().OfType<TextBlock>().Count(text => text.Name == "PrimaryQuotaLabel")}");
-        Assert.AreEqual(14d, quotaLabel.FontSize);
+        Assert.AreEqual(settingsButton.FontSize, quotaLabel.FontSize);
         Assert.AreEqual(settingsButton.FontFamily, quotaLabel.FontFamily);
         Assert.AreEqual(Avalonia.Media.FontWeight.Normal, quotaLabel.FontWeight);
         string directory = Path.Combine(AppContext.BaseDirectory, "QuotaScreenshots", "Current");
