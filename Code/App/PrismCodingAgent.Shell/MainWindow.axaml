@@ -12,9 +12,9 @@
         Width="1440" Height="900"
         MinWidth="1280"
         MinHeight="720"
-        TransparencyLevelHint="Mica, None"
+        TransparencyLevelHint="None"
         TransparencyBackgroundFallback="White"
-        Background="{Binding ActualTransparencyLevel, RelativeSource={RelativeSource Self}, Converter={StaticResource WindowTransparencyBackgroundConverter}}">
+        Background="White">
     <Window.Title>
         <MultiBinding Converter="{StaticResource WorkspaceTitleConverter}">
             <Binding Path="ChatViewModel.NextRunWorkspacePath" />
