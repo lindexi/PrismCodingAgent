@@ -170,8 +170,8 @@ public sealed class WpfChatSettingsTests
             await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
             Assert.IsTrue(model.ChatViewModel.IsChatSettingsOpen);
             Assert.AreEqual(Visibility.Visible, settings.Visibility);
-            Assert.AreEqual(2, Grid.GetRow(overlay));
-            Assert.AreEqual(2, Grid.GetRowSpan(overlay));
+            Assert.AreEqual(0, Grid.GetRow(overlay));
+            Assert.AreEqual(4, Grid.GetRowSpan(overlay));
             Assert.AreSame(open.Command, close.Command);
             close.Command.Execute(close.CommandParameter);
             await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);

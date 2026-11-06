@@ -800,7 +800,7 @@
                         <StackPanel Grid.Row="3">
                             <views:ChatView x:Name="ChatComposer" DataContext="{Binding ChatViewModel}" />
                         </StackPanel>
-                        <Grid x:Name="ChatOverlayLayer" Grid.Row="2" Grid.RowSpan="2">
+                        <Grid x:Name="ChatOverlayLayer" Grid.Row="0" Grid.RowSpan="4">
                             <views:ChatSettingsView x:Name="ChatSettingsPanel" DataContext="{Binding ChatViewModel}"
                                                     Background="{StaticResource BackgroundBrush}"
                                                     Visibility="{Binding IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}" />

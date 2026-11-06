@@ -93,6 +93,52 @@ public sealed class CodingChatRoomPathsTests
         Assert.IsFalse(File.Exists(paths.ConfigurationFile.FullName));
     }
 
+    [TestMethod]
+    public void MissingLogDirectoryShouldReturnNoFile()
+    {
+        var paths = CodingChatRoomPaths.Create(CreateRoot());
+
+        Assert.IsNull(paths.FindSessionLogFile(Guid.NewGuid()));
+    }
+
+    [TestMethod]
+    public void LogsForOtherSessionsShouldNotMatch()
+    {
+        var paths = CodingChatRoomPaths.Create(CreateRoot());
+        Directory.CreateDirectory(paths.LogDirectory);
+        File.WriteAllText(Path.Join(paths.LogDirectory, $"preview_{Guid.NewGuid():N}.log"), "other");
+
+        Assert.IsNull(paths.FindSessionLogFile(Guid.NewGuid()));
+    }
+
+    [TestMethod]
+    public void SessionLogLookupShouldReturnLatestModifiedFileAcrossDays()
+    {
+        var paths = CodingChatRoomPaths.Create(CreateRoot());
+        Guid id = Guid.NewGuid();
+        string olderDirectory = Directory.CreateDirectory(Path.Join(paths.LogDirectory, "20260101")).FullName;
+        string newerDirectory = Directory.CreateDirectory(Path.Join(paths.LogDirectory, "20260102")).FullName;
+        string older = Path.Join(olderDirectory, $"preview_{id:N}.log");
+        string newer = Path.Join(newerDirectory, $"preview_{id:N}.log");
+        File.WriteAllText(older, "older");
+        File.WriteAllText(newer, "newer");
+        File.SetLastWriteTimeUtc(older, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(newer, new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc));
+
+        Assert.AreEqual(newer, paths.FindSessionLogFile(id));
+    }
+
+    [TestMethod]
+    public void ArchiveDirectoryShouldBelongToSpecifiedSession()
+    {
+        var paths = CodingChatRoomPaths.Create(CreateRoot());
+        var session = new AgentLib.Model.CopilotChatSession();
+
+        Assert.AreEqual(Path.Join(paths.SessionDirectory.FullName,
+            session.StartedTime.ToString("yyyyMMdd"), session.SessionId.ToString("N")),
+            paths.GetSessionArchiveDirectory(session));
+    }
+
     private string CreateRoot()
     {
         string root = Path.Join(Path.GetTempPath(), "PrismCodingAgent.PathTests", Guid.NewGuid().ToString("N"));

@@ -520,7 +520,7 @@
                 </StackPanel>
             </Grid>
         </Grid>
-        <Grid x:Name="ChatOverlayLayer" Grid.Row="1" Grid.RowSpan="2" ClipToBounds="True">
+        <Grid x:Name="ChatOverlayLayer" Grid.Row="0" Grid.RowSpan="3" ClipToBounds="True">
             <views:ChatSettingsView x:Name="ChatSettingsPanel"
                                     IsVisible="{Binding IsChatSettingsOpen}" Background="{StaticResource BackgroundBrush}" />
         </Grid>

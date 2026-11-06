@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using AgentLib.Model;
 
 namespace PrismCodingAgent.CodingShell.Infrastructure;
 
@@ -57,6 +59,21 @@ public sealed class CodingChatRoomPaths
     /// 获取可恢复会话目录。
     /// </summary>
     public DirectoryInfo SessionDirectory { get; }
+
+    /// <summary>获取指定会话的存档目录，不创建目录。</summary>
+    internal string GetSessionArchiveDirectory(CopilotChatSession session)
+        => Path.Join(SessionDirectory.FullName, session.StartedTime.ToString("yyyyMMdd"),
+            session.SessionId.ToString("N"));
+
+    /// <summary>查找指定会话最近修改的日志文件；尚未生成时返回空。</summary>
+    internal string? FindSessionLogFile(Guid sessionId)
+    {
+        if (!Directory.Exists(LogDirectory)) return null;
+
+        return Directory.EnumerateFiles(LogDirectory, $"*{sessionId:N}*.log", SearchOption.AllDirectories)
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
+    }
 
     /// <summary>
     /// 获取发送前能力目录。
