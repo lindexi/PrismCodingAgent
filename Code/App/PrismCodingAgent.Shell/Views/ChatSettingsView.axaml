@@ -81,147 +81,177 @@
         <ScrollViewer x:Name="SettingsScrollViewer" Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="28,0,28,16">
                 <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-                <TextBlock Classes="SectionTitle" Margin="0,0,0,12" Text="{Binding ChatWorkspaceSection, Source={x:Static localizations:Lang.Current}}" />
-                <TextBlock Text="{Binding WorkDirectoryText, Source={x:Static localizations:Lang.Current}}" Margin="0,0,0,8" />
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <TextBox x:Name="SettingsWorkspaceInput" MinWidth="0" Classes="Rounded"
-                             Text="{Binding WorkspaceInput, UpdateSourceTrigger=PropertyChanged}"
-                             IsEnabled="{Binding !IsChangingWorkspace}" />
-                    <Button Grid.Column="1" Classes="Primary accent" Height="32"
-                            Content="{Binding ApplyText, Source={x:Static localizations:Lang.Current}}"
-                            Command="{Binding ApplyWorkspaceCommand}" />
-                </Grid>
-                <TextBlock Classes="Detail" Text="{Binding WorkspaceStatusText}" Margin="0,6,0,8"
-                           ToolTip.Tip="{Binding WorkspaceStatusText}" />
-                <Grid ColumnDefinitions="*,1,180" ColumnSpacing="20" Margin="0,12,0,8">
-                    <StackPanel Spacing="8">
-                    <TextBlock Text="{Binding ModelText, Source={x:Static localizations:Lang.Current}}" />
-                    <ComboBox x:Name="SettingsModelSelector" ItemsSource="{Binding AvailableModels}"
-                              SelectedItem="{Binding SelectedModel}" IsEnabled="{Binding !IsRunning}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="vm:LanguageModelOptionViewModel">
-                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    </StackPanel>
-                    <Border Grid.Column="1" Background="#E4E9F0" />
-                    <StackPanel Grid.Column="2" Spacing="8">
-                    <TextBlock Text="{Binding ReasoningEffortText, Source={x:Static localizations:Lang.Current}}" />
-                    <ComboBox x:Name="SettingsReasoningSelector" ItemsSource="{Binding AvailableReasoningEfforts}"
-                              SelectedItem="{Binding SelectedReasoningEffort}" IsEnabled="{Binding !IsRunning}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ReasoningEffortOptionViewModel">
-                                <TextBlock Text="{Binding DisplayName}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    </StackPanel>
-                </Grid>
-                </StackPanel>
-                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
-                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-                <TextBlock Classes="SectionTitle" Margin="0,12,0,8" Text="{Binding ChatRunSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
-                <Grid ColumnDefinitions="*,44" MinHeight="48">
-                    <TextBlock Classes="OptionTitle" Text="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}" />
-                    <ToggleSwitch x:Name="ChatAutomaticCompressionToggle" Grid.Column="1" IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}" />
-                </Grid>
-                <Border Height="1" Background="#ECEDEF" />
-                <Grid ColumnDefinitions="*,44" MinHeight="48">
-                    <TextBlock Classes="OptionTitle" Text="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}" />
-                    <ToggleSwitch x:Name="ChatDotNetRunToggle" Grid.Column="1" IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}" />
-                </Grid>
-                <Border Height="1" Background="#ECEDEF" />
-                <Grid ColumnDefinitions="*,44" MinHeight="48">
-                    <TextBlock Classes="OptionTitle" Text="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
-                    <ToggleSwitch x:Name="ChatResponsesApiToggle" Grid.Column="1" IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" />
-                </Grid>
-                </StackPanel>
-                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
-                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-                <Border x:Name="LoopSettingsGroup" Margin="0,12,0,0">
-                    <StackPanel>
-                        <TextBlock Text="{Binding LoopSettingsTitle, Source={x:Static localizations:Lang.Current}}"
-                                   FontSize="16" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"
-                                   Margin="0,4,0,8" />
-                        <Grid ColumnDefinitions="*,180" MinHeight="48">
-                            <TextBlock Classes="OptionTitle"
-                                       Text="{Binding LoopMaximumIterations, Source={x:Static localizations:Lang.Current}}" />
-                            <TextBox x:Name="LoopMaximumIterationsInput" Grid.Column="1" Height="32" MinHeight="32"
-                                     VerticalAlignment="Center" VerticalContentAlignment="Center"
-                                     Text="{Binding LoopOptions.MaximumIterations, Mode=TwoWay}"
-                                     AutomationProperties.Name="{Binding LoopMaximumIterations, Source={x:Static localizations:Lang.Current}}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="*,180" MinHeight="48">
-                            <TextBlock Classes="OptionTitle"
-                                       Text="{Binding LoopMaximumDuration, Source={x:Static localizations:Lang.Current}}" />
-                            <TextBox x:Name="LoopMaximumDurationInput" Grid.Column="1" Height="32" MinHeight="32"
-                                     VerticalAlignment="Center" VerticalContentAlignment="Center"
-                                     Text="{Binding LoopOptions.MaximumDurationMinutes, Mode=TwoWay}"
-                                     AutomationProperties.Name="{Binding LoopMaximumDuration, Source={x:Static localizations:Lang.Current}}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="*,180" MinHeight="48">
-                            <TextBlock Classes="OptionTitle"
-                                       Text="{Binding LoopConversation, Source={x:Static localizations:Lang.Current}}" />
-                            <ComboBox x:Name="LoopConversationSelector" Grid.Column="1" Height="32" MinHeight="32"
-                                      VerticalAlignment="Center" HorizontalAlignment="Stretch"
-                                      SelectedValueBinding="{ReflectionBinding Tag}"
-                                      SelectedValue="{Binding LoopOptions.ConversationMode, Mode=TwoWay}">
-                                <ComboBoxItem
-                                    DataContext="{ReflectionBinding LoopCompressHint, Source={x:Static localizations:Lang.Current}}"
-                                    Tag="{x:Static chat:LoopConversationMode.Compress}"
-                                    Content="{Binding LoopCompress, Source={x:Static localizations:Lang.Current}}" />
-                                <ComboBoxItem
-                                    DataContext="{ReflectionBinding LoopRestartHint, Source={x:Static localizations:Lang.Current}}"
-                                    Tag="{x:Static chat:LoopConversationMode.Restart}"
-                                    Content="{Binding LoopRestart, Source={x:Static localizations:Lang.Current}}" />
-                                <ComboBoxItem
-                                    DataContext="{ReflectionBinding LoopAppendHint, Source={x:Static localizations:Lang.Current}}"
-                                    Tag="{x:Static chat:LoopConversationMode.Append}"
-                                    Content="{Binding LoopAppend, Source={x:Static localizations:Lang.Current}}" />
+                    <TextBlock Classes="SectionTitle" Margin="0,0,0,12"
+                               Text="{Binding ChatWorkspaceSection, Source={x:Static localizations:Lang.Current}}" />
+                    <TextBlock Text="{Binding WorkDirectoryText, Source={x:Static localizations:Lang.Current}}"
+                               Margin="0,0,0,8" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBox x:Name="SettingsWorkspaceInput" MinWidth="0" Classes="Rounded"
+                                 Text="{Binding WorkspaceInput, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding !IsChangingWorkspace}" />
+                        <Button Grid.Column="1" Classes="Primary accent" Height="32"
+                                Content="{Binding ApplyText, Source={x:Static localizations:Lang.Current}}"
+                                Command="{Binding ApplyWorkspaceCommand}" />
+                    </Grid>
+                    <TextBlock Classes="Detail" Text="{Binding WorkspaceStatusText}" Margin="0,6,0,8"
+                               ToolTip.Tip="{Binding WorkspaceStatusText}" />
+                    <Grid ColumnDefinitions="*,1,180" ColumnSpacing="20" Margin="0,12,0,8">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding ModelText, Source={x:Static localizations:Lang.Current}}" />
+                            <ComboBox x:Name="SettingsModelSelector" ItemsSource="{Binding AvailableModels}"
+                                      SelectedItem="{Binding SelectedModel}" IsEnabled="{Binding !IsRunning}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:LanguageModelOptionViewModel">
+                                        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
                             </ComboBox>
-                        </Grid>
-                        <TextBlock x:Name="LoopConversationHint"
-                                   Text="{ReflectionBinding #LoopConversationSelector.SelectedItem.DataContext}"
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"
-                                   Margin="0,0,0,4" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#E4E9F0" />
+                        <StackPanel Grid.Column="2" Spacing="8">
+                            <TextBlock
+                                Text="{Binding ReasoningEffortText, Source={x:Static localizations:Lang.Current}}" />
+                            <ComboBox x:Name="SettingsReasoningSelector"
+                                      ItemsSource="{Binding AvailableReasoningEfforts}"
+                                      SelectedItem="{Binding SelectedReasoningEffort}" IsEnabled="{Binding !IsRunning}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReasoningEffortOptionViewModel">
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
+                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+                    <TextBlock Classes="SectionTitle" Margin="0,12,0,8"
+                               Text="{Binding ChatRunSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
+                    <Grid ColumnDefinitions="*,44" MinHeight="48">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatAutomaticCompressionToggle" Grid.Column="1"
+                                      IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}" />
+                    </Grid>
+                    <Border Height="1" Background="#ECEDEF" />
+                    <Grid ColumnDefinitions="*,44" MinHeight="48">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatDotNetRunToggle" Grid.Column="1"
+                                      IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}" />
+                    </Grid>
+                    <Border Height="1" Background="#ECEDEF" />
+                    <Grid ColumnDefinitions="*,44" MinHeight="48">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatResponsesApiToggle" Grid.Column="1"
+                                      IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" />
+                    </Grid>
+                </StackPanel>
+                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
+                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+                    <Border x:Name="LoopSettingsGroup" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{Binding LoopSettingsTitle, Source={x:Static localizations:Lang.Current}}"
+                                       FontSize="16" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,8" />
+                            <Grid ColumnDefinitions="*,180" MinHeight="48">
+                                <TextBlock Classes="OptionTitle"
+                                           Text="{Binding LoopMaximumIterations, Source={x:Static localizations:Lang.Current}}" />
+                                <TextBox x:Name="LoopMaximumIterationsInput" Grid.Column="1" Height="32" MinHeight="32"
+                                         VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                         Text="{Binding LoopOptions.MaximumIterations, Mode=TwoWay}"
+                                         AutomationProperties.Name="{Binding LoopMaximumIterations, Source={x:Static localizations:Lang.Current}}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,180" MinHeight="48">
+                                <TextBlock Classes="OptionTitle"
+                                           Text="{Binding LoopMaximumDuration, Source={x:Static localizations:Lang.Current}}" />
+                                <TextBox x:Name="LoopMaximumDurationInput" Grid.Column="1" Height="32" MinHeight="32"
+                                         VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                         Text="{Binding LoopOptions.MaximumDurationMinutes, Mode=TwoWay}"
+                                         AutomationProperties.Name="{Binding LoopMaximumDuration, Source={x:Static localizations:Lang.Current}}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,180" MinHeight="48">
+                                <TextBlock Classes="OptionTitle"
+                                           Text="{Binding LoopConversation, Source={x:Static localizations:Lang.Current}}" />
+                                <ComboBox x:Name="LoopConversationSelector" Grid.Column="1" Height="32" MinHeight="32"
+                                          VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                                          SelectedValueBinding="{ReflectionBinding Tag}"
+                                          SelectedValue="{Binding LoopOptions.ConversationMode, Mode=TwoWay}">
+                                    <ComboBoxItem
+                                        DataContext="{ReflectionBinding LoopCompressHint, Source={x:Static localizations:Lang.Current}}"
+                                        Tag="{x:Static chat:LoopConversationMode.Compress}"
+                                        Content="{Binding LoopCompress, Source={x:Static localizations:Lang.Current}}" />
+                                    <ComboBoxItem
+                                        DataContext="{ReflectionBinding LoopRestartHint, Source={x:Static localizations:Lang.Current}}"
+                                        Tag="{x:Static chat:LoopConversationMode.Restart}"
+                                        Content="{Binding LoopRestart, Source={x:Static localizations:Lang.Current}}" />
+                                    <ComboBoxItem
+                                        DataContext="{ReflectionBinding LoopAppendHint, Source={x:Static localizations:Lang.Current}}"
+                                        Tag="{x:Static chat:LoopConversationMode.Append}"
+                                        Content="{Binding LoopAppend, Source={x:Static localizations:Lang.Current}}" />
+                                </ComboBox>
+                            </Grid>
+                            <TextBlock x:Name="LoopConversationHint"
+                                       Text="{ReflectionBinding #LoopConversationSelector.SelectedItem.DataContext}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,4" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
+                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+                    <TextBlock Classes="SectionTitle" Margin="0,12,0,8"
+                               Text="{Binding ChatServiceSection, Source={x:Static localizations:Lang.Current}}" />
+                    <Grid ColumnDefinitions="*,Auto" MinHeight="48">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
+                        <Button x:Name="StopLanguageServerButton" Grid.Column="1" Classes="Secondary"
+                                VerticalAlignment="Center"
+                                Content="{Binding StopLanguageServerText, Source={x:Static localizations:Lang.Current}}"
+                                Command="{Binding StopLanguageServerCommand}" />
+                    </Grid>
+                </StackPanel>
+                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
+                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+                    <TextBlock Classes="SectionTitle" Margin="0,12,0,8"
+                               Text="{Binding ChatDiagnosticsSection, Source={x:Static localizations:Lang.Current}}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,16">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding ChatProcessLabel, Source={x:Static localizations:Lang.Current}}" />
+                        <Button x:Name="CopyPidButton" Classes="Flat" Padding="4,0" Click="CopyPidClicked"
+                                ToolTip.Tip="{Binding ChatCopyPid, Source={x:Static localizations:Lang.Current}}">
+                            <TextBlock x:Name="ProcessIdText" FontFamily="Cascadia Mono,Consolas,monospace" />
+                        </Button>
+                        <Button x:Name="LaunchDebuggerButton" Classes="Secondary"
+                                Content="{Binding ChatLaunchDebugger, Source={x:Static localizations:Lang.Current}}"
+                                Click="LaunchDebuggerClicked" />
                     </StackPanel>
-                </Border>
-                </StackPanel>
-                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
-                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-                <TextBlock Classes="SectionTitle" Margin="0,12,0,8" Text="{Binding ChatServiceSection, Source={x:Static localizations:Lang.Current}}" />
-                <Grid ColumnDefinitions="*,Auto" MinHeight="48">
-                    <TextBlock Classes="OptionTitle" Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
-                    <Button x:Name="StopLanguageServerButton" Grid.Column="1" Classes="Secondary" VerticalAlignment="Center"
-                            Content="{Binding StopLanguageServerText, Source={x:Static localizations:Lang.Current}}"
-                            Command="{Binding StopLanguageServerCommand}" />
-                </Grid>
-                </StackPanel>
-                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
-                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-                <TextBlock Classes="SectionTitle" Margin="0,12,0,8" Text="{Binding ChatDiagnosticsSection, Source={x:Static localizations:Lang.Current}}" />
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,16">
-                    <TextBlock Classes="OptionTitle" Text="{Binding ChatProcessLabel, Source={x:Static localizations:Lang.Current}}" />
-                    <Button x:Name="CopyPidButton" Classes="Flat" Padding="4,0" Click="CopyPidClicked" ToolTip.Tip="{Binding ChatCopyPid, Source={x:Static localizations:Lang.Current}}">
-                        <TextBlock x:Name="ProcessIdText" FontFamily="Cascadia Mono,Consolas,monospace" />
-                    </Button>
-                    <Button x:Name="LaunchDebuggerButton" Classes="Secondary" Content="{Binding ChatLaunchDebugger, Source={x:Static localizations:Lang.Current}}" Click="LaunchDebuggerClicked" />
-                </StackPanel>
-                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8" Margin="0,8">
-                    <TextBlock Classes="OptionTitle" Text="{Binding ChatLogFileLabel, Source={x:Static localizations:Lang.Current}}" />
-                    <TextBox x:Name="LogFileInput" Grid.Column="1" MinWidth="0" IsReadOnly="True" />
-                    <Button x:Name="OpenLogFileButton" Grid.Column="2" Classes="Secondary" Content="{Binding ChatOpenFile, Source={x:Static localizations:Lang.Current}}" Click="OpenLogClicked" />
-                    <Button x:Name="OpenLogFolderButton" Grid.Column="3" Classes="Secondary" Content="{Binding ChatOpenFolder, Source={x:Static localizations:Lang.Current}}" Click="OpenLogFolderClicked" />
-                </Grid>
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,8">
-                    <TextBlock Classes="OptionTitle" Text="{Binding ChatArchiveLabel, Source={x:Static localizations:Lang.Current}}" />
-                    <TextBox x:Name="SessionsDirectoryInput" Grid.Column="1" MinWidth="0" IsReadOnly="True" />
-                    <Button x:Name="OpenSessionsButton" Grid.Column="2" Classes="Secondary" Content="{Binding ChatOpenFolder, Source={x:Static localizations:Lang.Current}}" Click="OpenSessionsClicked" />
-                </Grid>
-                <TextBlock x:Name="DiagnosticsFeedback" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0" IsVisible="False" />
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8" Margin="0,8">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding ChatLogFileLabel, Source={x:Static localizations:Lang.Current}}" />
+                        <TextBox x:Name="LogFileInput" Grid.Column="1" MinWidth="0" IsReadOnly="True" />
+                        <Button x:Name="OpenLogFileButton" Grid.Column="2" Classes="Secondary"
+                                Content="{Binding ChatOpenFile, Source={x:Static localizations:Lang.Current}}"
+                                Click="OpenLogClicked" />
+                        <Button x:Name="OpenLogFolderButton" Grid.Column="3" Classes="Secondary"
+                                Content="{Binding ChatOpenFolder, Source={x:Static localizations:Lang.Current}}"
+                                Click="OpenLogFolderClicked" />
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,8">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding ChatArchiveLabel, Source={x:Static localizations:Lang.Current}}" />
+                        <TextBox x:Name="SessionsDirectoryInput" Grid.Column="1" MinWidth="0" IsReadOnly="True" />
+                        <Button x:Name="OpenSessionsButton" Grid.Column="2" Classes="Secondary"
+                                Content="{Binding ChatOpenFolder, Source={x:Static localizations:Lang.Current}}"
+                                Click="OpenSessionsClicked" />
+                    </Grid>
+                    <TextBlock x:Name="DiagnosticsFeedback" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"
+                               IsVisible="False" />
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

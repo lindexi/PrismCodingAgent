@@ -491,14 +491,15 @@
                     <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Spacing="16">
                         <CheckBox x:Name="LoopIterationCheckBox" MinHeight="32" VerticalAlignment="Center"
                                   Content="{Binding LoopIterationText, Source={x:Static localizations:Lang.Current}}"
-                                  IsChecked="{Binding LoopOptions.IsEnabled}" ToolTip.Tip="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}" />
-                    <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
-                            Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <PathIcon Width="14" Height="14" Data="M2,3 L22,12 L2,21 L6,13 L15,12 L6,11 Z" />
-                            <TextBlock Text="{Binding SendButtonText}" />
-                        </StackPanel>
-                    </Button>
+                                  IsChecked="{Binding LoopOptions.IsEnabled}"
+                                  ToolTip.Tip="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}" />
+                        <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
+                                Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <PathIcon Width="14" Height="14" Data="M2,3 L22,12 L2,21 L6,13 L15,12 L6,11 Z" />
+                                <TextBlock Text="{Binding SendButtonText}" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -522,7 +523,8 @@
         </Grid>
         <Grid x:Name="ChatOverlayLayer" Grid.Row="0" Grid.RowSpan="3" ClipToBounds="True">
             <views:ChatSettingsView x:Name="ChatSettingsPanel"
-                                    IsVisible="{Binding IsChatSettingsOpen}" Background="{StaticResource BackgroundBrush}" />
+                                    IsVisible="{Binding IsChatSettingsOpen}"
+                                    Background="{StaticResource BackgroundBrush}" />
         </Grid>
     </Grid>
 </UserControl>
