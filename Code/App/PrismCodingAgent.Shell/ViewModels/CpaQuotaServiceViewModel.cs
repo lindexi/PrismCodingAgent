@@ -81,6 +81,8 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     public string QuotaText => _windows.Count == 0 ? "—" : string.Join(" / ", _windows.Select(window => $"{window.RemainingPercent:0.##}%"));
     public string DetailText => string.Join(Environment.NewLine, _windows.Select(window =>
         $"{window.Account} · {window.Window}：{window.RemainingPercent:0.##}%　重置：{Format(window.ResetAt)}"));
+    public string TooltipText => string.Join(Environment.NewLine + Environment.NewLine, _windows.Select(window =>
+        $"{Alias} 剩余额度：{window.RemainingPercent:0.##}%\n重置：{Format(window.ResetAt)}"));
     public string ObservedText => string.Join(" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
 
     private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "未知";
@@ -145,6 +147,7 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(QuotaText));
         OnPropertyChanged(nameof(DetailText));
+        OnPropertyChanged(nameof(TooltipText));
         OnPropertyChanged(nameof(ObservedText));
         _changed();
     }

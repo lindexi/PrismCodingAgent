@@ -26,8 +26,9 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     public bool HasCpaServices => CpaServices.Count > 0;
     public bool HasPrimaryQuota => CpaServices.Any(service => service.IsPrimary && service.HasResults);
     public string PrimaryQuotaText => "额度：" + (CpaServices.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
-    public string AllQuotaDetails => string.Join(Environment.NewLine + Environment.NewLine, CpaServices.Select(service =>
-        $"{service.Alias}{(service.IsPrimary ? " · 主额度" : "")}\n{service.DetailText}\n{service.Status}".Trim()));
+    public string AllQuotaDetails => string.Join(Environment.NewLine + Environment.NewLine,
+        CpaServices.OrderByDescending(service => service.IsPrimary).Select(service =>
+            service.HasResults ? service.TooltipText : $"{service.Alias}：{service.Status}"));
 
     private void AddCpaService()
     {
