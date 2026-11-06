@@ -54,6 +54,39 @@ public sealed class CpaQuotaTests
         Assert.IsTrue(model.CpaServices.Single().IsPrimary);
     }
 
+    [TestMethod]
+    public void UnqueriedPrimaryQuotaIsHidden()
+    {
+        using var model = new SettingsViewModel();
+        model.AddCpaServiceCommand.Execute(null);
+        Assert.IsFalse(model.HasPrimaryQuota);
+    }
+
+    [TestMethod]
+    [DataRow("0")]
+    [DataRow("100")]
+    public async Task PrimaryQuotaWithResultIsVisibleAsync(string used)
+    {
+        using var model = new SettingsViewModel();
+        using var client = new HttpClient(new SingleWindowHandler(used));
+        using var service = new CpaQuotaServiceViewModel(_ => { }, () => { }, client)
+        {
+            Address = "https://example.com", ManagementKey = "offline", IsPrimary = true,
+        };
+        model.CpaServices.Add(service);
+        await service.RefreshAsync();
+        Assert.IsTrue(model.HasPrimaryQuota);
+    }
+
+    private sealed class SingleWindowHandler(string used) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"files\":[{\"quota\":{\"signals\":{\"X-Codex-Primary-Window-Minutes\":\"10080\",\"X-Codex-Primary-Used-Percent\":\"" + used + "\"}}}]}"),
+            });
+    }
+
     private sealed class ResponseHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

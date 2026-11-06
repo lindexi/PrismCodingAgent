@@ -24,6 +24,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     private SimpleCommand? _addCpaServiceCommand;
     private SimpleCommand<CpaQuotaServiceViewModel>? _removeCpaServiceCommand;
     public bool HasCpaServices => CpaServices.Count > 0;
+    public bool HasPrimaryQuota => CpaServices.Any(service => service.IsPrimary && service.HasResults);
     public string PrimaryQuotaText => "额度：" + (CpaServices.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
     public string AllQuotaDetails => string.Join(Environment.NewLine + Environment.NewLine, CpaServices.Select(service =>
         $"{service.Alias}{(service.IsPrimary ? " · 主额度" : "")}\n{service.DetailText}\n{service.Status}".Trim()));
@@ -51,6 +52,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
             CpaServices[0].IsPrimary = true;
         }
         OnPropertyChanged(nameof(HasCpaServices));
+        OnPropertyChanged(nameof(HasPrimaryQuota));
         OnPropertyChanged(nameof(PrimaryQuotaText));
         OnPropertyChanged(nameof(AllQuotaDetails));
     }
