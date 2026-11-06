@@ -176,7 +176,7 @@
                   ColumnSpacing="16">
                 <TextBlock Text="{Binding WorkDirectoryText, Source={x:Static localizations:Lang.Current}}"
                            Classes="Subtitle" FontSize="11" />
-                <Grid Grid.Column="1" ColumnDefinitions="220,96" ColumnSpacing="8">
+                <Grid Grid.Column="1" ColumnDefinitions="*,96" ColumnSpacing="8">
                     <TextBlock Text="{Binding ModelText, Source={x:Static localizations:Lang.Current}}"
                                Classes="Subtitle" FontSize="11" />
                     <TextBlock Grid.Column="1"
@@ -186,14 +186,15 @@
                 <Grid Grid.Row="1" Grid.Column="0"
                       ColumnDefinitions="*,Auto"
                       ColumnSpacing="8">
-                    <TextBox Grid.Column="0"
+                    <TextBox x:Name="WorkspaceInputBox" Grid.Column="0"
+                             MinWidth="0"
                              MinHeight="32"
                              Classes="Rounded"
                              ToolTip.Tip="{Binding WorkspaceStatusText}"
                              Text="{Binding WorkspaceInput, UpdateSourceTrigger=PropertyChanged}"
                              PlaceholderText="{Binding WorkspacePlaceholderText, Source={x:Static localizations:Lang.Current}}"
                              IsEnabled="{Binding !IsChangingWorkspace}" />
-                    <Button Grid.Column="1"
+                    <Button x:Name="ApplyWorkspaceButton" Grid.Column="1"
                             MinWidth="72"
                             MinHeight="32"
                             Classes="Primary accent"
@@ -202,11 +203,10 @@
                             IsEnabled="{Binding CanApplyWorkspace}" />
                 </Grid>
 
-                <StackPanel Grid.Row="1" Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="8">
+                <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,96" ColumnSpacing="8">
                     <ComboBox x:Name="ModelSelector"
-                              Width="220"
+                              HorizontalAlignment="Stretch"
+                              MinWidth="0"
                               MinHeight="32"
                               ToolTip.Tip="{Binding SelectModel, Source={x:Static localizations:Lang.Current}}"
                               ItemsSource="{Binding AvailableModels}"
@@ -221,6 +221,7 @@
                     </ComboBox>
 
                     <ComboBox x:Name="ReasoningEffortSelector"
+                              Grid.Column="1"
                               Width="96"
                               MinHeight="32"
                               ToolTip.Tip="{Binding ReasoningEffortToolTip, Source={x:Static localizations:Lang.Current}}"
@@ -233,7 +234,7 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </StackPanel>
+                </Grid>
                 <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Spacing="8"
                             VerticalAlignment="Bottom">
                     <Button x:Name="TaskHistoryButton" Classes="Secondary" Width="32" Height="32" Padding="7"

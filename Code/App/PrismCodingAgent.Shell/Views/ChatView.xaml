@@ -4,75 +4,138 @@
              xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views">
     <UserControl.Resources>
-        <Style TargetType="CheckBox" BasedOn="{StaticResource ComposerOption}"/>
-        <Style TargetType="ComboBox" BasedOn="{StaticResource ChatComboBox}"/>
-        <Style TargetType="Button" BasedOn="{StaticResource ShellSecondaryButton}"/>
+        <Style TargetType="CheckBox" BasedOn="{StaticResource ComposerOption}" />
+        <Style TargetType="ComboBox" BasedOn="{StaticResource ChatComboBox}" />
+        <Style TargetType="Button" BasedOn="{StaticResource ShellSecondaryButton}" />
     </UserControl.Resources>
     <Grid Margin="8,8,8,-2">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-    <Border x:Name="ComposerPanel" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="16,14,16,10">
-        <StackPanel>
-            <ItemsControl x:Name="PendingImageItems" ItemsSource="{Binding PendingImages}" Visibility="{Binding HasPendingImages, Converter={StaticResource BooleanVisibility}}">
-                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate><DataTemplate>
-                    <Border Margin="0,0,8,8" Padding="4" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
-                        <Grid>
-                            <Button x:Name="PreviewImageButton" Padding="0" BorderThickness="0" Background="Transparent" ToolTip="{Binding FileName}" CommandParameter="{Binding}" Click="PreviewImageButton_OnClick">
-                                <views:BinaryImage Width="96" Height="72" Data="{Binding Data}"/>
-                            </Button>
-                            <Button x:Name="RemoveImageButton" Width="24" Height="24" Padding="0" Content="×" HorizontalAlignment="Right" VerticalAlignment="Top" ToolTip="{Binding RemoveImageText, Source={x:Static l:Lang.Current}}" Click="RemoveImageButton_OnClick" CommandParameter="{Binding}"/>
-                        </Grid>
-                    </Border>
-                </DataTemplate></ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <TextBox x:Name="MessageInputTextBox" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="160" FontSize="14" Padding="0,10,2,2" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="{Binding MessageInputPlaceholder, Source={x:Static l:Lang.Current}}">
-                <TextBox.Template>
-                    <ControlTemplate TargetType="TextBox">
-                        <Grid>
-                            <ScrollViewer x:Name="PART_ContentHost"/>
-                            <TextBlock x:Name="Placeholder" Margin="{TemplateBinding Padding}" Text="{Binding MessageInputPlaceholder, Source={x:Static l:Lang.Current}}" Foreground="#999999" IsHitTestVisible="False" Visibility="Collapsed"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="Text" Value=""><Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/></Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </TextBox.Template>
-            </TextBox>
-            <Grid Margin="0,8,0,0">
-                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal">
-                    <ComboBox DropDownOpened="AbilitySelector_OnDropDownOpened" x:Name="AbilitySelector" MinWidth="150" MinHeight="32" Margin="0,0,8,0" ItemsSource="{Binding AvailableAbilities}" SelectedItem="{Binding SelectedAbility, Mode=TwoWay}" DisplayMemberPath="DisplayName"/>
-                    <Button x:Name="AddImageButton" Content="{Binding AddImageText, Source={x:Static l:Lang.Current}}" Click="AddImageButton_OnClick"/>
-                    <TextBlock Margin="12,0" Text="{Binding InputShortcutText, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}">
-                        <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding IsRunning}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
-                <Button x:Name="StopButton" Grid.Column="1" Margin="8,0,0,0" Content="{Binding StopText, Source={x:Static l:Lang.Current}}" Command="{Binding StopCommand}" Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}"/>
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <CheckBox x:Name="LoopIterationCheckBox" Margin="8,0,8,0" MinHeight="32" VerticalAlignment="Center" Content="{Binding LoopIterationText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding LoopOptions.IsEnabled}" ToolTip="{Binding LoopSettingsHint, Source={x:Static l:Lang.Current}}"/>
-                <Button x:Name="SendButton" Margin="8,0,0,0" MinWidth="88" Style="{StaticResource ComposerSendButton}" Content="{Binding SendButtonText}" Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}" AutomationProperties.Name="{Binding SendButtonText}">
-                    <Button.ContentTemplate>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Border x:Name="ComposerPanel" Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="16,14,16,10">
+            <StackPanel>
+                <ItemsControl x:Name="PendingImageItems" ItemsSource="{Binding PendingImages}"
+                              Visibility="{Binding HasPendingImages, Converter={StaticResource BooleanVisibility}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Path Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Data="M2,3 L22,12 L2,21 L6,13 L15,12 L6,11 Z"/>
-                                <TextBlock Text="{Binding}"/>
-                            </StackPanel>
+                            <Border Margin="0,0,8,8" Padding="4" Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                                <Grid>
+                                    <Button x:Name="PreviewImageButton" Padding="0" BorderThickness="0"
+                                            Background="Transparent" ToolTip="{Binding FileName}"
+                                            CommandParameter="{Binding}" Click="PreviewImageButton_OnClick">
+                                        <views:BinaryImage Width="96" Height="72" Data="{Binding Data}" />
+                                    </Button>
+                                    <Button x:Name="RemoveImageButton" Width="24" Height="24" Padding="0" Content="×"
+                                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            ToolTip="{Binding RemoveImageText, Source={x:Static l:Lang.Current}}"
+                                            Click="RemoveImageButton_OnClick" CommandParameter="{Binding}" />
+                                </Grid>
+                            </Border>
                         </DataTemplate>
-                    </Button.ContentTemplate>
-                </Button>
-                </StackPanel>
-            </Grid>
-        </StackPanel>
-    </Border>
-    <Grid Grid.Row="1" Margin="0,8,0,0">
-        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <WrapPanel x:Name="RunOptionsPanel" Margin="0,0,12,0" MaxWidth="600" HorizontalAlignment="Left" VerticalAlignment="Center" TextElement.FontSize="13">
-                <Button x:Name="OpenChatSettingsButton" Content="{Binding ChatSettingsTitle, Source={x:Static l:Lang.Current}}" Command="{Binding ToggleChatSettingsCommand}"/>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBox x:Name="MessageInputTextBox" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="160" FontSize="14"
+                         Padding="0,10,2,2" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Top"
+                         VerticalScrollBarVisibility="Auto"
+                         AutomationProperties.Name="{Binding MessageInputPlaceholder, Source={x:Static l:Lang.Current}}">
+                    <TextBox.Template>
+                        <ControlTemplate TargetType="TextBox">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost" />
+                                <TextBlock x:Name="Placeholder" Margin="{TemplateBinding Padding}"
+                                           Text="{Binding MessageInputPlaceholder, Source={x:Static l:Lang.Current}}"
+                                           Foreground="#999999" IsHitTestVisible="False" Visibility="Collapsed" />
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="Text" Value="">
+                                    <Setter TargetName="Placeholder" Property="Visibility" Value="Visible" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </TextBox.Template>
+                </TextBox>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox DropDownOpened="AbilitySelector_OnDropDownOpened" x:Name="AbilitySelector"
+                                  MinWidth="150" MinHeight="32" Margin="0,0,8,0"
+                                  ItemsSource="{Binding AvailableAbilities}"
+                                  SelectedItem="{Binding SelectedAbility, Mode=TwoWay}" DisplayMemberPath="DisplayName" />
+                        <Button x:Name="AddImageButton"
+                                Content="{Binding AddImageText, Source={x:Static l:Lang.Current}}"
+                                Click="AddImageButton_OnClick" />
+                        <TextBlock Margin="12,0" Text="{Binding InputShortcutText, Source={x:Static l:Lang.Current}}"
+                                   VerticalAlignment="Center" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextSecondaryBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                    <Button x:Name="StopButton" Grid.Column="1" Margin="8,0,0,0"
+                            Content="{Binding StopText, Source={x:Static l:Lang.Current}}"
+                            Command="{Binding StopCommand}"
+                            Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <CheckBox x:Name="LoopIterationCheckBox" Margin="8,0,8,0" MinHeight="32"
+                                  VerticalAlignment="Center"
+                                  Content="{Binding LoopIterationText, Source={x:Static l:Lang.Current}}"
+                                  IsChecked="{Binding LoopOptions.IsEnabled}"
+                                  ToolTip="{Binding LoopSettingsHint, Source={x:Static l:Lang.Current}}" />
+                        <Button x:Name="SendButton" Margin="8,0,0,0" MinWidth="88"
+                                Style="{StaticResource ComposerSendButton}" Content="{Binding SendButtonText}"
+                                Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}"
+                                AutomationProperties.Name="{Binding SendButtonText}">
+                            <Button.ContentTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center"
+                                              Margin="0,0,8,0"
+                                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              Data="M2,3 L22,12 L2,21 L6,13 L15,12 L6,11 Z" />
+                                        <TextBlock Text="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Button.ContentTemplate>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+        <Grid Grid.Row="1" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition /><ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <WrapPanel x:Name="RunOptionsPanel" Margin="0,0,12,0" MaxWidth="600" HorizontalAlignment="Left"
+                       VerticalAlignment="Center" TextElement.FontSize="13">
+                <Button x:Name="OpenChatSettingsButton"
+                        Content="{Binding ChatSettingsTitle, Source={x:Static l:Lang.Current}}"
+                        Command="{Binding ToggleChatSettingsCommand}" />
             </WrapPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button x:Name="CompressConversationButton" Margin="0,0,8,4" Content="{Binding CompressConversationText, Source={x:Static l:Lang.Current}}" Command="{Binding CompressConversationCommand}" IsEnabled="{Binding CanCompressConversation}"/>
-                <Button x:Name="NewSessionButton" Margin="4,0,0,4" Content="{Binding NewSessionText, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.SessionListViewModel.CreateNewSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                <Button x:Name="CompressConversationButton" Margin="0,0,8,4"
+                        Content="{Binding CompressConversationText, Source={x:Static l:Lang.Current}}"
+                        Command="{Binding CompressConversationCommand}" IsEnabled="{Binding CanCompressConversation}" />
+                <Button x:Name="NewSessionButton" Margin="4,0,0,4"
+                        Content="{Binding NewSessionText, Source={x:Static l:Lang.Current}}"
+                        Command="{Binding DataContext.SessionListViewModel.CreateNewSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
             </StackPanel>
-    </Grid>
+        </Grid>
     </Grid>
 </UserControl>

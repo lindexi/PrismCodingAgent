@@ -37,7 +37,7 @@ public sealed class CodingLoopOptions : NotifyBase
         get => _maximumIterations;
         set
         {
-            if (value < 0) return;
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
             SetField(ref _maximumIterations, value);
         }
     }
@@ -48,7 +48,7 @@ public sealed class CodingLoopOptions : NotifyBase
         get => _maximumDurationMinutes;
         set
         {
-            if (value is < 0 or > 71582) return;
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
             SetField(ref _maximumDurationMinutes, value);
         }
     }
@@ -57,13 +57,6 @@ public sealed class CodingLoopOptions : NotifyBase
     public LoopConversationMode ConversationMode
     {
         get => _conversationMode;
-        set
-        {
-            if (!Enum.IsDefined(value))
-            {
-                return;
-            }
-            SetField(ref _conversationMode, value);
-        }
+        set => SetField(ref _conversationMode, value);
     }
 }

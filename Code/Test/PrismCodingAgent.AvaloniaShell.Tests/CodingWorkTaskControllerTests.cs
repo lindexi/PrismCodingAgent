@@ -662,33 +662,23 @@ public sealed class CodingWorkTaskControllerTests
 
     [TestMethod]
     [DataRow(-1)]
-    [DataRow(71583)]
-    public void LoopShouldIgnoreInvalidDuration(int duration)
+    public void LoopShouldRejectNegativeDuration(int duration)
     {
         var options = new CodingLoopOptions { MaximumDurationMinutes = 12 };
-        options.MaximumDurationMinutes = duration;
-        Assert.AreEqual(12, options.MaximumDurationMinutes);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => options.MaximumDurationMinutes = duration);
     }
 
     [TestMethod]
-    public void LoopShouldIgnoreInvalidMode()
-    {
-        var options = new CodingLoopOptions { ConversationMode = LoopConversationMode.Append };
-        options.ConversationMode = (LoopConversationMode)99;
-        Assert.AreEqual(LoopConversationMode.Append, options.ConversationMode);
-    }
-
-    [TestMethod]
-    public void LoopShouldIgnoreNegativeIterationLimit()
+    public void LoopShouldRejectNegativeIterationLimit()
     {
         var options = new CodingLoopOptions { MaximumIterations = 4 };
-        options.MaximumIterations = -1;
-        Assert.AreEqual(4, options.MaximumIterations);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => options.MaximumIterations = -1);
     }
 
     [TestMethod]
     [DataRow(0)]
-    [DataRow(71582)]
+    [DataRow(71583)]
+    [DataRow(int.MaxValue)]
     public void LoopShouldAcceptDurationBoundary(int duration)
     {
         var options = new CodingLoopOptions { MaximumDurationMinutes = duration };
@@ -696,10 +686,61 @@ public sealed class CodingWorkTaskControllerTests
     }
 
     [TestMethod]
+    [DataRow(1)]
+    [DataRow(71583)]
+    [DataRow(int.MaxValue)]
     [Timeout(5000)]
-    public async Task TotalTimeoutShouldCancelRunningAttemptAndClearOperation()
+    public async Task DurationLimitShouldFinishCurrentAttemptWithoutStartingNext(int minutes)
     {
         var clock = new LoopClock();
+        var completion = new TaskCompletionSource<string?>();
+        CancellationToken runToken = default;
+        var runner = new LoopRunner { Completion = token =>
+        {
+            runToken = token;
+            return completion.Task;
+        } };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
+
+        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumDurationMinutes = minutes });
+        clock.Advance(TimeSpan.FromMinutes(minutes));
+        Assert.IsFalse(runToken.IsCancellationRequested);
+        Assert.IsFalse(run.IsCompleted);
+        completion.SetResult(null);
+        await run;
+
+        Assert.AreEqual(1, runner.Attempts);
+        Assert.AreEqual(0, runner.Compactions);
+        Assert.IsTrue(controller.CanChangeSession);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task UpdatedDurationShouldApplyAtNextLoopBoundary()
+    {
+        var clock = new LoopClock();
+        var settings = new CodingLoopOptions { MaximumDurationMinutes = 1, MaximumIterations = 2 };
+        var runner = new LoopRunner { OnRun = () =>
+        {
+            clock.Advance(TimeSpan.FromMinutes(2));
+            settings.MaximumDurationMinutes = 0;
+        } };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
+
+        await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default, settings);
+
+        Assert.AreEqual(2, runner.Attempts);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task StopButtonShouldStillCancelRunningAttemptAfterDurationLimit()
+    {
+        var clock = new LoopClock();
+        using var cancellation = new CancellationTokenSource();
         var runner = new LoopRunner { Completion = async token =>
         {
             await Task.Delay(Timeout.Infinite, token);
@@ -707,46 +748,30 @@ public sealed class CodingWorkTaskControllerTests
         } };
         var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
-        var settings = new CodingLoopOptions { MaximumDurationMinutes = 1 };
 
-        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default, settings);
-        settings.MaximumDurationMinutes = 0;
-        clock.Expire();
+        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumDurationMinutes = 1 }, cancellationToken: cancellation.Token);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        controller.StopActiveRun();
         await Assert.ThrowsAsync<OperationCanceledException>(() => run);
 
         Assert.IsTrue(controller.CanChangeSession);
-        Assert.AreEqual(TimeSpan.FromMinutes(1), clock.DueTime);
-        Assert.AreEqual(1, runner.Attempts);
     }
 
     [TestMethod]
     [Timeout(5000)]
-    public async Task TotalTimeoutShouldCancelRetryWaitWithoutAnotherAttempt()
+    public async Task ExternalCancellationShouldCancelRetryWaitAfterDurationLimit()
     {
         var clock = new LoopClock();
+        using var cancellation = new CancellationTokenSource();
         var runner = new LoopRunner { Failure = new InvalidOperationException("Retry") };
         var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
-            new CodingLoopOptions { MaximumDurationMinutes = 1 });
-        clock.Expire();
-        await Assert.ThrowsAsync<OperationCanceledException>(() => run);
-
-        Assert.AreEqual(1, runner.Attempts);
-        Assert.IsTrue(controller.CanChangeSession);
-    }
-
-    [TestMethod]
-    [Timeout(5000)]
-    public async Task ExternalCancellationShouldCancelRetryWait()
-    {
-        using var cancellation = new CancellationTokenSource();
-        var runner = new LoopRunner { Failure = new InvalidOperationException("Retry") };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
-
-        Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
-            new CodingLoopOptions(), cancellationToken: cancellation.Token);
+            new CodingLoopOptions { MaximumDurationMinutes = 1 }, cancellationToken: cancellation.Token);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        Assert.IsFalse(run.IsCompleted);
         cancellation.Cancel();
         await Assert.ThrowsAsync<OperationCanceledException>(() => run);
 
@@ -755,29 +780,32 @@ public sealed class CodingWorkTaskControllerTests
     }
 
     [TestMethod]
-    public async Task UnlimitedDurationShouldNotScheduleTimeout()
+    public async Task UnlimitedDurationShouldAllowNextAttemptAfterLongElapsedTime()
     {
         var clock = new LoopClock();
+        var runner = new LoopRunner { OnRun = () => clock.Advance(TimeSpan.FromMinutes(71583)) };
         var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
-            new TestSessionStore(), new LoopRunner(), timeProvider: clock.Provider);
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
-            new CodingLoopOptions { MaximumIterations = 1 });
+            new CodingLoopOptions { MaximumIterations = 2 });
 
-        Assert.AreEqual(Timeout.InfiniteTimeSpan, clock.DueTime);
+        Assert.AreEqual(2, runner.Attempts);
     }
 
     [TestMethod]
     [Timeout(5000)]
-    public async Task TotalTimeoutShouldCancelBetweenAttemptCompaction()
+    public async Task DurationLimitShouldFinishCompactionWithoutStartingNextAttempt()
     {
         var clock = new LoopClock();
+        var completion = new TaskCompletionSource<bool>();
+        CancellationToken compactToken = default;
         var runner = new LoopRunner
         {
-            Compact = async token =>
+            Compact = token =>
             {
-                await Task.Delay(Timeout.Infinite, token);
-                return true;
+                compactToken = token;
+                return completion.Task;
             },
         };
         var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
@@ -785,37 +813,46 @@ public sealed class CodingWorkTaskControllerTests
 
         Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
             new CodingLoopOptions { MaximumDurationMinutes = 1, MaximumIterations = 2 });
-        clock.Expire();
-        await Assert.ThrowsAsync<OperationCanceledException>(() => run);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        Assert.IsFalse(compactToken.IsCancellationRequested);
+        Assert.IsFalse(run.IsCompleted);
+        completion.SetResult(true);
+        await run;
 
         Assert.AreEqual(1, runner.Compactions);
         Assert.AreEqual(1, runner.Attempts);
         Assert.IsTrue(controller.CanChangeSession);
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task LongDurationShouldAllowAttemptBeyondOldTimerRange()
+    {
+        var clock = new LoopClock();
+        var runner = new LoopRunner { OnRun = () => clock.Advance(TimeSpan.FromMinutes(71583)) };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+            new TestSessionStore(), runner, timeProvider: clock.Provider);
+
+        await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
+            new CodingLoopOptions { MaximumDurationMinutes = 71584 });
+
+        Assert.AreEqual(2, runner.Attempts);
+    }
+
     private sealed class LoopClock
     {
-        private TimerCallback? _callback;
-        private object? _state;
-        public TimeSpan? DueTime { get; private set; }
+        private long _timestamp;
         public TimeProvider Provider { get; }
 
         public LoopClock()
         {
             var provider = new Moq.Mock<TimeProvider>();
-            provider.Setup(value => value.CreateTimer(Moq.It.IsAny<TimerCallback>(), Moq.It.IsAny<object?>(),
-                    Moq.It.IsAny<TimeSpan>(), Moq.It.IsAny<TimeSpan>()))
-                .Returns((TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
-                {
-                    _callback = callback;
-                    _state = state;
-                    DueTime = dueTime;
-                    return Moq.Mock.Of<ITimer>();
-                });
+            provider.SetupGet(value => value.TimestampFrequency).Returns(TimeSpan.TicksPerSecond);
+            provider.Setup(value => value.GetTimestamp()).Returns(() => _timestamp);
             Provider = provider.Object;
         }
 
-        public void Expire() => _callback!(_state);
+        public void Advance(TimeSpan elapsed) => _timestamp += elapsed.Ticks;
     }
 
     private sealed class LoopRunner : ICodingChatRunner

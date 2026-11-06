@@ -11,6 +11,28 @@ namespace PrismCodingAgent.WpfShell.Tests;
 [WpfTestClass]
 public sealed class WpfChatSettingsTests
 {
+    public TestContext TestContext { get; set; } = null!;
+
+    [TestMethod]
+    public async Task RedesignedSettingsRenderAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    {
+        PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent("zh-Hans");
+        var model = new MainViewModel();
+        var view = new ChatSettingsView { DataContext = model.ChatViewModel, Background = System.Windows.Media.Brushes.White };
+        var window = new Window { Content = view, Width = 920, Height = 760, Background = System.Windows.Media.Brushes.White };
+        window.Closing += (_, args) => args.Cancel = false;
+        using var session = new WpfScreenshotSession(window, TestContext);
+        try
+        {
+            model.ChatViewModel.IsChatSettingsOpen = true;
+            window.Show();
+            await session.CaptureAsync("chat-settings-redesigned");
+            window.Width = 1280;
+            window.Height = 720;
+            await session.CaptureAsync("chat-settings-compact");
+        }
+        finally { window.Close(); await model.DisposeAsync(); }
+    });
     [TestMethod]
     [DataRow("ChatAutomaticCompressionToggle", "EnableAutomaticCompression")]
     [DataRow("ChatDotNetRunToggle", "EnableDotNetRun")]
@@ -59,7 +81,9 @@ public sealed class WpfChatSettingsTests
     [DataRow("LoopMaximumIterationsInput", "invalid")]
     [DataRow("LoopMaximumIterationsInput", "2147483648")]
     [DataRow("LoopMaximumDurationInput", "-1")]
-    [DataRow("LoopMaximumDurationInput", "71583")]
+    [DataRow("LoopMaximumDurationInput", "2147483648")]
+    [DataRow("LoopMaximumDurationInput", "1.5")]
+    [DataRow("LoopMaximumIterationsInput", "1.5")]
     [DataRow("LoopMaximumDurationInput", "invalid")]
     public async Task InvalidLoopTextShouldPreserveSettingsAsync(string name, string text)
         => await WpfTestClassAttribute.RunUiAsync(async () =>
@@ -77,6 +101,7 @@ public sealed class WpfChatSettingsTests
 
             Assert.AreEqual(12, name == "LoopMaximumIterationsInput"
                 ? model.LoopOptions.MaximumIterations : model.LoopOptions.MaximumDurationMinutes);
+            Assert.IsTrue(Validation.GetHasError(input));
         });
 
     [TestMethod]
@@ -90,9 +115,9 @@ public sealed class WpfChatSettingsTests
             var input = (TextBox)settings.FindName(name);
             await settings.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
 
-            input.SetCurrentValue(TextBox.TextProperty, "12");
+            input.SetCurrentValue(TextBox.TextProperty, "71583");
             input.GetBindingExpression(TextBox.TextProperty)!.UpdateSource();
-            Assert.AreEqual(12, name == "LoopMaximumIterationsInput"
+            Assert.AreEqual(71583, name == "LoopMaximumIterationsInput"
                 ? model.LoopOptions.MaximumIterations : model.LoopOptions.MaximumDurationMinutes);
 
             model.LoopOptions.MaximumIterations = 24;

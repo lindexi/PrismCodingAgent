@@ -5,87 +5,161 @@
              xmlns:chat="clr-namespace:PrismCodingAgent.CodingShell.Services.Chat">
     <UserControl.Resources>
         <Style TargetType="CheckBox">
-            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
                         <Border x:Name="Track" Width="44" Height="24" CornerRadius="12" Background="#D7DEE7">
-                            <Ellipse x:Name="Knob" Width="18" Height="18" Margin="3" Fill="White" HorizontalAlignment="Left"/>
+                            <Ellipse x:Name="Knob" Width="18" Height="18" Margin="3" Fill="White"
+                                     HorizontalAlignment="Left" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Track" Property="Background" Value="{StaticResource PrimaryBrush}"/>
-                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Track" Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Track" Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}"/>
-                                <Setter TargetName="Track" Property="BorderThickness" Value="2"/>
+                                <Setter TargetName="Track" Property="BorderBrush"
+                                        Value="{StaticResource TextPrimaryBrush}" />
+                                <Setter TargetName="Track" Property="BorderThickness" Value="2" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="ToolTip"
+                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style TargetType="TextBlock">
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
     </UserControl.Resources>
     <Grid Margin="32,24">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition />
+        </Grid.RowDefinitions>
         <Grid>
-            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding ChatSettingsTitle, Source={x:Static l:Lang.Current}}" FontSize="22" FontWeight="SemiBold"/>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition /><ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding ChatSettingsTitle, Source={x:Static l:Lang.Current}}" FontSize="22"
+                       FontWeight="SemiBold" />
             <Button x:Name="CloseChatSettingsButton" Grid.Column="1" Width="32" Height="32" Padding="8"
                     Background="Transparent" BorderThickness="0" Command="{Binding ToggleChatSettingsCommand}"
                     ToolTip="{Binding CloseChatSettingsText, Source={x:Static l:Lang.Current}}"
                     AutomationProperties.Name="{Binding CloseChatSettingsText, Source={x:Static l:Lang.Current}}">
-                <Path Width="14" Height="14" Stretch="Uniform" Stroke="#50555C" StrokeThickness="1.8" Data="M1,1 L13,13 M13,1 L1,13"/>
+                <Path Width="14" Height="14" Stretch="Uniform" Stroke="#50555C" StrokeThickness="1.8"
+                      Data="M1,1 L13,13 M13,1 L1,13" />
             </Button>
         </Grid>
-        <ScrollViewer Grid.Row="1" Margin="0,16,0,0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel MaxWidth="520" HorizontalAlignment="Stretch">
-                <TextBlock Text="{Binding LoopSettingsHint, Source={x:Static l:Lang.Current}}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <Grid Height="48">
-                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding LoopMaximumIterations, Source={x:Static l:Lang.Current}}"/>
-                    <TextBox x:Name="LoopMaximumIterationsInput" Grid.Column="1" VerticalAlignment="Center" Text="{Binding LoopOptions.MaximumIterations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
+        <ScrollViewer Grid.Row="1" Margin="0,16,0,0" HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+                <Border x:Name="LoopSettingsGroup" Background="#F8FAFC" BorderBrush="#E4E9F0" BorderThickness="1"
+                        CornerRadius="8" Padding="20,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding LoopSettingsTitle, Source={x:Static l:Lang.Current}}" FontSize="16"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding LoopSettingsHint, Source={x:Static l:Lang.Current}}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,4,0,12" />
+                        <Grid Height="48">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition /><ColumnDefinition Width="180" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding LoopMaximumIterations, Source={x:Static l:Lang.Current}}" />
+                            <TextBox x:Name="LoopMaximumIterationsInput" Grid.Column="1" Height="32" MinHeight="32"
+                                     VerticalContentAlignment="Center" VerticalAlignment="Center">
+                                <TextBox.Text>
+                                    <Binding Path="LoopOptions.MaximumIterations" Mode="TwoWay"
+                                             UpdateSourceTrigger="PropertyChanged" ValidatesOnExceptions="True" />
+                                </TextBox.Text>
+                            </TextBox>
+                        </Grid>
+                        <Grid Height="48">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition /><ColumnDefinition Width="180" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding LoopMaximumDuration, Source={x:Static l:Lang.Current}}" />
+                            <TextBox x:Name="LoopMaximumDurationInput" Grid.Column="1" Height="32" MinHeight="32"
+                                     VerticalContentAlignment="Center" VerticalAlignment="Center">
+                                <TextBox.Text>
+                                    <Binding Path="LoopOptions.MaximumDurationMinutes" Mode="TwoWay"
+                                             UpdateSourceTrigger="PropertyChanged" ValidatesOnExceptions="True" />
+                                </TextBox.Text>
+                            </TextBox>
+                        </Grid>
+                        <Grid Height="48">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition /><ColumnDefinition Width="180" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding LoopConversation, Source={x:Static l:Lang.Current}}" />
+                            <ComboBox x:Name="LoopConversationSelector" Grid.Column="1" Height="32" MinHeight="32"
+                                      VerticalAlignment="Center" SelectedValuePath="Tag"
+                                      SelectedValue="{Binding LoopOptions.ConversationMode, Mode=TwoWay}">
+                                <ComboBoxItem
+                                    DataContext="{Binding LoopCompressHint, Source={x:Static l:Lang.Current}}"
+                                    Tag="{x:Static chat:LoopConversationMode.Compress}"
+                                    Content="{Binding LoopCompress, Source={x:Static l:Lang.Current}}" />
+                                <ComboBoxItem DataContext="{Binding LoopRestartHint, Source={x:Static l:Lang.Current}}"
+                                              Tag="{x:Static chat:LoopConversationMode.Restart}"
+                                              Content="{Binding LoopRestart, Source={x:Static l:Lang.Current}}" />
+                                <ComboBoxItem DataContext="{Binding LoopAppendHint, Source={x:Static l:Lang.Current}}"
+                                              Tag="{x:Static chat:LoopConversationMode.Append}"
+                                              Content="{Binding LoopAppend, Source={x:Static l:Lang.Current}}" />
+                            </ComboBox>
+                        </Grid>
+                        <TextBlock x:Name="LoopConversationHint"
+                                   Text="{Binding SelectedItem.DataContext, ElementName=LoopConversationSelector}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"
+                                   Margin="0,0,0,4" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{Binding ChatRunSettingsTitle, Source={x:Static l:Lang.Current}}" FontSize="16"
+                           FontWeight="SemiBold" Margin="20,24,20,4" />
+                <Grid Height="48" Margin="20,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition /><ColumnDefinition Width="44" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}" />
+                    <CheckBox x:Name="ChatAutomaticCompressionToggle" Grid.Column="1"
+                              IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}"
+                              AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}" />
                 </Grid>
-                <Grid Height="48">
-                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding LoopMaximumDuration, Source={x:Static l:Lang.Current}}"/>
-                    <TextBox x:Name="LoopMaximumDurationInput" Grid.Column="1" VerticalAlignment="Center" Text="{Binding LoopOptions.MaximumDurationMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
+                <Border Height="1" Background="{StaticResource BorderBrush}" />
+                <Grid Height="48" Margin="20,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition /><ColumnDefinition Width="44" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}" />
+                    <CheckBox x:Name="ChatDotNetRunToggle" Grid.Column="1"
+                              IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}"
+                              AutomationProperties.Name="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}" />
                 </Grid>
-                <Grid Height="48">
-                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding LoopConversation, Source={x:Static l:Lang.Current}}"/>
-                    <ComboBox x:Name="LoopConversationSelector" Grid.Column="1" VerticalAlignment="Center" SelectedValuePath="Tag" SelectedValue="{Binding LoopOptions.ConversationMode, Mode=TwoWay}">
-                        <ComboBoxItem Tag="{x:Static chat:LoopConversationMode.Compress}" Content="{Binding LoopCompress, Source={x:Static l:Lang.Current}}"/>
-                        <ComboBoxItem Tag="{x:Static chat:LoopConversationMode.Restart}" Content="{Binding LoopRestart, Source={x:Static l:Lang.Current}}"/>
-                        <ComboBoxItem Tag="{x:Static chat:LoopConversationMode.Append}" Content="{Binding LoopAppend, Source={x:Static l:Lang.Current}}"/>
-                    </ComboBox>
+                <Border Height="1" Background="{StaticResource BorderBrush}" />
+                <Grid Height="48" Margin="20,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition /><ColumnDefinition Width="44" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}" />
+                    <CheckBox x:Name="ChatResponsesApiToggle" Grid.Column="1"
+                              IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}"
+                              AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}" />
                 </Grid>
-                <Grid Height="48">
-                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}"/>
-                    <CheckBox x:Name="ChatAutomaticCompressionToggle" Grid.Column="1" IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}" AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}"/>
-                </Grid>
-                <Border Height="1" Background="{StaticResource BorderBrush}"/>
-                <Grid Height="48">
-                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}"/>
-                    <CheckBox x:Name="ChatDotNetRunToggle" Grid.Column="1" IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}" AutomationProperties.Name="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}"/>
-                </Grid>
-                <Border Height="1" Background="{StaticResource BorderBrush}"/>
-                <Grid Height="48">
-                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}"/>
-                    <CheckBox x:Name="ChatResponsesApiToggle" Grid.Column="1" IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}"/>
-                </Grid>
-                <Border Height="1" Margin="0,16,0,8" Background="{StaticResource BorderBrush}"/>
-                <Button x:Name="StopLanguageServerButton" HorizontalAlignment="Left" Margin="0,8,0,0" Style="{StaticResource ShellSecondaryButton}"
-                        Content="{Binding StopLanguageServerText, Source={x:Static l:Lang.Current}}" Command="{Binding StopLanguageServerCommand}"
-                        ToolTip="{Binding StopLanguageServerToolTip, Source={x:Static l:Lang.Current}}"/>
+                <TextBlock Text="{Binding LanguageServerSettingsTitle, Source={x:Static l:Lang.Current}}" FontSize="16"
+                           FontWeight="SemiBold" Margin="20,24,20,8" />
+                <Button x:Name="StopLanguageServerButton" HorizontalAlignment="Right" Margin="20,0"
+                        Style="{StaticResource ShellSecondaryButton}"
+                        Content="{Binding StopLanguageServerText, Source={x:Static l:Lang.Current}}"
+                        Command="{Binding StopLanguageServerCommand}"
+                        ToolTip="{Binding StopLanguageServerToolTip, Source={x:Static l:Lang.Current}}" />
             </StackPanel>
         </ScrollViewer>
     </Grid>

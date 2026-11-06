@@ -503,20 +503,38 @@ internal sealed class CodingWorkTaskController
             throw new InvalidOperationException("当前任务已有活动操作。");
         }
 
-        using var timeoutCancellation = new CancellationTokenSource(
-            loopOptions.MaximumDurationMinutes > 0
-                ? TimeSpan.FromMinutes(loopOptions.MaximumDurationMinutes)
-                : Timeout.InfiniteTimeSpan, _timeProvider);
         using CancellationTokenSource operationCancellationTokenSource =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellation.Token);
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        long started = _timeProvider.GetTimestamp();
         _activeOperationCancellationTokenSource = operationCancellationTokenSource;
         ICodingChatRunner chatRunner = runner ?? _chatRunner;
         UpdateOperationState(CodingWorkTaskOperationState.LoopRunning);
         try
         {
             long attempts = 0;
-            bool HasNextIteration() => loopOptions.MaximumIterations == 0
-                || attempts < loopOptions.MaximumIterations;
+            bool HasNextIteration()
+            {
+                if (loopOptions.MaximumIterations != 0)
+                {
+                    if (attempts >= loopOptions.MaximumIterations)
+                    {
+                        return false;
+                    }
+                }
+
+                if (loopOptions.MaximumDurationMinutes != 0)
+                {
+                    TimeSpan elapsed = _timeProvider.GetElapsedTime(started);
+                    TimeSpan maximumDuration = TimeSpan.FromMinutes(loopOptions.MaximumDurationMinutes);
+                    if (elapsed >= maximumDuration)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             while (HasNextIteration())
             {
                 operationCancellationTokenSource.Token.ThrowIfCancellationRequested();
@@ -564,7 +582,6 @@ internal sealed class CodingWorkTaskController
             {
                 _activeOperationCancellationTokenSource = null;
             }
-
             UpdateOperationState(default);
         }
     }
