@@ -4,6 +4,8 @@ namespace PrismCodingAgent.CodingShell.Services.Settings;
 
 internal sealed record CodingChatShellSettings
 {
+    public CpaQuotaConfiguration[] CpaQuotaServices { get; init; } = [];
+
     public string LanguageTag { get; init; } = GetDefaultLanguageTag();
 
     private static string GetDefaultLanguageTag()

@@ -18,6 +18,43 @@ namespace PrismCodingAgent.CodingShell.ViewModels;
 
 public sealed class SettingsViewModel : ViewModelBase, IDisposable
 {
+    public ObservableCollection<CpaQuotaServiceViewModel> CpaServices { get; } = [];
+    public SimpleCommand AddCpaServiceCommand => _addCpaServiceCommand ??= new SimpleCommand(AddCpaService);
+    public SimpleCommand<CpaQuotaServiceViewModel> RemoveCpaServiceCommand => _removeCpaServiceCommand ??= new SimpleCommand<CpaQuotaServiceViewModel>(RemoveCpaService);
+    private SimpleCommand? _addCpaServiceCommand;
+    private SimpleCommand<CpaQuotaServiceViewModel>? _removeCpaServiceCommand;
+    public bool HasCpaServices => CpaServices.Count > 0;
+    public string PrimaryQuotaText => "额度：" + (CpaServices.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
+    public string AllQuotaDetails => string.Join(Environment.NewLine + Environment.NewLine, CpaServices.Select(service =>
+        $"{service.Alias}{(service.IsPrimary ? " · 主额度" : "")}\n{service.DetailText}\n{service.Status}".Trim()));
+
+    private void AddCpaService()
+    {
+        var service = new CpaQuotaServiceViewModel(SelectPrimaryQuota, NotifyQuotaChanged);
+        CpaServices.Add(service);
+        NotifyQuotaChanged();
+    }
+    private void RemoveCpaService(CpaQuotaServiceViewModel service)
+    {
+        service.Dispose();
+        CpaServices.Remove(service);
+        NotifyQuotaChanged();
+    }
+    private void SelectPrimaryQuota(CpaQuotaServiceViewModel selected)
+    {
+        foreach (var service in CpaServices.Where(service => service != selected)) service.IsPrimary = false;
+    }
+    private void NotifyQuotaChanged()
+    {
+        if (CpaServices.Count == 1 && !CpaServices[0].IsPrimary)
+        {
+            CpaServices[0].IsPrimary = true;
+        }
+        OnPropertyChanged(nameof(HasCpaServices));
+        OnPropertyChanged(nameof(PrimaryQuotaText));
+        OnPropertyChanged(nameof(AllQuotaDetails));
+    }
+
     private readonly CodingChatSettingsService? _settingsService;
     private readonly IWindowsSandboxConnectionTester? _windowsSandboxConnectionTester;
     private readonly Action? _backAction;
@@ -268,6 +305,14 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     private void Load(CodingChatSettingsSnapshot snapshot)
     {
         _isLoading = true;
+        foreach (var service in CpaServices) service.Dispose();
+        CpaServices.Clear();
+        foreach (var configuration in snapshot.ShellSettings.CpaQuotaServices)
+        {
+            AddCpaService();
+            CpaServices[^1].Load(configuration);
+        }
+        NotifyQuotaChanged();
         DeepSeekApiKey = snapshot.ShellSettings.DeepSeekApiKey;
         LanguageTag = snapshot.ShellSettings.LanguageTag;
         IsWindowsSandboxEnabled = snapshot.ShellSettings.IsWindowsSandboxEnabled;
@@ -382,6 +427,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
             };
             var shellSettings = new CodingChatShellSettings
             {
+                CpaQuotaServices = CpaServices.Select(service => service.ToConfiguration()).ToArray(),
                 DeepSeekApiKey = DeepSeekApiKeyResolver.Resolve(DeepSeekApiKey, modelConfiguration),
                 LanguageTag = LanguageTag,
                 IsWindowsSandboxEnabled = IsWindowsSandboxEnabled,
@@ -511,6 +557,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable
     {
         if (_isDisposed) return;
         _isDisposed = true;
+        foreach (var service in CpaServices) service.Dispose();
         Providers.CollectionChanged -= OnProvidersChanged;
         foreach (var provider in _subscribedProviders)
         {

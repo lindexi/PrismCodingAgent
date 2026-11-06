@@ -282,6 +282,59 @@
                     </StackPanel>
                 </Border>
 
+                <Border Classes="SettingsCard" Padding="24" x:Name="CpaQuotaSettings">
+                    <StackPanel Spacing="16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="CPA 额度查询服务设置" Classes="SettingsSectionTitle" />
+                            <Button Grid.Column="1" Classes="Secondary" Content="添加服务" Command="{Binding AddCpaServiceCommand}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding CpaServices}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CpaQuotaServiceViewModel">
+                                    <Border BorderBrush="#E4E9F0" BorderThickness="0,1,0,0" Padding="0,16,0,16">
+                                        <StackPanel Spacing="10">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Text="{Binding Alias}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                <Button Grid.Column="1" Width="32" MinWidth="32" Height="32" MinHeight="32" Padding="0" Background="Transparent" BorderThickness="0" ToolTip.Tip="移除服务"
+                                                    Command="{Binding $parent[views:SettingsView].((vm:SettingsViewModel)DataContext).RemoveCpaServiceCommand}" CommandParameter="{Binding}">
+                                                    <Button.Template>
+                                                        <ControlTemplate>
+                                                            <Border Background="Transparent">
+                                                                <Path Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="#50555C" StrokeThickness="1.5" Data="M1,1 L11,11 M11,1 L1,11" />
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
+                                                <TextBlock Text="CPA 地址" VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Classes="Rounded" Text="{Binding Address}" PlaceholderText="https://example.com" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
+                                                <TextBlock Text="CPA 密钥" VerticalAlignment="Center" />
+                                                <views:SecretInput Grid.Column="1" Classes="Rounded" Text="{Binding ManagementKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
+                                                <TextBlock Text="额度别名" VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Classes="Rounded" Text="{Binding Alias}" />
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <CheckBox Content="主额度" IsChecked="{Binding IsPrimary}" />
+                                                <Button Grid.Column="1" Classes="Secondary" Content="刷新" Command="{Binding RefreshCommand}" />
+                                            </Grid>
+                                            <TextBlock Text="{Binding DetailText}" IsVisible="{Binding HasResults}" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding Status}" IsVisible="{Binding HasStatus}" TextWrapping="Wrap" />
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,-4,0,0" IsVisible="{Binding HasResults}">
+                                                <TextBlock Text="额度数据时间：" Classes="SettingsHint" />
+                                                <TextBlock Text="{Binding ObservedText}" Classes="SettingsHint" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 

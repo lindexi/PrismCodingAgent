@@ -40,7 +40,7 @@
                 </TextBox>
                 <TextBlock Grid.Row="3" Margin="6,2,6,0"
                            Text="{Binding WorkTaskListText, Source={x:Static localizations:Lang.Current}}"
-                           FontSize="12" FontWeight="SemiBold" Foreground="#62738D" />
+                           FontSize="13" FontWeight="SemiBold" Foreground="#62738D" />
                 <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto" Margin="-4,0,-4,0">
                     <StackPanel>
                         <ItemsControl ItemsSource="{Binding FilteredWorkTasks}" Margin="0,4,0,0">
@@ -225,15 +225,26 @@
                             <TextBlock Text="{Binding AllSessionsText, Source={x:Static localizations:Lang.Current}}" />
                         </StackPanel>
                     </Button>
+                    <Grid>
                     <Button Name="SettingsButton" Classes="Navigation" Classes.Active="{Binding IsSettingsOpen}"
                             Command="{Binding OpenSettingsCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <PathIcon Width="16" Height="16"
                                       Data="M4,3 L6,3 L6,8 L9,8 L9,10 L6,10 L6,21 L4,21 L4,10 L1,10 L1,8 L4,8 Z M11,3 L13,3 L13,14 L16,14 L16,16 L13,16 L13,21 L11,21 L11,16 L8,16 L8,14 L11,14 Z M18,3 L20,3 L20,6 L23,6 L23,8 L20,8 L20,21 L18,21 L18,8 L15,8 L15,6 L18,6 Z" />
-                            <TextBlock
-                                Text="{Binding SettingsNavigationText, Source={x:Static localizations:Lang.Current}}" />
+                            <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static localizations:Lang.Current}}" />
                         </StackPanel>
                     </Button>
+                            <TextBlock x:Name="PrimaryQuotaLabel" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                                       FontWeight="Normal" FontFamily="{Binding #SettingsButton.FontFamily}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"
+                                       Text="{Binding SettingsViewModel.PrimaryQuotaText}"
+                                       IsVisible="{Binding SettingsViewModel.HasCpaServices}">
+                                <ToolTip.Tip>
+                                    <Border Padding="12" MinWidth="260" MaxWidth="460">
+                                        <TextBlock Text="{Binding SettingsViewModel.AllQuotaDetails}" TextWrapping="Wrap" />
+                                    </Border>
+                                </ToolTip.Tip>
+                            </TextBlock>
+                    </Grid>
                 </StackPanel>
             </Grid>
         </Border>
