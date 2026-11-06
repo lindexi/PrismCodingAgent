@@ -33,6 +33,10 @@ public sealed class ShellMainLayoutTests
             Assert.AreEqual(900d, window.ClientSize.Height);
             File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "main-layout.txt"),
                 $"{Lang.Current.IetfLanguageTag}; client={window.ClientSize}; dpi={window.RenderScaling * 96}; appData={root}{Environment.NewLine}");
+            window.MinWidth = 0;
+            window.Width = 1200;
+            window.Height = 900;
+            Capture("main-1200x900");
             window.Width = 1280;
             window.Height = 720;
             Capture("main-1280x720");

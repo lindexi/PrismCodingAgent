@@ -15,6 +15,89 @@ public sealed class WpfMainLayoutTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    public async Task ToolbarRespondsToWindowWidthWithoutChangingSelectionsAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    {
+        string root = Path.Combine(AppContext.BaseDirectory, "ToolbarLayoutData", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"),
+            """{"PrimaryModel":"gpt-5.4","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline-test","ModelDefinitions":[{"ModelName":"gpt-5.4","ModelId":"gpt-5.4","Provider":"openai"}]}]}""");
+        await File.WriteAllTextAsync(Path.Combine(root, "ShellSettings.json"), JsonSerializer.Serialize(new
+        {
+            LanguageTag = Lang.Current.IetfLanguageTag, IsWindowsSandboxEnabled = false
+        }));
+        var window = (MainWindow)await ((App)Application.Current).OpenAsync(["--data-directory", root]);
+        var model = (MainViewModel)window.DataContext;
+        window.Closing += (_, args) => args.Cancel = false;
+        using var screenshots = new WpfScreenshotSession(window, TestContext);
+        try
+        {
+            // Only this test host permits sizes below the production minimum.
+            window.MinWidth = 0;
+            window.MinHeight = 0;
+            var toolbar = (Grid)window.FindName("ConversationToolbar");
+            var workspace = (TextBox)window.FindName("WorkspaceInput");
+            var apply = (Button)window.FindName("ApplyWorkspaceButton");
+            var selector = (ComboBox)window.FindName("ModelSelector");
+            var reasoning = (ComboBox)window.FindName("ReasoningEffortSelector");
+            var history = (Button)window.FindName("TaskHistoryButton");
+            var log = (Button)window.FindName("OpenLogDirectoryButton");
+            var selectedModel = model.ChatViewModel.SelectedModel;
+            Assert.IsNotNull(selectedModel);
+            double toolbarHeight = 0;
+            double normalDirectoryWidth = 0;
+
+            async Task ResizeAsync(int width, int height, bool showModels)
+            {
+                window.Width = width;
+                window.Height = height;
+                await screenshots.CaptureSurfaceAsync(window, $"toolbar-window-{width}x{height}");
+                Assert.AreEqual((double)width, window.ActualWidth, 1d);
+                Assert.AreEqual((double)height, window.ActualHeight, 1d);
+                Assert.AreEqual(showModels, selector.IsVisible);
+                Assert.AreEqual(showModels, reasoning.IsVisible);
+                Assert.AreEqual(showModels, ((TextBlock)window.FindName("ConversationStatus")).IsVisible);
+                Assert.AreEqual(showModels, ((TextBlock)window.FindName("ReasoningEffortLabel")).IsVisible);
+                Assert.IsTrue(workspace.IsVisible && apply.IsVisible && history.IsVisible && log.IsVisible);
+                Assert.IsGreaterThan(100d, workspace.ActualWidth);
+                Assert.AreEqual(toolbarHeight == 0 ? toolbar.ActualHeight : toolbarHeight, toolbar.ActualHeight, 0.1d);
+                toolbarHeight = toolbar.ActualHeight;
+                Rect Bounds(FrameworkElement element) => new(element.TranslatePoint(default, toolbar), element.RenderSize);
+                Assert.IsTrue(Bounds(workspace).Right <= Bounds(apply).Left);
+                Assert.IsTrue(Bounds(apply).Right <= Bounds(history).Left);
+                Assert.IsTrue(Bounds(history).Right <= Bounds(log).Left);
+                Assert.IsTrue(Bounds(log).Right <= toolbar.ActualWidth + 0.1d);
+                Assert.AreEqual(Bounds(workspace).Top, Bounds(history).Top, 0.1d);
+                Assert.AreSame(selectedModel, selector.SelectedItem);
+            }
+
+            await ResizeAsync(1200, 900, true);
+            normalDirectoryWidth = workspace.ActualWidth;
+            Assert.AreEqual(220d, selector.ActualWidth, 0.1d);
+            Assert.IsTrue(selector.ApplyTemplate());
+            Assert.IsNotNull(selector.Template.FindName("PART_Popup", selector));
+            Assert.AreSame(model.ChatViewModel.AvailableModels, selector.ItemsSource);
+            Assert.AreEqual(System.Windows.Data.BindingMode.TwoWay,
+                System.Windows.Data.BindingOperations.GetBinding(selector, ComboBox.SelectedItemProperty)!.Mode);
+            reasoning.SetCurrentValue(ComboBox.SelectedItemProperty, model.ChatViewModel.AvailableReasoningEfforts.Last());
+            Assert.AreSame(reasoning.SelectedItem, model.ChatViewModel.SelectedReasoningEffort);
+            var selectedEffort = reasoning.SelectedItem;
+            await ResizeAsync(1440, 900, true);
+            Assert.AreEqual(normalDirectoryWidth + 240, workspace.ActualWidth, 0.1d);
+            await ResizeAsync(800, 600, false);
+            await ResizeAsync(1199, 900, false);
+            Assert.AreEqual(normalDirectoryWidth + 323, workspace.ActualWidth, 0.1d);
+            await ResizeAsync(1200, 900, true);
+            Assert.AreSame(selectedEffort, reasoning.SelectedItem);
+            Assert.AreEqual(normalDirectoryWidth, workspace.ActualWidth, 0.1d);
+        }
+        finally
+        {
+            window.Close();
+            await model.DisposeAsync();
+        }
+    });
+
+    [TestMethod]
     public async Task RealStartupRendersShellAndTaskInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;

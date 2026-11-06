@@ -6,6 +6,17 @@
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
              x:Class="PrismCodingAgent.CodingShell.Views.ChatView"
              x:DataType="vm:ChatViewModel">
+    <UserControl.Styles>
+        <Style Selector="Grid.ModelSettings">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <!-- 1200 窗口扣除 280 左栏、宿主的 8 外边距和 2 边框，聊天区宽度为 910。 -->
+        <ContainerQuery Name="ChatLayout" Query="min-width:910">
+            <Style Selector="Grid.ModelSettings">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
+        </ContainerQuery>
+    </UserControl.Styles>
     <UserControl.DataTemplates>
         <views:ChatMessageItemTemplateSelector>
             <views:ChatMessageItemTemplateSelector.TextItemTemplate>
@@ -167,7 +178,8 @@
         </views:ChatMessageItemTemplateSelector>
     </UserControl.DataTemplates>
 
-    <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource BackgroundBrush}">
+    <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource BackgroundBrush}"
+          Container.Name="ChatLayout" Container.Sizing="Width">
         <Border Grid.Row="0"
                 Margin="32,12,32,8" Padding="16,12"
                 CornerRadius="8" Background="#B3FFFFFF"
@@ -176,7 +188,7 @@
                   ColumnSpacing="16">
                 <TextBlock Text="{Binding WorkDirectoryText, Source={x:Static localizations:Lang.Current}}"
                            Classes="Subtitle" FontSize="11" />
-                <Grid Grid.Column="1" ColumnDefinitions="*,96" ColumnSpacing="8">
+                <Grid Grid.Column="1" Classes="ModelSettings" ColumnDefinitions="*,96" ColumnSpacing="8">
                     <TextBlock Text="{Binding ModelText, Source={x:Static localizations:Lang.Current}}"
                                Classes="Subtitle" FontSize="11" />
                     <TextBlock Grid.Column="1"
@@ -203,7 +215,7 @@
                             IsEnabled="{Binding CanApplyWorkspace}" />
                 </Grid>
 
-                <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,96" ColumnSpacing="8">
+                <Grid Grid.Row="1" Grid.Column="1" Classes="ModelSettings" ColumnDefinitions="*,96" ColumnSpacing="8">
                     <ComboBox x:Name="ModelSelector"
                               HorizontalAlignment="Stretch"
                               MinWidth="0"

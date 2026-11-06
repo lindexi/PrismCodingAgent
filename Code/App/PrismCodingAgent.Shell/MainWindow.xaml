@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
         xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views"
+        xmlns:converters="clr-namespace:PrismCodingAgent.CodingShell.Converters"
         Width="1440" Height="900" MinWidth="1280" MinHeight="720"
         Icon="Assets/Icons/CodingChatRoom.ico" WindowStartupLocation="CenterScreen" PreviewKeyDown="OnExitKeyDown">
     <Window.Title>
@@ -18,6 +19,10 @@
                         Executed="OnMessageCopyExecuted" />
     </Window.CommandBindings>
     <Window.Resources>
+        <converters:WindowWidthVisibilityConverter x:Key="WindowWidthVisibility" />
+        <Style x:Key="TopModelSettings" TargetType="Grid">
+            <Setter Property="Visibility" Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource WindowWidthVisibility}, ConverterParameter=1200}" />
+        </Style>
         <ContextMenu x:Key="MessageMenu" x:Shared="False" MinWidth="104" FontFamily="Microsoft YaHei UI" Padding="0,4"
                      Background="#FAFAFA" BorderBrush="#D5D5D5" BorderThickness="1"
                      DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
@@ -627,9 +632,9 @@
                         </Grid.RowDefinitions>
                         <Border Grid.Row="1" Margin="8,-12,8,8" Padding="16,12" CornerRadius="8" Background="#B3FFFFFF"
                                 BorderBrush="#10000000" BorderThickness="1">
-                            <Grid DataContext="{Binding ChatViewModel}">
+                            <Grid x:Name="ConversationToolbar" DataContext="{Binding ChatViewModel}">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition /><ColumnDefinition Width="228" /><ColumnDefinition Width="96" />
+                                    <ColumnDefinition /><ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
@@ -638,7 +643,11 @@
                                 <TextBlock FontSize="11" Margin="0,0,0,7"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Text="{Binding WorkDirectoryText, Source={x:Static l:Lang.Current}}" />
-                                <TextBlock x:Name="ConversationStatus" Grid.Column="1" FontSize="11" Margin="0,0,0,7"
+                                <Grid Grid.Column="1" Style="{StaticResource TopModelSettings}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="228" /><ColumnDefinition Width="96" />
+                                    </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="ConversationStatus" FontSize="11" Margin="0,0,0,7"
                                            Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
                                            ToolTip="{Binding StatusText}">
                                     <TextBlock.Text>
@@ -647,9 +656,10 @@
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
-                                <TextBlock Grid.Column="2" FontSize="11" Margin="0,0,0,7"
+                                <TextBlock x:Name="ReasoningEffortLabel" Grid.Column="1" FontSize="11" Margin="0,0,0,7"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            Text="{Binding ReasoningEffortText, Source={x:Static l:Lang.Current}}" />
+                                </Grid>
                                 <Grid Grid.Row="1" Margin="0,0,16,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition /><ColumnDefinition Width="Auto" />
@@ -696,7 +706,11 @@
                                             Command="{Binding ApplyWorkspaceCommand}"
                                             IsEnabled="{Binding CanApplyWorkspace}" />
                                 </Grid>
-                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="ModelSelector" Height="32"
+                                <Grid Grid.Row="1" Grid.Column="1" Style="{StaticResource TopModelSettings}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="228" /><ColumnDefinition Width="96" />
+                                    </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="ModelSelector" Height="32"
                                           Margin="0,0,8,0" MinHeight="32" ItemsSource="{Binding AvailableModels}"
                                           SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
                                           DisplayMemberPath="DisplayName"
@@ -711,7 +725,7 @@
                                         </Style>
                                     </ComboBox.Style>
                                 </ComboBox>
-                                <ComboBox Grid.Row="1" Grid.Column="2" x:Name="ReasoningEffortSelector" Height="32"
+                                <ComboBox Grid.Column="1" x:Name="ReasoningEffortSelector" Height="32"
                                           MinHeight="32" Margin="0" ItemsSource="{Binding AvailableReasoningEfforts}"
                                           SelectedItem="{Binding SelectedReasoningEffort, Mode=TwoWay}"
                                           DisplayMemberPath="DisplayName"
@@ -726,7 +740,8 @@
                                         </Style>
                                     </ComboBox.Style>
                                 </ComboBox>
-                                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Margin="16,0,0,0"
+                                </Grid>
+                                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="16,0,0,0"
                                             DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
                                     <Button x:Name="TaskHistoryButton" Style="{StaticResource ShellSecondaryButton}"
                                             Width="32" Height="32" Padding="7"

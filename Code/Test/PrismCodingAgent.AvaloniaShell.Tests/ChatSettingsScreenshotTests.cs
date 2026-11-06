@@ -13,6 +13,8 @@ public sealed class ChatSettingsScreenshotTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    [DataRow(1200, 900)]
+    [DataRow(1440, 900)]
     [DataRow(1280, 720)]
     [DataRow(800, 600)]
     public async Task ProductionChatSettingsShouldRenderAndRemainOperableAsync(int width, int height)
@@ -32,30 +34,39 @@ public sealed class ChatSettingsScreenshotTests
         Assert.AreSame(session.Model.ChatViewModel, settings.DataContext);
         var modelSelector = chat.FindControl<ComboBox>("ModelSelector")!;
         var historyButton = chat.FindControl<Button>("TaskHistoryButton")!;
-        var modelOrigin = modelSelector.TranslatePoint(default, chat)!.Value;
-        var historyOrigin = historyButton.TranslatePoint(default, chat)!.Value;
-        Assert.IsTrue(modelOrigin.X >= 0 && modelOrigin.X + modelSelector.Bounds.Width <= historyOrigin.X);
-        Assert.IsLessThanOrEqualTo(chat.Bounds.Width, historyOrigin.X + historyButton.Bounds.Width);
-        var toolbarControls = new Control[]
+        bool showModelSettings = width >= 1200;
+        Assert.AreEqual(width - 280d - 8d - 2d, chat.Bounds.Width);
+        Assert.AreEqual(showModelSettings, modelSelector.IsEffectivelyVisible);
+        var reasoningSelector = chat.FindControl<ComboBox>("ReasoningEffortSelector")!;
+        Assert.AreEqual(showModelSettings, reasoningSelector.IsEffectivelyVisible);
+        Assert.IsTrue(chat.GetVisualDescendants().OfType<Grid>()
+            .Where(grid => grid.Classes.Contains("ModelSettings"))
+            .All(grid => grid.IsVisible == showModelSettings));
+        var workspace = chat.FindControl<TextBox>("WorkspaceInputBox")!;
+        var toolbarOrigin = workspace.TranslatePoint(default, chat)!.Value;
+        var toolbarControls = new List<Control>
         {
-            chat.FindControl<TextBox>("WorkspaceInputBox")!,
+            workspace,
             chat.FindControl<Button>("ApplyWorkspaceButton")!,
-            modelSelector,
-            chat.FindControl<ComboBox>("ReasoningEffortSelector")!,
-            historyButton,
-            chat.FindControl<Button>("OpenLogDirectoryButton")!,
         };
+        if (showModelSettings)
+        {
+            toolbarControls.Add(modelSelector);
+            toolbarControls.Add(reasoningSelector);
+        }
+        toolbarControls.Add(historyButton);
+        toolbarControls.Add(chat.FindControl<Button>("OpenLogDirectoryButton")!);
         double previousRight = 0;
         foreach (var control in toolbarControls)
         {
             var origin = control.TranslatePoint(default, chat)!.Value;
-            Assert.AreEqual(modelOrigin.Y, origin.Y, 0.5, control.Name);
+            Assert.AreEqual(toolbarOrigin.Y, origin.Y, 0.5, control.Name);
             Assert.IsGreaterThanOrEqualTo(previousRight, origin.X, control.Name);
             Assert.IsLessThanOrEqualTo(chat.Bounds.Width, origin.X + control.Bounds.Width, control.Name);
             Assert.IsGreaterThan(0d, control.Bounds.Width, control.Name);
             previousRight = origin.X + control.Bounds.Width;
         }
-        Assert.IsLessThan(110d, modelOrigin.Y + modelSelector.Bounds.Height);
+        Assert.IsLessThan(110d, toolbarOrigin.Y + workspace.Bounds.Height);
         var model = session.Model.ChatViewModel;
         var iterations = settings.FindControl<TextBox>("LoopMaximumIterationsInput")!;
         var duration = settings.FindControl<TextBox>("LoopMaximumDurationInput")!;
