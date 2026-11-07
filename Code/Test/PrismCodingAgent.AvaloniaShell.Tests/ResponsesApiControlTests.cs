@@ -174,7 +174,7 @@ public sealed class ResponsesApiControlTests
     [DataRow(640)]
     [DataRow(760)]
     [DataRow(1016)]
-    public void ChatSettingsEntryShouldStayLeftOfComposerActions(int width)
+    public void ChatSettingsEntryShouldStayInToolbar(int width)
     {
         using var viewModel = new ChatViewModel();
         var view = new ChatView { DataContext = viewModel };
@@ -185,22 +185,20 @@ public sealed class ResponsesApiControlTests
             window.UpdateLayout();
             var entry = view.FindControl<Button>("OpenChatSettingsButton")!;
             var loop = view.FindControl<CheckBox>("LoopIterationCheckBox")!;
-            var runOptions = view.FindControl<WrapPanel>("RunOptionsPanel")!;
-            CollectionAssert.AreEqual(new Control[] { entry }, runOptions.Children.ToArray());
+            Assert.IsNull(view.FindControl<WrapPanel>("RunOptionsPanel"));
+            Assert.AreSame(viewModel.ToggleChatSettingsCommand, entry.Command);
             var send = view.FindControl<Button>("SendButton")!;
             Assert.AreSame(loop.Parent, send.Parent);
             var compress = view.FindControl<Button>("CompressConversationButton")!;
             var entryOrigin = entry.TranslatePoint(default, view)!.Value;
             var compressOrigin = compress.TranslatePoint(default, view)!.Value;
             var loopOrigin = loop.TranslatePoint(default, view)!.Value;
-            var runOptionsOrigin = runOptions.TranslatePoint(default, view)!.Value;
 
             var sendOrigin = send.TranslatePoint(default, view)!.Value;
             Assert.IsTrue(loopOrigin.X >= 0 && loopOrigin.X + loop.Bounds.Width <= sendOrigin.X);
             Assert.AreEqual(sendOrigin.Y + send.Bounds.Height / 2, loopOrigin.Y + loop.Bounds.Height / 2, 0.5);
-            Assert.IsLessThanOrEqualTo(compressOrigin.X, runOptionsOrigin.X + runOptions.Bounds.Width);
-            Assert.IsTrue(entryOrigin.X >= 0 && entryOrigin.X + entry.Bounds.Width <= compressOrigin.X);
-            Assert.AreEqual(compressOrigin.Y + compress.Bounds.Height / 2, entryOrigin.Y + entry.Bounds.Height / 2, 0.5);
+            Assert.IsTrue(entryOrigin.Y < compressOrigin.Y);
+            Assert.AreEqual(32d, entry.Width);
         }
         finally { window.Close(); }
     }

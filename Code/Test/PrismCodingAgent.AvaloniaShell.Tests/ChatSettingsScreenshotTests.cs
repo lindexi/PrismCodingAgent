@@ -55,7 +55,7 @@ public sealed class ChatSettingsScreenshotTests
             toolbarControls.Add(reasoningSelector);
         }
         toolbarControls.Add(historyButton);
-        toolbarControls.Add(chat.FindControl<Button>("OpenLogDirectoryButton")!);
+        toolbarControls.Add(chat.FindControl<Button>("OpenChatSettingsButton")!);
         double previousRight = 0;
         foreach (var control in toolbarControls)
         {

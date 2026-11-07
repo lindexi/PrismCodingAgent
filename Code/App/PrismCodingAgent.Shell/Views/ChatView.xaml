@@ -122,12 +122,6 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition /><ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <WrapPanel x:Name="RunOptionsPanel" Margin="0,0,12,0" MaxWidth="600" HorizontalAlignment="Left"
-                       VerticalAlignment="Center" TextElement.FontSize="13">
-                <Button x:Name="OpenChatSettingsButton"
-                        Content="{Binding ChatSettingsTitle, Source={x:Static l:Lang.Current}}"
-                        Command="{Binding ToggleChatSettingsCommand}" />
-            </WrapPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button x:Name="CompressConversationButton" Margin="0,0,8,4"
                         Content="{Binding CompressConversationText, Source={x:Static l:Lang.Current}}"

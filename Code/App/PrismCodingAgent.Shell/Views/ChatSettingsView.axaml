@@ -131,6 +131,7 @@
                         <TextBlock Classes="OptionTitle"
                                    Text="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatAutomaticCompressionToggle" Grid.Column="1"
+                                      AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}" />
                     </Grid>
                     <Border Height="1" Background="#ECEDEF" />
@@ -138,6 +139,7 @@
                         <TextBlock Classes="OptionTitle"
                                    Text="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatDotNetRunToggle" Grid.Column="1"
+                                      AutomationProperties.Name="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}" />
                     </Grid>
                     <Border Height="1" Background="#ECEDEF" />
@@ -145,6 +147,7 @@
                         <TextBlock Classes="OptionTitle"
                                    Text="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatResponsesApiToggle" Grid.Column="1"
+                                      AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>

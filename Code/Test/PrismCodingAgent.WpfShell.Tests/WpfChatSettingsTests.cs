@@ -157,7 +157,7 @@ public sealed class WpfChatSettingsTests
             var input = (TextBox)composer.FindName("MessageInputTextBox");
             var overlay = (Grid)window.FindName("ChatOverlayLayer");
             var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
-            var open = (Button)composer.FindName("OpenChatSettingsButton");
+            var open = (Button)window.FindName("OpenChatSettingsButton");
             var close = (Button)settings.FindName("CloseChatSettingsButton");
             const string draft = "First draft line\nSecond draft line";
             model.ChatViewModel.InputText = draft;
