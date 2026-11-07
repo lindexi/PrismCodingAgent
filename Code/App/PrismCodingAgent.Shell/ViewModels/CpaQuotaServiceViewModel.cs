@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PrismCodingAgent.CodingShell.Localizations;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -19,7 +20,7 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     private string _managementKey = "";
     private string _name = "";
     private bool _isPrimary;
-    private string _status = "尚未查询";
+    private string _status = Lang.Current.QuotaPending;
     private IReadOnlyList<CpaQuotaWindow> _windows = [];
 
     internal CpaQuotaServiceViewModel(HttpClient client)
@@ -70,12 +71,13 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     public bool HasResults => _windows.Count > 0;
     public string QuotaText => _windows.Count == 0 ? "—" : string.Join(" / ", _windows.Select(window => $"{window.RemainingPercent:0.##}%"));
     public string DetailText => string.Join(Environment.NewLine, _windows.Select(window =>
-        $"{window.Account} · {window.Window}：{window.RemainingPercent:0.##}%　重置：{Format(window.ResetAt)}"));
+        Lang.Format(Lang.Current.QuotaDetail, window.Account,
+            $"{(window.Window == "Primary" ? Lang.Current.QuotaPrimaryWindow : Lang.Current.QuotaSecondaryWindow)}：{window.RemainingPercent:0.##}%", Format(window.ResetAt))));
     public string TooltipText => string.Join(Environment.NewLine + Environment.NewLine, _windows.Select(window =>
-        $"{Name} 剩余额度：{window.RemainingPercent:0.##}%\n重置：{Format(window.ResetAt)}"));
+        Lang.Format(Lang.Current.QuotaTooltip, Name, $"{window.RemainingPercent:0.##}%", Format(window.ResetAt))));
     public string ObservedText => string.Join(" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
 
-    private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "未知";
+    private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? Lang.Current.QuotaUnknown;
 
     internal CpaQuotaConfiguration ToConfiguration() => new(Address, ManagementKey, Name, IsPrimary);
     internal void Load(CpaQuotaConfiguration configuration)
@@ -90,7 +92,7 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     {
         _request?.Cancel();
         _windows = [];
-        Status = "尚未查询";
+        Status = Lang.Current.QuotaPending;
         Publish();
     }
 
@@ -100,27 +102,27 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cancellation.CancelAfter(TimeSpan.FromSeconds(30));
         _request = cancellation;
-        Status = "查询中…";
+        Status = Lang.Current.QuotaLoading;
         try
         {
             var result = await CpaQuotaClient.QueryAsync(_client, Address, ManagementKey, cancellation.Token);
             if (cancellation.IsCancellationRequested) return;
             _windows = result;
-            Status = result.Count == 0 ? "暂无额度数据" : "";
+            Status = result.Count == 0 ? Lang.Current.QuotaEmpty : "";
             Publish();
         }
         catch (OperationCanceledException)
         {
-            Status = cancellation.IsCancellationRequested ? "查询已取消或超时" : "读取失败，请重试";
+            Status = cancellation.IsCancellationRequested ? Lang.Current.QuotaCancelled : Lang.Current.QuotaNetworkFailed;
         }
         catch (HttpRequestException exception)
         {
             Status = exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
-                ? "请检查 CPA 管理密钥或访问权限" : "读取失败，请检查 CPA 地址和网络后重试";
+                ? Lang.Current.QuotaAuthFailed : Lang.Current.QuotaNetworkFailed;
         }
         catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException or FormatException)
         {
-            Status = "CPA 返回的数据格式无法识别";
+            Status = Lang.Current.QuotaInvalidResponse;
         }
         catch (ArgumentException exception)
         {
@@ -130,6 +132,11 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         {
             _request = null;
         }
+    }
+
+    internal void UpdateLocalizedResults()
+    {
+        Publish();
     }
 
     private void Publish()

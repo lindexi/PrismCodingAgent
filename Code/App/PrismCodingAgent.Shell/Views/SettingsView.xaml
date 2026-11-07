@@ -576,6 +576,54 @@
                         <views:ModelSettingsView />
                     </StackPanel>
                 </Border>
+                <Border x:Name="CpaQuotaSettings" Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding QuotaTitle, Source={x:Static l:Lang.Current}}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="{Binding QuotaAdd, Source={x:Static l:Lang.Current}}" Command="{Binding Quotas.AddServiceCommand}"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Quotas.Services}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#E4E9F0" BorderThickness="0,1,0,0" Padding="0,16">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                <Button Grid.Column="1" Width="32" Height="32" Padding="0" ToolTip="{Binding QuotaRemove, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.Quotas.RemoveServiceCommand, RelativeSource={RelativeSource AncestorType={x:Type views:SettingsView}}}" CommandParameter="{Binding}">
+                                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><Path Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="#50555C" StrokeThickness="1.5" Data="M1,1 L11,11 M11,1 L1,11"/></Border></ControlTemplate></Button.Template>
+                                                </Button>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding QuotaAddress, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center"/>
+                                                <TextBox Grid.Column="1" Margin="12,0,0,0" Height="32" VerticalContentAlignment="Center" Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding QuotaKey, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center"/>
+                                                <views:SecretInput Grid.Column="1" Margin="12,0,0,0" Text="{Binding ManagementKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding QuotaName, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center"/>
+                                                <TextBox Grid.Column="1" Margin="12,0,0,0" Height="32" VerticalContentAlignment="Center" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <CheckBox Content="{Binding QuotaPrimary, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsPrimary}" VerticalAlignment="Center"/>
+                                                <Button Grid.Column="1" Content="{Binding QuotaRefresh, Source={x:Static l:Lang.Current}}" Command="{Binding RefreshCommand}"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding DetailText}" TextWrapping="Wrap" Visibility="{Binding HasResults, Converter={StaticResource BooleanVisibility}}"/>
+                                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Visibility="{Binding HasStatus, Converter={StaticResource BooleanVisibility}}"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding HasResults, Converter={StaticResource BooleanVisibility}}">
+                                                <TextBlock Text="{Binding QuotaObserved, Source={x:Static l:Lang.Current}}" Style="{StaticResource SettingsHint}" Margin="0,0,6,0"/>
+                                                <TextBlock Text="{Binding ObservedText}" Style="{StaticResource SettingsHint}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
         <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"

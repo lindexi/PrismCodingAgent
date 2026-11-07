@@ -606,6 +606,7 @@
                             <TextBlock Text="{Binding AllSessionsText, Source={x:Static l:Lang.Current}}" />
                         </StackPanel>
                     </Button>
+                    <Grid>
                     <Button x:Name="SettingsButton" Style="{StaticResource NavigationButton}" IsEnabled="True"
                             Command="{Binding OpenSettingsCommand}">
                         <StackPanel Orientation="Horizontal">
@@ -615,6 +616,13 @@
                             <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static l:Lang.Current}}" />
                         </StackPanel>
                     </Button>
+                    <TextBlock x:Name="PrimaryQuotaLabel" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" FontWeight="Normal"
+                               FontFamily="{Binding FontFamily, ElementName=SettingsButton}" FontSize="{Binding FontSize, ElementName=SettingsButton}"
+                               Foreground="{StaticResource TextSecondaryBrush}" Text="{Binding SettingsViewModel.Quotas.PrimaryQuotaText}"
+                               Visibility="{Binding SettingsViewModel.Quotas.HasPrimaryQuota, Converter={StaticResource BooleanVisibility}}">
+                        <TextBlock.ToolTip><ToolTip><Border Padding="12" MinWidth="260" MaxWidth="460"><TextBlock Text="{Binding SettingsViewModel.Quotas.AllQuotaDetails}" TextWrapping="Wrap"/></Border></ToolTip></TextBlock.ToolTip>
+                    </TextBlock>
+                    </Grid>
                 </StackPanel>
             </Grid>
             <Border x:Name="ContentSurface" Grid.Column="1" Margin="0,8,8,8" CornerRadius="8"

@@ -285,8 +285,8 @@
                 <Border Classes="SettingsCard" Padding="24" x:Name="CpaQuotaSettings">
                     <StackPanel Spacing="16">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="CPA 额度查询服务设置" Classes="SettingsSectionTitle" />
-                            <Button Grid.Column="1" Classes="Secondary" Content="添加服务" Command="{Binding Quotas.AddServiceCommand}" />
+                            <TextBlock Text="{Binding QuotaTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                            <Button Grid.Column="1" Classes="Secondary" Content="{Binding QuotaAdd, Source={x:Static localizations:Lang.Current}}" Command="{Binding Quotas.AddServiceCommand}" />
                         </Grid>
                         <ItemsControl ItemsSource="{Binding Quotas.Services}">
                             <ItemsControl.ItemTemplate>
@@ -295,7 +295,7 @@
                                         <StackPanel Spacing="10">
                                             <Grid ColumnDefinitions="*,Auto">
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                                <Button Grid.Column="1" Width="32" MinWidth="32" Height="32" MinHeight="32" Padding="0" Background="Transparent" BorderThickness="0" ToolTip.Tip="移除服务"
+                                                <Button Grid.Column="1" Width="32" MinWidth="32" Height="32" MinHeight="32" Padding="0" Background="Transparent" BorderThickness="0" ToolTip.Tip="{Binding QuotaRemove, Source={x:Static localizations:Lang.Current}}"
                                                     Command="{Binding $parent[views:SettingsView].((vm:SettingsViewModel)DataContext).Quotas.RemoveServiceCommand}" CommandParameter="{Binding}">
                                                     <Button.Template>
                                                         <ControlTemplate>
@@ -306,26 +306,26 @@
                                                     </Button.Template>
                                                 </Button>
                                             </Grid>
-                                            <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
-                                                <TextBlock Text="CPA 地址" VerticalAlignment="Center" />
+                                            <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
+                                                <TextBlock Text="{Binding QuotaAddress, Source={x:Static localizations:Lang.Current}}" VerticalAlignment="Center" />
                                                 <TextBox Grid.Column="1" Classes="Rounded" Text="{Binding Address}" PlaceholderText="https://example.com" />
                                             </Grid>
-                                            <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
-                                                <TextBlock Text="CPA 密钥" VerticalAlignment="Center" />
+                                            <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
+                                                <TextBlock Text="{Binding QuotaKey, Source={x:Static localizations:Lang.Current}}" VerticalAlignment="Center" />
                                                 <views:SecretInput Grid.Column="1" Classes="Rounded" Text="{Binding ManagementKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                             </Grid>
-                                            <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
-                                                <TextBlock Text="额度别名" VerticalAlignment="Center" />
+                                            <Grid ColumnDefinitions="160,*" ColumnSpacing="12">
+                                                <TextBlock Text="{Binding QuotaName, Source={x:Static localizations:Lang.Current}}" VerticalAlignment="Center" />
                                                 <TextBox Grid.Column="1" Classes="Rounded" Text="{Binding Name}" />
                                             </Grid>
                                             <Grid ColumnDefinitions="*,Auto">
-                                                <CheckBox Content="主额度" IsChecked="{Binding IsPrimary}" />
-                                                <Button Grid.Column="1" Classes="Secondary" Content="刷新" Command="{Binding RefreshCommand}" />
+                                                <CheckBox Content="{Binding QuotaPrimary, Source={x:Static localizations:Lang.Current}}" IsChecked="{Binding IsPrimary}" />
+                                                <Button Grid.Column="1" Classes="Secondary" Content="{Binding QuotaRefresh, Source={x:Static localizations:Lang.Current}}" Command="{Binding RefreshCommand}" />
                                             </Grid>
                                             <TextBlock Text="{Binding DetailText}" IsVisible="{Binding HasResults}" TextWrapping="Wrap" />
                                             <TextBlock Text="{Binding Status}" IsVisible="{Binding HasStatus}" TextWrapping="Wrap" />
                                             <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,-4,0,0" IsVisible="{Binding HasResults}">
-                                                <TextBlock Text="额度数据时间：" Classes="SettingsHint" />
+                                                <TextBlock Text="{Binding QuotaObserved, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" />
                                                 <TextBlock Text="{Binding ObservedText}" Classes="SettingsHint" />
                                             </StackPanel>
                                         </StackPanel>

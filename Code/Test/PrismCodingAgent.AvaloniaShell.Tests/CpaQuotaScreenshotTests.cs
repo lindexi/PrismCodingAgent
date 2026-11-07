@@ -14,9 +14,12 @@ public sealed class CpaQuotaScreenshotTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
-    public async Task SettingsRenderMultipleIndependentQuotaServicesAsync()
+    [DataRow("zh-Hans")]
+    [DataRow("en")]
+    [DataRow("de")]
+    public async Task SettingsRenderMultipleIndependentQuotaServicesAsync(string language)
     {
-        Lang.SetCurrent("zh-Hans");
+        Lang.SetCurrent(language);
         await using var session = await ShellScreenshotSession.OpenAsync(TestContext,
             """{"PrimaryModel":"Preview","OpenAIConfigurationList":[{"EndPoint":"http://127.0.0.1:1/v1","Key":"offline","ModelDefinitions":[{"ModelName":"Preview","ModelId":"preview","Provider":"openai"}]}]}""");
         var model = session.Model.SettingsViewModel!;
@@ -71,7 +74,7 @@ public sealed class CpaQuotaScreenshotTests
         Assert.AreEqual(settingsButton.FontSize, quotaLabel.FontSize);
         Assert.AreEqual(settingsButton.FontFamily, quotaLabel.FontFamily);
         Assert.AreEqual(Avalonia.Media.FontWeight.Normal, quotaLabel.FontWeight);
-        string directory = Path.Combine(AppContext.BaseDirectory, "QuotaScreenshots", "Current");
+        string directory = Path.Combine(AppContext.BaseDirectory, "QuotaScreenshots", "Current", language);
         Directory.CreateDirectory(directory);
         using var frame = session.Window.CaptureRenderedFrame();
         Assert.IsNotNull(frame);
@@ -82,7 +85,7 @@ public sealed class CpaQuotaScreenshotTests
         Assert.AreEqual("xx", quotas.Services[0].Name);
         await ((PrismCodingAgent.CodingShell.ViewModels.SimpleAsyncCommand)model.SaveCommand).ExecuteAsync();
         await model.LoadAsync();
-        Assert.AreEqual(2, quotas.Services.Count);
+        Assert.HasCount(2, quotas.Services);
         Assert.AreEqual("offline-test-secret", quotas.Services[0].ManagementKey);
         Assert.IsTrue(quotas.Services[0].IsPrimary);
     }

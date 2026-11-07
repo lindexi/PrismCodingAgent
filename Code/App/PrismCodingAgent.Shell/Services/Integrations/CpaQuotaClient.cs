@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using PrismCodingAgent.CodingShell.Localizations;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -18,8 +19,8 @@ internal static class CpaQuotaClient
     {
         if (!Uri.TryCreate(address, UriKind.Absolute, out var uri)
             || uri.Scheme is not ("https" or "http"))
-            throw new ArgumentException("请输入有效的 CPA HTTP 或 HTTPS 地址。");
-        if (string.IsNullOrWhiteSpace(managementKey)) throw new ArgumentException("请输入 CPA 管理密钥。");
+            throw new ArgumentException(Lang.Current.QuotaInvalidAddress);
+        if (string.IsNullOrWhiteSpace(managementKey)) throw new ArgumentException(Lang.Current.QuotaKeyRequired);
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(uri, "/v0/management/auth-files"));
         request.Headers.Add("X-Management-Key", managementKey);
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -31,11 +32,11 @@ internal static class CpaQuotaClient
         {
             if (!file.TryGetProperty("quota", out var quota) || quota.ValueKind != JsonValueKind.Object
                 || !quota.TryGetProperty("signals", out var signals) || signals.ValueKind != JsonValueKind.Object) continue;
-            string account = file.TryGetProperty("account", out var name) ? name.ToString() : "账户";
+            string account = file.TryGetProperty("account", out var name) ? name.ToString() : Lang.Current.QuotaAccount;
             DateTimeOffset? observed = quota.TryGetProperty("observed_at", out var time)
                 && DateTimeOffset.TryParse(time.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed) ? parsed : null;
-            AddWindow("Primary", "主窗口");
-            AddWindow("Secondary", "次窗口");
+            AddWindow("Primary", "Primary");
+            AddWindow("Secondary", "Secondary");
 
             void AddWindow(string key, string label)
             {

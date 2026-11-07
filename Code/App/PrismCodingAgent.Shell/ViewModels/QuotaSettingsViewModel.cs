@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using PrismCodingAgent.CodingShell.Localizations;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,8 +23,9 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
     public QuotaSettingsViewModel()
     {
         AddServiceCommand = new SimpleCommand(() => Services.Add(CreateService()));
-        RemoveServiceCommand = new SimpleCommand<CpaQuotaServiceViewModel>(service => Services.Remove(service));
+        RemoveServiceCommand = new SimpleCommand<CpaQuotaServiceViewModel>(service => { if (service is not null) Services.Remove(service); });
         Services.CollectionChanged += OnServicesChanged;
+        Lang.Current.PropertyChanged += OnLanguageChanged;
     }
 
     public ObservableCollection<CpaQuotaServiceViewModel> Services { get; } = [];
@@ -31,7 +33,7 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
     public SimpleCommand<CpaQuotaServiceViewModel> RemoveServiceCommand { get; }
     public bool HasServices => Services.Count > 0;
     public bool HasPrimaryQuota => Services.Any(service => service.IsPrimary && service.HasResults);
-    public string PrimaryQuotaText => "额度：" + (Services.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
+    public string PrimaryQuotaText => Lang.Current.QuotaPrefix + (Services.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
     public string AllQuotaDetails => string.Join(Environment.NewLine + Environment.NewLine,
         Services.OrderByDescending(service => service.IsPrimary).Select(service =>
             service.HasResults ? service.TooltipText : $"{service.Name}：{service.Status}"));
@@ -100,6 +102,12 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
         }
     }
 
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        foreach (var service in Services) service.UpdateLocalizedResults();
+        NotifySummaryChanged();
+    }
+
     private void NotifySummaryChanged()
     {
         OnPropertyChanged(nameof(HasServices));
@@ -135,6 +143,7 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
     {
         if (_disposed) return;
         _disposed = true;
+        Lang.Current.PropertyChanged -= OnLanguageChanged;
         _refreshCancellation.Cancel();
         foreach (var service in Services) service.Dispose();
         _client?.Dispose();

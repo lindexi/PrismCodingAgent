@@ -9,7 +9,7 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 public sealed class CpaQuotaRefreshTests
 {
     [TestMethod]
-    public async Task RefreshWaitsTenSecondsThenQueriesServicesSequentiallyAsync()
+    public async Task RefreshQueriesServicesSequentiallyThenWaitsTenSecondsAsync()
     {
         await using var model = new QuotaSettingsViewModel();
         using var cancellation = new CancellationTokenSource();
@@ -23,6 +23,7 @@ public sealed class CpaQuotaRefreshTests
             {
                 tick = callback;
                 tickState = state;
+                cancellation.Cancel();
             }).Returns(timer.Object);
         var order = new List<string>();
         var firstResponse = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -36,7 +37,6 @@ public sealed class CpaQuotaRefreshTests
         using var secondClient = new HttpClient(new Handler(_ =>
         {
             order.Add("second");
-            cancellation.Cancel();
             return Task.FromResult(Response());
         }));
         using var first = CreateService(firstClient);
@@ -44,14 +44,12 @@ public sealed class CpaQuotaRefreshTests
         model.Services.Add(first);
         model.Services.Add(second);
         Task refresh = model.RunRefreshAsync(clock.Object, cancellation.Token);
-        Assert.IsEmpty(order);
-        Assert.IsNotNull(tick);
-        tick(tickState);
         await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         CollectionAssert.AreEqual(new[] { "first" }, order);
         firstResponse.SetResult(Response());
         await refresh.WaitAsync(TimeSpan.FromSeconds(5));
         CollectionAssert.AreEqual(new[] { "first", "second" }, order);
+        Assert.IsNotNull(tick);
     }
 
     private static CpaQuotaServiceViewModel CreateService(HttpClient client)
