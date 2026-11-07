@@ -72,10 +72,18 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     public string QuotaText => _windows.Count == 0 ? "—" : string.Join(" / ", _windows.Select(window => $"{window.RemainingPercent:0.##}%"));
     public string DetailText => string.Join(Environment.NewLine, _windows.Select(window =>
         Lang.Format(Lang.Current.QuotaDetail, window.Account,
-            $"{(window.Window == "Primary" ? Lang.Current.QuotaPrimaryWindow : Lang.Current.QuotaSecondaryWindow)}：{window.RemainingPercent:0.##}%", Format(window.ResetAt))));
+            $"{(window.Window == "Primary" ? Lang.Current.QuotaPrimaryWindow : Lang.Current.QuotaSecondaryWindow)}：{window.RemainingPercent:0.##}%", FormatReset(window.ResetAt, DateTimeOffset.Now))));
     public string TooltipText => string.Join(Environment.NewLine + Environment.NewLine, _windows.Select(window =>
-        Lang.Format(Lang.Current.QuotaTooltip, Name, $"{window.RemainingPercent:0.##}%", Format(window.ResetAt))));
+        Lang.Format(Lang.Current.QuotaTooltip, Name, $"{window.RemainingPercent:0.##}%", FormatReset(window.ResetAt, DateTimeOffset.Now))));
     public string ObservedText => string.Join(" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
+
+    internal static string FormatReset(DateTimeOffset? resetAt, DateTimeOffset now)
+    {
+        if (resetAt is not { } reset) return Lang.Current.QuotaUnknown;
+
+        TimeSpan remaining = reset > now ? reset - now : TimeSpan.Zero;
+        return Lang.Format(Lang.Current.QuotaResetRemaining, Format(reset), remaining.Days, remaining.Hours);
+    }
 
     private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? Lang.Current.QuotaUnknown;
 
