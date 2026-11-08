@@ -49,7 +49,7 @@ internal static class SessionDirectoryStorage
 
         await FileCopilotChatSessionStore.SaveDocumentAsync(Path.Join(directory, "History.xml"), document, cancellationToken).ConfigureAwait(false);
         var entry = new XElement("CopilotChatSessionHistory",
-            new XAttribute("SessionId", data.SessionId), new XAttribute("StartedTime", data.StartedTime.ToString("o")),
+            new XAttribute("SessionId", data.SessionId.ToString("N")), new XAttribute("StartedTime", data.StartedTime.ToString("o")),
             new XAttribute("Title", data.Title));
         entry.SetAttributeValue("WorkspacePath", data.WorkspacePath);
         entry.SetAttributeValue("WorkTaskId", data.WorkTaskId);
