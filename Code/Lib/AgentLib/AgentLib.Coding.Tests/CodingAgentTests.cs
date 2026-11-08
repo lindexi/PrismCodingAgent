@@ -617,20 +617,20 @@ public sealed class CodingAgentTests
 
     private sealed class FixedToolSource(IReadOnlyList<AITool> tools) : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<AITool> CreateTools(string workspacePath)
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions)
         {
             _ = workspacePath;
-            return tools;
+            return tools.Select(tool => new ToolRegistration(tool)).ToArray();
         }
     }
 
     private sealed class WorkspaceNamedToolSource : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<AITool> CreateTools(string workspacePath) =>
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
         [
-            AIFunctionFactory.Create(
+            new(AIFunctionFactory.Create(
                 () => workspacePath,
-                $"tool_{Path.GetFileName(workspacePath)}"),
+                $"tool_{Path.GetFileName(workspacePath)}")),
         ];
     }
 

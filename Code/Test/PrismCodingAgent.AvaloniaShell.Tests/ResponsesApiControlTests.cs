@@ -110,6 +110,8 @@ public sealed class ResponsesApiControlTests
     [TestMethod]
     [DataRow("ChatAutomaticCompressionToggle", "EnableAutomaticCompression")]
     [DataRow("ChatDotNetRunToggle", "EnableDotNetRun")]
+    [DataRow("ChatWebSearchToggle", "EnableWebSearch")]
+    [DataRow("ChatWebFetchToggle", "EnableWebFetch")]
     [DataRow("ChatResponsesApiToggle", nameof(ChatViewModel.IsResponsesApiEnabled))]
     public void ChatSettingsOptionShouldBindBothWays(string name, string propertyName)
     {
@@ -120,6 +122,8 @@ public sealed class ResponsesApiControlTests
         object settingsSource = propertyName == nameof(ChatViewModel.IsResponsesApiEnabled) ? viewModel : viewModel.RunOptions;
         var property = settingsSource.GetType().GetProperty(propertyName)!;
 
+        toggle.IsChecked = false;
+        Assert.IsFalse((bool)property.GetValue(settingsSource)!);
         toggle.IsChecked = true;
         Assert.IsTrue((bool)property.GetValue(settingsSource)!);
         property.SetValue(settingsSource, false);
@@ -153,7 +157,7 @@ public sealed class ResponsesApiControlTests
         {
             window.Show();
             window.UpdateLayout();
-            var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatResponsesApiToggle" }
+            var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatWebSearchToggle", "ChatWebFetchToggle", "ChatResponsesApiToggle" }
                 .Select(name => settings.FindControl<ToggleSwitch>(name)).ToArray();
             CollectionAssert.DoesNotContain(toggles, null);
             CollectionAssert.AreEquivalent(toggles, settings.GetVisualDescendants().OfType<ToggleSwitch>().ToArray());

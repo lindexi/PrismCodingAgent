@@ -11,6 +11,7 @@ public sealed class CodingChatRunOptionsTests
         var options = CodingChatRunOptions.Default;
 
         Assert.IsTrue(options.EnableAutomaticCompression && !options.EnableDotNetRun
+            && options.EnableWebSearch && options.EnableWebFetch
             && options.ReasoningEffort is null
             && options.LanguageTag == System.Globalization.CultureInfo.CurrentUICulture.Name);
     }
@@ -27,6 +28,8 @@ public sealed class CodingChatRunOptionsTests
     [TestMethod]
     [DataRow(nameof(CodingChatRunOptions.EnableAutomaticCompression), false)]
     [DataRow(nameof(CodingChatRunOptions.EnableDotNetRun), true)]
+    [DataRow(nameof(CodingChatRunOptions.EnableWebSearch), false)]
+    [DataRow(nameof(CodingChatRunOptions.EnableWebFetch), false)]
     [DataRow(nameof(CodingChatRunOptions.LanguageTag), "test-language")]
     public void ChangedSettingShouldNotifyOnlyOnce(string propertyName, object value)
     {

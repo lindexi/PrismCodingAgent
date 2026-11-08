@@ -160,10 +160,44 @@ public sealed class ResponsesCodingAgentTests
         Assert.HasCount(0, handler.CompactRequests);
     }
 
+    [TestMethod]
+    [DataRow("Search", "query", false, true)]
+    [DataRow("Fetch", "url", true, false)]
+    public async Task RunAsyncShouldReturnDisabledWebToolResultAsync(string name, string parameter, bool search, bool fetch)
+    {
+        using var handler = new StreamingHandler { ReturnToolCall = true, WebToolName = name, WebParameter = parameter };
+        using var http = new HttpClient(handler);
+        using var webHttp = new HttpClient();
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.HttpClient?.Dispose();
+        manager.AgentApiEndpointManager.HttpClient = http;
+        manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
+            {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
+            "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
+            """));
+        await using var coding = new CodingAgent(new CodingAgentOptions
+            { AdditionalToolSources = [new DeepSeekWebToolSource(webHttp, null)] });
+        var agent = new ResponsesCodingAgent(coding);
+        string workspace = Path.Combine(Path.GetTempPath(), $"web-responses-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspace);
+        Console.WriteLine(workspace);
+
+        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
+            [new TextContent("task")], manager.SelectedSession.ResponsesSession, workspace,
+            new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch });
+        await run.CompletionTask;
+
+        using var request = JsonDocument.Parse(handler.Requests[1]);
+        string output = request.RootElement.GetProperty("input").EnumerateArray()
+            .Single(item => item.GetProperty("type").GetString() == "function_call_output")
+            .GetProperty("output").GetString()!;
+        StringAssert.Contains(output, "已在当前对话运行设置中禁用");
+    }
+
     private sealed class TestToolSource : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<AITool> CreateTools(string workspacePath) =>
-            [AIFunctionFactory.Create((int left, int right) => left + right, "add")];
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+            [new(AIFunctionFactory.Create((int left, int right) => left + right, "add"))];
     }
 
     private sealed class StreamingHandler : HttpMessageHandler
@@ -171,6 +205,8 @@ public sealed class ResponsesCodingAgentTests
         public List<string> Requests { get; } = new();
         public List<string> CompactRequests { get; } = new();
         public bool ReturnToolCall { get; init; }
+        public string? WebToolName { get; init; }
+        public string? WebParameter { get; init; }
         public int TotalTokens { get; init; }
         public int OutputTokens { get; init; }
         public bool NullTerminalAnnotations { get; init; }
@@ -207,6 +243,17 @@ public sealed class ResponsesCodingAgentTests
                 response = """
                     {"id":"resp_tool","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_add","name":"add","arguments":"{\"left\":2,\"right\":3}","status":"completed"}]}
                     """;
+            }
+            if (ReturnToolCall && Requests.Count == 1 && WebToolName is not null)
+            {
+                response = JsonSerializer.Serialize(new
+                {
+                    id = "resp_web", status = "completed",
+                    output = new[] { new { type = "function_call", id = "fc_web", call_id = "call_web",
+                        name = WebToolName, status = "completed",
+                        arguments = JsonSerializer.Serialize(new Dictionary<string, string>
+                            { [WebParameter!] = "https://example.com/" }) } }
+                });
             }
             if (ReturnToolCall && Requests.Count == 1 && TotalTokens > 0)
                 response = response[..^1] + $",\"usage\":{{\"input_tokens\":{TotalTokens - OutputTokens},\"output_tokens\":{OutputTokens},\"total_tokens\":{TotalTokens}}}}}";

@@ -1,7 +1,5 @@
 using AgentLib.Tools;
 
-using Microsoft.Extensions.AI;
-
 namespace AgentLib.Coding.Sandboxes;
 
 /// <summary>
@@ -65,11 +63,7 @@ public sealed class WindowsSandboxToolSource : ICodingWorkspaceToolSource
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<AITool> CreateTools(string workspacePath) =>
-        CreateToolRegistrations(workspacePath).Select(registration => registration.Tool).ToArray();
-
-    /// <inheritdoc />
-    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath)
+    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions)
     {
         WindowsSandboxConfiguration configuration = Volatile.Read(ref _configuration);
         if (!configuration.IsEnabled)

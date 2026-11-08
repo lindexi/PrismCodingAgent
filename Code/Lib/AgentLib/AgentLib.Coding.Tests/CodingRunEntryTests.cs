@@ -144,6 +144,40 @@ public sealed class CodingRunEntryTests
             .Where(item => item.Role == ChatRole.Assistant).Select(item => item.Text).ToArray());
     }
 
+    [TestMethod]
+    [DataRow(false, true, "Search", "query")]
+    [DataRow(true, false, "Fetch", "url")]
+    public async Task RunAsyncShouldPassWebSwitchesToToolsAsync(bool search, bool fetch, string name, string parameter)
+    {
+        ChatOptions? captured = null;
+        var client = new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (_, options, cancellationToken) =>
+            {
+                captured = options;
+                return RespondAsync(cancellationToken);
+            },
+        };
+        using var http = new HttpClient();
+        await using var agent = new CodingAgent(new CodingAgentOptions
+            { AdditionalToolSources = [new DeepSeekWebToolSource(http, null)] });
+        var context = new CodingRunContext(client,
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession());
+        string workspace = Path.Combine(Path.GetTempPath(), $"web-chat-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspace);
+        Console.WriteLine(workspace);
+        var options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch };
+
+        var run = await agent.RunAsync(context, [new TextContent("task")], workspace, options);
+        await run.CompletionTask;
+        options.EnableWebSearch = !search;
+        options.EnableWebFetch = !fetch;
+        var function = captured!.Tools!.OfType<AIFunction>().Single(tool => tool.Name == name);
+        object? result = await function.InvokeAsync(new AIFunctionArguments { [parameter] = "https://example.com/" });
+
+        StringAssert.Contains(result?.ToString(), name + " 已在当前对话运行设置中禁用");
+    }
+
     private static async IAsyncEnumerable<ChatResponseUpdate> RespondThenFailAsync(int request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {

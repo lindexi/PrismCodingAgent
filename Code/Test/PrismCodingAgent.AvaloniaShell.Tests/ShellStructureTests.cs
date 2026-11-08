@@ -81,9 +81,11 @@ public sealed class ShellStructureTests
         Assert.IsNotNull(buttonField);
     }
 
-    [TestMethod(DisplayName = "聊天设置视图应包含三个选项开关")]
+    [TestMethod(DisplayName = "聊天设置视图应包含五个选项开关")]
     [DataRow("ChatAutomaticCompressionToggle")]
     [DataRow("ChatDotNetRunToggle")]
+    [DataRow("ChatWebSearchToggle")]
+    [DataRow("ChatWebFetchToggle")]
     [DataRow("ChatResponsesApiToggle")]
     [Timeout(5000)]
     public void ChatSettingsViewShouldContainOptionToggle(string name)

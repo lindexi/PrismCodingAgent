@@ -179,7 +179,7 @@ public sealed class ChatSettingsScreenshotTests
         var panelOrigin = settings.TranslatePoint(default, overlay)!.Value;
         Assert.IsGreaterThanOrEqualTo(0d, panelOrigin.Y);
         Assert.IsLessThanOrEqualTo(overlay.Bounds.Height, panelOrigin.Y + settings.Bounds.Height);
-        Assert.HasCount(3, settings.GetVisualDescendants().OfType<ToggleSwitch>());
+        Assert.HasCount(5, settings.GetVisualDescendants().OfType<ToggleSwitch>());
         session.Click(settings.FindControl<ToggleSwitch>("ChatDotNetRunToggle")!);
         Assert.IsTrue(settings.FindControl<ToggleSwitch>("ChatDotNetRunToggle")!.IsChecked);
         session.Click(settings.FindControl<ToggleSwitch>("ChatResponsesApiToggle")!);

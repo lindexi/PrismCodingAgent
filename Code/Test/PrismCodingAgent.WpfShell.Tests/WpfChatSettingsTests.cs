@@ -36,6 +36,8 @@ public sealed class WpfChatSettingsTests
     [TestMethod]
     [DataRow("ChatAutomaticCompressionToggle", "EnableAutomaticCompression")]
     [DataRow("ChatDotNetRunToggle", "EnableDotNetRun")]
+    [DataRow("ChatWebSearchToggle", "EnableWebSearch")]
+    [DataRow("ChatWebFetchToggle", "EnableWebFetch")]
     [DataRow("ChatResponsesApiToggle", nameof(ChatViewModel.IsResponsesApiEnabled))]
     public async Task SettingsToggleUpdatesViewModelAndReflectsViewModelAsync(string name, string propertyName)
         => await WpfTestClassAttribute.RunUiAsync(async () =>

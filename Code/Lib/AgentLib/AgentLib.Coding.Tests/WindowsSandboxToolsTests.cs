@@ -16,9 +16,9 @@ public sealed class WindowsSandboxToolsTests
         string workspacePath = CreateTestDirectory();
         var toolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
 
-        IReadOnlyList<AITool> beforeUpdate = toolSource.CreateTools(workspacePath);
+        var beforeUpdate = toolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions());
         toolSource.UpdateConfiguration(false, string.Empty, string.Empty);
-        IReadOnlyList<AITool> afterUpdate = toolSource.CreateTools(workspacePath);
+        var afterUpdate = toolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions());
 
         Assert.HasCount(1, beforeUpdate);
         Assert.IsEmpty(afterUpdate);
@@ -31,9 +31,9 @@ public sealed class WindowsSandboxToolsTests
         var toolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
         toolSource.UpdateConfiguration(true, "UpdatedShell.exe", "127.0.0.1:12400");
 
-        IReadOnlyList<AITool> tools = toolSource.CreateTools(workspacePath);
+        var tools = toolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions());
 
-        Assert.AreEqual("execute_in_windows_sandbox", tools.Single().Name);
+        Assert.AreEqual("execute_in_windows_sandbox", tools.Single().Tool.Name);
     }
 
     [TestMethod(DisplayName = "沙盒工具集合只应暴露高层执行工具")]

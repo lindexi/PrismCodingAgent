@@ -75,7 +75,7 @@ public sealed class CodingAgent : IAsyncDisposable
         CodingChatRunOptions runOptions = options ?? CodingChatRunOptions.Default;
         CodingRunWorkspaceContext workspaceContext = await GetRunWorkspaceContextAsync
         (
-            workspacePath, runOptions.EnableDotNetRun, cancellationToken
+            workspacePath, runOptions, cancellationToken
         ).ConfigureAwait(false);
         IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync
         (
@@ -193,7 +193,7 @@ public sealed class CodingAgent : IAsyncDisposable
     internal async Task<CodingRunWorkspaceContext> GetRunWorkspaceContextAsync
     (
         string? workspacePath,
-        bool enableDotNetRun,
+        CodingChatRunOptions runOptions,
         CancellationToken cancellationToken
     )
     {
@@ -206,7 +206,7 @@ public sealed class CodingAgent : IAsyncDisposable
             ThrowIfDisposed();
             if (AreSameWorkspace(_workspaceCache?.WorkspacePath, normalizedPath))
             {
-                return CreateRunWorkspaceContext(_workspaceCache, enableDotNetRun);
+                return CreateRunWorkspaceContext(_workspaceCache, runOptions);
             }
 
             CodingWorkspaceCache? replacement = normalizedPath is null
@@ -223,7 +223,7 @@ public sealed class CodingAgent : IAsyncDisposable
                 await previous.DisposeAsync().ConfigureAwait(false);
             }
 
-            return CreateRunWorkspaceContext(replacement, enableDotNetRun);
+            return CreateRunWorkspaceContext(replacement, runOptions);
         }
         finally
         {
@@ -234,7 +234,7 @@ public sealed class CodingAgent : IAsyncDisposable
     private CodingRunWorkspaceContext CreateRunWorkspaceContext
     (
         CodingWorkspaceCache? workspaceCache,
-        bool enableDotNetRun
+        CodingChatRunOptions runOptions
     )
     {
         if (workspaceCache is null)
@@ -243,9 +243,9 @@ public sealed class CodingAgent : IAsyncDisposable
         }
 
         IReadOnlyList<ToolRegistration> additionalToolRegistrations = _additionalToolSources
-            .SelectMany(source => source.CreateToolRegistrations(workspaceCache.WorkspacePath))
+            .SelectMany(source => source.CreateToolRegistrations(workspaceCache.WorkspacePath, runOptions))
             .ToArray();
-        return workspaceCache.CreateRunContext(additionalToolRegistrations, enableDotNetRun);
+        return workspaceCache.CreateRunContext(additionalToolRegistrations, runOptions.EnableDotNetRun);
     }
 
     /// <summary>

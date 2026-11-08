@@ -49,7 +49,7 @@ public sealed class ResponsesCodingAgent
         var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, runOptions, cancellationToken).ConfigureAwait(false);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel)
             .GetResponsesClientAsync().ConfigureAwait(false);
-        var workspaceContext = await _codingAgent.GetRunWorkspaceContextAsync(workspacePath, runOptions.EnableDotNetRun, cancellationToken).ConfigureAwait(false);
+        var workspaceContext = await _codingAgent.GetRunWorkspaceContextAsync(workspacePath, runOptions, cancellationToken).ConfigureAwait(false);
         var runner = new ResponsesCodingAgentRunner
         {
             MessageContext = context,

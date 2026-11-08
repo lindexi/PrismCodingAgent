@@ -87,8 +87,8 @@ public sealed class DeepSeekRuntimeUpdateTests
         return paths;
     }
 
-    private static AIFunction Search(DeepSeekWebToolSource source) => source.CreateTools(Environment.CurrentDirectory)
-        .Cast<AIFunction>().Single(tool => tool.Name == "Search");
+    private static AIFunction Search(DeepSeekWebToolSource source) => source.CreateToolRegistrations(Environment.CurrentDirectory, new CodingChatRunOptions())
+        .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == "Search");
 
     private static string? Text(object? value) => Assert.IsInstanceOfType<JsonElement>(value).GetString();
 

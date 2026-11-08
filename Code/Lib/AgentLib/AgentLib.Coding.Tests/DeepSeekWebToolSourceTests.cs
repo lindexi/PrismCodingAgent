@@ -9,16 +9,27 @@ namespace AgentLib.Coding.Tests;
 public sealed class DeepSeekWebToolSourceTests
 {
     [TestMethod]
+    public void WorkspaceToolSourceShouldExposeOnlyRunScopedRegistrationEntry()
+    {
+        var method = typeof(ICodingWorkspaceToolSource).GetMethods().Single();
+
+        Assert.AreEqual("CreateToolRegistrations", method.Name);
+        CollectionAssert.AreEqual(new[] { typeof(string), typeof(CodingChatRunOptions) },
+            method.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+        Assert.IsTrue(method.IsAbstract);
+    }
+
+    [TestMethod]
     [DataRow(false, null)]
     [DataRow(false, "")]
     [DataRow(false, " \t\r\n")]
     [DataRow(true, null)]
     [DataRow(true, "")]
     [DataRow(true, " \t\r\n")]
-    public void CreateToolsWhenApiKeyIsMissingShouldRegisterBothFunctions(bool useRegistrations, string? apiKey)
+    public void CreateToolRegistrationsWhenApiKeyIsMissingShouldRegisterBothFunctions(bool useInterface, string? apiKey)
     {
         using var httpClient = new HttpClient();
-        IReadOnlyList<AIFunction> functions = CreateFunctions(httpClient, apiKey, useRegistrations);
+        IReadOnlyList<AIFunction> functions = CreateFunctions(httpClient, apiKey, useInterface);
 
         CollectionAssert.AreEquivalent(new[] { "Search", "Fetch" },
             functions.Select(function => function.Name).ToArray());
@@ -38,10 +49,10 @@ public sealed class DeepSeekWebToolSourceTests
     [DataRow(true, "", "Fetch", "url")]
     [DataRow(true, " \t\r\n", "Fetch", "url")]
     public async Task InvokeAsyncWhenApiKeyIsMissingShouldReturnSettingsHintAsync(
-        bool useRegistrations, string? apiKey, string toolName, string parameterName)
+        bool useInterface, string? apiKey, string toolName, string parameterName)
     {
         using var httpClient = new HttpClient();
-        AIFunction function = CreateFunctions(httpClient, apiKey, useRegistrations).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, apiKey, useInterface).Single(tool => tool.Name == toolName);
         var arguments = new AIFunctionArguments { [parameterName] = "https://example.invalid/" };
 
         object? result = await function.InvokeAsync(arguments);
@@ -59,10 +70,10 @@ public sealed class DeepSeekWebToolSourceTests
     [DataRow(true, "offline-test-key", "Search", "query")]
     [DataRow(true, "offline-test-key", "Fetch", "url")]
     public async Task InvokeAsyncWhenCanceledShouldPropagateCancellationAsync(
-        bool useRegistrations, string? apiKey, string toolName, string parameterName)
+        bool useInterface, string? apiKey, string toolName, string parameterName)
     {
         using var httpClient = new HttpClient();
-        AIFunction function = CreateFunctions(httpClient, apiKey, useRegistrations).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, apiKey, useInterface).Single(tool => tool.Name == toolName);
         var arguments = new AIFunctionArguments { [parameterName] = "https://example.invalid/" };
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -78,11 +89,11 @@ public sealed class DeepSeekWebToolSourceTests
     [DataRow(false, "Fetch", "url", "url")]
     [DataRow(true, "Search", "query", "query,count,needContent,originalQuestion,localization")]
     [DataRow(true, "Fetch", "url", "url")]
-    public void CreateToolsShouldGenerateSerializableParameterSchema(
-        bool useRegistrations, string toolName, string requiredParameter, string parameters)
+    public void CreateToolRegistrationsShouldGenerateSerializableParameterSchema(
+        bool useInterface, string toolName, string requiredParameter, string parameters)
     {
         using var httpClient = new HttpClient();
-        AIFunction function = CreateFunctions(httpClient, null, useRegistrations).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, null, useInterface).Single(tool => tool.Name == toolName);
 
         using JsonDocument schema = JsonDocument.Parse(JsonSerializer.Serialize(function.JsonSchema));
 
@@ -102,7 +113,7 @@ public sealed class DeepSeekWebToolSourceTests
     }
 
     [TestMethod]
-    public void CreateToolsShouldNotChangeHttpClientConfiguration()
+    public void CreateToolRegistrationsShouldNotChangeHttpClientConfiguration()
     {
         using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(17) };
         CreateFunctions(httpClient, "offline-test-key", false);
@@ -172,7 +183,8 @@ public sealed class DeepSeekWebToolSourceTests
         var handler = new RecordingHandler(response);
         using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(17) };
         var source = new DeepSeekWebToolSource(httpClient, null);
-        var function = source.CreateTools(Environment.CurrentDirectory).Cast<AIFunction>().Single(tool => tool.Name == name);
+        var function = source.CreateToolRegistrations(Environment.CurrentDirectory, new CodingChatRunOptions())
+            .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == name);
         var arguments = new AIFunctionArguments { [parameter] = "https://example.invalid/" };
         object? missing = await function.InvokeAsync(arguments);
 
@@ -195,7 +207,8 @@ public sealed class DeepSeekWebToolSourceTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var httpClient = new HttpClient(new BlockingHandler(started, release));
         var source = new DeepSeekWebToolSource(httpClient, "old-test-key");
-        var function = source.CreateTools(Environment.CurrentDirectory).Cast<AIFunction>().Single(tool => tool.Name == "Search");
+        var function = source.CreateToolRegistrations(Environment.CurrentDirectory, new CodingChatRunOptions())
+            .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == "Search");
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
         var pending = function.InvokeAsync(arguments).AsTask();
         try
@@ -435,6 +448,72 @@ public sealed class DeepSeekWebToolSourceTests
         }
     }
 
+    [TestMethod]
+    [DataRow(null, "Search", "query")]
+    [DataRow(null, "Fetch", "url")]
+    [DataRow("offline-key", "Search", "query")]
+    [DataRow("offline-key", "Fetch", "url")]
+    public async Task DisabledToolsShouldRemainRegisteredAndMakeNoHttpRequestAsync(string? key, string name, string parameter)
+    {
+        using var handler = new RecordingHandler("{}");
+        using var http = new HttpClient(handler);
+        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, key);
+        var tools = source.CreateToolRegistrations(Environment.CurrentDirectory,
+            new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false });
+
+        CollectionAssert.AreEquivalent(new[] { "Search", "Fetch" },
+            tools.Select(tool => ((AIFunction)tool.Tool).Name).ToArray());
+        var function = tools.Select(tool => (AIFunction)tool.Tool).Single(tool => tool.Name == name);
+        object? result = await function.InvokeAsync(new AIFunctionArguments { [parameter] = "https://example.com/" });
+
+        StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(result).GetString(), name + " 已在当前对话运行设置中禁用");
+        Assert.IsEmpty(handler.Keys);
+    }
+
+    [TestMethod]
+    [DataRow("Search", "query", false, true)]
+    [DataRow("Fetch", "url", true, false)]
+    public async Task WebToolFunctionsShouldCaptureIndependentSwitchesAsync(string name, string parameter, bool search, bool fetch)
+    {
+        using var handler = new RecordingHandler("{}");
+        using var http = new HttpClient(handler);
+        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, null);
+        var options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch };
+        var first = source.CreateToolRegistrations(Environment.CurrentDirectory, options)
+            .Select(tool => (AIFunction)tool.Tool).ToArray();
+        options.EnableWebSearch = !search;
+        options.EnableWebFetch = !fetch;
+        var second = source.CreateToolRegistrations(Environment.CurrentDirectory, options)
+            .Select(tool => (AIFunction)tool.Tool).ToArray();
+        var arguments = new AIFunctionArguments { [parameter] = "https://example.com/" };
+
+        object? disabled = await first.Single(tool => tool.Name == name).InvokeAsync(arguments);
+        object? enabled = await second.Single(tool => tool.Name == name).InvokeAsync(arguments);
+        object? other = await first.Single(tool => tool.Name != name).InvokeAsync(new AIFunctionArguments
+            { [name == "Search" ? "url" : "query"] = "https://example.com/" });
+
+        StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(disabled).GetString(), "禁用");
+        StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(enabled).GetString(), "尚未配置 DeepSeek API Key");
+        StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(other).GetString(), "尚未配置 DeepSeek API Key");
+    }
+
+    [TestMethod]
+    [DataRow("Search", "query")]
+    [DataRow("Fetch", "url")]
+    public async Task DisabledToolsShouldPreserveCancellationAsync(string name, string parameter)
+    {
+        using var http = new HttpClient();
+        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, null);
+        var function = source.CreateToolRegistrations(Environment.CurrentDirectory,
+                new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false })
+            .Select(tool => (AIFunction)tool.Tool).Single(tool => tool.Name == name);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await function.InvokeAsync(new AIFunctionArguments { [parameter] = "https://example.com/" }, cancellation.Token));
+    }
+
     private sealed class FailureHandler(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {
@@ -474,13 +553,14 @@ public sealed class DeepSeekWebToolSourceTests
         }
     }
 
-    private static IReadOnlyList<AIFunction> CreateFunctions(HttpClient httpClient, string? apiKey, bool useRegistrations)
+    private static IReadOnlyList<AIFunction> CreateFunctions(HttpClient httpClient, string? apiKey, bool useInterface)
     {
-        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(httpClient, apiKey);
-        IEnumerable<AITool> tools = useRegistrations
-            ? source.CreateToolRegistrations(Environment.CurrentDirectory).Select(registration => registration.Tool)
-            : source.CreateTools(Environment.CurrentDirectory);
-        return tools.Cast<AIFunction>().ToArray();
+        var source = new DeepSeekWebToolSource(httpClient, apiKey);
+        var runOptions = new CodingChatRunOptions();
+        var registrations = useInterface
+            ? ((ICodingWorkspaceToolSource)source).CreateToolRegistrations(Environment.CurrentDirectory, runOptions)
+            : source.CreateToolRegistrations(Environment.CurrentDirectory, runOptions);
+        return registrations.Select(registration => (AIFunction)registration.Tool).ToArray();
     }
 
     private sealed class OfflineHandler(string response) : HttpMessageHandler

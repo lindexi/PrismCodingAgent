@@ -55,6 +55,41 @@ public sealed class LoopSettingsBindingTests
     }
 
     [TestMethod]
+    [DataRow("ChatWebSearchToggle", "EnableWebSearch", "EnableWebSearchText")]
+    [DataRow("ChatWebFetchToggle", "EnableWebFetch", "EnableWebFetchText")]
+    public void WebSwitchesShouldBindAndLocalize(string name, string propertyName, string labelName)
+    {
+        using var model = new ChatViewModel();
+        var view = new ChatSettingsView { DataContext = model };
+        var toggle = view.FindControl<ToggleSwitch>(name)!;
+        var property = typeof(AgentLib.Coding.CodingChatRunOptions).GetProperty(propertyName)!;
+        Assert.IsTrue(toggle.IsChecked);
+        toggle.IsChecked = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.AreEqual(false, property.GetValue(model.RunOptions));
+        property.SetValue(model.RunOptions, true);
+        Dispatcher.UIThread.RunJobs();
+        Assert.IsTrue(toggle.IsChecked);
+        string originalLanguage = PrismCodingAgent.CodingShell.Localizations.Lang.Current.IetfLanguageTag;
+        try
+        {
+            PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent("en");
+            Dispatcher.UIThread.RunJobs();
+            string? english = Avalonia.Automation.AutomationProperties.GetName(toggle);
+            PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent("zh-Hans");
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreNotEqual(english, Avalonia.Automation.AutomationProperties.GetName(toggle));
+            Assert.AreEqual(PrismCodingAgent.CodingShell.Localizations.Lang.Current.GetType().GetProperty(labelName)!
+                .GetValue(PrismCodingAgent.CodingShell.Localizations.Lang.Current)?.ToString(),
+                Avalonia.Automation.AutomationProperties.GetName(toggle));
+        }
+        finally
+        {
+            PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent(originalLanguage);
+        }
+    }
+
+    [TestMethod]
     public void ConversationModeShouldBindInBothDirections()
     {
         using var model = new ChatViewModel();

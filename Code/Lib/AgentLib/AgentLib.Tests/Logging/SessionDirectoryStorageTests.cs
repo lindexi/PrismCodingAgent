@@ -13,6 +13,20 @@ public sealed class SessionDirectoryStorageTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    public async Task SavedSessionIdShouldMatchDirectoryName()
+    {
+        string root = CreatePath();
+        var store = new FileCopilotChatSessionStore(root);
+        var session = new CopilotChatSession();
+
+        await store.SaveSessionAsync(session, null);
+
+        string entry = Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories).Single();
+        Assert.AreEqual(Path.GetFileName(Path.GetDirectoryName(entry)),
+            XDocument.Load(entry).Root!.Attribute("SessionId")!.Value);
+    }
+
+    [TestMethod]
     public async Task SaveShouldSeparateEntryHistoryAndDeduplicatedResources()
     {
         string root = CreatePath();

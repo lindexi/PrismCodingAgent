@@ -10,6 +10,8 @@ public sealed class CodingChatRunOptions : NotifyBase
 {
     private bool _enableAutomaticCompression = true;
     private bool _enableDotNetRun;
+    private bool _enableWebSearch = true;
+    private bool _enableWebFetch = true;
     private ReasoningEffort? _reasoningEffort;
     private string _languageTag = System.Globalization.CultureInfo.CurrentUICulture.Name;
 
@@ -25,6 +27,20 @@ public sealed class CodingChatRunOptions : NotifyBase
     {
         get => _enableDotNetRun;
         set => SetField(ref _enableDotNetRun, value);
+    }
+
+    /// <summary>获取或设置是否允许网页搜索，下次运行生效。</summary>
+    public bool EnableWebSearch
+    {
+        get => _enableWebSearch;
+        set => SetField(ref _enableWebSearch, value);
+    }
+
+    /// <summary>获取或设置是否允许网页抓取，下次运行生效。</summary>
+    public bool EnableWebFetch
+    {
+        get => _enableWebFetch;
+        set => SetField(ref _enableWebFetch, value);
     }
 
     /// <summary>获取或设置模型思考强度。</summary>

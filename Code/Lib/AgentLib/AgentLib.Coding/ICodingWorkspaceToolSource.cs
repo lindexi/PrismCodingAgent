@@ -1,7 +1,4 @@
-using AgentLib.Model;
 using AgentLib.Tools;
-
-using Microsoft.Extensions.AI;
 
 namespace AgentLib.Coding;
 
@@ -10,20 +7,9 @@ namespace AgentLib.Coding;
 /// </summary>
 public interface ICodingWorkspaceToolSource
 {
-    /// <summary>
-    /// 为指定代码工作区创建工具。
-    /// </summary>
+    /// <summary>根据本次运行选项创建工具及其展示摘要规则。</summary>
     /// <param name="workspacePath">代码工作区的完整路径。</param>
-    /// <returns>绑定该工作区的工具集合。</returns>
-    IReadOnlyList<AITool> CreateTools(string workspacePath);
-
-    /// <summary>
-    /// 为指定代码工作区创建工具及其展示摘要规则。
-    /// </summary>
-    /// <param name="workspacePath">代码工作区的完整路径。</param>
-    /// <returns>绑定该工作区的工具注册集合。</returns>
-    IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath) =>
-        CreateTools(workspacePath)
-            .Select(tool => new ToolRegistration(tool))
-            .ToArray();
+    /// <param name="runOptions">本次运行选项；工具源应捕获所需值，不保留可变选项。</param>
+    /// <returns>绑定该运行的工具注册集合。</returns>
+    IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions);
 }
