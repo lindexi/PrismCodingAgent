@@ -277,7 +277,16 @@
                 <Border Classes="SettingsCard" Padding="24">
                     <StackPanel Spacing="16">
                         <TextBlock Text="{Binding ModelConfigurationTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <TextBox Text="{Binding PrimaryModel}" PlaceholderText="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" Classes="Rounded SettingsInput" />
+                        <Grid ColumnDefinitions="*,1.2*" ColumnSpacing="24" Margin="0,0,0,4">
+                            <StackPanel Spacing="4" VerticalAlignment="Center">
+                                <TextBlock x:Name="PrimaryModelLabel" Text="{Binding DefaultModelLabel, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" TextWrapping="Wrap" />
+                                <TextBlock x:Name="PrimaryModelHint" Text="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBox x:Name="PrimaryModelInput" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                     Text="{Binding PrimaryModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.LabeledBy="{Binding #PrimaryModelLabel}"
+                                     Classes="Rounded SettingsInput" />
+                        </Grid>
                         <views:ModelSettingsView />
                     </StackPanel>
                 </Border>

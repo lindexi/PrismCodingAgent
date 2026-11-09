@@ -13,6 +13,7 @@
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
         <Style x:Key="ModelLabel" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="FontSize" Value="12" /><Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="#344454" />
         </Style>
@@ -78,13 +79,20 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                            CornerRadius="8" Padding="16" Margin="0,4">
+                            CornerRadius="12" Padding="16" Margin="0,0,0,16">
                         <StackPanel>
-                            <Button HorizontalAlignment="Right" Foreground="DarkRed"
-                                    Content="{Binding RemoveModelServiceText, Source={x:Static l:Lang.Current}}"
-                                    Command="{Binding DataContext.RemoveProviderCommand, RelativeSource={RelativeSource AncestorType=views:ModelSettingsView}}"
-                                    CommandParameter="{Binding}" />
-                            <Grid Margin="0,16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding SetupConnectionLabel, Source={x:Static l:Lang.Current}}"
+                                           Style="{StaticResource ModelLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <Button Grid.Column="1" HorizontalAlignment="Right" Foreground="DarkRed"
+                                        Content="{Binding RemoveModelServiceText, Source={x:Static l:Lang.Current}}"
+                                        Command="{Binding DataContext.RemoveProviderCommand, RelativeSource={RelativeSource AncestorType=views:ModelSettingsView}}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                            <Grid Margin="0,12,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition /><ColumnDefinition />
                                 </Grid.ColumnDefinitions>

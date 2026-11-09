@@ -5,19 +5,32 @@
              x:Class="PrismCodingAgent.CodingShell.Views.ModelSettingsView" x:DataType="vm:SettingsViewModel">
     <StackPanel Spacing="16" IsEnabled="{Binding !IsBusy}">
         <ItemsControl ItemsSource="{Binding Providers}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="16" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ProviderSettingsViewModel">
-                    <Border Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource SettingsCardBorderBrush}" BorderThickness="1" CornerRadius="8"
-                            Padding="16" Margin="0,4">
-                        <StackPanel Spacing="16">
-                            <Button
+                    <Border Classes="ProviderCard" Padding="16" Margin="0">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="{Binding SetupConnectionLabel, Source={x:Static localizations:Lang.Current}}"
+                                           Classes="SettingsLabel" VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
                                 Content="{Binding RemoveModelServiceText, Source={x:Static localizations:Lang.Current}}"
                                 Classes="QuietDanger" HorizontalAlignment="Right"
                                 Command="{Binding $parent[views:ModelSettingsView].((vm:SettingsViewModel)DataContext).RemoveProviderCommand}"
                                 CommandParameter="{Binding}" />
+                            </Grid>
                             <views:ModelServiceConnectionView />
-                            <views:OpenAIModelCatalogView />
+                            <views:OpenAIModelCatalogView>
+                                <views:OpenAIModelCatalogView.Styles>
+                                    <Style Selector="StackPanel#CatalogPanel">
+                                        <Setter Property="Spacing" Value="6" />
+                                    </Style>
+                                </views:OpenAIModelCatalogView.Styles>
+                            </views:OpenAIModelCatalogView>
                             <ItemsControl ItemsSource="{Binding Models}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:ModelSettingsViewModel">

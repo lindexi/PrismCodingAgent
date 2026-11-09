@@ -42,10 +42,10 @@
         <Setter Property="BoxShadow" Value="0 1 0 0 #08000000" />
     </Style>
     <Style Selector="Border.ProviderCard">
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource SettingsCardBorderBrush}" />
-        <Setter Property="BorderThickness" Value="0,1,0,0" />
-        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
     </Style>
     <Style Selector="Border.ModelCard">
         <Setter Property="Background" Value="Transparent" />
@@ -63,12 +63,6 @@
     <Style Selector="Button.CompactModelAdd">
         <Setter Property="Padding" Value="6,3" />
         <Setter Property="MinHeight" Value="0" />
-    </Style>
-    <Style Selector="Border.PrimaryModelPanel">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="#E5E5E5" />
-        <Setter Property="BorderThickness" Value="0,1,0,0" />
-        <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Border.SectionIcon">
         <Setter Property="Width" Value="40" />
