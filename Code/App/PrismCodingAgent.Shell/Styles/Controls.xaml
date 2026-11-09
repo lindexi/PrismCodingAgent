@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:input="clr-namespace:PrismCodingAgent.CodingShell.Infrastructure">
     <FontFamily x:Key="ShellFont">Microsoft YaHei UI, Microsoft YaHei, Segoe UI</FontFamily>
     <BooleanToVisibilityConverter x:Key="BooleanVisibility" />
     <Style TargetType="Window">
@@ -68,9 +69,30 @@
         <Setter Property="Template"><Setter.Value>
             <ControlTemplate TargetType="TextBox">
                 <Border x:Name="Surface" CornerRadius="4" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                    <ScrollViewer x:Name="PART_ContentHost" />
+                    <Grid>
+                        <ScrollViewer x:Name="PART_ContentHost" />
+                        <!-- TextBoxView includes a two-DIP horizontal text inset. -->
+                        <TextBlock x:Name="Placeholder"
+                                   Text="{TemplateBinding input:TextBoxPlaceholder.Text}"
+                                   Margin="{TemplateBinding Padding}" Padding="2,0" Foreground="#777777"
+                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                   TextAlignment="{TemplateBinding TextAlignment}"
+                                   IsHitTestVisible="False" Visibility="Collapsed" />
+                    </Grid>
                 </Border>
                 <ControlTemplate.Triggers>
+                    <Trigger Property="Text" Value="">
+                        <Setter TargetName="Placeholder" Property="Visibility" Value="Visible" />
+                    </Trigger>
+                    <Trigger Property="Text" Value="{x:Null}">
+                        <Setter TargetName="Placeholder" Property="Visibility" Value="Visible" />
+                    </Trigger>
+                    <Trigger Property="input:TextBoxPlaceholder.Text" Value="">
+                        <Setter TargetName="Placeholder" Property="Visibility" Value="Collapsed" />
+                    </Trigger>
+                    <Trigger Property="input:TextBoxPlaceholder.Text" Value="{x:Null}">
+                        <Setter TargetName="Placeholder" Property="Visibility" Value="Collapsed" />
+                    </Trigger>
                     <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" /></Trigger>
                     <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.45" /></Trigger>
                 </ControlTemplate.Triggers>

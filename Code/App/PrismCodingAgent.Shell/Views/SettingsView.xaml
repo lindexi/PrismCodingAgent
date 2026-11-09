@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views"
+             xmlns:input="clr-namespace:PrismCodingAgent.CodingShell.Infrastructure"
              FontSize="12" TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
     <UserControl.Resources>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -18,42 +19,7 @@
             <Setter Property="Foreground" Value="#344454" />
         </Style>
         <Style x:Key="SettingsInput" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="FontSize" Value="13" /><Setter Property="Padding" Value="10,6" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="InputSurface" Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                            <Grid>
-                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
-                                <TextBlock x:Name="Placeholder"
-                                           Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
-                                           Margin="{TemplateBinding Padding}" Foreground="#777777"
-                                           VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="Text" Value="{x:Null}">
-                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                            <Trigger Property="Text" Value="">
-                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="InputSurface" Property="BorderBrush"
-                                        Value="{StaticResource PrimaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="InputSurface" Property="Background" Value="#CCCCCC" />
-                                <Setter TargetName="InputSurface" Property="BorderBrush" Value="#B8B8B8" />
-                                <Setter Property="Foreground" Value="#999999" />
-                                <Setter TargetName="Placeholder" Property="Foreground" Value="#999999" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="FontSize" Value="13" />
         </Style>
         <Style TargetType="CheckBox" BasedOn="{StaticResource ComposerOption}">
             <Setter Property="Template">
@@ -332,7 +298,7 @@
                             <TextBlock Style="{StaticResource SettingsLabel}"
                                        Text="{Binding NetworkProxyAddressLabel, Source={x:Static l:Lang.Current}}" />
                             <TextBox x:Name="ProxyAddress" Style="{StaticResource SettingsInput}"
-                                     Tag="{Binding NetworkProxyAddressPlaceholder, Source={x:Static l:Lang.Current}}"
+                                     input:TextBoxPlaceholder.Text="{Binding NetworkProxyAddressPlaceholder, Source={x:Static l:Lang.Current}}"
                                      Text="{Binding NetworkProxyAddress, UpdateSourceTrigger=PropertyChanged}"
                                      MinHeight="32" Margin="0,6" />
                             <TextBlock Style="{StaticResource SettingsHint}"
@@ -427,7 +393,7 @@
                             <TextBlock Style="{StaticResource SettingsLabel}"
                                        Text="{Binding InstructionsPath, Source={x:Static l:Lang.Current}}" />
                             <TextBox x:Name="InstructionsPath" Style="{StaticResource SettingsInput}"
-                                     Tag="{Binding InstructionsPlaceholder, Source={x:Static l:Lang.Current}}"
+                                     input:TextBoxPlaceholder.Text="{Binding InstructionsPlaceholder, Source={x:Static l:Lang.Current}}"
                                      Text="{Binding CopilotInstructionsPath, UpdateSourceTrigger=PropertyChanged}"
                                      MinHeight="32" Margin="0,6"
                                      ToolTip="{Binding InstructionsPlaceholder, Source={x:Static l:Lang.Current}}" />
