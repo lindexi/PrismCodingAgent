@@ -64,13 +64,16 @@
     <TextBlock Style="{StaticResource SectionTitle}" Margin="0,12,0,8" Text="{Binding ChatRunSettingsTitle, Source={x:Static l:Lang.Current}}"/>
     <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatAutomaticCompressionToggle" Grid.Column="1" AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}"/></Grid>
     <Border Height="1" Background="#ECEDEF"/>
+    <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatResponsesApiToggle" Grid.Column="1" AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}"/></Grid>
+    </StackPanel>
+    <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
+    <StackPanel MaxWidth="720">
+    <TextBlock Style="{StaticResource SectionTitle}" Margin="0,12,0,8" Text="{Binding ChatToolSettingsTitle, Source={x:Static l:Lang.Current}}"/>
     <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatDotNetRunToggle" Grid.Column="1" AutomationProperties.Name="{Binding EnableDotNetRunText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}"/></Grid>
-    <Border Height="1" Background="#ECEDEF"/>
-    <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding EnableWebSearchText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatWebSearchToggle" Grid.Column="1" AutomationProperties.Name="{Binding EnableWebSearchText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableWebSearch, Mode=TwoWay}"/></Grid>
     <Border Height="1" Background="#ECEDEF"/>
     <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding EnableWebFetchText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatWebFetchToggle" Grid.Column="1" AutomationProperties.Name="{Binding EnableWebFetchText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableWebFetch, Mode=TwoWay}"/></Grid>
     <Border Height="1" Background="#ECEDEF"/>
-    <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatResponsesApiToggle" Grid.Column="1" AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}"/></Grid>
+    <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding EnableWebSearchText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatWebSearchToggle" Grid.Column="1" AutomationProperties.Name="{Binding EnableWebSearchText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableWebSearch, Mode=TwoWay}"/></Grid>
     </StackPanel>
     <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
     <StackPanel MaxWidth="720">

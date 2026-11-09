@@ -137,17 +137,22 @@
                     <Border Height="1" Background="#ECEDEF" />
                     <Grid ColumnDefinitions="*,44" MinHeight="48">
                         <TextBlock Classes="OptionTitle"
+                                   Text="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatResponsesApiToggle" Grid.Column="1"
+                                      AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}"
+                                      IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" />
+                    </Grid>
+                </StackPanel>
+                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
+                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+                    <TextBlock Classes="SectionTitle" Margin="0,12,0,8"
+                               Text="{Binding ChatToolSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
+                    <Grid ColumnDefinitions="*,44" MinHeight="48">
+                        <TextBlock Classes="OptionTitle"
                                    Text="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatDotNetRunToggle" Grid.Column="1"
                                       AutomationProperties.Name="{Binding EnableDotNetRunText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding RunOptions.EnableDotNetRun, Mode=TwoWay}" />
-                    </Grid>
-                    <Border Height="1" Background="#ECEDEF" />
-                    <Grid ColumnDefinitions="*,44" MinHeight="48">
-                        <TextBlock Classes="OptionTitle" Text="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}" />
-                        <ToggleSwitch x:Name="ChatWebSearchToggle" Grid.Column="1"
-                                      AutomationProperties.Name="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}"
-                                      IsChecked="{Binding RunOptions.EnableWebSearch, Mode=TwoWay}" />
                     </Grid>
                     <Border Height="1" Background="#ECEDEF" />
                     <Grid ColumnDefinitions="*,44" MinHeight="48">
@@ -158,11 +163,10 @@
                     </Grid>
                     <Border Height="1" Background="#ECEDEF" />
                     <Grid ColumnDefinitions="*,44" MinHeight="48">
-                        <TextBlock Classes="OptionTitle"
-                                   Text="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}" />
-                        <ToggleSwitch x:Name="ChatResponsesApiToggle" Grid.Column="1"
-                                      AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}"
-                                      IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" />
+                        <TextBlock Classes="OptionTitle" Text="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch x:Name="ChatWebSearchToggle" Grid.Column="1"
+                                      AutomationProperties.Name="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}"
+                                      IsChecked="{Binding RunOptions.EnableWebSearch, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>
                 <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />

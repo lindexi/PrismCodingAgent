@@ -157,7 +157,7 @@ public sealed class ResponsesApiControlTests
         {
             window.Show();
             window.UpdateLayout();
-            var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatDotNetRunToggle", "ChatWebSearchToggle", "ChatWebFetchToggle", "ChatResponsesApiToggle" }
+            var toggles = new[] { "ChatAutomaticCompressionToggle", "ChatResponsesApiToggle", "ChatDotNetRunToggle", "ChatWebFetchToggle", "ChatWebSearchToggle" }
                 .Select(name => settings.FindControl<ToggleSwitch>(name)).ToArray();
             CollectionAssert.DoesNotContain(toggles, null);
             CollectionAssert.AreEquivalent(toggles, settings.GetVisualDescendants().OfType<ToggleSwitch>().ToArray());

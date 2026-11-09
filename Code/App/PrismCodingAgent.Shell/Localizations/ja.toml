@@ -40,6 +40,7 @@ ChatCopyFailed = "コピーできませんでした。再試行してくださ�
 CompactUnavailable = "現在の会話に圧縮できるコンテキストがありません。"
 LoopSettingsTitle = "ループ反復"
 ChatRunSettingsTitle = "実行オプション"
+ChatToolSettingsTitle = "ツールオプション"
 LoopCompressHint = "コンテキストを圧縮して次のラウンドに進みます。"
 LoopRestartHint = "モデルのコンテキストを消去し、表示メッセージは保持します。"
 LoopAppendHint = "コンテキストを保持し、次のラウンドを追加します。"

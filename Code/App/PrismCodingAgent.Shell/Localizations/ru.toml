@@ -40,6 +40,7 @@ ChatCopyFailed = "Не удалось скопировать. Повторите
 CompactUnavailable = "В текущем диалоге нет контекста, который можно сжать."
 LoopSettingsTitle = "Циклическое выполнение"
 ChatRunSettingsTitle = "Параметры запуска"
+ChatToolSettingsTitle = "Параметры инструментов"
 LoopCompressHint = "Сжать контекст перед следующим раундом."
 LoopRestartHint = "Очистить контекст модели и сохранить сообщения."
 LoopAppendHint = "Сохранить контекст и добавить следующий раунд."

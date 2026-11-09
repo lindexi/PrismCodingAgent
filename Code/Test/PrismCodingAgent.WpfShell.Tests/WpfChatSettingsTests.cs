@@ -14,6 +14,30 @@ public sealed class WpfChatSettingsTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    [DataRow("ChatRunSettingsTitle", "ChatAutomaticCompressionToggle,ChatResponsesApiToggle")]
+    [DataRow("ChatToolSettingsTitle", "ChatDotNetRunToggle,ChatWebFetchToggle,ChatWebSearchToggle")]
+    public async Task SettingsSectionsShouldContainOnlyOrderedOptionsAsync(string titleKey, string names)
+        => await WpfTestClassAttribute.RunUiAsync(async () =>
+        {
+            using var model = new ChatViewModel();
+            var settings = new ChatSettingsView { DataContext = model };
+            var first = (CheckBox)settings.FindName(names.Split(',')[0]);
+            var section = (StackPanel)((Grid)first.Parent).Parent;
+            CollectionAssert.AreEqual(names.Split(','), section.Children.OfType<Grid>()
+                .SelectMany(row => row.Children.OfType<CheckBox>()).Select(toggle => toggle.Name).ToArray());
+            foreach (string language in new[] { "de", "en", "es", "fr", "it", "ja", "ko", "nl", "pt-BR", "ru", "zh-Hans", "zh-Hant" })
+            {
+                PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent(language);
+                await settings.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                string title = titleKey == "ChatRunSettingsTitle"
+                    ? PrismCodingAgent.CodingShell.Localizations.Lang.Current.ChatRunSettingsTitle
+                    : PrismCodingAgent.CodingShell.Localizations.Lang.Current.ChatToolSettingsTitle;
+                Assert.IsFalse(string.IsNullOrWhiteSpace(title));
+                Assert.AreEqual(title, section.Children.OfType<TextBlock>().Single().Text);
+            }
+        });
+
+    [TestMethod]
     public async Task RedesignedSettingsRenderAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent("zh-Hans");

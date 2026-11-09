@@ -10,6 +10,29 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 public sealed class LoopSettingsBindingTests
 {
     [TestMethod]
+    [DataRow("ChatRunSettingsTitle", "ChatAutomaticCompressionToggle,ChatResponsesApiToggle")]
+    [DataRow("ChatToolSettingsTitle", "ChatDotNetRunToggle,ChatWebFetchToggle,ChatWebSearchToggle")]
+    public void SettingsSectionsShouldContainOnlyOrderedOptions(string titleKey, string names)
+    {
+        using var model = new ChatViewModel();
+        var view = new ChatSettingsView { DataContext = model };
+        var first = view.FindControl<ToggleSwitch>(names.Split(',')[0])!;
+        var section = (StackPanel)first.Parent!.Parent!;
+        CollectionAssert.AreEqual(names.Split(','), section.Children.OfType<Grid>()
+            .SelectMany(row => row.Children.OfType<ToggleSwitch>()).Select(toggle => toggle.Name).ToArray());
+        foreach (string language in new[] { "de", "en", "es", "fr", "it", "ja", "ko", "nl", "pt-BR", "ru", "zh-Hans", "zh-Hant" })
+        {
+            PrismCodingAgent.CodingShell.Localizations.Lang.SetCurrent(language);
+            Dispatcher.UIThread.RunJobs();
+            string title = titleKey == "ChatRunSettingsTitle"
+                ? PrismCodingAgent.CodingShell.Localizations.Lang.Current.ChatRunSettingsTitle
+                : PrismCodingAgent.CodingShell.Localizations.Lang.Current.ChatToolSettingsTitle;
+            Assert.IsFalse(string.IsNullOrWhiteSpace(title));
+            Assert.AreEqual(title, section.Children.OfType<TextBlock>().Single().Text);
+        }
+    }
+
+    [TestMethod]
     [DataRow("LoopMaximumIterationsInput")]
     [DataRow("LoopMaximumDurationInput")]
     public void NumericSettingsShouldBindInBothDirections(string name)
