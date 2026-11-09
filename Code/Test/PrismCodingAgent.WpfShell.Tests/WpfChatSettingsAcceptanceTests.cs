@@ -45,7 +45,15 @@ public sealed class WpfChatSettingsAcceptanceTests
             var settings = (ChatSettingsView)window.FindName("ChatSettingsPanel");
             model.ChatViewModel.IsChatSettingsOpen = true;
             await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ApplicationIdle);
-            Assert.AreEqual(0, Grid.GetRow((Grid)window.FindName("ChatOverlayLayer")));
+            var overlay = (Grid)window.FindName("ChatOverlayLayer");
+            var surface = (Border)window.FindName("ContentSurface");
+            var host = (Grid)surface.Child;
+            Assert.AreSame(host, overlay.Parent);
+            Assert.AreEqual(default(Thickness), overlay.Margin);
+            Assert.AreEqual(new Point(), overlay.TranslatePoint(new Point(), host));
+            Assert.AreEqual(host.RenderSize, overlay.RenderSize);
+            Assert.IsGreaterThan(Panel.GetZIndex((UIElement)window.FindName("HistoryConversation")), Panel.GetZIndex(overlay));
+            Assert.IsNotNull(overlay.Background);
             var workspace = (TextBox)settings.FindName("SettingsWorkspaceInput");
             Assert.AreEqual(root, workspace.Text);
             var selector = (ComboBox)settings.FindName("SettingsModelSelector");

@@ -808,11 +808,11 @@
                         <StackPanel Grid.Row="3">
                             <views:ChatView x:Name="ChatComposer" DataContext="{Binding ChatViewModel}" />
                         </StackPanel>
-                        <Grid x:Name="ChatOverlayLayer" Grid.Row="0" Grid.RowSpan="4">
-                            <views:ChatSettingsView x:Name="ChatSettingsPanel" DataContext="{Binding ChatViewModel}"
-                                                    Background="{StaticResource BackgroundBrush}"
-                                                    Visibility="{Binding IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}" />
-                        </Grid>
+                    </Grid>
+                    <Grid x:Name="ChatOverlayLayer" Panel.ZIndex="1" Background="{StaticResource BackgroundBrush}"
+                          Visibility="{Binding ChatViewModel.IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}"
+                          KeyboardNavigation.TabNavigation="Cycle">
+                        <views:ChatSettingsView x:Name="ChatSettingsPanel" DataContext="{Binding ChatViewModel}" />
                     </Grid>
                     <views:ModelSetupView x:Name="ModelGuide" DataContext="{Binding SettingsViewModel}">
                         <views:ModelSetupView.Style>

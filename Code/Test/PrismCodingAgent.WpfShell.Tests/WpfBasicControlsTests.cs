@@ -47,7 +47,9 @@ public sealed class WpfBasicControlsTests
     });
 
     [TestMethod]
-    public async Task SecretInputMasksRevealsAndUpdatesBindingAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task SecretInputMasksRevealsAndUpdatesBindingAsync(bool useDefault) => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         var source = new TextBox { Text = "sample-key" };
         var input = new SecretInput { Width = 300, Height = 32 };
@@ -58,6 +60,11 @@ public sealed class WpfBasicControlsTests
         var masked = (PasswordBox)input.FindName("MaskedInput");
         var revealed = (TextBox)input.FindName("RevealedInput");
         var toggle = (ToggleButton)input.FindName("RevealButton");
+        if (useDefault)
+        {
+            masked.Style = null;
+            revealed.Style = null;
+        }
         await screenshots.CaptureAsync("secret-masked");
         Assert.IsTrue(masked.IsVisible);
         Assert.AreEqual('●', masked.PasswordChar);
@@ -75,6 +82,31 @@ public sealed class WpfBasicControlsTests
         await WpfInput.WaitAsync(() => masked.IsVisible, "Secret did not mask again.");
         Assert.AreEqual(string.Empty, revealed.Text);
         Assert.AreEqual("changed-key", masked.Password);
+    });
+
+    [TestMethod]
+    public async Task SecretInputBindingAndRevealPreserveMaskingAsync() => await WpfTestClassAttribute.RunUiAsync(() =>
+    {
+        var source = new TextBox { Text = "sample-key" };
+        var input = new SecretInput();
+        input.SetBinding(SecretInput.TextProperty, new Binding(nameof(TextBox.Text)) { Source = source, Mode = BindingMode.TwoWay });
+        var masked = (PasswordBox)input.FindName("MaskedInput");
+        var revealed = (TextBox)input.FindName("RevealedInput");
+        var toggle = (ToggleButton)input.FindName("RevealButton");
+        Assert.AreEqual("sample-key", masked.Password);
+        Assert.AreEqual(string.Empty, revealed.Text);
+        masked.Password = "masked-edit";
+        Assert.AreEqual("masked-edit", source.Text);
+        toggle.IsChecked = true;
+        Assert.AreEqual(Visibility.Visible, revealed.Visibility);
+        Assert.AreEqual("masked-edit", revealed.Text);
+        revealed.Text = "revealed-edit";
+        Assert.AreEqual("revealed-edit", source.Text);
+        toggle.IsChecked = false;
+        Assert.AreEqual(Visibility.Visible, masked.Visibility);
+        Assert.AreEqual(string.Empty, revealed.Text);
+        Assert.AreEqual("revealed-edit", masked.Password);
+        return Task.CompletedTask;
     });
 
     [TestMethod]
