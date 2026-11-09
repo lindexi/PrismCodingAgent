@@ -485,14 +485,14 @@
                                Text="{Binding InputShortcutText, Source={x:Static localizations:Lang.Current}}"
                                Classes="Subtitle" Margin="12,0" VerticalAlignment="Center"
                                IsVisible="{Binding !IsRunning}" />
-                    <Button Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Classes="Danger"
-                            Content="{Binding StopText, Source={x:Static localizations:Lang.Current}}"
-                            Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
                     <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Spacing="16">
                         <CheckBox x:Name="LoopIterationCheckBox" MinHeight="32" VerticalAlignment="Center"
                                   Content="{Binding LoopIterationText, Source={x:Static localizations:Lang.Current}}"
                                   IsChecked="{Binding LoopOptions.IsEnabled}"
                                   ToolTip.Tip="{Binding LoopSettingsHint, Source={x:Static localizations:Lang.Current}}" />
+                        <Button HorizontalAlignment="Right" Classes="Danger"
+                                Content="{Binding StopText, Source={x:Static localizations:Lang.Current}}"
+                                Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
                         <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
                                 Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
                             <StackPanel Orientation="Horizontal" Spacing="8">

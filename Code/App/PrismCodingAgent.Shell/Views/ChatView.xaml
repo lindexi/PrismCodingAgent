@@ -88,16 +88,16 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </StackPanel>
-                    <Button x:Name="StopButton" Grid.Column="1" Margin="8,0,0,0"
-                            Content="{Binding StopText, Source={x:Static l:Lang.Current}}"
-                            Command="{Binding StopCommand}"
-                            Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}" />
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
                         <CheckBox x:Name="LoopIterationCheckBox" Margin="8,0,8,0" MinHeight="32"
                                   VerticalAlignment="Center"
                                   Content="{Binding LoopIterationText, Source={x:Static l:Lang.Current}}"
                                   IsChecked="{Binding LoopOptions.IsEnabled}"
                                   ToolTip="{Binding LoopSettingsHint, Source={x:Static l:Lang.Current}}" />
+                        <Button x:Name="StopButton" Margin="8,0,0,0"
+                                Content="{Binding StopText, Source={x:Static l:Lang.Current}}"
+                                Command="{Binding StopCommand}"
+                                Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}" />
                         <Button x:Name="SendButton" Margin="8,0,0,0" MinWidth="88"
                                 Style="{StaticResource ComposerSendButton}" Content="{Binding SendButtonText}"
                                 Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}"
