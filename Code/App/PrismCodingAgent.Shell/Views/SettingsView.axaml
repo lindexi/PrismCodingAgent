@@ -3,8 +3,82 @@
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:views="using:PrismCodingAgent.CodingShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
+             xmlns:converters="using:Avalonia.Data.Converters"
              x:Class="PrismCodingAgent.CodingShell.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
+    <UserControl.Styles>
+        <Style Selector="Expander.PurposeSection">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <StackPanel>
+                        <Border BorderBrush="{StaticResource SettingsCardBorderBrush}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
+                            <ToggleButton Classes="PurposeHeader" Width="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" HorizontalContentAlignment="Stretch">
+                                <Grid ColumnDefinitions="20,*" HorizontalAlignment="Stretch">
+                                    <ContentPresenter Grid.Column="1" Content="{TemplateBinding Header}" HorizontalAlignment="Left" />
+                                    <Path Grid.Column="0" Classes="PurposeChevron" Data="M 2,2 L 8,8 L 2,14" Width="16" Height="16" Stroke="#536171" StrokeThickness="2" VerticalAlignment="Center" />
+                                </Grid>
+                            </ToggleButton>
+                        </Border>
+                        <TextBlock Margin="20,4,0,0" Text="{Binding PurposeValidationFailed, Source={x:Static localizations:Lang.Current}}" IsVisible="{Binding HasPurposeErrors}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
+                        <ContentPresenter Margin="20,12,0,0" Content="{TemplateBinding Content}" IsVisible="{TemplateBinding IsExpanded}" />
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.PurposeHeader">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0,8" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="6">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.PurposeHeader:pointerover">
+            <Setter Property="Background" Value="#EEF2F6" />
+        </Style>
+        <Style Selector="ToggleButton.PurposeHeader:checked Path.PurposeChevron">
+            <Setter Property="RenderTransform" Value="rotate(90deg)" />
+        </Style>
+        <Style Selector="ToggleButton.PurposeHeader:focus-visible">
+            <Setter Property="Background" Value="#EEF6FF" />
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+        </Style>
+        <Style Selector="Border.PurposeRow">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="{Binding $parent[ItemsControl].Tag}" />
+        </Style>
+        <Style Selector="Border.PurposeRow.CustomPurpose">
+            <Setter Property="Width" Value="{Binding $parent[ItemsControl].Bounds.Width}" />
+        </Style>
+        <Style Selector="Border.CustomPurpose">
+            <Setter Property="BorderBrush" Value="{StaticResource SettingsCardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="ComboBox.PurposeSelector">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#DCE2E9" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="10,0" />
+        </Style>
+        <Style Selector="Button.PurposeAction">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+        </Style>
+        <Style Selector="ComboBox.PurposeError, TextBox.PurposeError">
+            <Setter Property="BorderBrush" Value="{StaticResource ErrorBrush}" />
+        </Style>
+    </UserControl.Styles>
     <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource SettingsBackgroundBrush}">
         <Border Grid.Row="0" Classes="SettingsHeader" Padding="32,24,32,16">
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="20" HorizontalAlignment="Stretch">
@@ -276,18 +350,64 @@
 
                 <Border Classes="SettingsCard" Padding="24">
                     <StackPanel Spacing="16">
-                        <TextBlock Text="{Binding ModelConfigurationTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
-                        <Grid ColumnDefinitions="*,1.2*" ColumnSpacing="24" Margin="0,0,0,4">
-                            <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock x:Name="ModelConfigurationHeading" Text="{Binding ModelConfigurationTitle, Source={x:Static localizations:Lang.Current}}" Classes="SettingsSectionTitle" />
+                        <Grid ColumnDefinitions="64,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4">
+                            <Border x:Name="PrimaryModelFields" Grid.Column="1" />
+                            <StackPanel VerticalAlignment="Center">
                                 <TextBlock x:Name="PrimaryModelLabel" Text="{Binding DefaultModelLabel, Source={x:Static localizations:Lang.Current}}" Classes="SettingsLabel" TextWrapping="Wrap" />
-                                <TextBlock x:Name="PrimaryModelHint" Text="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
                             </StackPanel>
-                            <TextBox x:Name="PrimaryModelInput" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                            <TextBlock x:Name="PrimaryModelHint" Grid.Row="1" Grid.Column="1" Text="{Binding DefaultModelHint, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" />
+                            <TextBox x:Name="PrimaryModelInput" Grid.Column="1" HorizontalAlignment="Left" Width="{Binding #PrimaryModelFields.Bounds.Width}" MaxWidth="300" VerticalAlignment="Center"
                                      Text="{Binding PrimaryModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      AutomationProperties.LabeledBy="{Binding #PrimaryModelLabel}"
                                      Classes="Rounded SettingsInput" />
                         </Grid>
-                        <views:ModelSettingsView />
+                        <Expander x:Name="PurposeModelsExpander" Classes="PurposeSection" IsExpanded="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Expander.Header>
+                                <TextBlock x:Name="PurposeModelsHeading" FontWeight="SemiBold" Text="{Binding PurposeModelsTitle, Source={x:Static localizations:Lang.Current}}" />
+                            </Expander.Header>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding PurposeModelsHelp, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" MaxWidth="792" HorizontalAlignment="Left" />
+                                <ItemsControl x:Name="PurposeModelsList" DataContextChanged="OnPurposeListDataContextChanged" Width="{Binding $parent[StackPanel].Bounds.Width}" MaxWidth="776" HorizontalAlignment="Left" SizeChanged="OnPurposeListSizeChanged">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel ItemSpacing="32" LineSpacing="8" /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:PurposeModelSettingsViewModel">
+                                            <Border Classes="PurposeRow" Classes.CustomPurpose="{Binding CanEditPurpose}">
+                                                <Grid ColumnDefinitions="64,8,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" DataContextChanged="OnPurposeFieldsDataContextChanged" SizeChanged="OnPurposeFieldsSizeChanged">
+                                                    <TextBlock Text="{Binding DisplayName, StringFormat='{}{0}:'}" IsVisible="{Binding IsBuiltIn}" HorizontalAlignment="Right" VerticalAlignment="Center" TextWrapping="NoWrap" />
+                                                    <TextBox Grid.Column="0" Height="36" VerticalContentAlignment="Center" ToolTip.Tip="{Binding PurposeKey}" TextWrapping="NoWrap" ScrollViewer.HorizontalScrollBarVisibility="Hidden" Classes="Rounded SettingsInput" Classes.PurposeError="{Binding PurposeError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" IsVisible="{Binding CanEditPurpose}"
+                                                             Text="{Binding PurposeKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             PlaceholderText="{Binding PurposeKeyHint, Source={x:Static localizations:Lang.Current}}"
+                                                             AutomationProperties.Name="{Binding PurposeKeyLabel, Source={x:Static localizations:Lang.Current}}" />
+                                                    <ComboBox Grid.Column="2" Classes="PurposeSelector" Classes.PurposeError="{Binding ModelError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="{Binding SelectedModel.DisplayName}" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MinWidth="0" MaxWidth="300"
+                                                              AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static localizations:Lang.Current}}">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:PurposeModelOptionViewModel">
+                                                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                    <TextBlock Grid.Row="1" Text="{Binding PurposeError}" IsVisible="{Binding PurposeError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding ModelError}" IsVisible="{Binding ModelError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
+                                                    <Button Grid.Column="3" HorizontalAlignment="Left" Classes="PurposeAction" Foreground="{StaticResource ErrorBrush}" VerticalAlignment="Center" Margin="8,0,0,0" Padding="4" IsVisible="{Binding CanRemove}"
+                                                            Content="{Binding PurposeRemove, Source={x:Static localizations:Lang.Current}}"
+                                                            Command="{Binding $parent[views:SettingsView].((vm:SettingsViewModel)DataContext).RemovePurposeModelCommand}" CommandParameter="{Binding}" />
+                                                    <TextBlock Grid.Column="1" Text="：" VerticalAlignment="Center" IsVisible="False" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button x:Name="AddPurposeModelButton" Classes="PurposeAction" Margin="0,4,0,0" Padding="0,4" HorizontalAlignment="Left" Content="{Binding PurposeAdd, Source={x:Static localizations:Lang.Current}}" Command="{Binding AddPurposeModelCommand}" />
+                            </StackPanel>
+                        </Expander>
+                        <StackPanel Spacing="24">
+                            <Border x:Name="ConnectionServicesSection" Height="1" Background="{StaticResource SettingsCardBorderBrush}" />
+                            <views:ModelSettingsView />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

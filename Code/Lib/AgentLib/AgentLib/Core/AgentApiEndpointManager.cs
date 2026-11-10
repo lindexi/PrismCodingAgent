@@ -11,6 +11,14 @@ namespace AgentLib.Core;
 public class AgentApiEndpointManager : IHttpClientProvider
 {
     private readonly DynamicWebProxy _dynamicWebProxy = new();
+    private Dictionary<string, string> _modelsByPurpose = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// 获取用途到模型标识的只读快照；用途区分大小写。
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ModelsByPurpose
+        => new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(
+            new Dictionary<string, string>(_modelsByPurpose, StringComparer.Ordinal));
 
     /// <summary>
     /// 创建 API 终结点管理器。
@@ -54,6 +62,7 @@ public class AgentApiEndpointManager : IHttpClientProvider
             }
         }
 
+        ILanguageModel? configuredPrimaryModel = null;
         if (configuration.PrimaryModel is var primaryModel && !string.IsNullOrEmpty(primaryModel))
         {
             ILanguageModel? languageModel = ResolveModel(primaryModel);
@@ -63,7 +72,13 @@ public class AgentApiEndpointManager : IHttpClientProvider
                 throw new ArgumentException($"Can not find PrimaryModel('{primaryModel}') in SupportedModels");
             }
 
-            PrimaryModel = languageModel;
+            configuredPrimaryModel = languageModel;
+        }
+
+        ReplaceModelsByPurpose(configuration.ModelsByPurpose);
+        if (configuredPrimaryModel is not null)
+        {
+            PrimaryModel = configuredPrimaryModel;
         }
     }
 
@@ -87,6 +102,7 @@ public class AgentApiEndpointManager : IHttpClientProvider
         SupportedModels.AddRange(replacement.SupportedModels);
         _userSetPrimaryLanguageModel = replacementPrimaryModel;
         _autoSetPrimaryLanguageModel = null;
+        _modelsByPurpose = replacement._modelsByPurpose;
     }
 
     /// <summary>
@@ -133,6 +149,70 @@ public class AgentApiEndpointManager : IHttpClientProvider
     /// </summary>
     /// <returns>受支持的模型列表。</returns>
     public IReadOnlyList<ILanguageModel> GetSupportedModels() => SupportedModels;
+
+    /// <summary>
+    /// 设置指定用途的模型标识；模型在查询时解析，无需预先注册。
+    /// </summary>
+    public void SetModelForPurpose(string purpose, string modelSpecifier)
+    {
+        ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
+        ArgumentHelper.ThrowIfNullOrWhiteSpace(modelSpecifier);
+        _modelsByPurpose[purpose] = modelSpecifier;
+    }
+
+    /// <summary>
+    /// 移除指定用途的映射，返回是否存在该映射。
+    /// </summary>
+    public bool RemoveModelForPurpose(string purpose)
+    {
+        ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
+        return _modelsByPurpose.Remove(purpose);
+    }
+
+    /// <summary>
+    /// 整体替换用途映射；空值清空映射，参数验证失败时保留原映射。模型无需预先注册。
+    /// </summary>
+    public void ReplaceModelsByPurpose(IReadOnlyDictionary<string, string>? modelsByPurpose)
+    {
+        var replacement = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (modelsByPurpose is not null)
+        {
+            foreach (var (purpose, modelSpecifier) in modelsByPurpose)
+            {
+                ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
+                ArgumentHelper.ThrowIfNullOrWhiteSpace(modelSpecifier);
+                replacement.Add(purpose, modelSpecifier);
+            }
+        }
+
+        _modelsByPurpose = replacement;
+    }
+
+    /// <summary>
+    /// 获取指定用途配置的模型；未配置时返回 <see langword="null"/>。用途区分大小写。
+    /// </summary>
+    /// <param name="purpose">非空白的用途标识。</param>
+    /// <returns>该用途配置的模型，或 <see langword="null"/>。</returns>
+    public ILanguageModel? GetModelForPurpose(string purpose)
+    {
+        ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
+        if (!_modelsByPurpose.TryGetValue(purpose, out var modelSpecifier))
+        {
+            return null;
+        }
+
+        return ResolveModel(modelSpecifier)
+            ?? throw new InvalidOperationException(
+                $"Model '{modelSpecifier}' configured for purpose '{purpose}' is not registered.");
+    }
+
+    /// <summary>
+    /// 获取指定用途配置的模型；未配置时返回当前的 <see cref="PrimaryModel"/>。
+    /// </summary>
+    /// <param name="purpose">非空白的用途标识。</param>
+    /// <returns>该用途配置的模型或当前首选模型。</returns>
+    public ILanguageModel GetModelForPurposeOrPrimary(string purpose)
+        => GetModelForPurpose(purpose) ?? PrimaryModel;
 
     /// <summary>
     /// 根据模型名称或 ID 查找模型，可选择性指定提供商。

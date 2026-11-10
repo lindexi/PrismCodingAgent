@@ -7,7 +7,7 @@ using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
-internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
+internal sealed class AvaloniaTestClassAttribute(string? language = null) : TestClassAttribute
 {
     private static readonly Lazy<HeadlessUnitTestSession> SharedSession = new(
         () => HeadlessUnitTestSession.StartNew(typeof(TestApplication)));
@@ -15,7 +15,7 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
     internal static HeadlessUnitTestSession Session => SharedSession.Value;
 
     public override TestMethodAttribute GetTestMethodAttribute(TestMethodAttribute testMethodAttribute)
-        => new UiTestMethodAttribute(testMethodAttribute)
+        => new UiTestMethodAttribute(testMethodAttribute, language)
         {
             DisplayName = testMethodAttribute.DisplayName,
             UnfoldingStrategy = testMethodAttribute.UnfoldingStrategy,
@@ -23,6 +23,7 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
 
     private sealed class UiTestMethodAttribute(
         TestMethodAttribute inner,
+        string? selectedLanguage,
         [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = -1) : TestMethodAttribute(callerFilePath, callerLineNumber)
     {
@@ -37,7 +38,7 @@ internal sealed class AvaloniaTestClassAttribute : TestClassAttribute
                 try
                 {
                     var results = new List<TestResult>();
-                    foreach (string language in Lang.SupportedLanguageTags)
+                    foreach (string language in selectedLanguage is null ? Lang.SupportedLanguageTags : new[] { selectedLanguage })
                     {
                         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(language);
                         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);

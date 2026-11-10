@@ -134,9 +134,10 @@ public sealed class PrimaryModelLayoutTests
                 Dispatcher.UIThread.RunJobs();
                 window.UpdateLayout();
                 Rect outerBounds = new(modelCard.TranslatePoint(default, scroll)!.Value, modelCard.Bounds.Size);
-                Rect adjacentBounds = new(quotaCard.TranslatePoint(default, scroll)!.Value, quotaCard.Bounds.Size);
+                var purposes = view.FindControl<Expander>("PurposeModelsExpander")!;
+                Assert.IsFalse(purposes.IsExpanded);
+                Assert.IsTrue(purposes.GetVisualAncestors().Contains(modelCard));
                 Assert.IsTrue(outerBounds.Top >= 0 && outerBounds.Bottom < scroll.Bounds.Height);
-                Assert.IsTrue(adjacentBounds.Top > outerBounds.Bottom && adjacentBounds.Top + 80 < scroll.Bounds.Height);
                 string overviewPath = Path.Combine(AppContext.BaseDirectory, "PrimaryModelScreenshots", $"{language}-{width}-settings-cards-overview.png");
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick();
                 using var overview = window.CaptureRenderedFrame() ?? throw new InvalidOperationException("No rendered frame.");

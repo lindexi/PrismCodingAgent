@@ -16,7 +16,7 @@ using PrismCodingAgent.CodingShell.Services.Settings;
 
 namespace PrismCodingAgent.CodingShell.ViewModels;
 
-public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDisposable
+public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDisposable
 {
     /// <summary>获取独立管理的额度设置。</summary>
     public QuotaSettingsViewModel Quotas { get; } = new();
@@ -70,6 +70,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
         _saveCommand = new SimpleAsyncCommand(static () => Task.CompletedTask, static () => false);
         _testWindowsSandboxConnectionCommand = new SimpleAsyncCommand
             (static () => Task.CompletedTask, static () => false);
+        InitializePurposeModels();
         BackCommand = new SimpleCommand(static () => { }, static () => false);
         AddProviderCommand = new SimpleCommand(AddProvider);
         RemoveProviderCommand = new SimpleCommand<ProviderSettingsViewModel>(RemoveProvider);
@@ -98,6 +99,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
         _saveCommand = new SimpleAsyncCommand(SaveAsync, exceptionHandler: HandleCommandException);
         _testWindowsSandboxConnectionCommand = new SimpleAsyncCommand
             (TestWindowsSandboxConnectionAsync, CanTestWindowsSandboxConnection, exceptionHandler: HandleCommandException);
+        InitializePurposeModels();
         BackCommand = new SimpleCommand(Back);
         AddProviderCommand = new SimpleCommand(AddProvider);
         RemoveProviderCommand = new SimpleCommand<ProviderSettingsViewModel>(RemoveProvider);
@@ -305,6 +307,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
             Providers.Add(CreateEmptyProvider());
         }
 
+        LoadPurposeModels(snapshot.ModelConfiguration?.ModelsByPurpose);
         _isLoading = false;
         RefreshDeepSeekApiKey();
 
@@ -389,6 +392,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
             var modelConfiguration = new AgentApiManagerConfiguration
             {
                 PrimaryModel = primaryModel,
+                ModelsByPurpose = CreatePurposeMapping(),
                 OpenAIConfigurationList = configurations,
             };
             var shellSettings = new CodingChatShellSettings
@@ -483,6 +487,7 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
         foreach (var provider in _subscribedProviders.Where(provider => !Providers.Contains(provider)).ToArray())
         {
             provider.PropertyChanged -= OnProviderPropertyChanged;
+            provider.Models.CollectionChanged -= OnPurposeModelsChanged;
             _subscribedProviders.Remove(provider);
         }
 
@@ -491,10 +496,12 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
             if (_subscribedProviders.Add(provider))
             {
                 provider.PropertyChanged += OnProviderPropertyChanged;
+                provider.Models.CollectionChanged += OnPurposeModelsChanged;
             }
         }
 
         RefreshDeepSeekApiKey();
+        RefreshPurposeModels();
     }
 
     private void OnProviderPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -528,7 +535,9 @@ public sealed class SettingsViewModel : ViewModelBase, IDisposable, IAsyncDispos
         foreach (var provider in _subscribedProviders)
         {
             provider.PropertyChanged -= OnProviderPropertyChanged;
+            provider.Models.CollectionChanged -= OnPurposeModelsChanged;
         }
+        DisposePurposeModels();
         _subscribedProviders.Clear();
         _sandboxConnectionTestCancellationTokenSource?.Cancel();
     }

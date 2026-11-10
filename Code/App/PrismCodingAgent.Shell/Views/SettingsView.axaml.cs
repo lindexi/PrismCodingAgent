@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Collections.Specialized;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -18,6 +20,70 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         InitializeComponent();
+    }
+
+    private SettingsViewModel? _purposeModel;
+
+    private void OnPurposeListDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_purposeModel is not null)
+            _purposeModel.PurposeModels.CollectionChanged -= OnPurposeCollectionChanged;
+        _purposeModel = DataContext as SettingsViewModel;
+        if (_purposeModel is not null)
+            _purposeModel.PurposeModels.CollectionChanged += OnPurposeCollectionChanged;
+        RefreshPurposeOrder();
+    }
+
+    private void OnPurposeCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshPurposeOrder();
+
+    private void RefreshPurposeOrder()
+    {
+        string[] order = ["UserCommunication", "DocumentGeneration", "ImageAnalysis", "Reasoning", "CodeDesign", "CodeReview", "CodeExploration", "HistoryCompression", "SessionTitle"];
+        PurposeModelsList.ItemsSource = _purposeModel?.PurposeModels.OrderBy(row =>
+        {
+            int index = Array.IndexOf(order, row.PurposeKey);
+            return row.IsBuiltIn ? index : order.Length;
+        }).ToArray();
+    }
+
+    private void OnPurposeFieldsDataContextChanged(object? sender, EventArgs e)
+    {
+        if (sender is Grid panel) UpdatePurposeFields(panel, panel.Bounds.Width);
+    }
+
+    private void OnPurposeFieldsSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (sender is Grid panel) UpdatePurposeFields(panel, e.NewSize.Width);
+    }
+
+    private static void UpdatePurposeFields(Grid panel, double width)
+    {
+        if (panel.DataContext is not PurposeModelSettingsViewModel row) return;
+        bool narrow = row.CanEditPurpose && width < 600;
+        panel.ColumnDefinitions = new ColumnDefinitions(row.IsBuiltIn ? "64,8,*,Auto" : narrow ? "170,Auto,*,0" : "170,16,300,Auto");
+        var model = panel.Children[2];
+        var modelError = panel.Children[4];
+        var remove = panel.Children[5];
+        Grid.SetRow(model, narrow ? 2 : 0);
+        Grid.SetColumn(model, narrow ? 0 : 2);
+        Grid.SetColumnSpan(model, narrow ? 3 : 1);
+        model.Margin = new Avalonia.Thickness(0, narrow ? 8 : 0, 0, 0);
+        Grid.SetRow(modelError, narrow ? 3 : 1);
+        Grid.SetColumn(modelError, narrow ? 0 : 2);
+        Grid.SetColumnSpan(modelError, narrow ? 3 : 1);
+        model.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left;
+        model.Width = Math.Max(0, Math.Min(300, row.IsBuiltIn ? width - 72 : narrow ? width : 300));
+        modelError.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left;
+        modelError.Width = model.Width;
+        Grid.SetColumn(remove, narrow ? 1 : 3);
+        panel.Children[6].IsVisible = row.CanEditPurpose && !narrow;
+        panel.Margin = new Avalonia.Thickness(0, row.CanEditPurpose ? 8 : 0, 0, 0);
+    }
+
+    private void OnPurposeListSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (sender is ItemsControl list)
+            list.Tag = Math.Min(372d, e.NewSize.Width);
     }
 
     private void OnWindowsSandboxServerAddressLostFocus(object? sender, RoutedEventArgs e)

@@ -18,7 +18,7 @@
             <Setter Property="FontFamily" Value="{StaticResource ShellFont}" />
         </Style>
     </UserControl.Styles>
-    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="24" RowSpacing="16" SizeChanged="OnConnectionSizeChanged">
         <StackPanel Spacing="6">
             <TextBlock Text="{Binding SetupEndpointText, Source={x:Static localizations:Lang.Current}}"
                        Classes="SettingsLabel" />

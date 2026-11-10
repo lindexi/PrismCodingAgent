@@ -6,6 +6,16 @@
              xmlns:input="clr-namespace:PrismCodingAgent.CodingShell.Infrastructure"
              FontSize="12" TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="PurposeVisibility" />
+        <Style x:Key="PurposeErrorText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+            <Style.Triggers>
+                <Trigger Property="Text" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger>
+                <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed" /></Trigger>
+            </Style.Triggers>
+        </Style>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Height" Value="38" /><Setter Property="Padding" Value="5,3" />
             <Setter Property="BorderBrush" Value="#CCD5DF" />
@@ -425,6 +435,60 @@
                                      AutomationProperties.LabeledBy="{Binding ElementName=PrimaryModelLabel}"
                                      AutomationProperties.Name="{Binding DefaultModelLabel, Source={x:Static l:Lang.Current}}" />
                         </Grid>
+                        <Expander x:Name="PurposeModelsExpander" IsExpanded="False" HorizontalContentAlignment="Stretch" Margin="0,0,0,12">
+                            <Expander.Header>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding PurposeModelsTitle, Source={x:Static l:Lang.Current}}" />
+                                    <TextBlock Text="{Binding PurposeValidationFailed, Source={x:Static l:Lang.Current}}" Visibility="{Binding HasPurposeErrors, Converter={StaticResource PurposeVisibility}}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel>
+                                <ItemsControl x:Name="PurposeModelsList" ItemsSource="{Binding PurposeModels}" MaxWidth="864" HorizontalAlignment="Left">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Width="432" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}}" Padding="0,0,12,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="6" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding DisplayName, StringFormat='{}{0}:'}" Visibility="{Binding IsBuiltIn, Converter={StaticResource PurposeVisibility}}" MinHeight="38" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                                        <TextBox Text="{Binding PurposeKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsInput}"
+                                                                 Visibility="{Binding CanEditPurpose, Converter={StaticResource PurposeVisibility}}"
+                                                                 ToolTip="{Binding PurposeKeyHint, Source={x:Static l:Lang.Current}}"
+                                                                 AutomationProperties.Name="{Binding PurposeKeyLabel, Source={x:Static l:Lang.Current}}" />
+                                                        <TextBlock Text="{Binding PurposeError}" Style="{StaticResource PurposeErrorText}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2">
+                                                        <ComboBox ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                                                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MinWidth="0" MinHeight="38"
+                                                                  AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static l:Lang.Current}}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                        <TextBlock Text="{Binding ModelError}" Style="{StaticResource PurposeErrorText}" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="3" VerticalAlignment="Top" Margin="6,0,0,0" Padding="4"
+                                                            Visibility="{Binding CanRemove, Converter={StaticResource PurposeVisibility}}"
+                                                            Content="{Binding PurposeRemove, Source={x:Static l:Lang.Current}}"
+                                                            Command="{Binding DataContext.RemovePurposeModelCommand, RelativeSource={RelativeSource AncestorType={x:Type views:SettingsView}}}" CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button x:Name="AddPurposeModelButton" HorizontalAlignment="Left" Content="{Binding PurposeAdd, Source={x:Static l:Lang.Current}}" Command="{Binding AddPurposeModelCommand}" />
+                            </StackPanel>
+                        </Expander>
                         <views:ModelSettingsView />
                     </StackPanel>
                 </Border>
