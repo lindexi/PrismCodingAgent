@@ -113,7 +113,7 @@ public sealed class ResponsesCodingAgent
     {
         TextContent text => ResponseContentPart.CreateInputTextPart(text.Text),
         DataContent image when image.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) =>
-            ResponseContentPart.CreateInputImagePart(image.Uri),
+            ResponseContentPart.CreateInputImagePart(new BinaryData(image.Data, image.MediaType)),
         UriContent image when image.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) =>
             ResponseContentPart.CreateInputImagePart(image.Uri),
         _ => throw new NotSupportedException($"Responses 编程输入不支持 {content.GetType().Name}。"),

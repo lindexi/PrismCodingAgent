@@ -13,6 +13,44 @@ namespace AgentLib.Coding.Tests;
 public sealed class ResponsesCodingAgentTests
 {
     [TestMethod]
+    [DataRow("image/png", false)]
+    [DataRow("image/jpeg", false)]
+    [DataRow("image/png", true)]
+    public async Task RunAsyncShouldSerializeImagesAsImageUrlsAsync(string mediaType, bool remoteImage)
+    {
+        using var handler = new StreamingHandler();
+        using var http = new HttpClient(handler);
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.HttpClient?.Dispose();
+        manager.AgentApiEndpointManager.HttpClient = http;
+        manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
+            {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
+            "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
+            """));
+        byte[] bytes = [0, 1, 2, 127, 128, 254, 255];
+        const string remoteUrl = "https://example.com/sample.png";
+        AIContent image = remoteImage
+            ? new UriContent(new Uri(remoteUrl), mediaType)
+            : new DataContent(bytes, mediaType);
+        await using var runtime = new CodingAgent(new CodingAgentOptions());
+        var agent = new ResponsesCodingAgent(runtime);
+
+        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
+            [new TextContent("describe the image"), image], manager.SelectedSession.ResponsesSession, null,
+            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
+        await run.CompletionTask;
+
+        using var request = JsonDocument.Parse(handler.Requests.Single());
+        var content = request.RootElement.GetProperty("input")[0].GetProperty("content");
+        var imagePart = content[1];
+        string expectedUrl = remoteImage ? remoteUrl : $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}";
+        Assert.AreEqual("describe the image", content[0].GetProperty("text").GetString());
+        Assert.AreEqual("input_image", imagePart.GetProperty("type").GetString());
+        Assert.AreEqual(expectedUrl, imagePart.GetProperty("image_url").GetString());
+        Assert.IsFalse(imagePart.TryGetProperty("file_id", out _));
+    }
+
+    [TestMethod]
     [DataRow("explicit-model", null, "explicit-model", false)]
     [DataRow(null, null, "demo", false)]
     [DataRow(null, "mapped-model", "mapped-model", false)]
