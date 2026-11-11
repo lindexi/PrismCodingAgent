@@ -12,6 +12,60 @@ namespace AgentLib.Tests;
 public sealed class CopilotResponsesSessionTests
 {
     [TestMethod]
+    public void RepairShouldPreserveOnlyCompletedPairsAndNativeItemsInOriginalOrder()
+    {
+        var session = new CopilotResponsesSession();
+        ResponseItem user = ResponseItem.CreateUserMessageItem("input");
+        ResponseItem reasoning = ResponseItem.CreateReasoningItem("reasoning");
+        ResponseItem call = ResponseItem.CreateFunctionCallItem("completed", "add", BinaryData.FromString("{}"));
+        ResponseItem output = ResponseItem.CreateFunctionCallOutputItem("completed", "5");
+        ResponseItem answer = ResponseItem.CreateAssistantMessageItem("answer");
+        ResponseItem search = ModelReaderWriter.Read<ResponseItem>(BinaryData.FromString("""
+            {"type":"web_search_call","id":"ws_test","status":"completed","action":{"type":"search","query":"test"}}
+            """)) ?? throw new InvalidDataException("Search item missing.");
+        ResponseItem[] expected = [user, reasoning, call, search, output, answer];
+        session.AppendItem(ResponseItem.CreateFunctionCallOutputItem("orphan", "orphan"));
+        session.AppendItem(user);
+        session.AppendItem(reasoning);
+        session.AppendItem(call);
+        session.AppendItem(ResponseItem.CreateFunctionCallItem("pending", "add", BinaryData.FromString("{}")));
+        session.AppendItem(search);
+        session.AppendItem(output);
+        session.AppendItem(ResponseItem.CreateFunctionCallOutputItem("completed", "duplicate"));
+        session.AppendItem(answer);
+
+        session.RepairToolCallHistory();
+
+        CollectionAssert.AreEqual(expected, session.Items.ToArray());
+    }
+
+    [TestMethod]
+    public void RepairShouldNotPairAnOutputWithALaterCall()
+    {
+        var session = new CopilotResponsesSession();
+        session.AppendItem(ResponseItem.CreateFunctionCallOutputItem("call", "out of order"));
+        session.AppendItem(ResponseItem.CreateFunctionCallItem("call", "add", BinaryData.FromString("{}")));
+
+        session.RepairToolCallHistory();
+
+        Assert.HasCount(0, session.Items);
+    }
+
+    [TestMethod]
+    public void RepairShouldBeIdempotent()
+    {
+        var session = new CopilotResponsesSession();
+        session.AppendItem(ResponseItem.CreateFunctionCallItem("call", "add", BinaryData.FromString("{}")));
+        session.AppendItem(ResponseItem.CreateFunctionCallOutputItem("call", "5"));
+        var expected = session.Items.ToArray();
+        session.RepairToolCallHistory();
+
+        session.RepairToolCallHistory();
+
+        CollectionAssert.AreEqual(expected, session.Items.ToArray());
+    }
+
+    [TestMethod]
     public void SessionShouldReuseResponsesState()
     {
         var session = new CopilotChatSession();

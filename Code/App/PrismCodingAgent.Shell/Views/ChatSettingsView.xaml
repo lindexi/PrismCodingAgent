@@ -61,6 +61,15 @@
     </StackPanel>
     <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
     <StackPanel MaxWidth="720">
+     <TextBlock Style="{StaticResource SectionTitle}" Margin="0,12,0,8" Text="{Binding CurrentSessionText, Source={x:Static l:Lang.Current}}"/>
+     <TextBlock Text="{Binding EditSessionTitleText, Source={x:Static l:Lang.Current}}" Margin="0,0,0,8"/>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBox x:Name="SessionTitleInput" Text="{Binding EditedSessionTitle, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{Binding EditSessionTitleText, Source={x:Static l:Lang.Current}}"/>
+      <Button x:Name="UpdateSessionTitleButton" Grid.Column="1" Margin="8,0,0,0" Content="{Binding UpdateTitleText, Source={x:Static l:Lang.Current}}" Command="{Binding UpdateSessionTitleCommand}"/>
+     </Grid>
+    </StackPanel>
+    <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
+    <StackPanel MaxWidth="720">
     <TextBlock Style="{StaticResource SectionTitle}" Margin="0,12,0,8" Text="{Binding ChatRunSettingsTitle, Source={x:Static l:Lang.Current}}"/>
     <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatAutomaticCompressionToggle" Grid.Column="1" AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}"/></Grid>
     <Border Height="1" Background="#ECEDEF"/>

@@ -167,7 +167,7 @@ public sealed class ResponsesApiControlTests
                 return new Rect(toggle.TranslatePoint(default, settings)!.Value, toggle.Bounds.Size);
             }).ToArray();
 
-            Assert.IsTrue(bounds.All(rect => new Rect(settings.Bounds.Size).Contains(rect)));
+            Assert.IsTrue(bounds.All(rect => rect.Left >= 0 && rect.Right <= settings.Bounds.Width));
             Assert.IsTrue(bounds.Zip(bounds.Skip(1), (previous, next) =>
                 previous.Bottom <= next.Top && Math.Abs(previous.Left - next.Left) <= 0.5).All(aligned => aligned));
         }

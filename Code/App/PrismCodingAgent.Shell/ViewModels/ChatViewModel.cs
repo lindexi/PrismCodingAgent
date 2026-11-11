@@ -35,10 +35,12 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private LanguageModelOptionViewModel? _selectedModel;
     private AbilityOptionViewModel? _selectedAbility;
     private string _inputText = string.Empty;
+    private string _editedSessionTitle = string.Empty;
     private string? _runStatusText;
     private bool _isResponsesApiEnabled;
     private bool _isChatSettingsOpen;
     private SimpleCommand? _toggleChatSettingsCommand;
+    private SimpleAsyncCommand? _updateSessionTitleCommand;
 
     /// <summary>获取或设置聊天设置是否显示。</summary>
     public bool IsChatSettingsOpen
@@ -149,6 +151,23 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     /// <summary>获取当前会话标题。</summary>
     public string CurrentSessionTitle => _subscribedSession?.Title ?? Lang.Current.ChatTitle;
+
+    /// <summary>获取或设置待更新的当前会话标题。</summary>
+    public string EditedSessionTitle
+    {
+        get => _editedSessionTitle;
+        set
+        {
+            if (SetField(ref _editedSessionTitle, value))
+            {
+                _updateSessionTitleCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>获取更新当前会话标题的命令。</summary>
+    public ICommand UpdateSessionTitleCommand => _updateSessionTitleCommand ??= new SimpleAsyncCommand(
+        UpdateSessionTitleAsync, CanUpdateSessionTitle);
 
     /// <summary>
     /// 获取当前会话 ID。
@@ -850,6 +869,23 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             stopLanguageServerCommand.RaiseCanExecuteChanged();
         }
+
+        _updateSessionTitleCommand?.RaiseCanExecuteChanged();
+    }
+
+    private bool CanUpdateSessionTitle()
+        => _workTaskController?.CanChangeSession == true
+           && !string.IsNullOrWhiteSpace(EditedSessionTitle)
+           && !string.Equals(EditedSessionTitle.Trim(), CurrentSessionTitle, StringComparison.Ordinal);
+
+    private async Task UpdateSessionTitleAsync()
+    {
+        if (_workTaskController is null)
+        {
+            return;
+        }
+
+        await _workTaskController.RenameSessionAsync(CurrentSessionId, EditedSessionTitle).ConfigureAwait(true);
     }
 
     private void OnChatManagerPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -882,6 +918,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(ShowWelcome));
         OnPropertyChanged(nameof(CurrentSessionId));
         OnPropertyChanged(nameof(CurrentSessionTitle));
+        EditedSessionTitle = CurrentSessionTitle;
     }
 
     private void DetachSession()
@@ -901,6 +938,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         if (e.PropertyName == nameof(CopilotChatSession.Title))
         {
             OnPropertyChanged(nameof(CurrentSessionTitle));
+            EditedSessionTitle = CurrentSessionTitle;
         }
     }
 

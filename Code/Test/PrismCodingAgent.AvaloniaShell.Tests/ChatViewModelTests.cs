@@ -100,6 +100,32 @@ public sealed class ChatViewModelTests
         StringAssert.Contains(viewModel.FullContent, "文件内容");
     }
 
+    [TestMethod(DisplayName = "会话标题编辑值应初始化为当前会话标题")]
+    public void EditedSessionTitleShouldStartWithCurrentSessionTitle()
+    {
+        var manager = new CopilotChatManager();
+        manager.SelectedSession.SetTitle("当前标题");
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型");
+
+        Assert.AreEqual("当前标题", viewModel.EditedSessionTitle);
+    }
+
+    [TestMethod(DisplayName = "更新会话标题命令应修改当前会话标题")]
+    public async Task UpdateSessionTitleCommandShouldRenameCurrentSession()
+    {
+        var manager = new CopilotChatManager();
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型")
+        {
+            EditedSessionTitle = "更新后的标题",
+        };
+
+        await ((SimpleAsyncCommand)viewModel.UpdateSessionTitleCommand).ExecuteAsync();
+
+        Assert.AreEqual("更新后的标题", manager.SelectedSession.Title);
+    }
+
     [TestMethod(DisplayName = "切换会话后旧消息集合不应继续更新当前界面")]
     [Timeout(5000)]
     public async Task SwitchingSessionShouldUnsubscribePreviousMessageCollection()

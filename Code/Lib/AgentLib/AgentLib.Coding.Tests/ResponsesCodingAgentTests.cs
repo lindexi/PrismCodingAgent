@@ -7,6 +7,8 @@ using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
+#pragma warning disable OPENAI001
+
 namespace AgentLib.Coding.Tests;
 
 [TestClass]
@@ -269,6 +271,113 @@ public sealed class ResponsesCodingAgentTests
         StringAssert.Contains(output, "已在当前对话运行设置中禁用");
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task CancellationShouldRepairHistoryAndContinueWithoutReplayingToolsAsync(bool completeFirstCall)
+    {
+        using var handler = new StreamingHandler { ReturnToolCall = true, ReturnMultipleToolCalls = completeFirstCall };
+        using var http = new HttpClient(handler);
+        var manager = CreateHistoryTestManager(http);
+        using var cancellation = new CancellationTokenSource();
+        var tools = new CancelingToolSource(cancellation, completeFirstCall);
+        await using var runtime = new CodingAgent(new CodingAgentOptions { AdditionalToolSources = [tools] });
+        var agent = new ResponsesCodingAgent(runtime);
+        string workspace = Path.Combine(Path.GetTempPath(), $"responses-cancel-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspace);
+        Console.WriteLine(workspace);
+        var session = manager.SelectedSession.ResponsesSession;
+        var options = new CodingChatRunOptions { EnableAutomaticCompression = false };
+        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
+            [new TextContent("task")], session, workspace, options, cancellation.Token);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => run.CompletionTask);
+
+        int expectedPairs = completeFirstCall ? 1 : 0;
+        Assert.HasCount(expectedPairs, session.Items.OfType<OpenAI.Responses.FunctionCallResponseItem>().ToArray());
+        Assert.HasCount(expectedPairs, session.Items.OfType<OpenAI.Responses.FunctionCallOutputResponseItem>().ToArray());
+        CollectionAssert.AreEqual(completeFirstCall ? new[] { "call_add" } : Array.Empty<string>(),
+            session.Items.OfType<OpenAI.Responses.FunctionCallResponseItem>().Select(call => call.CallId).ToArray());
+        CollectionAssert.AreEqual(completeFirstCall ? new[] { "5" } : Array.Empty<string>(),
+            session.Items.OfType<OpenAI.Responses.FunctionCallOutputResponseItem>().Select(output =>
+            {
+                using var json = JsonDocument.Parse(System.ClientModel.Primitives.ModelReaderWriter.Write(output));
+                return json.RootElement.GetProperty("output").GetString();
+            }).ToArray());
+        var retained = session.Items.ToArray();
+        int executions = tools.Executions;
+        var next = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
+            [new TextContent("continue")], session, workspace, options);
+        await next.CompletionTask;
+
+        Assert.AreEqual(executions, tools.Executions);
+        using var request = JsonDocument.Parse(handler.Requests[1]);
+        var input = request.RootElement.GetProperty("input").EnumerateArray().ToArray();
+        Assert.AreEqual(expectedPairs, input.Count(item => item.GetProperty("type").GetString() == "function_call"));
+        Assert.AreEqual(expectedPairs, input.Count(item => item.GetProperty("type").GetString() == "function_call_output"));
+        CollectionAssert.AreEqual(retained, session.Items.Take(retained.Length).ToArray());
+        Assert.HasCount(2, handler.Requests);
+    }
+
+    [TestMethod]
+    public async Task RunShouldRepairOldHistoryBeforeSendingInputAsync()
+    {
+        using var handler = new StreamingHandler();
+        using var http = new HttpClient(handler);
+        var manager = CreateHistoryTestManager(http);
+        var session = manager.SelectedSession.ResponsesSession;
+        var user = OpenAI.Responses.ResponseItem.CreateUserMessageItem("old input");
+        var reasoning = OpenAI.Responses.ResponseItem.CreateReasoningItem("reasoning");
+        session.AppendItem(user);
+        session.AppendItem(reasoning);
+        session.AppendItem(OpenAI.Responses.ResponseItem.CreateFunctionCallItem("old", "add", BinaryData.FromString("{}")));
+        session.AppendItem(OpenAI.Responses.ResponseItem.CreateFunctionCallOutputItem("orphan", "unused"));
+        await using var runtime = new CodingAgent(new CodingAgentOptions());
+        var agent = new ResponsesCodingAgent(runtime);
+
+        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
+            [new TextContent("continue")], session, null,
+            new CodingChatRunOptions { EnableAutomaticCompression = false });
+        await run.CompletionTask;
+
+        using var request = JsonDocument.Parse(handler.Requests.Single());
+        CollectionAssert.AreEqual(new[] { "message", "reasoning", "message" },
+            request.RootElement.GetProperty("input").EnumerateArray().Select(item => item.GetProperty("type").GetString()).ToArray());
+        Assert.AreSame(user, session.Items[0]);
+        Assert.AreSame(reasoning, session.Items[1]);
+    }
+
+    private static CopilotChatManager CreateHistoryTestManager(HttpClient http)
+    {
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.HttpClient?.Dispose();
+        manager.AgentApiEndpointManager.HttpClient = http;
+        manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
+            {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
+            "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
+            """));
+        return manager;
+    }
+
+    private sealed class CancelingToolSource(CancellationTokenSource cancellation, bool completeFirstCall) : ICodingWorkspaceToolSource
+    {
+        public int Executions { get; private set; }
+
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+            [new(AIFunctionFactory.Create(Add, "add"))];
+
+        private int Add(int left, int right, CancellationToken cancellationToken)
+        {
+            Executions++;
+            if (!completeFirstCall || Executions > 1)
+            {
+                cancellation.Cancel();
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+            return left + right;
+        }
+    }
+
     private sealed class TestToolSource : ICodingWorkspaceToolSource
     {
         public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
@@ -315,6 +424,7 @@ public sealed class ResponsesCodingAgentTests
         public List<string> Requests { get; } = new();
         public List<string> CompactRequests { get; } = new();
         public bool ReturnToolCall { get; init; }
+        public bool ReturnMultipleToolCalls { get; init; }
         public string? WebToolName { get; init; }
         public string? WebParameter { get; init; }
         public int TotalTokens { get; init; }
@@ -352,6 +462,12 @@ public sealed class ResponsesCodingAgentTests
             {
                 response = """
                     {"id":"resp_tool","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_add","name":"add","arguments":"{\"left\":2,\"right\":3}","status":"completed"}]}
+                    """;
+            }
+            if (ReturnMultipleToolCalls && Requests.Count == 1)
+            {
+                response = """
+                    {"id":"resp_tools","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_add","name":"add","arguments":"{\"left\":2,\"right\":3}","status":"completed"},{"type":"function_call","id":"fc_2","call_id":"call_pending","name":"add","arguments":"{\"left\":4,\"right\":5}","status":"completed"}]}
                     """;
             }
             if (ReturnToolCall && Requests.Count == 1 && WebToolName is not null)

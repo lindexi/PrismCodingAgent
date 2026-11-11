@@ -140,6 +140,45 @@ public sealed class ResponsesCompactionTests
                 System.ClientModel.Primitives.ModelReaderWriter.Read<ResponseItem>(BinaryData.FromString(item.GetRawText()))!).ToString()).ToArray(), actual);
     }
 
+    [TestMethod]
+    public async Task ManualCompactShouldRepairOldHistoryBeforeSendingAsync()
+    {
+        using var handler = new ControlledCompactHandler();
+        using var http = new HttpClient(handler);
+        var model = await CreateModelAsync(http);
+        await using var coding = new CodingAgent();
+        var agent = new ResponsesCodingAgent(coding);
+        var state = new CopilotResponsesSession();
+        state.AppendItem(ResponseItem.CreateUserMessageItem("input"));
+        state.AppendItem(ResponseItem.CreateReasoningItem("reasoning"));
+        state.AppendItem(ResponseItem.CreateFunctionCallItem("old", "add", BinaryData.FromString("{}")));
+        state.AppendItem(ResponseItem.CreateFunctionCallOutputItem("orphan", "unused"));
+
+        await agent.TryCompactConversationAsync(model, state);
+
+        using var request = System.Text.Json.JsonDocument.Parse(handler.RequestBody!);
+        CollectionAssert.AreEqual(new[] { "message", "reasoning" },
+            request.RootElement.GetProperty("input").EnumerateArray().Select(item => item.GetProperty("type").GetString()).ToArray());
+    }
+
+    [TestMethod]
+    public async Task ManualCompactShouldSkipHistoryContainingOnlyIncompleteCallsAsync()
+    {
+        using var handler = new ControlledCompactHandler();
+        using var http = new HttpClient(handler);
+        var model = await CreateModelAsync(http);
+        await using var coding = new CodingAgent();
+        var agent = new ResponsesCodingAgent(coding);
+        var state = new CopilotResponsesSession();
+        state.AppendItem(ResponseItem.CreateFunctionCallItem("old", "add", BinaryData.FromString("{}")));
+
+        bool compacted = await agent.TryCompactConversationAsync(model, state);
+
+        Assert.IsFalse(compacted);
+        Assert.AreEqual(0, handler.RequestCount);
+        Assert.HasCount(0, state.Items);
+    }
+
     private static async Task<ILanguageModel> CreateModelAsync(HttpClient http)
     {
         var manager = new CopilotChatManager();
@@ -157,10 +196,12 @@ public sealed class ResponsesCompactionTests
         public string Body { get; init; } = """{"output":[]}""";
         public bool WaitForCancellation { get; init; }
         public int RequestCount { get; private set; }
+        public string? RequestBody { get; private set; }
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestCount++;
+            RequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
             Started.TrySetResult();
             if (WaitForCancellation) await Task.Delay(Timeout.Infinite, cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK)
