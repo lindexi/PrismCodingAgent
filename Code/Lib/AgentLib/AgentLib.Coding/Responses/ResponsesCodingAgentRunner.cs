@@ -59,6 +59,7 @@ internal sealed class ResponsesCodingAgentRunner
         IDisposable? chatting = null;
         try
         {
+            Conversation.RepairToolCallHistory();
             await DispatchAsync(() =>
             {
                 InitializeUserMessage();
@@ -95,6 +96,7 @@ internal sealed class ResponsesCodingAgentRunner
         }
         finally
         {
+            Conversation.RepairToolCallHistory();
             await DispatchAsync(() =>
             {
                 if (MessageContext.AssistantChatMessage.Content == CopilotChatMessage.PlaceholderContent)

@@ -27,6 +27,36 @@ public sealed class CopilotResponsesSession
         _items.Add(item);
     }
 
+    /// <summary>删除未完成的自定义函数调用及孤立、重复结果，保留有效配对和其他原生条目的对象与顺序。</summary>
+    /// <remarks>仅在运行边界或手动压缩前调用，不清理仍在执行工具的历史。</remarks>
+    public void RepairToolCallHistory()
+    {
+        var pendingCalls = new Dictionary<string, int>(StringComparer.Ordinal);
+        var retained = new bool[_items.Count];
+        for (int index = 0; index < _items.Count; index++)
+        {
+            switch (_items[index])
+            {
+                case FunctionCallResponseItem call:
+                    pendingCalls.TryAdd(call.CallId, index);
+                    break;
+                case FunctionCallOutputResponseItem output:
+                    if (pendingCalls.Remove(output.CallId, out int callIndex))
+                    {
+                        retained[callIndex] = true;
+                        retained[index] = true;
+                    }
+                    break;
+                default:
+                    retained[index] = true;
+                    break;
+            }
+        }
+
+        int itemIndex = 0;
+        _items.RemoveAll(_ => !retained[itemIndex++]);
+    }
+
     /// <summary>清除全部原生请求历史。</summary>
     public void Clear() => _items.Clear();
 

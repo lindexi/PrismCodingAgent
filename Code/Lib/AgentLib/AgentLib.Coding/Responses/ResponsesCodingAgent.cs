@@ -67,7 +67,7 @@ public sealed class ResponsesCodingAgent
     }
 
     /// <summary>
-    /// 通过服务端原生 Compact 压缩历史；无历史返回 false，失败或取消不修改历史且不回退。
+    /// 修复未完成的函数调用历史后通过服务端原生 Compact 压缩；无历史返回 false，失败或取消不应用压缩且不回退。
     /// </summary>
     public async Task<bool> TryCompactConversationAsync(ILanguageModel model, CopilotResponsesSession conversation,
         string? additionalInstructions = null, CancellationToken cancellationToken = default)
@@ -75,6 +75,7 @@ public sealed class ResponsesCodingAgent
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(conversation);
         cancellationToken.ThrowIfCancellationRequested();
+        conversation.RepairToolCallHistory();
         if (conversation.Items.Count == 0) return false;
         var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, CodingChatRunOptions.Default, cancellationToken).ConfigureAwait(false);
         string instructions = string.Join(Environment.NewLine + Environment.NewLine, prompts);
