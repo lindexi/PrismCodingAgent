@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using AgentLib.Logging;
 using AgentLib.Reducers;
 
 #pragma warning disable MAAI001
@@ -58,6 +59,9 @@ internal sealed class ManualSendMessageContext : IManualSendMessageContext
 
     /// <inheritdoc />
     public IMainThreadDispatcher? MainThreadDispatcher => ChatManager.MainThreadDispatcher;
+
+    /// <inheritdoc />
+    public ISessionCopilotChatLogger Logger => Session.Logger;
 
     /// <inheritdoc />
     public async Task<ChatClientAgent> GetChatClientAgentAsync(Action<ChatClientAgentOptions>? configure = null, CancellationToken cancellationToken = default)

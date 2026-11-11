@@ -2,6 +2,8 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using AgentLib.Logging;
+using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
@@ -134,7 +136,8 @@ public sealed class ResponsesCodingAgentTests
         Console.WriteLine(path);
         using var handler = new StreamingHandler { ReturnToolCall = true };
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var logger = new RecordingChatLogger();
+        var manager = new CopilotChatManager(logger);
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -155,7 +158,9 @@ public sealed class ResponsesCodingAgentTests
         string? output = request.RootElement.GetProperty("input").EnumerateArray()
             .Single(item => item.GetProperty("type").GetString() == "function_call_output")
             .GetProperty("output").GetString();
-        Assert.AreEqual("System.IO.IOException: test tool failure", output);
+        Assert.AreEqual(
+            ("System.IO.IOException: test tool failure", "工具调用", "test tool failure"),
+            (output, logger.SessionLogger.Category, logger.SessionLogger.Exception?.Message));
     }
 
     [TestMethod]
@@ -238,6 +243,33 @@ public sealed class ResponsesCodingAgentTests
             [new(AIFunctionFactory.Create(Throw, "add"))];
 
         private static int Throw(int left, int right) => throw new IOException("test tool failure");
+    }
+
+    private sealed class RecordingChatLogger : ICopilotChatLogger
+    {
+        public RecordingSessionLogger SessionLogger { get; } = new();
+
+        public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => SessionLogger;
+
+        public Task LogMessageAsync(Guid sessionId, CopilotChatMessage chatMessage) => Task.CompletedTask;
+
+        public Task LogDiagnosticAsync(Guid sessionId, string category, string message, Exception? exception = null) =>
+            SessionLogger.LogDiagnosticAsync(category, message, exception);
+    }
+
+    private sealed class RecordingSessionLogger : ISessionCopilotChatLogger
+    {
+        public string? Category { get; private set; }
+        public Exception? Exception { get; private set; }
+
+        public Task LogMessageAsync(CopilotChatMessage chatMessage) => Task.CompletedTask;
+
+        public Task LogDiagnosticAsync(string category, string message, Exception? exception = null)
+        {
+            Category = category;
+            Exception = exception;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StreamingHandler : HttpMessageHandler

@@ -1,5 +1,6 @@
 using AgentLib;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using AgentLib.Logging;
 
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -40,6 +41,9 @@ public interface IManualSendMessageContext
     /// The context does not use it automatically; callers may use it at an explicit cross-thread boundary.
     /// </summary>
     IMainThreadDispatcher? MainThreadDispatcher { get; }
+
+    /// <summary>获取绑定当前会话的日志记录器。</summary>
+    ISessionCopilotChatLogger Logger { get; }
 
     /// <summary>
     /// 由聊天客户端创建的代理对象，已装配默认 <see cref="IChatReducer"/> 和 <see cref="AIContextProvider"/>。
