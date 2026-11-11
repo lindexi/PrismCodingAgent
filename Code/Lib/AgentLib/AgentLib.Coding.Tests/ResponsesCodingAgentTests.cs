@@ -127,6 +127,38 @@ public sealed class ResponsesCodingAgentTests
     }
 
     [TestMethod]
+    public async Task RunAsyncShouldReturnToolExceptionToModelAsync()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"responses-tool-exception-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        Console.WriteLine(path);
+        using var handler = new StreamingHandler { ReturnToolCall = true };
+        using var http = new HttpClient(handler);
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.HttpClient?.Dispose();
+        manager.AgentApiEndpointManager.HttpClient = http;
+        manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
+            {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
+            "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
+            """));
+        await using var runtime = new CodingAgent(new CodingAgentOptions
+        {
+            AdditionalToolSources = [new ThrowingToolSource()],
+        });
+        var agent = new ResponsesCodingAgent(runtime);
+
+        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
+            [new TextContent("calculate")], manager.SelectedSession.ResponsesSession, path);
+        await run.CompletionTask;
+
+        using var request = JsonDocument.Parse(handler.Requests[1]);
+        string? output = request.RootElement.GetProperty("input").EnumerateArray()
+            .Single(item => item.GetProperty("type").GetString() == "function_call_output")
+            .GetProperty("output").GetString();
+        Assert.AreEqual("System.IO.IOException: test tool failure", output);
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public async Task InjectedMessagesShouldContinueAtRequestBoundary(bool toolCall)
@@ -198,6 +230,14 @@ public sealed class ResponsesCodingAgentTests
     {
         public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
             [new(AIFunctionFactory.Create((int left, int right) => left + right, "add"))];
+    }
+
+    private sealed class ThrowingToolSource : ICodingWorkspaceToolSource
+    {
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+            [new(AIFunctionFactory.Create(Throw, "add"))];
+
+        private static int Throw(int left, int right) => throw new IOException("test tool failure");
     }
 
     private sealed class StreamingHandler : HttpMessageHandler

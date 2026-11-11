@@ -246,8 +246,22 @@ internal sealed class ResponsesCodingAgentRunner
         foreach (FunctionCallResponseItem call in calls)
         {
             CancellationToken.ThrowIfCancellationRequested();
-            FunctionCallOutputResponseItem output = await ResponsesToolHelper
-                .InvokeAsync(functions[call.FunctionName], call, CancellationToken).ConfigureAwait(false);
+            FunctionCallOutputResponseItem output;
+            try
+            {
+                output = await ResponsesToolHelper
+                    .InvokeAsync(functions[call.FunctionName], call, CancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                string exceptionType = exception.GetType().FullName ?? exception.GetType().Name;
+                output = ResponsesToolHelper.CreateOutput(call.CallId, $"{exceptionType}: {exception.Message}");
+                System.Diagnostics.Trace.TraceError($"Responses 工具调用失败。工具={call.FunctionName}；调用Id={call.CallId}；{exception}");
+            }
             Conversation.AppendItem(output);
             await DispatchAsync(() => MessageContext.AssistantChatMessage.ResponseInfo
                 .AppendToolResult(output)).ConfigureAwait(false);
