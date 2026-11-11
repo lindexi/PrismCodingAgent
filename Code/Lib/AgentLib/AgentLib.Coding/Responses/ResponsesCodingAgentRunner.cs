@@ -260,15 +260,8 @@ internal sealed class ResponsesCodingAgentRunner
             {
                 string exceptionType = exception.GetType().FullName ?? exception.GetType().Name;
                 output = ResponsesToolHelper.CreateOutput(call.CallId, $"{exceptionType}: {exception.Message}");
-                try
-                {
-                    await MessageContext.Logger.LogDiagnosticAsync("工具调用",
-                        $"Responses 工具调用失败。工具={call.FunctionName}；调用Id={call.CallId}。", exception).ConfigureAwait(false);
-                }
-                catch (Exception loggingException)
-                {
-                    System.Diagnostics.Trace.TraceError($"记录 Responses 工具调用异常失败。{loggingException}");
-                }
+                await MessageContext.Logger.LogDiagnosticAsync("工具调用",
+                    $"Responses 工具调用失败。工具={call.FunctionName}；调用Id={call.CallId}。", exception).ConfigureAwait(false);
             }
             Conversation.AppendItem(output);
             await DispatchAsync(() => MessageContext.AssistantChatMessage.ResponseInfo
