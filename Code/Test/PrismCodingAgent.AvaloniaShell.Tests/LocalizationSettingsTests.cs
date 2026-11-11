@@ -7,7 +7,7 @@ using PrismCodingAgent.CodingShell.Services.Settings;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
-[TestClass]
+[AvaloniaTestClass("en")]
 public sealed class LocalizationSettingsTests
 {
     [TestMethod]
@@ -16,7 +16,10 @@ public sealed class LocalizationSettingsTests
     [DataRow("en-GB", "en")]
     [DataRow("zh-Hans", "zh-Hans")]
     [DataRow("zh-CN", "zh-Hans")]
-    [DataRow("fr-FR", "zh-Hans")]
+    [DataRow("fr-FR", "fr")]
+    [DataRow("pt-BR", "pt-BR")]
+    [DataRow("zh-TW", "zh-Hant")]
+    [DataRow("ar-SA", "zh-Hans")]
     public void WhenLanguageIsNotConfiguredThenDefaultMatchesSupportedSystemLanguage(string cultureName, string expectedLanguage)
     {
         var originalCulture = CultureInfo.CurrentUICulture;
@@ -40,7 +43,10 @@ public sealed class LocalizationSettingsTests
     [DataRow("en-GB", "en")]
     [DataRow("zh-Hans", "zh-Hans")]
     [DataRow("zh-CN", "zh-Hans")]
-    [DataRow("fr-FR", "zh-Hans")]
+    [DataRow("fr-FR", "fr")]
+    [DataRow("pt-BR", "pt-BR")]
+    [DataRow("zh-TW", "zh-Hant")]
+    [DataRow("ar-SA", "zh-Hans")]
     public void WhenSavedSettingsOmitLanguageThenDefaultMatchesSupportedSystemLanguage(string cultureName, string expectedLanguage)
     {
         var originalCulture = CultureInfo.CurrentUICulture;

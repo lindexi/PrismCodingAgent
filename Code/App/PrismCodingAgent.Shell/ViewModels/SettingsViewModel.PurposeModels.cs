@@ -44,7 +44,10 @@ public sealed partial class SettingsViewModel
         PurposeModels.CollectionChanged += OnPurposeRowsChanged;
         LoadPurposeModels(null);
         _purposeMappingWasNull = false;
+        ((INotifyPropertyChanged)Lang.Current).PropertyChanged += OnPurposeLanguageChanged;
     }
+
+    private void OnPurposeLanguageChanged(object? sender, PropertyChangedEventArgs e) => RefreshPurposeModels();
 
     private string[] GetPurposeModelReferences() => Providers.SelectMany(provider => provider.Models)
         .Where(model => !string.IsNullOrWhiteSpace(model.ModelName))
@@ -137,6 +140,7 @@ public sealed partial class SettingsViewModel
 
     private void DisposePurposeModels()
     {
+        ((INotifyPropertyChanged)Lang.Current).PropertyChanged -= OnPurposeLanguageChanged;
         PurposeModels.CollectionChanged -= OnPurposeRowsChanged;
         foreach (var row in _purposeRowSubscriptions) row.PropertyChanged -= OnPurposeRowChanged;
         foreach (var model in _purposeModelSubscriptions) model.PropertyChanged -= OnPurposeModelChanged;

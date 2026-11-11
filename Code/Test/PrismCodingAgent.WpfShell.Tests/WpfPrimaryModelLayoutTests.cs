@@ -48,7 +48,7 @@ public sealed class WpfPrimaryModelLayoutTests
             model.PrimaryModel = "atlas/code";
             Assert.AreEqual(model.PrimaryModel, input.Text);
             var editor = Descendants(view).OfType<ModelSettingsView>().Single();
-            var outer = Ancestors(editor).OfType<Border>().First();
+            var outer = Ancestors(editor).OfType<Border>().First(border => border.Style == view.FindResource("SettingsCard"));
             var adjacent = (Border)view.FindName("CpaQuotaSettings");
             Assert.AreSame(outer.Style, adjacent.Style);
             Assert.AreSame(outer.Parent, adjacent.Parent);

@@ -77,6 +77,7 @@ internal sealed class CodingChatSettingsService
 
         await modelConfiguration.SaveToFileAsync(_paths.ConfigurationFile).ConfigureAwait(false);
 
+        shellSettings = shellSettings with { LanguageTag = Localizations.ShellLanguage.Normalize(shellSettings.LanguageTag) };
         string shellJson = JsonSerializer.Serialize(shellSettings, s_jsonOptions);
         await File.WriteAllTextAsync
         (
@@ -123,8 +124,9 @@ internal sealed class CodingChatSettingsService
             _paths.ShellSettingsFile.FullName,
             cancellationToken
         ).ConfigureAwait(false);
-        return JsonSerializer.Deserialize<CodingChatShellSettings>(json, s_jsonOptions)
-               ?? new CodingChatShellSettings();
+        var settings = JsonSerializer.Deserialize<CodingChatShellSettings>(json, s_jsonOptions)
+                       ?? new CodingChatShellSettings();
+        return settings with { LanguageTag = Localizations.ShellLanguage.Normalize(settings.LanguageTag) };
     }
 }
 

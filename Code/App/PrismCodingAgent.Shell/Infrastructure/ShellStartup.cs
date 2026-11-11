@@ -24,7 +24,7 @@ internal static class ShellStartup
             var windowsSandboxToolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
             var languageSettingsService = new Services.Settings.CodingChatSettingsService(paths, windowsSandboxToolSource);
             var shellSettings = await languageSettingsService.LoadInitialShellSettingsAsync().ConfigureAwait(true);
-            Lang.SetCurrent(shellSettings.LanguageTag == "en" ? "en" : "zh-Hans");
+            Lang.SetCurrent(ShellLanguage.Normalize(shellSettings.LanguageTag));
             await DefaultAbilityInstaller.InstallOnceAsync(paths.AbilitiesDirectory).ConfigureAwait(true);
             var abilityCatalog = new AbilityCatalog(paths.AbilitiesDirectory);
             await abilityCatalog.RefreshAsync().ConfigureAwait(true);

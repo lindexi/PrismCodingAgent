@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+    <EmbeddedResource Include="..\..\App\PrismCodingAgent.Shell\Localizations\*.toml" LogicalName="PurposeResources.%(Filename).toml" />
   </ItemGroup>
 
 </Project>

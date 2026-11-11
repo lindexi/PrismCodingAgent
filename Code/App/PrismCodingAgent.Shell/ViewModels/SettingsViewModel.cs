@@ -38,13 +38,13 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     private string _languageTag = Lang.Current.IetfLanguageTag;
 
     /// <summary>获取可选择的界面语言标签。</summary>
-    public string[] LanguageTags { get; } = ["zh-Hans", "en"];
+    public string[] LanguageTags { get; } = Lang.SupportedLanguageTags.ToArray();
 
     /// <summary>获取或设置保存后应用的界面语言。</summary>
     public string LanguageTag
     {
         get => _languageTag;
-        set => SetField(ref _languageTag, value == "en" ? "en" : "zh-Hans");
+        set => SetField(ref _languageTag, ShellLanguage.Normalize(value));
     }
     private bool _isWindowsSandboxEnabled = true;
     private string _windowsSandboxToolPath = "WinRemoteShell.exe";
