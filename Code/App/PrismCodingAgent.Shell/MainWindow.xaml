@@ -620,7 +620,7 @@
                                FontFamily="{Binding FontFamily, ElementName=SettingsButton}" FontSize="{Binding FontSize, ElementName=SettingsButton}"
                                Foreground="{StaticResource TextSecondaryBrush}" Text="{Binding SettingsViewModel.Quotas.PrimaryQuotaText}"
                                Visibility="{Binding SettingsViewModel.Quotas.HasPrimaryQuota, Converter={StaticResource BooleanVisibility}}">
-                        <TextBlock.ToolTip><ToolTip><Border Padding="12" MinWidth="260" MaxWidth="460"><TextBlock Text="{Binding SettingsViewModel.Quotas.AllQuotaDetails}" TextWrapping="Wrap"/></Border></ToolTip></TextBlock.ToolTip>
+                        <TextBlock.ToolTip><ToolTip><Border Padding="12" MinWidth="260"><TextBlock Text="{Binding SettingsViewModel.Quotas.AllQuotaDetails}" TextWrapping="NoWrap"/></Border></ToolTip></TextBlock.ToolTip>
                     </TextBlock>
                     </Grid>
                 </StackPanel>

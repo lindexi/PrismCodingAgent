@@ -70,19 +70,23 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
     public SimpleAsyncCommand RefreshCommand { get; }
     public bool HasResults => _windows.Count > 0;
     public string QuotaText => _windows.Count == 0 ? "—" : string.Join(" / ", _windows.Select(window => $"{window.RemainingPercent:0.##}%"));
-    public string DetailText => string.Join(Environment.NewLine, _windows.Select(window =>
-        Lang.Format(Lang.Current.QuotaDetail, window.Account,
-            $"{(window.Window == "Primary" ? Lang.Current.QuotaPrimaryWindow : Lang.Current.QuotaSecondaryWindow)}：{window.RemainingPercent:0.##}%", FormatReset(window.ResetAt, DateTimeOffset.Now))));
-    public string TooltipText => string.Join(Environment.NewLine + Environment.NewLine, _windows.Select(window =>
-        Lang.Format(Lang.Current.QuotaTooltip, Name, $"{window.RemainingPercent:0.##}%", FormatReset(window.ResetAt, DateTimeOffset.Now))));
+    public string DetailText => FormatAccountDetails(DateTimeOffset.Now);
+    public string TooltipText => FormatAccountDetails(DateTimeOffset.Now);
     public string ObservedText => string.Join(" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
 
-    internal static string FormatReset(DateTimeOffset? resetAt, DateTimeOffset now)
+    internal string FormatAccountDetails(DateTimeOffset now)
     {
-        if (resetAt is not { } reset) return Lang.Current.QuotaUnknown;
-
-        TimeSpan remaining = reset > now ? reset - now : TimeSpan.Zero;
-        return Lang.Format(Lang.Current.QuotaResetRemaining, Format(reset), remaining.Days, remaining.Hours);
+        return string.Join(Environment.NewLine + Environment.NewLine, _windows.GroupBy(window => window.Account).Select(account =>
+        {
+            var windows = account.OrderBy(window => window.WindowMinutes).ToArray();
+            string percentages = string.Join(" / ", windows.Select(window => $"{window.RemainingPercent:0.##}%"));
+            string details = windows.Length == 1
+                ? Lang.Format(Lang.Current.QuotaResetLine, QuotaTimeFormatter.FormatResetTime(windows[0].ResetAt, now))
+                : string.Join(Environment.NewLine, windows.Select(window => Lang.Format(Lang.Current.QuotaWindowDetail,
+                    QuotaTimeFormatter.FormatWindowDuration(window.WindowMinutes), $"{window.RemainingPercent:0.##}%",
+                    QuotaTimeFormatter.FormatResetTime(window.ResetAt, now))));
+            return Lang.Format(Lang.Current.QuotaAccountDetails, account.Key, percentages, details).ReplaceLineEndings(Environment.NewLine);
+        }));
     }
 
     private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? Lang.Current.QuotaUnknown;
@@ -139,6 +143,7 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         finally
         {
             _request = null;
+            Publish();
         }
     }
 

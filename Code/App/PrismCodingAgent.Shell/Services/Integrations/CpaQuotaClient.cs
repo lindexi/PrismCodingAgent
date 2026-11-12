@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace PrismCodingAgent.CodingShell.Services.Integrations;
 
 internal sealed record CpaQuotaWindow(string Account, string Window, decimal RemainingPercent,
-    DateTimeOffset? ResetAt, DateTimeOffset? ObservedAt);
+    DateTimeOffset? ResetAt, DateTimeOffset? ObservedAt, decimal WindowMinutes);
 
 internal static class CpaQuotaClient
 {
@@ -46,7 +46,7 @@ internal static class CpaQuotaClient
                 DateTimeOffset? reset = Number(prefix + "-Reset-At", out var seconds)
                     && seconds >= -62135596800m && seconds <= 253402300799m
                     ? DateTimeOffset.FromUnixTimeSeconds((long)seconds) : null;
-                result.Add(new(account, label, 100 - used, reset, observed));
+                result.Add(new(account, label, 100 - used, reset, observed, minutes));
             }
             bool Number(string key, out decimal number)
             {

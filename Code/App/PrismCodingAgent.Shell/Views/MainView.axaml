@@ -243,10 +243,12 @@
                                    Text="{Binding SettingsViewModel.Quotas.PrimaryQuotaText}"
                                    IsVisible="{Binding SettingsViewModel.Quotas.HasPrimaryQuota}">
                             <ToolTip.Tip>
-                                <Border Padding="12" MinWidth="260" MaxWidth="460">
-                                    <TextBlock Text="{Binding SettingsViewModel.Quotas.AllQuotaDetails}"
-                                               TextWrapping="Wrap" />
-                                </Border>
+                                <ToolTip MaxWidth="Infinity">
+                                    <Border Padding="12" MinWidth="260">
+                                        <TextBlock Text="{Binding SettingsViewModel.Quotas.AllQuotaDetails}"
+                                                   TextWrapping="NoWrap" />
+                                    </Border>
+                                </ToolTip>
                             </ToolTip.Tip>
                         </TextBlock>
                     </Grid>

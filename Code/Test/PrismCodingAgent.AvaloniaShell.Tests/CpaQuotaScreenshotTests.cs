@@ -81,6 +81,29 @@ public sealed class CpaQuotaScreenshotTests
         string path = Path.Combine(directory, "settings.png");
         frame.Save(path, new Avalonia.Media.Imaging.PngBitmapEncoderOptions());
         TestContext.AddResultFile(path);
+        session.Model.CloseHistoryCommand.Execute(null);
+        ToolTip.SetIsOpen(quotaLabel, true);
+        Dispatcher.UIThread.RunJobs();
+        session.Window.UpdateLayout();
+        var popup = (ToolTip)ToolTip.GetTip(quotaLabel)!;
+        var tooltip = (Border)popup.Content!;
+        var tooltipText = tooltip.GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.AreEqual(quotas.AllQuotaDetails, tooltipText.Text);
+        Assert.AreEqual(Avalonia.Media.FontWeight.Normal, tooltipText.FontWeight);
+        Assert.Contains("alexander.montgomery+production.quota.monitoring@engineering.example.com", tooltipText.Text!);
+        Assert.AreEqual(Avalonia.Media.TextWrapping.NoWrap, tooltipText.TextWrapping);
+        Assert.AreEqual(tooltipText.Text!.Split('\n').Length, tooltipText.TextLayout.TextLines.Count);
+        double longestLine = tooltipText.TextLayout.TextLines.Max(line => line.WidthIncludingTrailingWhitespace);
+        TestContext.WriteLine($"Quota tooltip: text={tooltipText.Bounds}, border={tooltip.Bounds}, longestLine={longestLine}");
+        Assert.IsTrue(tooltipText.Bounds.Width + 1 >= longestLine, "The longest quota line must fit in the arranged text bounds.");
+        Assert.IsTrue(tooltip.Bounds.Width + 1 >= longestLine + tooltip.Padding.Left + tooltip.Padding.Right,
+            "The tooltip border must include the full text width and padding.");
+        using var tooltipFrame = session.Window.CaptureRenderedFrame();
+        Assert.IsNotNull(tooltipFrame);
+        string tooltipPath = Path.Combine(directory, "tooltip.png");
+        tooltipFrame.Save(tooltipPath, new Avalonia.Media.Imaging.PngBitmapEncoderOptions());
+        TestContext.AddResultFile(tooltipPath);
+        ToolTip.SetIsOpen(quotaLabel, false);
         Assert.IsTrue(quotas.HasServices);
         Assert.AreEqual("xx", quotas.Services[0].Name);
         await ((PrismCodingAgent.CodingShell.ViewModels.SimpleAsyncCommand)model.SaveCommand).ExecuteAsync();
@@ -95,7 +118,7 @@ public sealed class CpaQuotaScreenshotTests
         protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken cancellationToken)
             => Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
-                Content = new System.Net.Http.StringContent("""{"files":[{"account":"preview@example.com","quota":{"observed_at":"2026-11-06T11:44:49+08:00","signals":{"X-Codex-Primary-Used-Percent":"39","X-Codex-Primary-Window-Minutes":"10080","X-Codex-Primary-Reset-At":"1794298229"}}}]}""")
+                Content = new System.Net.Http.StringContent("""{"files":[{"account":"alexander.montgomery+production.quota.monitoring@engineering.example.com","quota":{"observed_at":"2026-11-06T11:44:49+08:00","signals":{"X-Codex-Primary-Used-Percent":"39","X-Codex-Primary-Window-Minutes":"300","X-Codex-Primary-Reset-At":"RESET","X-Codex-Secondary-Used-Percent":"12","X-Codex-Secondary-Window-Minutes":"10080","X-Codex-Secondary-Reset-At":"RESET"}}}]}""".Replace("RESET", DateTimeOffset.Now.AddHours(3).AddMinutes(45).ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture)))
             });
     }
 }

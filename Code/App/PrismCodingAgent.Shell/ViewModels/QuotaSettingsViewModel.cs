@@ -34,9 +34,21 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
     public bool HasServices => Services.Count > 0;
     public bool HasPrimaryQuota => Services.Any(service => service.IsPrimary && service.HasResults);
     public string PrimaryQuotaText => Lang.Current.QuotaPrefix + (Services.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
-    public string AllQuotaDetails => string.Join(Environment.NewLine + Environment.NewLine,
-        Services.OrderByDescending(service => service.IsPrimary).Select(service =>
-            service.HasResults ? service.TooltipText : $"{service.Name}：{service.Status}"));
+    public string AllQuotaDetails
+    {
+        get
+        {
+            var now = DateTimeOffset.Now;
+            return string.Join(Environment.NewLine + Environment.NewLine,
+                Services.OrderByDescending(service => service.IsPrimary).Select(service =>
+                {
+                    string status = Lang.Format(Lang.Current.QuotaServiceStatus, service.Name, service.Status);
+                    if (!service.HasResults) return status;
+                    string details = service.FormatAccountDetails(now);
+                    return service.HasStatus ? details + Environment.NewLine + Environment.NewLine + status : details;
+                }));
+        }
+    }
 
     private CpaQuotaServiceViewModel CreateService()
         => new(_client ??= new HttpClient { Timeout = Timeout.InfiniteTimeSpan });
@@ -96,7 +108,8 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
         }
 
         if (e.PropertyName is nameof(CpaQuotaServiceViewModel.IsPrimary) or nameof(CpaQuotaServiceViewModel.Name)
-            or nameof(CpaQuotaServiceViewModel.HasResults) or nameof(CpaQuotaServiceViewModel.Status))
+            or nameof(CpaQuotaServiceViewModel.HasResults) or nameof(CpaQuotaServiceViewModel.Status)
+            or nameof(CpaQuotaServiceViewModel.TooltipText))
         {
             NotifySummaryChanged();
         }
