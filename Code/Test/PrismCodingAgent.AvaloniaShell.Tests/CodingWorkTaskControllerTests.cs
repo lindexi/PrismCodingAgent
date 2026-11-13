@@ -417,6 +417,35 @@ public sealed class CodingWorkTaskControllerTests
         Assert.AreEqual(selectedId, application.SelectedSessionId);
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task UpdateTitleDuringActiveOperationShouldUpdateTitleAndSummaryWithoutSaving()
+    {
+        var manager = new CopilotChatManager();
+        var store = new TestSessionStore();
+        var runner = new ControlledCompressionRunner("empty");
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+        using var viewModel = new ChatViewModel(manager, controller, "test");
+        Task<bool> operation = controller.CompressConversationAsync();
+        await runner.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            viewModel.EditedSessionTitle = "Updated title";
+
+            Assert.IsTrue(viewModel.UpdateSessionTitleCommand.CanExecute(null));
+            await ((SimpleAsyncCommand)viewModel.UpdateSessionTitleCommand).ExecuteAsync();
+
+            Assert.AreEqual("Updated title", manager.SelectedSession.Title);
+            Assert.AreEqual("Updated title", controller.Sessions.Single().Title);
+            Assert.AreEqual(0, store.SaveCount);
+        }
+        finally
+        {
+            runner.Release.TrySetResult();
+            await operation;
+        }
+    }
+
     private static string CreateTestDirectory()
     {
         string path = Path.Join(Path.GetTempPath(), $"CodingChatRoom.HistoryWorkspace.{Guid.NewGuid():N}");

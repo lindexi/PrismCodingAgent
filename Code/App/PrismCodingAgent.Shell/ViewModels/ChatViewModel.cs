@@ -874,7 +874,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     }
 
     private bool CanUpdateSessionTitle()
-        => _workTaskController?.CanChangeSession == true
+        => _workTaskController is not null
            && !string.IsNullOrWhiteSpace(EditedSessionTitle)
            && !string.Equals(EditedSessionTitle.Trim(), CurrentSessionTitle, StringComparison.Ordinal);
 

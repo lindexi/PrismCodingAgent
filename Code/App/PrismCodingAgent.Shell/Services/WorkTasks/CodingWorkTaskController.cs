@@ -190,7 +190,6 @@ internal sealed class CodingWorkTaskController
 
     public async Task RenameSessionAsync(Guid sessionId, string title, CancellationToken cancellationToken = default)
     {
-        EnsureCanChangeSession();
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
         CopilotChatSession session = _chatManager.ChatSessions.FirstOrDefault(item => item.SessionId == sessionId)
                                      ?? await _sessionStore.LoadSessionAsync(sessionId, cancellationToken);
@@ -198,7 +197,10 @@ internal sealed class CodingWorkTaskController
         try
         {
             session.SetTitle(title.Trim());
-            await _sessionStore.SaveSessionAsync(session, cancellationToken);
+            if (!HasActiveOperation)
+            {
+                await _sessionStore.SaveSessionAsync(session, cancellationToken);
+            }
             AddOrUpdateSummary(session, insertAtTop: false);
         }
         catch
