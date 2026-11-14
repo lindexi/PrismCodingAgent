@@ -69,13 +69,13 @@
             </Button>
         </DataTemplate>
         <DataTemplate x:Key="MessageReasoning">
-            <Expander IsExpanded="False" Margin="0,0,0,8" HorizontalAlignment="Left" FontFamily="Microsoft YaHei UI"
+            <views:DeferredExpander Details="{Binding}" IsExpanded="False" Margin="0,0,0,8" HorizontalAlignment="Left" FontFamily="Microsoft YaHei UI"
                       FontSize="13" Visibility="{Binding HasText, Converter={StaticResource BooleanVisibility}}">
-                <Expander.Header>
+                <views:DeferredExpander.Header>
                     <TextBlock Text="{Binding ReasoningProcess, Source={x:Static l:Lang.Current}}" FontSize="12"
                                FontWeight="SemiBold" Foreground="#546E7A" />
-                </Expander.Header>
-                <Expander.Template>
+                </views:DeferredExpander.Header>
+                <views:DeferredExpander.Template>
                     <ControlTemplate TargetType="Expander">
                         <StackPanel>
                             <ToggleButton x:Name="HeaderSite" Height="48"
@@ -116,17 +116,21 @@
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
-                </Expander.Template>
+                </views:DeferredExpander.Template>
+                <views:DeferredExpander.DetailsTemplate>
+                    <DataTemplate>
                 <Border Background="#F0F4F8" Padding="10,8" Margin="0,4" CornerRadius="4" BorderBrush="#90A4AE"
                         BorderThickness="3,0,0,0">
                     <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Foreground="#546E7A" />
                 </Border>
-            </Expander>
+                    </DataTemplate>
+                </views:DeferredExpander.DetailsTemplate>
+            </views:DeferredExpander>
         </DataTemplate>
         <DataTemplate x:Key="MessageTool">
-            <Expander Margin="0,0,0,8" MinWidth="170" IsExpanded="False" HorizontalAlignment="Left"
+            <views:DeferredExpander Details="{Binding}" Margin="0,0,0,8" MinWidth="170" IsExpanded="False" HorizontalAlignment="Left"
                       HorizontalContentAlignment="Stretch" Template="{StaticResource ToolAgentExpanderTemplate}">
-                <Expander.Header>
+                <views:DeferredExpander.Header>
                     <Grid ToolTip="{Binding ToolTipText}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
@@ -140,7 +144,9 @@
                                    TextTrimming="CharacterEllipsis" Foreground="{StaticResource TextSecondaryBrush}"
                                    Visibility="{Binding HasSecondaryText, Converter={StaticResource BooleanVisibility}}" />
                     </Grid>
-                </Expander.Header>
+                </views:DeferredExpander.Header>
+                <views:DeferredExpander.DetailsTemplate>
+                    <DataTemplate>
                 <Border Background="#F5F5F5" BorderBrush="#BDBDBD" BorderThickness="1" Padding="8,6" Margin="0,4"
                         CornerRadius="6">
                     <StackPanel>
@@ -158,14 +164,18 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-            </Expander>
+                    </DataTemplate>
+                </views:DeferredExpander.DetailsTemplate>
+            </views:DeferredExpander>
         </DataTemplate>
         <DataTemplate x:Key="MessageSubAgent">
-            <Expander Margin="0,0,0,8" IsExpanded="True" HorizontalAlignment="Left"
+            <views:DeferredExpander Details="{Binding}" Margin="0,0,0,8" IsExpanded="True" HorizontalAlignment="Left"
                       HorizontalContentAlignment="Stretch" Template="{StaticResource ToolAgentExpanderTemplate}">
-                <Expander.Header>
+                <views:DeferredExpander.Header>
                     <TextBlock Text="{Binding DisplayName}" />
-                </Expander.Header>
+                </views:DeferredExpander.Header>
+                <views:DeferredExpander.DetailsTemplate>
+                    <DataTemplate>
                 <Border Background="#E8EAF6" BorderBrush="#BDBDBD" BorderThickness="1" Padding="8,6" Margin="0,4"
                         CornerRadius="6">
                     <StackPanel>
@@ -183,7 +193,9 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-            </Expander>
+                    </DataTemplate>
+                </views:DeferredExpander.DetailsTemplate>
+            </views:DeferredExpander>
         </DataTemplate>
         <DataTemplate x:Key="MessageApproval">
             <Border Background="#FFFFF3E0" BorderBrush="#BDBDBD" BorderThickness="1" Padding="8,6" CornerRadius="6"
