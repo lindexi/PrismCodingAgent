@@ -21,9 +21,16 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
     {
         _provider = provider;
         _client = client ?? new OpenAIModelCatalogClient();
-        LoadCommand = new SimpleAsyncCommand(LoadAsync, exceptionHandler: _ => Status = Lang.Current.SetupCatalogFailed);
+        LoadCommand = new SimpleAsyncCommand
+            (LoadAsync, exceptionHandler: _ => Status = Lang.Current.SetupCatalogFailed);
         AddCommand = new SimpleCommand<string>(Add);
-        AddManualCommand = new SimpleCommand(() => { Cancel(); Add(ModelId); });
+        AddManualCommand = new SimpleCommand
+        (() =>
+            {
+                Cancel();
+                Add(ModelId);
+            }
+        );
         _provider.PropertyChanged += OnConnectionChanged;
     }
 
@@ -31,8 +38,18 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
     public SimpleAsyncCommand LoadCommand { get; }
     public SimpleCommand<string> AddCommand { get; }
     public SimpleCommand AddManualCommand { get; }
-    public string ModelId { get => _modelId; set => SetField(ref _modelId, value); }
-    public string? Status { get => _status; private set => SetField(ref _status, value); }
+
+    public string ModelId
+    {
+        get => _modelId;
+        set => SetField(ref _modelId, value);
+    }
+
+    public string? Status
+    {
+        get => _status;
+        private set => SetField(ref _status, value);
+    }
 
     internal static bool HasValidEndpoint(ProviderSettingsViewModel provider)
         => !string.IsNullOrWhiteSpace(provider.EndPoint)
@@ -96,6 +113,7 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
             Status = Lang.Current.SetupModelRequired;
             return;
         }
+
         id = id.Trim();
         if (IsModelAdded(id))
         {
@@ -103,8 +121,11 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
             Status = Lang.Current.SetupAlreadyAdded;
             return;
         }
-        var model = _provider.Models.FirstOrDefault(model => string.IsNullOrWhiteSpace(model.Provider)
-            && string.IsNullOrWhiteSpace(model.ModelName) && string.IsNullOrWhiteSpace(model.ModelId));
+
+        var model = _provider.Models.FirstOrDefault
+        (model => string.IsNullOrWhiteSpace(model.Provider)
+                  && string.IsNullOrWhiteSpace(model.ModelName) && string.IsNullOrWhiteSpace(model.ModelId)
+        );
         if (model is null)
         {
             model = new ModelSettingsViewModel { Provider = "openai", ModelName = id, ModelId = id };
@@ -116,6 +137,7 @@ public sealed class ModelCatalogViewModel : ViewModelBase, IDisposable
             model.ModelName = id;
             model.ModelId = id;
         }
+
         Models.Remove(id);
         ModelId = string.Empty;
         Status = Lang.Current.SetupModelAdded;

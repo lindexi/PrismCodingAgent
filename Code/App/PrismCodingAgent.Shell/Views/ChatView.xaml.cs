@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -45,7 +46,7 @@ public partial class ChatView : UserControl
                     pasteModel.TryAddImageAttachment($"clipboard-{DateTime.Now:yyyyMMdd-HHmmss}.png", stream.ToArray());
                 }
             }
-            catch (Exception exception) when (exception is IOException or InvalidOperationException or ArgumentException or System.Runtime.InteropServices.ExternalException)
+            catch (Exception exception) when (exception is IOException or InvalidOperationException or ArgumentException or ExternalException)
             {
                 e.Handled = true;
                 await pasteModel.AddSystemNoticeAsync(session, Lang.Format(Lang.Current.ImagePasteFailed, exception.Message));

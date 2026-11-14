@@ -43,21 +43,28 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
             }
         }
     }
+
     public string ManagementKey
     {
         get => _managementKey;
-        set { if (SetField(ref _managementKey, value)) InvalidateResult(); }
+        set
+        {
+            if (SetField(ref _managementKey, value)) InvalidateResult();
+        }
     }
+
     public string Name
     {
         get => _name;
         set => SetField(ref _name, value);
     }
+
     public bool IsPrimary
     {
         get => _isPrimary;
         set => SetField(ref _isPrimary, value);
     }
+
     public string Status
     {
         get => _status;
@@ -66,32 +73,59 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
             if (SetField(ref _status, value)) OnPropertyChanged(nameof(HasStatus));
         }
     }
+
     public bool HasStatus => !string.IsNullOrEmpty(Status);
     public SimpleAsyncCommand RefreshCommand { get; }
     public bool HasResults => _windows.Count > 0;
-    public string QuotaText => _windows.Count == 0 ? "—" : string.Join(" / ", _windows.Select(window => $"{window.RemainingPercent:0.##}%"));
+
+    public string QuotaText => _windows.Count == 0
+        ? "—"
+        : string.Join(" / ", _windows.Select(window => $"{window.RemainingPercent:0.##}%"));
+
     public string DetailText => FormatAccountDetails(DateTimeOffset.Now);
     public string TooltipText => FormatAccountDetails(DateTimeOffset.Now);
-    public string ObservedText => string.Join(" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
+
+    public string ObservedText => string.Join
+        (" / ", _windows.Select(window => window.ObservedAt).Distinct().Select(Format));
 
     internal string FormatAccountDetails(DateTimeOffset now)
     {
-        return string.Join(Environment.NewLine + Environment.NewLine, _windows.GroupBy(window => window.Account).Select(account =>
-        {
-            var windows = account.OrderBy(window => window.WindowMinutes).ToArray();
-            string percentages = string.Join(" / ", windows.Select(window => $"{window.RemainingPercent:0.##}%"));
-            string details = windows.Length == 1
-                ? Lang.Format(Lang.Current.QuotaResetLine, QuotaTimeFormatter.FormatResetTime(windows[0].ResetAt, now))
-                : string.Join(Environment.NewLine, windows.Select(window => Lang.Format(Lang.Current.QuotaWindowDetail,
-                    QuotaTimeFormatter.FormatWindowDuration(window.WindowMinutes), $"{window.RemainingPercent:0.##}%",
-                    QuotaTimeFormatter.FormatResetTime(window.ResetAt, now))));
-            return Lang.Format(Lang.Current.QuotaAccountDetails, account.Key, percentages, details).ReplaceLineEndings(Environment.NewLine);
-        }));
+        return string.Join
+        (
+            Environment.NewLine + Environment.NewLine, _windows.GroupBy(window => window.Account).Select
+            (account =>
+                {
+                    var windows = account.OrderBy(window => window.WindowMinutes).ToArray();
+                    string percentages = string.Join
+                        (" / ", windows.Select(window => $"{window.RemainingPercent:0.##}%"));
+                    string details = windows.Length == 1
+                        ? Lang.Format
+                            (Lang.Current.QuotaResetLine, QuotaTimeFormatter.FormatResetTime(windows[0].ResetAt, now))
+                        : string.Join
+                        (
+                            Environment.NewLine, windows.Select
+                            (window => Lang.Format
+                                (
+                                    Lang.Current.QuotaWindowDetail,
+                                    QuotaTimeFormatter.FormatWindowDuration(window.WindowMinutes),
+                                    $"{window.RemainingPercent:0.##}%",
+                                    QuotaTimeFormatter.FormatResetTime(window.ResetAt, now)
+                                )
+                            )
+                        );
+                    return Lang.Format
+                        (Lang.Current.QuotaAccountDetails, account.Key, percentages, details).ReplaceLineEndings
+                        (Environment.NewLine);
+                }
+            )
+        );
     }
 
-    private static string Format(DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? Lang.Current.QuotaUnknown;
+    private static string Format
+        (DateTimeOffset? time) => time?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? Lang.Current.QuotaUnknown;
 
     internal CpaQuotaConfiguration ToConfiguration() => new(Address, ManagementKey, Name, IsPrimary);
+
     internal void Load(CpaQuotaConfiguration configuration)
     {
         _address = configuration.Address;
@@ -125,14 +159,18 @@ public sealed class CpaQuotaServiceViewModel : ViewModelBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            Status = cancellation.IsCancellationRequested ? Lang.Current.QuotaCancelled : Lang.Current.QuotaNetworkFailed;
+            Status = cancellation.IsCancellationRequested
+                ? Lang.Current.QuotaCancelled
+                : Lang.Current.QuotaNetworkFailed;
         }
         catch (HttpRequestException exception)
         {
             Status = exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
-                ? Lang.Current.QuotaAuthFailed : Lang.Current.QuotaNetworkFailed;
+                ? Lang.Current.QuotaAuthFailed
+                : Lang.Current.QuotaNetworkFailed;
         }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException or FormatException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException
+                                              or KeyNotFoundException or FormatException)
         {
             Status = Lang.Current.QuotaInvalidResponse;
         }

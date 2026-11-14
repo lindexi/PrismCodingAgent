@@ -89,14 +89,26 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
 
         RefreshWorkTaskFilter();
 
-        OpenSettingsCommand = new SimpleAsyncCommand(OpenSettingsAsync, () => _settingsViewModel is not null,
-            exceptionHandler: HandleCommandException);
-        OpenHistoryCommand = new SimpleAsyncCommand(() => OpenHistoryAsync(false), allowConcurrentExecutions: true,
-            exceptionHandler: HandleCommandException);
-        OpenTaskHistoryCommand = new SimpleAsyncCommand(() => OpenHistoryAsync(true), allowConcurrentExecutions: true,
-            exceptionHandler: HandleCommandException);
-        OrganizeHistoryCommand = new SimpleAsyncCommand(OrganizeHistoryAsync, () => ActiveWorkTask.Runtime is not null,
-            exceptionHandler: HandleCommandException);
+        OpenSettingsCommand = new SimpleAsyncCommand
+        (
+            OpenSettingsAsync, () => _settingsViewModel is not null,
+            exceptionHandler: HandleCommandException
+        );
+        OpenHistoryCommand = new SimpleAsyncCommand
+        (
+            () => OpenHistoryAsync(false), allowConcurrentExecutions: true,
+            exceptionHandler: HandleCommandException
+        );
+        OpenTaskHistoryCommand = new SimpleAsyncCommand
+        (
+            () => OpenHistoryAsync(true), allowConcurrentExecutions: true,
+            exceptionHandler: HandleCommandException
+        );
+        OrganizeHistoryCommand = new SimpleAsyncCommand
+        (
+            OrganizeHistoryAsync, () => ActiveWorkTask.Runtime is not null,
+            exceptionHandler: HandleCommandException
+        );
         OpenLogDirectoryCommand = new SimpleCommand(OpenLogDirectory, () => ActiveWorkTask.Runtime is not null);
         OpenArchiveCommand = new SimpleCommand(OpenArchive);
         CloseHistoryCommand = new SimpleCommand(CloseNavigationPages);
@@ -106,8 +118,11 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             item => item is not null && SessionListViewModel.CanChangeSession,
             HandleCommandException
         );
-        CreateWorkTaskCommand = new SimpleAsyncCommand(CreateWorkTaskAsync, () => _createRuntimeAsync is not null,
-            exceptionHandler: HandleCommandException);
+        CreateWorkTaskCommand = new SimpleAsyncCommand
+        (
+            CreateWorkTaskAsync, () => _createRuntimeAsync is not null,
+            exceptionHandler: HandleCommandException
+        );
         ActivateWorkTaskCommand = new SimpleCommand<WorkTaskItemViewModel>
         (task =>
             {
@@ -165,7 +180,8 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         ArgumentNullException.ThrowIfNull(createRuntimeAsync);
         ArgumentNullException.ThrowIfNull(abilityCatalog);
         ArgumentNullException.ThrowIfNull(archivedTasks);
-        return new MainViewModel(tasks, archivedTasks, settingsService, workTaskStore, createRuntimeAsync, abilityCatalog, initialMessage);
+        return new MainViewModel
+            (tasks, archivedTasks, settingsService, workTaskStore, createRuntimeAsync, abilityCatalog, initialMessage);
     }
 
     internal static MainViewModel CreateForTests
@@ -333,10 +349,12 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
     /// <summary>打开设置。</summary>
     public ICommand OpenSettingsCommand { get; }
 
-    internal static WorkTaskItemViewModel CreateRuntimeTask(
+    internal static WorkTaskItemViewModel CreateRuntimeTask
+    (
         CodingWorkTaskRuntime runtime,
         WorkTaskRecord record,
-        AbilityCatalog? abilityCatalog = null)
+        AbilityCatalog? abilityCatalog = null
+    )
     {
         runtime.Controller.SetWorkTask(record.Id, record.DisplayName);
         return new WorkTaskItemViewModel
@@ -625,16 +643,20 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         FilteredWorkTasks.Clear();
         FilteredArchivedWorkTasks.Clear();
 
-        foreach (WorkTaskItemViewModel task in WorkTasks.Where(task => MatchesWorkTaskSearch
-                 (task.DisplayName, task.Chat.NextRunWorkspacePath, searchText)))
+        foreach (WorkTaskItemViewModel task in WorkTasks.Where
+                 (task => MatchesWorkTaskSearch
+                     (task.DisplayName, task.Chat.NextRunWorkspacePath, searchText)
+                 ))
         {
             FilteredWorkTasks.Add(task);
         }
 
         if (!string.IsNullOrWhiteSpace(searchText))
         {
-            foreach (ArchivedWorkTaskItemViewModel task in ArchivedWorkTasks.Where(task => MatchesWorkTaskSearch
-                     (task.DisplayName, task.WorkspacePath, searchText)))
+            foreach (ArchivedWorkTaskItemViewModel task in ArchivedWorkTasks.Where
+                     (task => MatchesWorkTaskSearch
+                         (task.DisplayName, task.WorkspacePath, searchText)
+                     ))
             {
                 FilteredArchivedWorkTasks.Add(task);
             }
@@ -646,13 +668,14 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
 
     private static bool MatchesWorkTaskSearch(string displayName, string? workspacePath, string searchText)
         => string.IsNullOrWhiteSpace(searchText)
-            || displayName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)
-            || (workspacePath?.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ?? false);
+           || displayName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)
+           || (workspacePath?.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ?? false);
 
     /// <summary>整理全部持久化历史会话。</summary>
     public ICommand OrganizeHistoryCommand { get; }
 
     private string? _historyOrganizationResult;
+
     /// <summary>历史整理结果。</summary>
     public string? HistoryOrganizationResult
     {
@@ -666,15 +689,20 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         HistoryOrganizationResult = Lang.Current.HistoryOrganizingText;
         try
         {
-            var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(runtime.Paths.SessionDirectory.FullName);
+            var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore
+                (runtime.Paths.SessionDirectory.FullName);
             var result = await store.OrganizeAsync().ConfigureAwait(true);
-            HistoryOrganizationResult = Localizations.Lang.Format(Lang.Current.HistoryOrganizedText, result.Upgraded, result.Compressed);
+            HistoryOrganizationResult = Localizations.Lang.Format
+                (Lang.Current.HistoryOrganizedText, result.Upgraded, result.Compressed);
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
         {
             HistoryOrganizationResult = Lang.Current.HistoryOrganizeFailedText;
-            await runtime.ChatLogger.LogDiagnosticAsync(runtime.ChatManager.SelectedSession.SessionId,
-                "History", "[History][Organize] Failed.", exception).ConfigureAwait(true);
+            await runtime.ChatLogger.LogDiagnosticAsync
+            (
+                runtime.ChatManager.SelectedSession.SessionId,
+                "History", "[History][Organize] Failed.", exception
+            ).ConfigureAwait(true);
             throw;
         }
     }
@@ -691,14 +719,17 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             string? sessionLogFile = sessionId == Guid.Empty
                 ? null
                 : Directory.EnumerateFiles
-                    (logDirectory, $"*{sessionId:N}*.log", SearchOption.AllDirectories)
+                        (logDirectory, $"*{sessionId:N}*.log", SearchOption.AllDirectories)
                     .OrderByDescending(File.GetLastWriteTimeUtc)
                     .FirstOrDefault();
-            using Process? process = Process.Start(new ProcessStartInfo
-            {
-                FileName = sessionLogFile ?? logDirectory,
-                UseShellExecute = true,
-            });
+            using Process? process = Process.Start
+            (
+                new ProcessStartInfo
+                {
+                    FileName = sessionLogFile ?? logDirectory,
+                    UseShellExecute = true,
+                }
+            );
             ErrorMessage = null;
         }
         catch (Exception exception) when (IsExpectedOperationException(exception))
@@ -757,6 +788,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
                     .CreateWebProxy(e.Settings.ShellSettings);
                 runtime.ApplyModelConfiguration(modelConfiguration);
             }
+
             task.Chat.RefreshAvailableModels(selectedModelDisplayName);
         }
     }
@@ -851,6 +883,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         {
             await task.Runtime.DisposeAsync().ConfigureAwait(true);
         }
+
         Unsubscribe(task);
         task.Chat.Dispose();
         task.Sessions.Dispose();
@@ -876,6 +909,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         {
             _disposeTask = DisposeCoreAsync();
         }
+
         return new ValueTask(_disposeTask);
     }
 
@@ -886,6 +920,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         {
             await _createWorkTask.ConfigureAwait(true);
         }
+
         if (_settingsViewModel is not null && !_settingsDisposed)
         {
             _settingsViewModel.SettingsSaved -= OnSettingsSaved;
@@ -905,6 +940,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             // WhenAll waits for every runtime, including those after a failed cleanup.
             throw allCleanup.Exception ?? throw new InvalidOperationException();
         }
+
         _saveGate.Dispose();
     }
 
@@ -914,6 +950,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         {
             await task.Runtime.DisposeAsync().ConfigureAwait(true);
         }
+
         Unsubscribe(task);
         task.Chat.Dispose();
         task.Sessions.Dispose();

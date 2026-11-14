@@ -12,19 +12,32 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Expander">
                         <StackPanel>
-                            <ToggleButton x:Name="PurposeHeader" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" HorizontalContentAlignment="Stretch" MinHeight="36" Background="Transparent" BorderThickness="0" Padding="0">
+                            <ToggleButton x:Name="PurposeHeader"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          HorizontalContentAlignment="Stretch" MinHeight="36" Background="Transparent"
+                                          BorderThickness="0" Padding="0">
                                 <Grid>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                    <Path x:Name="PurposeChevron" Data="M 2,2 L 8,8 L 2,14" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" Width="16" Height="16" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"/>
-                                    <ContentPresenter Grid.Column="1" Content="{TemplateBinding Header}" VerticalAlignment="Center"/>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20" /><ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Path x:Name="PurposeChevron" Data="M 2,2 L 8,8 L 2,14"
+                                          Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" Width="16"
+                                          Height="16" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5" />
+                                    <ContentPresenter Grid.Column="1" Content="{TemplateBinding Header}"
+                                                      VerticalAlignment="Center" />
                                 </Grid>
                             </ToggleButton>
-                            <ContentPresenter x:Name="PurposeContent" Content="{TemplateBinding Content}" Visibility="Collapsed" Margin="0,8,0,0"/>
+                            <ContentPresenter x:Name="PurposeContent" Content="{TemplateBinding Content}"
+                                              Visibility="Collapsed" Margin="0,8,0,0" />
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
-                                <Setter TargetName="PurposeContent" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="PurposeChevron" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90"/></Setter.Value></Setter>
+                                <Setter TargetName="PurposeContent" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="PurposeChevron" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="90" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -36,8 +49,12 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
             <Style.Triggers>
-                <Trigger Property="Text" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed" /></Trigger>
-                <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed" /></Trigger>
+                <Trigger Property="Text" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
             </Style.Triggers>
         </Style>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -170,17 +187,23 @@
         </Grid.RowDefinitions>
         <Border Background="#F9F9F9" BorderBrush="#E4E9F0" BorderThickness="0,0,0,1" Padding="32,24,32,16">
             <Grid>
-                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                <Button x:Name="BackButton" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="14"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Button x:Name="BackButton" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        FontSize="14"
                         FontWeight="SemiBold" Padding="12,7" Margin="0,0,20,0"
                         Content="{Binding BackArrowText, Source={x:Static l:Lang.Current}}"
                         ToolTip="{Binding BackToChatText, Source={x:Static l:Lang.Current}}"
                         Command="{Binding BackCommand}" />
-                <Button x:Name="SaveButton" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center" Height="38" FontSize="14"
+                <Button x:Name="SaveButton" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Height="38" FontSize="14"
                         Padding="18,8" Content="{Binding SaveChangesText, Source={x:Static l:Lang.Current}}"
                         Command="{Binding SaveCommand}"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}">
-                    <Button.Style><StaticResource ResourceKey="PrimaryButton" /></Button.Style>
+                    <Button.Style>
+                        <StaticResource ResourceKey="PrimaryButton" />
+                    </Button.Style>
                 </Button>
                 <StackPanel Grid.Row="1" Margin="0,12,0,0">
                     <TextBlock Text="{Binding SettingsNavigationText, Source={x:Static l:Lang.Current}}" FontSize="28"
@@ -450,9 +473,12 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock x:Name="PrimaryModelLabel" Style="{StaticResource SettingsLabel}"
-                                           Text="{Binding DefaultModelLabel, Source={x:Static l:Lang.Current}}" TextWrapping="Wrap" />
-                                <TextBlock x:Name="PrimaryModelHint" Style="{StaticResource SettingsHint}" Margin="0,4,0,0"
-                                           Text="{Binding DefaultModelHint, Source={x:Static l:Lang.Current}}" TextWrapping="Wrap" />
+                                           Text="{Binding DefaultModelLabel, Source={x:Static l:Lang.Current}}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock x:Name="PrimaryModelHint" Style="{StaticResource SettingsHint}"
+                                           Margin="0,4,0,0"
+                                           Text="{Binding DefaultModelHint, Source={x:Static l:Lang.Current}}"
+                                           TextWrapping="Wrap" />
                             </StackPanel>
                             <TextBox x:Name="PrimaryModelInput" Grid.Column="2" Style="{StaticResource SettingsInput}"
                                      Text="{Binding PrimaryModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -460,23 +486,35 @@
                                      AutomationProperties.LabeledBy="{Binding ElementName=PrimaryModelLabel}"
                                      AutomationProperties.Name="{Binding DefaultModelLabel, Source={x:Static l:Lang.Current}}" />
                         </Grid>
-                        <Expander x:Name="PurposeModelsExpander" Style="{StaticResource PurposeSection}" IsExpanded="False" HorizontalContentAlignment="Stretch" Margin="0,0,0,32">
+                        <Expander x:Name="PurposeModelsExpander" Style="{StaticResource PurposeSection}"
+                                  IsExpanded="False" HorizontalContentAlignment="Stretch" Margin="0,0,0,32">
                             <Expander.Header>
                                 <StackPanel>
                                     <TextBlock Text="{Binding PurposeModelsTitle, Source={x:Static l:Lang.Current}}" />
-                                    <TextBlock Text="{Binding PurposeValidationFailed, Source={x:Static l:Lang.Current}}" Visibility="{Binding HasPurposeErrors, Converter={StaticResource PurposeVisibility}}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
+                                    <TextBlock
+                                        Text="{Binding PurposeValidationFailed, Source={x:Static l:Lang.Current}}"
+                                        Visibility="{Binding HasPurposeErrors, Converter={StaticResource PurposeVisibility}}"
+                                        Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Expander.Header>
                             <StackPanel>
-                                <ItemsControl x:Name="PurposeModelsList" DataContextChanged="OnPurposeListDataContextChanged" SizeChanged="OnPurposeListSizeChanged" MaxWidth="1000" HorizontalAlignment="Stretch">
+                                <ItemsControl x:Name="PurposeModelsList"
+                                              DataContextChanged="OnPurposeListDataContextChanged"
+                                              SizeChanged="OnPurposeListSizeChanged" MaxWidth="1000"
+                                              HorizontalAlignment="Stretch">
                                     <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border x:Name="PurposeRow" Loaded="OnPurposeRowLoaded" SizeChanged="OnPurposeRowSizeChanged" Padding="0,0,32,8">
+                                            <Border x:Name="PurposeRow" Loaded="OnPurposeRowLoaded"
+                                                    SizeChanged="OnPurposeRowSizeChanged" Padding="0,0,32,8">
                                                 <Grid>
-                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="8" />
@@ -484,46 +522,68 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel>
-                                                        <TextBlock Text="{Binding DisplayName, StringFormat='{}{0}:'}" Visibility="{Binding IsBuiltIn, Converter={StaticResource PurposeVisibility}}" MinHeight="36" TextAlignment="Right" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                                        <TextBox Height="36" Text="{Binding PurposeKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsInput}"
+                                                        <TextBlock Text="{Binding DisplayName, StringFormat='{}{0}:'}"
+                                                                   Visibility="{Binding IsBuiltIn, Converter={StaticResource PurposeVisibility}}"
+                                                                   MinHeight="36" TextAlignment="Right"
+                                                                   TextWrapping="Wrap" VerticalAlignment="Center" />
+                                                        <TextBox Height="36"
+                                                                 Text="{Binding PurposeKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                 Style="{StaticResource SettingsInput}"
                                                                  Visibility="{Binding CanEditPurpose, Converter={StaticResource PurposeVisibility}}"
                                                                  input:TextBoxPlaceholder.Text="{Binding PurposeKeyHint, Source={x:Static l:Lang.Current}}"
                                                                  AutomationProperties.Name="{Binding PurposeKeyLabel, Source={x:Static l:Lang.Current}}" />
-                                                        <TextBlock Text="{Binding PurposeError}" Style="{StaticResource PurposeErrorText}" />
+                                                        <TextBlock Text="{Binding PurposeError}"
+                                                                   Style="{StaticResource PurposeErrorText}" />
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="2">
-                                                        <ComboBox ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
-                                                                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MinWidth="0" Height="36"
+                                                        <ComboBox ItemsSource="{Binding ModelOptions}"
+                                                                  SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  HorizontalContentAlignment="Stretch" MinWidth="0"
+                                                                  Height="36"
                                                                   AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static l:Lang.Current}}">
                                                             <ComboBox.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DisplayName}" />
+                                                                    <TextBlock Text="{Binding DisplayName}"
+                                                                               TextTrimming="CharacterEllipsis"
+                                                                               ToolTip="{Binding DisplayName}" />
                                                                 </DataTemplate>
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>
-                                                        <TextBlock Text="{Binding ModelError}" Style="{StaticResource PurposeErrorText}" />
+                                                        <TextBlock Text="{Binding ModelError}"
+                                                                   Style="{StaticResource PurposeErrorText}" />
                                                     </StackPanel>
-                                                    <Button Grid.Column="3" VerticalAlignment="Top" Margin="6,0,0,0" Padding="4"
+                                                    <Button Grid.Column="3" VerticalAlignment="Top" Margin="6,0,0,0"
+                                                            Padding="4"
                                                             Visibility="{Binding CanRemove, Converter={StaticResource PurposeVisibility}}"
                                                             Content="{Binding PurposeRemove, Source={x:Static l:Lang.Current}}"
-                                                            Command="{Binding DataContext.RemovePurposeModelCommand, RelativeSource={RelativeSource AncestorType={x:Type views:SettingsView}}}" CommandParameter="{Binding}" />
+                                                            Command="{Binding DataContext.RemovePurposeModelCommand, RelativeSource={RelativeSource AncestorType={x:Type views:SettingsView}}}"
+                                                            CommandParameter="{Binding}" />
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <Button x:Name="AddPurposeModelButton" HorizontalAlignment="Left" Content="{Binding PurposeAdd, Source={x:Static l:Lang.Current}}" Command="{Binding AddPurposeModelCommand}" />
+                                <Button x:Name="AddPurposeModelButton" HorizontalAlignment="Left"
+                                        Content="{Binding PurposeAdd, Source={x:Static l:Lang.Current}}"
+                                        Command="{Binding AddPurposeModelCommand}" />
                             </StackPanel>
                         </Expander>
-                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,24,0,0"><views:ModelSettingsView /></Border>
+                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,24,0,0">
+                            <views:ModelSettingsView />
+                        </Border>
                     </StackPanel>
                 </Border>
                 <Border x:Name="CpaQuotaSettings" Style="{StaticResource SettingsCard}">
                     <StackPanel>
                         <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding QuotaTitle, Source={x:Static l:Lang.Current}}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Content="{Binding QuotaAdd, Source={x:Static l:Lang.Current}}" Command="{Binding Quotas.AddServiceCommand}"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition /><ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding QuotaTitle, Source={x:Static l:Lang.Current}}" FontSize="15"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="{Binding QuotaAdd, Source={x:Static l:Lang.Current}}"
+                                    Command="{Binding Quotas.AddServiceCommand}" />
                         </Grid>
                         <ItemsControl ItemsSource="{Binding Quotas.Services}">
                             <ItemsControl.ItemTemplate>
@@ -531,33 +591,80 @@
                                     <Border BorderBrush="#E4E9F0" BorderThickness="0,1,0,0" Padding="0,16">
                                         <StackPanel>
                                             <Grid Margin="0,0,0,10">
-                                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="1" Width="32" Height="32" Padding="0" ToolTip="{Binding QuotaRemove, Source={x:Static l:Lang.Current}}" Command="{Binding DataContext.Quotas.RemoveServiceCommand, RelativeSource={RelativeSource AncestorType={x:Type views:SettingsView}}}" CommandParameter="{Binding}">
-                                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><Path Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="#50555C" StrokeThickness="1.5" Data="M1,1 L11,11 M11,1 L1,11"/></Border></ControlTemplate></Button.Template>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition /><ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                           VerticalAlignment="Center" />
+                                                <Button Grid.Column="1" Width="32" Height="32" Padding="0"
+                                                        ToolTip="{Binding QuotaRemove, Source={x:Static l:Lang.Current}}"
+                                                        Command="{Binding DataContext.Quotas.RemoveServiceCommand, RelativeSource={RelativeSource AncestorType={x:Type views:SettingsView}}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="Transparent">
+                                                                <Path Width="12" Height="12"
+                                                                      HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center" Stroke="#50555C"
+                                                                      StrokeThickness="1.5"
+                                                                      Data="M1,1 L11,11 M11,1 L1,11" />
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
                                                 </Button>
                                             </Grid>
-                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding QuotaAddress, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center"/>
-                                                <TextBox Grid.Column="1" Margin="12,0,0,0" Height="32" VerticalContentAlignment="Center" Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="160" /><ColumnDefinition />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock
+                                                    Text="{Binding QuotaAddress, Source={x:Static l:Lang.Current}}"
+                                                    VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Margin="12,0,0,0" Height="32"
+                                                         VerticalContentAlignment="Center"
+                                                         Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" />
                                             </Grid>
-                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding QuotaKey, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center"/>
-                                                <views:SecretInput Grid.Column="1" Margin="12,0,0,0" Text="{Binding ManagementKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="160" /><ColumnDefinition />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding QuotaKey, Source={x:Static l:Lang.Current}}"
+                                                           VerticalAlignment="Center" />
+                                                <views:SecretInput Grid.Column="1" Margin="12,0,0,0"
+                                                                   Text="{Binding ManagementKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                             </Grid>
-                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding QuotaName, Source={x:Static l:Lang.Current}}" VerticalAlignment="Center"/>
-                                                <TextBox Grid.Column="1" Margin="12,0,0,0" Height="32" VerticalContentAlignment="Center" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="160" /><ColumnDefinition />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding QuotaName, Source={x:Static l:Lang.Current}}"
+                                                           VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Margin="12,0,0,0" Height="32"
+                                                         VerticalContentAlignment="Center"
+                                                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
                                             </Grid>
-                                            <Grid Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                                <CheckBox Content="{Binding QuotaPrimary, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsPrimary}" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="1" Content="{Binding QuotaRefresh, Source={x:Static l:Lang.Current}}" Command="{Binding RefreshCommand}"/>
+                                            <Grid Margin="0,0,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition /><ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <CheckBox
+                                                    Content="{Binding QuotaPrimary, Source={x:Static l:Lang.Current}}"
+                                                    IsChecked="{Binding IsPrimary}" VerticalAlignment="Center" />
+                                                <Button Grid.Column="1"
+                                                        Content="{Binding QuotaRefresh, Source={x:Static l:Lang.Current}}"
+                                                        Command="{Binding RefreshCommand}" />
                                             </Grid>
-                                            <TextBlock Text="{Binding DetailText}" TextWrapping="Wrap" Visibility="{Binding HasResults, Converter={StaticResource BooleanVisibility}}"/>
-                                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Visibility="{Binding HasStatus, Converter={StaticResource BooleanVisibility}}"/>
-                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding HasResults, Converter={StaticResource BooleanVisibility}}">
-                                                <TextBlock Text="{Binding QuotaObserved, Source={x:Static l:Lang.Current}}" Style="{StaticResource SettingsHint}" Margin="0,0,6,0"/>
-                                                <TextBlock Text="{Binding ObservedText}" Style="{StaticResource SettingsHint}"/>
+                                            <TextBlock Text="{Binding DetailText}" TextWrapping="Wrap"
+                                                       Visibility="{Binding HasResults, Converter={StaticResource BooleanVisibility}}" />
+                                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap"
+                                                       Visibility="{Binding HasStatus, Converter={StaticResource BooleanVisibility}}" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                                                        Visibility="{Binding HasResults, Converter={StaticResource BooleanVisibility}}">
+                                                <TextBlock
+                                                    Text="{Binding QuotaObserved, Source={x:Static l:Lang.Current}}"
+                                                    Style="{StaticResource SettingsHint}" Margin="0,0,6,0" />
+                                                <TextBlock Text="{Binding ObservedText}"
+                                                           Style="{StaticResource SettingsHint}" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>

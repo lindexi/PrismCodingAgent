@@ -7,6 +7,7 @@ public abstract class ChatEntryViewModel : ViewModelBase, IDisposable
 {
     /// <summary>条目的显示正文。</summary>
     public abstract string Content { get; }
+
     /// <inheritdoc />
     public abstract void Dispose();
 }

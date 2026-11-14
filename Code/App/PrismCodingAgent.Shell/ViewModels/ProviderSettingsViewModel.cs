@@ -10,6 +10,7 @@ public sealed class ProviderSettingsViewModel : ViewModelBase
 {
     private string _endPoint = string.Empty;
     private string _apiKey = string.Empty;
+
     public ProviderSettingsViewModel()
     {
         AddModelCommand = new SimpleCommand(AddModel);

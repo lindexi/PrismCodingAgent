@@ -23,7 +23,12 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
     public QuotaSettingsViewModel()
     {
         AddServiceCommand = new SimpleCommand(() => Services.Add(CreateService()));
-        RemoveServiceCommand = new SimpleCommand<CpaQuotaServiceViewModel>(service => { if (service is not null) Services.Remove(service); });
+        RemoveServiceCommand = new SimpleCommand<CpaQuotaServiceViewModel>
+        (service =>
+            {
+                if (service is not null) Services.Remove(service);
+            }
+        );
         Services.CollectionChanged += OnServicesChanged;
         Lang.Current.PropertyChanged += OnLanguageChanged;
     }
@@ -33,20 +38,30 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
     public SimpleCommand<CpaQuotaServiceViewModel> RemoveServiceCommand { get; }
     public bool HasServices => Services.Count > 0;
     public bool HasPrimaryQuota => Services.Any(service => service.IsPrimary && service.HasResults);
-    public string PrimaryQuotaText => Lang.Current.QuotaPrefix + (Services.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
+
+    public string PrimaryQuotaText => Lang.Current.QuotaPrefix +
+                                      (Services.FirstOrDefault(service => service.IsPrimary)?.QuotaText ?? "—");
+
     public string AllQuotaDetails
     {
         get
         {
             var now = DateTimeOffset.Now;
-            return string.Join(Environment.NewLine + Environment.NewLine,
-                Services.OrderByDescending(service => service.IsPrimary).Select(service =>
-                {
-                    string status = Lang.Format(Lang.Current.QuotaServiceStatus, service.Name, service.Status);
-                    if (!service.HasResults) return status;
-                    string details = service.FormatAccountDetails(now);
-                    return service.HasStatus ? details + Environment.NewLine + Environment.NewLine + status : details;
-                }));
+            return string.Join
+            (
+                Environment.NewLine + Environment.NewLine,
+                Services.OrderByDescending(service => service.IsPrimary).Select
+                (service =>
+                    {
+                        string status = Lang.Format(Lang.Current.QuotaServiceStatus, service.Name, service.Status);
+                        if (!service.HasResults) return status;
+                        string details = service.FormatAccountDetails(now);
+                        return service.HasStatus
+                            ? details + Environment.NewLine + Environment.NewLine + status
+                            : details;
+                    }
+                )
+            );
         }
     }
 
@@ -62,10 +77,12 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
             service.Load(configuration);
             Services.Add(service);
         }
+
         _refreshTask ??= RunRefreshAsync(TimeProvider.System, _refreshCancellation.Token);
     }
 
-    internal CpaQuotaConfiguration[] ToConfiguration() => Services.Select(service => service.ToConfiguration()).ToArray();
+    internal CpaQuotaConfiguration[] ToConfiguration() =>
+        Services.Select(service => service.ToConfiguration()).ToArray();
 
     private void OnServicesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -139,9 +156,10 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     if (!Services.Contains(service) || string.IsNullOrWhiteSpace(service.Address)
-                        || string.IsNullOrWhiteSpace(service.ManagementKey)) continue;
+                                                    || string.IsNullOrWhiteSpace(service.ManagementKey)) continue;
                     await service.RefreshAsync(cancellationToken);
                 }
+
                 await Task.Delay(TimeSpan.FromSeconds(10), timeProvider, cancellationToken);
             }
         }

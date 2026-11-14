@@ -54,22 +54,29 @@ public sealed class PurposeModelSettingsViewModel : ViewModelBase
 
     /// <summary>获取是否为内置用途。</summary>
     public bool IsBuiltIn { get; }
+
     /// <summary>获取是否允许编辑用途键。</summary>
     public bool CanEditPurpose => !IsBuiltIn;
+
     /// <summary>获取是否允许删除此行。</summary>
     public bool CanRemove => !IsBuiltIn;
+
     /// <summary>获取模型选项，包含未指定项及当前失效的旧引用。</summary>
     public ObservableCollection<PurposeModelOptionViewModel> ModelOptions => _modelOptions;
+
     /// <summary>获取或设置草稿选择；未指定项不写入映射。</summary>
     public PurposeModelOptionViewModel? SelectedModel
     {
         get => _selectedModel;
         set => SetField(ref _selectedModel, value);
     }
+
     /// <summary>获取用途键的就地校验消息。</summary>
     public string? PurposeError => _purposeError;
+
     /// <summary>获取模型的就地校验消息。</summary>
     public string? ModelError => _modelError;
+
     /// <summary>获取是否存在校验错误。</summary>
     public bool HasErrors => PurposeError is not null || ModelError is not null;
 
@@ -97,7 +104,9 @@ public sealed class PurposeModelSettingsViewModel : ViewModelBase
         string? keyError = string.IsNullOrWhiteSpace(PurposeKey) ? Lang.Current.PurposeKeyRequired
             : duplicate ? Lang.Current.PurposeKeyDuplicate : null;
         string? modelError = SelectedModel?.ModelReference is { } reference
-            && !references.Contains(reference, StringComparer.Ordinal) ? Lang.Current.PurposeModelInvalid : null;
+                             && !references.Contains(reference, StringComparer.Ordinal)
+            ? Lang.Current.PurposeModelInvalid
+            : null;
         SetField(ref _purposeError, keyError, nameof(PurposeError));
         SetField(ref _modelError, modelError, nameof(ModelError));
         OnPropertyChanged(nameof(HasErrors));

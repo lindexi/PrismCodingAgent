@@ -50,10 +50,12 @@ public sealed class ImageAttachmentViewModel
     /// <param name="data">图片二进制数据。</param>
     /// <param name="attachment">创建成功的图片附件。</param>
     /// <returns>文件扩展名受支持且数据非空时返回 <see langword="true"/>。</returns>
-    public static bool TryCreate(
+    public static bool TryCreate
+    (
         string fileName,
         ReadOnlyMemory<byte> data,
-        [NotNullWhen(true)] out ImageAttachmentViewModel? attachment)
+        [NotNullWhen(true)] out ImageAttachmentViewModel? attachment
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
@@ -64,10 +66,12 @@ public sealed class ImageAttachmentViewModel
             return false;
         }
 
-        attachment = new ImageAttachmentViewModel(
+        attachment = new ImageAttachmentViewModel
+        (
             Path.GetFileName(fileName),
             mimeType,
-            BinaryData.FromBytes(data));
+            BinaryData.FromBytes(data)
+        );
         return true;
     }
 }

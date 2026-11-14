@@ -50,15 +50,17 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>获取打开或关闭聊天设置的命令。</summary>
-    public ICommand ToggleChatSettingsCommand => _toggleChatSettingsCommand ??= new SimpleCommand(
-        () => IsChatSettingsOpen = !IsChatSettingsOpen);
+    public ICommand ToggleChatSettingsCommand => _toggleChatSettingsCommand ??=
+        new SimpleCommand(() => IsChatSettingsOpen = !IsChatSettingsOpen);
 
     private bool _isDisposed;
     private SimpleAsyncCommand<CopilotChatNotice>? _retryChatCommand;
 
-    private SimpleAsyncCommand<CopilotChatNotice> RetryChatCommand => _retryChatCommand ??= new(
+    private SimpleAsyncCommand<CopilotChatNotice> RetryChatCommand => _retryChatCommand ??= new
+    (
         ContinueChatAsync,
-        notice => notice is not null && _workTaskController?.CanContinueChat(notice) == true);
+        notice => notice is not null && _workTaskController?.CanContinueChat(notice) == true
+    );
 
     /// <summary>
     /// 初始化尚未接入模型发送的聊天视图骨架。
@@ -131,6 +133,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             _abilityCatalog.Changed += OnAbilityCatalogChanged;
         }
+
         PendingImages.CollectionChanged += OnPendingImagesCollectionChanged;
         InitializeAvailableModels();
         InitializeReasoningEfforts();
@@ -139,7 +142,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     }
 
     internal ChatViewModel(CodingWorkTaskRuntime runtime, AbilityCatalog? abilityCatalog = null)
-        : this(runtime.ChatManager, runtime.Controller, runtime.WorkspaceController, runtime.ModelDisplayName, abilityCatalog)
+        : this
+        (
+            runtime.ChatManager, runtime.Controller, runtime.WorkspaceController, runtime.ModelDisplayName,
+            abilityCatalog
+        )
     {
         _runtime = runtime;
     }
@@ -166,8 +173,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>获取更新当前会话标题的命令。</summary>
-    public ICommand UpdateSessionTitleCommand => _updateSessionTitleCommand ??= new SimpleAsyncCommand(
-        UpdateSessionTitleAsync, CanUpdateSessionTitle);
+    public ICommand UpdateSessionTitleCommand => _updateSessionTitleCommand ??= new SimpleAsyncCommand
+    (
+        UpdateSessionTitleAsync, CanUpdateSessionTitle
+    );
 
     /// <summary>
     /// 获取当前会话 ID。
@@ -179,7 +188,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// </summary>
     public string StatusText => _runStatusText ?? (SelectedModel is { } model
         ? Localizations.Lang.Format(Lang.Current.CurrentModel, model.DisplayName)
-        : _chatManager is not null ? Lang.Current.NoModels : Lang.Current.InitializingText);
+        : _chatManager is not null
+            ? Lang.Current.NoModels
+            : Lang.Current.InitializingText);
 
     /// <summary>
     /// 获取当前进程可用的语言模型。
@@ -415,9 +426,12 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     {
         AvailableReasoningEfforts.Clear();
         AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningDefault, null));
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningLow, ReasoningEffort.Low));
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningMedium, ReasoningEffort.Medium));
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningHigh, ReasoningEffort.High));
+        AvailableReasoningEfforts.Add
+            (new ReasoningEffortOptionViewModel(Lang.Current.ReasoningLow, ReasoningEffort.Low));
+        AvailableReasoningEfforts.Add
+            (new ReasoningEffortOptionViewModel(Lang.Current.ReasoningMedium, ReasoningEffort.Medium));
+        AvailableReasoningEfforts.Add
+            (new ReasoningEffortOptionViewModel(Lang.Current.ReasoningHigh, ReasoningEffort.High));
         OnPropertyChanged(nameof(SelectedReasoningEffort));
     }
 
@@ -489,8 +503,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     internal CopilotChatSession? NoticeSession => _subscribedSession;
 
-    internal Task AddSystemNoticeAsync(CopilotChatSession? session, string content,
-        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Error)
+    internal Task AddSystemNoticeAsync
+    (
+        CopilotChatSession? session, string content,
+        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Error
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(content);
         return AddSystemMessageAsync(session, content, level);
@@ -559,7 +576,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         catch (Exception exception)
         {
             Trace.TraceError($"工作路径切换失败：{exception}");
-            await AddSystemMessageAsync(session, Localizations.Lang.Format(Lang.Current.WorkspaceFailed, exception.Message)).ConfigureAwait(true);
+            await AddSystemMessageAsync
+                (session, Localizations.Lang.Format(Lang.Current.WorkspaceFailed, exception.Message)).ConfigureAwait
+                (true);
         }
     }
 
@@ -613,6 +632,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             notice.UpdateContinuation(_workTaskController?.HasChatContinuation(notice.Notice) == true);
         }
+
         _retryChatCommand?.RaiseCanExecuteChanged();
     }
 
@@ -641,6 +661,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         {
             OnPropertyChanged(nameof(StatusText));
         }
+
         await AddSystemMessageAsync(session, StatusText, level).ConfigureAwait(true);
     }
 
@@ -666,6 +687,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                 _runStatusText = Lang.Current.CompactUnavailable;
                 return;
             }
+
             _runStatusText = Lang.Current.Compacted;
         }
         catch (OperationCanceledException)
@@ -809,21 +831,39 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     {
         string selectedId = SelectedAbility?.Id ?? AbilityCatalog.ProgrammingId;
         AvailableAbilities.Clear();
-        AvailableAbilities.Add(new AbilityOptionViewModel(new AbilityDefinition(
-            AbilityCatalog.ProgrammingId, Lang.Current.ProgrammingAbilityText, null, null)));
+        AvailableAbilities.Add
+        (
+            new AbilityOptionViewModel
+            (
+                new AbilityDefinition
+                (
+                    AbilityCatalog.ProgrammingId, Lang.Current.ProgrammingAbilityText, null, null
+                )
+            )
+        );
         AbilityCollection abilities = _abilityCatalog?.Current ?? AbilityCollection.Empty;
-        AvailableAbilities.Add(new AbilityOptionViewModel(new AbilityDefinition(
-            AbilityCatalog.CompressionId,
-            abilities.CompressionDisplayName ?? Lang.Current.CompressWithInstructionsAbilityText,
-            abilities.CompressionPrompt,
-            null), usesDefaultCompressionName: abilities.CompressionDisplayName is null));
+        AvailableAbilities.Add
+        (
+            new AbilityOptionViewModel
+            (
+                new AbilityDefinition
+                (
+                    AbilityCatalog.CompressionId,
+                    abilities.CompressionDisplayName ?? Lang.Current.CompressWithInstructionsAbilityText,
+                    abilities.CompressionPrompt,
+                    null
+                ), usesDefaultCompressionName: abilities.CompressionDisplayName is null
+            )
+        );
         foreach (AbilityDefinition ability in abilities.Items)
         {
             AvailableAbilities.Add(new AbilityOptionViewModel(ability));
         }
 
-        _selectedAbility = AvailableAbilities.FirstOrDefault(item =>
-                               string.Equals(item.Id, selectedId, StringComparison.OrdinalIgnoreCase))
+        _selectedAbility = AvailableAbilities.FirstOrDefault
+                           (item =>
+                               string.Equals(item.Id, selectedId, StringComparison.OrdinalIgnoreCase)
+                           )
                            ?? AvailableAbilities[0];
         OnPropertyChanged(nameof(SelectedAbility));
         OnPropertyChanged(nameof(SendButtonText));
@@ -874,7 +914,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>获取生成当前会话标题预览的命令。</summary>
-    public ICommand GenerateSessionTitleCommand => _generateSessionTitleCommand ??= new SimpleAsyncCommand(
+    public ICommand GenerateSessionTitleCommand => _generateSessionTitleCommand ??= new SimpleAsyncCommand
+    (
         GenerateSessionTitlePreviewAsync,
         () => _chatManager is not null && _subscribedSession is not null,
         exceptionHandler: exception =>
@@ -882,7 +923,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             Trace.TraceError($"[ChatViewModel][GenerateSessionTitle] {exception}");
             _runStatusText = Localizations.Lang.Format(Lang.Current.TitleGenerationFailed, exception.Message);
             OnPropertyChanged(nameof(StatusText));
-        });
+        }
+    );
 
     private SimpleAsyncCommand? _generateSessionTitleCommand;
 
@@ -1015,8 +1057,10 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private ChatEntryViewModel CreateEntryViewModel(CopilotChatEntry entry) => entry switch
     {
         CopilotChatMessage message => new MessageItemViewModel(message),
-        CopilotChatNotice notice when _workTaskController is { } controller => new NoticeItemViewModel(
-            notice, RetryChatCommand, controller.HasChatContinuation(notice)),
+        CopilotChatNotice notice when _workTaskController is { } controller => new NoticeItemViewModel
+        (
+            notice, RetryChatCommand, controller.HasChatContinuation(notice)
+        ),
         CopilotChatNotice notice => new NoticeItemViewModel(notice),
         _ => throw new ArgumentException(nameof(entry)),
     };
@@ -1045,8 +1089,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task AddSystemMessageAsync(CopilotChatSession? session, string content,
-        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Information)
+    private async Task AddSystemMessageAsync
+    (
+        CopilotChatSession? session, string content,
+        CopilotChatNoticeLevel level = CopilotChatNoticeLevel.Information
+    )
     {
         if (session is null) return;
         await session.AddEntryAsync(new CopilotChatNotice(content, level));

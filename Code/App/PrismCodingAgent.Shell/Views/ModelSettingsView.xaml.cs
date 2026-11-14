@@ -18,6 +18,7 @@ public partial class ModelSettingsView : UserControl
             input.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
             return;
         }
+
         if (decimal.TryParse(input.Text, out decimal value))
         {
             input.Text = decimal.Clamp(decimal.Truncate(value), 1, decimal.Parse((string)input.Tag)).ToString();

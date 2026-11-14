@@ -86,7 +86,8 @@
                                     <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding SetupConnectionLabel, Source={x:Static l:Lang.Current}}"
-                                           Style="{StaticResource ModelLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                           Style="{StaticResource ModelLabel}" VerticalAlignment="Center"
+                                           Margin="0,0,12,0" />
                                 <Button Grid.Column="1" HorizontalAlignment="Right" Foreground="DarkRed"
                                         Content="{Binding RemoveModelServiceText, Source={x:Static l:Lang.Current}}"
                                         Command="{Binding DataContext.RemoveProviderCommand, RelativeSource={RelativeSource AncestorType=views:ModelSettingsView}}"

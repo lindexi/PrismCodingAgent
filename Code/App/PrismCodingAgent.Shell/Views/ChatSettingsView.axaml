@@ -183,14 +183,16 @@
                     </Grid>
                     <Border Height="1" Background="#ECEDEF" />
                     <Grid ColumnDefinitions="*,44" MinHeight="48">
-                        <TextBlock Classes="OptionTitle" Text="{Binding EnableWebFetchText, Source={x:Static localizations:Lang.Current}}" />
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding EnableWebFetchText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatWebFetchToggle" Grid.Column="1"
                                       AutomationProperties.Name="{Binding EnableWebFetchText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding RunOptions.EnableWebFetch, Mode=TwoWay}" />
                     </Grid>
                     <Border Height="1" Background="#ECEDEF" />
                     <Grid ColumnDefinitions="*,44" MinHeight="48">
-                        <TextBlock Classes="OptionTitle" Text="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}" />
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}" />
                         <ToggleSwitch x:Name="ChatWebSearchToggle" Grid.Column="1"
                                       AutomationProperties.Name="{Binding EnableWebSearchText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding RunOptions.EnableWebSearch, Mode=TwoWay}" />
