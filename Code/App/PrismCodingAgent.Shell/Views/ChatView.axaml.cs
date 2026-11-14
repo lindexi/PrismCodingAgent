@@ -267,7 +267,16 @@ public partial class ChatView : UserControl
         }
 
         e.Handled = true;
-        viewModel.SendCommand.Execute(null);
+        SendMessage();
+    }
+
+    private void SendButton_OnClick(object? sender, RoutedEventArgs e) => SendMessage();
+
+    private void SendMessage()
+    {
+        if (DataContext is not ChatViewModel model || !model.SendCommand.CanExecute(null)) return;
+        if (model.SelectedAbility?.IsCompression != true) ResetAndScrollToEnd();
+        model.SendCommand.Execute(null);
     }
 
     private async Task<bool> TryPasteClipboardImageAsync()

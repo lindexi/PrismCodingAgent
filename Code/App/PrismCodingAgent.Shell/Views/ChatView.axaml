@@ -507,7 +507,7 @@
                                 Content="{Binding StopText, Source={x:Static localizations:Lang.Current}}"
                                 Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
                         <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
-                                Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
+                                Click="SendButton_OnClick" IsEnabled="{Binding CanSend}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <PathIcon Width="14" Height="14" Data="M2,3 L22,12 L2,21 L6,13 L15,12 L6,11 Z" />
                                 <TextBlock Text="{Binding SendButtonText}" />
