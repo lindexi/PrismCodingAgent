@@ -210,16 +210,20 @@ internal sealed class CodingWorkTaskController
         }
     }
 
-    public Task CreateNewSessionAsync(CancellationToken cancellationToken = default)
+    public async Task CreateNewSessionAsync(CancellationToken cancellationToken = default)
     {
         EnsureCanChangeSession();
         cancellationToken.ThrowIfCancellationRequested();
-        AddOrUpdateSummary(_chatManager.SelectedSession, insertAtTop: false);
+        CopilotChatSession previousSession = _chatManager.SelectedSession;
+        AddOrUpdateSummary(previousSession, insertAtTop: false);
         _chatManager.CreateNewSession();
         ApplyWorkTaskMetadata(_chatManager.SelectedSession);
         AddOrUpdateSummary(_chatManager.SelectedSession, insertAtTop: true);
         OnStateChanged();
-        return Task.CompletedTask;
+        if (!ReferenceEquals(previousSession, _chatManager.SelectedSession))
+        {
+            await SaveAndUnloadSessionAsync(previousSession);
+        }
     }
 
     public async Task OpenSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
@@ -259,8 +263,50 @@ internal sealed class CodingWorkTaskController
             _chatManager.SelectedSession = previousSession;
             await _workspaceController
                 .ChangeWorkspaceAsync(previousWorkspacePath, CancellationToken.None);
+            if (!sessionAlreadyLoaded)
+            {
+                CopilotChatSession? targetSession = _chatManager.ChatSessions.FirstOrDefault(session => session.SessionId == sessionId);
+                if (targetSession is not null) _chatManager.RemoveSession(targetSession);
+            }
             OnStateChanged();
+            await TryAddSessionOperationNoticeAsync();
             throw;
+        }
+
+        AddOrUpdateSummary(previousSession, insertAtTop: false);
+        await SaveAndUnloadSessionAsync(previousSession);
+    }
+
+    private async Task SaveAndUnloadSessionAsync(CopilotChatSession session)
+    {
+        try
+        {
+            await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Trace.TraceError("[CodingWorkTaskController][SaveAndUnloadSession] SessionId={0} Exception={1}",
+                session.SessionId, exception);
+            await TryAddSessionOperationNoticeAsync();
+            return;
+        }
+
+        if (!ReferenceEquals(session, _chatManager.SelectedSession))
+        {
+            _chatManager.RemoveSession(session);
+        }
+    }
+
+    private async Task TryAddSessionOperationNoticeAsync()
+    {
+        try
+        {
+            await AddNoticeAsync(_chatManager.SelectedSession,
+                new CopilotChatNotice(Lang.Current.HistoryOperationFailed, CopilotChatNoticeLevel.Error));
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Trace.TraceError("[CodingWorkTaskController][SessionOperationNotice] Exception={0}", exception);
         }
     }
 
