@@ -47,16 +47,20 @@ public partial class ChatView : UserControl
         if (_subscribedViewModel is not null)
         {
             _subscribedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _subscribedViewModel.MessageSending -= OnMessageSending;
         }
 
         _subscribedViewModel = DataContext as ChatViewModel;
         if (_subscribedViewModel is not null)
         {
             _subscribedViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            _subscribedViewModel.MessageSending += OnMessageSending;
         }
 
         ResetAndScrollToEnd();
     }
+
+    private void OnMessageSending(object? sender, EventArgs e) => ResetAndScrollToEnd();
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

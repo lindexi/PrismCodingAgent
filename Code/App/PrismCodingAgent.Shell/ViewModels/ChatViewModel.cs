@@ -314,6 +314,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ICommand SendCommand { get; }
 
+    /// <summary>有效消息准备完成、即将提交发送时发生。</summary>
+    public event EventHandler? MessageSending;
+
     /// <summary>
     /// 获取压缩当前对话命令。
     /// </summary>
@@ -750,6 +753,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         RunOptions.LanguageTag = Lang.Current.IetfLanguageTag;
         try
         {
+            MessageSending?.Invoke(this, EventArgs.Empty);
             if (runLoopIteration)
             {
                 await _workTaskController

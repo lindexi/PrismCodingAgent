@@ -345,6 +345,38 @@ public sealed class ChatViewModelTests
         Assert.AreEqual(1, runner.RunCount);
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task SendingMessageShouldNotifyBeforeRunnerStarts()
+    {
+        var manager = new CopilotChatManager();
+        var runner = new ImmediateRunner(manager);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
+        await application.InitializeAsync();
+        using var model = new ChatViewModel(manager, application, "test") { InputText = "question" };
+        var runCountsAtNotification = new List<int>();
+        model.MessageSending += (_, _) => runCountsAtNotification.Add(runner.RunCount);
+
+        model.SendCommand.Execute(null);
+        await runner.Completed.Task;
+
+        CollectionAssert.AreEqual(new[] { 0 }, runCountsAtNotification);
+    }
+
+    [TestMethod]
+    public void EmptyInputShouldNotNotifyMessageSending()
+    {
+        var manager = new CopilotChatManager();
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), new ImmediateRunner(manager));
+        using var model = new ChatViewModel(manager, application, "test");
+        int notifications = 0;
+        model.MessageSending += (_, _) => notifications++;
+
+        model.SendCommand.Execute(null);
+
+        Assert.AreEqual(0, notifications);
+    }
+
     [TestMethod(DisplayName = "运行期间插话应显示提交反馈并保持发送入口可用")]
     [Timeout(5000)]
     public async Task InterruptionShouldShowSubmissionFeedbackAndKeepSendAvailable()
