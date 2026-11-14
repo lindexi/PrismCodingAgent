@@ -20,27 +20,6 @@ public partial class ChatView : UserControl
 
     }
 
-    /// <summary>标识发送时恢复消息尾部跟随的视图路由事件。</summary>
-    public static readonly RoutedEvent ScrollToEndRequestedEvent = EventManager.RegisterRoutedEvent(
-        nameof(ScrollToEndRequested), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(ChatView));
-
-    /// <summary>发送时通知承载消息列表的视图恢复尾部跟随。</summary>
-    public event RoutedEventHandler ScrollToEndRequested
-    {
-        add => AddHandler(ScrollToEndRequestedEvent, value);
-        remove => RemoveHandler(ScrollToEndRequestedEvent, value);
-    }
-
-    private void SendButton_OnClick(object sender, RoutedEventArgs e) => SendMessage();
-
-    private void SendMessage()
-    {
-        if (DataContext is not ChatViewModel model || !model.SendCommand.CanExecute(null)) return;
-        if (model.SelectedAbility?.IsCompression != true)
-            RaiseEvent(new RoutedEventArgs(ScrollToEndRequestedEvent, this));
-        model.SendCommand.Execute(null);
-    }
-
     private void AbilitySelector_OnDropDownOpened(object sender, EventArgs e)
     {
         if (DataContext is ChatViewModel model)
@@ -78,7 +57,7 @@ public partial class ChatView : UserControl
             && DataContext is ChatViewModel model && model.SendCommand.CanExecute(null))
         {
             e.Handled = true;
-            SendMessage();
+            model.SendCommand.Execute(null);
         }
     }
 

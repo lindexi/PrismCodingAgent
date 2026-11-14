@@ -100,7 +100,7 @@
                                 Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}" />
                         <Button x:Name="SendButton" Margin="8,0,0,0" MinWidth="88"
                                 Style="{StaticResource ComposerSendButton}" Content="{Binding SendButtonText}"
-                                Click="SendButton_OnClick" IsEnabled="{Binding CanSend}"
+                                Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}"
                                 AutomationProperties.Name="{Binding SendButtonText}">
                             <Button.ContentTemplate>
                                 <DataTemplate>

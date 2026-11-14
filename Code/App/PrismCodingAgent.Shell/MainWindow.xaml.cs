@@ -26,23 +26,11 @@ public partial class MainWindow : Window
 
     private void OnChatDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (_scrollChat is not null)
-        {
-            _scrollChat.PropertyChanged -= OnChatPropertyChanged;
-        }
+        if (_scrollChat is not null) _scrollChat.PropertyChanged -= OnChatPropertyChanged;
         _scrollChat = e.NewValue as ChatViewModel;
-        if (_scrollChat is not null)
-        {
-            _scrollChat.PropertyChanged += OnChatPropertyChanged;
-        }
+        if (_scrollChat is not null) _scrollChat.PropertyChanged += OnChatPropertyChanged;
         _autoScrollState.Reset();
         ScrollToEndAfterLayout((System.Windows.Controls.ScrollViewer)sender);
-    }
-
-    private void OnScrollToEndRequested(object sender, RoutedEventArgs e)
-    {
-        _autoScrollState.Reset();
-        ScrollToEndAfterLayout(MessagesScrollViewer);
     }
 
     private void OnChatPropertyChanged(object? sender, PropertyChangedEventArgs e)

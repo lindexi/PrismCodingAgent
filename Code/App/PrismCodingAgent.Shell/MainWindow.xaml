@@ -5,8 +5,7 @@
         xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views"
         xmlns:converters="clr-namespace:PrismCodingAgent.CodingShell.Converters"
         Width="1440" Height="900" MinWidth="1280" MinHeight="720"
-        Icon="Assets/Icons/CodingChatRoom.ico" WindowStartupLocation="CenterScreen" PreviewKeyDown="OnExitKeyDown"
-        views:ChatView.ScrollToEndRequested="OnScrollToEndRequested">
+        Icon="Assets/Icons/CodingChatRoom.ico" WindowStartupLocation="CenterScreen" PreviewKeyDown="OnExitKeyDown">
     <Window.Title>
         <MultiBinding Converter="{StaticResource WorkspaceTitleConverter}">
             <Binding Path="ChatViewModel.NextRunWorkspacePath" />
