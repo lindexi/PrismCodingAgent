@@ -75,7 +75,7 @@ public class ModelPurposeTests
 
         manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([expected]));
 
-        Assert.AreSame(expected, manager.GetModelForPurpose("review"));
+        Assert.AreSame(expected, manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -90,7 +90,7 @@ public class ModelPurposeTests
 
         manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([expected]));
 
-        Assert.AreSame(expected, manager.GetModelForPurpose("review"));
+        Assert.AreSame(expected, manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -105,25 +105,16 @@ public class ModelPurposeTests
 
         manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([expected]));
 
-        Assert.AreSame(expected, manager.GetModelForPurpose("review"));
+        Assert.AreSame(expected, manager.ResolveModel("review"));
     }
 
     [TestMethod]
-    public void GetModelForPurpose_WhenConfiguredModelWasNeverRegistered_ThrowsInvalidOperationException()
+    public void ResolveModel_WhenConfiguredModelWasNeverRegistered_ReturnsNull()
     {
         var (manager, _, _) = CreateManager();
         manager.LoadConfiguration(CreateConfiguration("review", "future/shared"));
 
-        Assert.Throws<InvalidOperationException>(() => manager.GetModelForPurpose("review"));
-    }
-
-    [TestMethod]
-    public void GetModelForPurposeOrPrimary_WhenConfiguredModelWasNeverRegistered_ThrowsWithoutFallback()
-    {
-        var (manager, _, _) = CreateManager();
-        manager.SetModelForPurpose("review", "future/shared");
-
-        Assert.Throws<InvalidOperationException>(() => manager.GetModelForPurposeOrPrimary("review"));
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [TestMethod]
@@ -136,19 +127,19 @@ public class ModelPurposeTests
         });
 
         Assert.AreEqual("future/shared", manager.ModelsByPurpose["review"]);
-        Assert.Throws<InvalidOperationException>(() => manager.GetModelForPurposeOrPrimary("review"));
+        Assert.IsNull(manager.ResolveModel("review"));
 
         var expected = CreateModel("future", "shared", "future-id");
         manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([expected]));
 
-        Assert.AreSame(expected, manager.GetModelForPurpose("review"));
+        Assert.AreSame(expected, manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
     [DataRow("alpha/shared")]
     [DataRow("alpha\\shared")]
     [DataRow("alpha-id")]
-    public void GetModelForPurpose_WhenConfigured_UsesExistingModelResolution(string modelSpecifier)
+    public void ResolveModel_WhenPurposeIsConfigured_UsesExistingModelResolution(string modelSpecifier)
     {
         var manager = new AgentApiEndpointManager();
         var other = CreateModel("beta", "shared", "beta-id");
@@ -156,16 +147,16 @@ public class ModelPurposeTests
         manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([other, expected]));
         manager.LoadConfiguration(CreateConfiguration("review", modelSpecifier));
 
-        Assert.AreSame(expected, manager.GetModelForPurpose("review"));
+        Assert.AreSame(expected, manager.ResolveModel("review"));
     }
 
     [TestMethod]
-    public void GetModelForPurpose_WhenModelNameIsUnqualified_ResolvesByModelName()
+    public void ResolveModel_WhenPurposeModelNameIsUnqualified_ResolvesByModelName()
     {
         var (manager, primary, _) = CreateManager();
         manager.LoadConfiguration(CreateConfiguration("review", "primary"));
 
-        Assert.AreSame(primary, manager.GetModelForPurpose("review"));
+        Assert.AreSame(primary, manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -173,16 +164,16 @@ public class ModelPurposeTests
     [DataRow("REVIEW")]
     [DataRow(" review")]
     [DataRow("review ")]
-    public void GetModelForPurpose_WhenKeyDoesNotMatchOrdinally_ReturnsNull(string purpose)
+    public void ResolveModel_WhenPurposeKeyDoesNotMatchOrdinally_ReturnsNull(string purpose)
     {
         var (manager, _, _) = CreateManager();
         manager.LoadConfiguration(CreateConfiguration("review", "secondary"));
 
-        Assert.IsNull(manager.GetModelForPurpose(purpose));
+        Assert.IsNull(manager.ResolveModel(purpose));
     }
 
     [TestMethod]
-    public void GetModelForPurpose_WhenKeysDifferOnlyByCase_KeepsDistinctMappings()
+    public void ResolveModel_WhenPurposeKeysDifferOnlyByCase_KeepsDistinctMappings()
     {
         var (manager, primary, secondary) = CreateManager();
         manager.LoadConfiguration(new AgentApiManagerConfiguration
@@ -196,11 +187,11 @@ public class ModelPurposeTests
 
         CollectionAssert.AreEqual(
             new[] { primary, secondary },
-            new[] { manager.GetModelForPurpose("review"), manager.GetModelForPurpose("Review") });
+            new[] { manager.ResolveModel("review"), manager.ResolveModel("Review") });
     }
 
     [TestMethod]
-    public void GetModelForPurpose_WhenSourceDictionaryIgnoresCase_StillUsesOrdinalKeys()
+    public void ResolveModel_WhenPurposeSourceDictionaryIgnoresCase_StillUsesOrdinalKeys()
     {
         var (manager, _, _) = CreateManager();
         manager.LoadConfiguration(new AgentApiManagerConfiguration
@@ -211,23 +202,23 @@ public class ModelPurposeTests
             },
         });
 
-        Assert.IsNull(manager.GetModelForPurpose("Review"));
+        Assert.IsNull(manager.ResolveModel("Review"));
     }
 
     [TestMethod]
-    public void GetModelForPurpose_WhenNotConfigured_ReturnsNull()
+    public void ResolveModel_WhenPurposeIsNotConfigured_ReturnsNull()
     {
         var (manager, _, _) = CreateManager();
 
-        Assert.IsNull(manager.GetModelForPurpose("review"));
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [TestMethod]
-    public void GetModelForPurpose_WhenNoModelsAreRegistered_ReturnsNull()
+    public void ResolveModel_WhenNoModelsAreRegistered_ReturnsNull()
     {
         var manager = new AgentApiEndpointManager();
 
-        Assert.IsNull(manager.GetModelForPurpose("review"));
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -235,60 +226,21 @@ public class ModelPurposeTests
     [DataRow("")]
     [DataRow(" ")]
     [DataRow("\t\r\n")]
-    public void GetModelForPurpose_WhenPurposeIsNullOrWhiteSpace_ThrowsArgumentException(string? purpose)
+    public void ResolveModel_WhenSpecifierIsNullOrWhiteSpace_ReturnsNull(string? modelSpecifier)
     {
         var (manager, _, _) = CreateManager();
 
-        Assert.Throws<ArgumentException>(() => manager.GetModelForPurpose(purpose!));
-    }
-
-    [DataTestMethod]
-    [DataRow(null)]
-    [DataRow("")]
-    [DataRow(" ")]
-    [DataRow("\t\r\n")]
-    public void GetModelForPurposeOrPrimary_WhenPurposeIsNullOrWhiteSpace_ThrowsArgumentException(string? purpose)
-    {
-        var (manager, _, _) = CreateManager();
-
-        Assert.Throws<ArgumentException>(() => manager.GetModelForPurposeOrPrimary(purpose!));
+        Assert.IsNull(manager.ResolveModel(modelSpecifier!));
     }
 
     [TestMethod]
-    public void GetModelForPurposeOrPrimary_WhenConfigured_ReturnsPurposeModel()
+    public void ResolveModel_WhenPrimaryChanges_UnconfiguredPurposeStillReturnsNull()
     {
         var (manager, _, secondary) = CreateManager();
-        manager.LoadConfiguration(CreateConfiguration("review", "secondary"));
-
-        Assert.AreSame(secondary, manager.GetModelForPurposeOrPrimary("review"));
-    }
-
-    [TestMethod]
-    public void GetModelForPurposeOrPrimary_WhenNotConfigured_ReturnsPrimaryModel()
-    {
-        var (manager, primary, _) = CreateManager();
-
-        Assert.AreSame(primary, manager.GetModelForPurposeOrPrimary("review"));
-    }
-
-    [TestMethod]
-    public void GetModelForPurposeOrPrimary_WhenPrimaryChanges_ReturnsCurrentPrimaryModel()
-    {
-        var (manager, _, secondary) = CreateManager();
-        _ = manager.GetModelForPurposeOrPrimary("review");
 
         manager.PrimaryModel = secondary;
 
-        Assert.AreSame(secondary, manager.GetModelForPurposeOrPrimary("review"));
-    }
-
-    [TestMethod]
-    public void GetModelForPurposeOrPrimary_WhenKeyCaseDiffers_ReturnsPrimaryModel()
-    {
-        var (manager, primary, _) = CreateManager();
-        manager.LoadConfiguration(CreateConfiguration("review", "secondary"));
-
-        Assert.AreSame(primary, manager.GetModelForPurposeOrPrimary("Review"));
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -317,7 +269,7 @@ public class ModelPurposeTests
 
         CollectionAssert.AreEqual(
             new FakeLanguageModel?[] { null, primary },
-            new[] { manager.GetModelForPurpose("old"), manager.GetModelForPurpose("new") });
+            new[] { manager.ResolveModel("old"), manager.ResolveModel("new") });
     }
 
     [DataTestMethod]
@@ -333,7 +285,7 @@ public class ModelPurposeTests
             ModelsByPurpose = useNull ? null : new Dictionary<string, string>(),
         });
 
-        Assert.IsNull(manager.GetModelForPurpose("review"));
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [TestMethod]
@@ -353,7 +305,7 @@ public class ModelPurposeTests
 
         CollectionAssert.AreEqual(
             new FakeLanguageModel?[] { secondary, null, null },
-            new[] { manager.GetModelForPurpose("old"), manager.GetModelForPurpose("new"), manager.GetModelForPurpose("invalid") });
+            new[] { manager.ResolveModel("old"), manager.ResolveModel("new"), manager.ResolveModel("invalid") });
     }
 
     [TestMethod]
@@ -364,7 +316,7 @@ public class ModelPurposeTests
         var configuration = CreateConfiguration("review", "primary") with { PrimaryModel = "missing" };
         Assert.Throws<ArgumentException>(() => manager.LoadConfiguration(configuration));
 
-        Assert.AreSame(secondary, manager.GetModelForPurpose("review"));
+        Assert.AreSame(secondary, manager.ResolveModel("review"));
     }
 
     [TestMethod]
@@ -384,8 +336,8 @@ public class ModelPurposeTests
                 manager.GetSupportedModels().Count,
                 manager.PrimaryModel.ModelDefinition.ModelName,
                 manager.PrimaryModel,
-                manager.GetModelForPurpose("new-purpose"),
-                manager.GetModelForPurpose("old"),
+                manager.ResolveModel("new-purpose"),
+                manager.ResolveModel("old"),
                 manager.ResolveModel("test/primary"),
             });
     }
@@ -398,7 +350,7 @@ public class ModelPurposeTests
 
         manager.ReplaceConfiguration(CreateReplacementConfiguration() with { ModelsByPurpose = null });
 
-        Assert.IsNull(manager.GetModelForPurpose("old"));
+        Assert.IsNull(manager.ResolveModel("old"));
     }
 
     [DataTestMethod]
@@ -423,8 +375,8 @@ public class ModelPurposeTests
                 manager.GetSupportedModels()[0],
                 manager.GetSupportedModels()[1],
                 manager.PrimaryModel,
-                manager.GetModelForPurpose("old"),
-                manager.GetModelForPurpose("review"),
+                manager.ResolveModel("old"),
+                manager.ResolveModel("review"),
                 manager.ResolveModel("replacement/new"),
             });
     }
@@ -486,7 +438,7 @@ public class ModelPurposeTests
 
         CollectionAssert.AreEqual(
             new[] { primary, secondary, primary },
-            new[] { manager.PrimaryModel, manager.GetModelForPurpose("review"), manager.GetModelForPurpose("Review") });
+            new[] { manager.PrimaryModel, manager.ResolveModel("review"), manager.ResolveModel("Review") });
     }
 
     [DataTestMethod]
@@ -530,7 +482,7 @@ public class ModelPurposeTests
         manager.SetModelForPurpose("review", "secondary");
         manager.SetModelForPurpose("review", "primary");
 
-        Assert.AreSame(primary, manager.GetModelForPurpose("review"));
+        Assert.AreSame(primary, manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -548,7 +500,7 @@ public class ModelPurposeTests
         manager.SetModelForPurpose("review", "secondary");
         Assert.Throws<ArgumentException>(() => manager.SetModelForPurpose(purpose!, modelSpecifier!));
 
-        Assert.AreSame(secondary, manager.GetModelForPurpose("review"));
+        Assert.AreSame(secondary, manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -564,13 +516,13 @@ public class ModelPurposeTests
     }
 
     [TestMethod]
-    public void RemoveModelForPurpose_WhenRemoved_ReturnsCurrentPrimary()
+    public void RemoveModelForPurpose_WhenRemoved_ResolveModelReturnsNull()
     {
-        var (manager, primary, _) = CreateManager();
+        var (manager, _, _) = CreateManager();
         manager.SetModelForPurpose("review", "secondary");
         manager.RemoveModelForPurpose("review");
 
-        Assert.AreSame(primary, manager.GetModelForPurposeOrPrimary("review"));
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
@@ -668,11 +620,9 @@ public class ModelPurposeTests
     }
 
     [DataTestMethod]
-    [DataRow("removed/shared", false)]
-    [DataRow("removed-id", false)]
-    [DataRow("removed/shared", true)]
-    [DataRow("removed-id", true)]
-    public void GetModelForPurpose_WhenConfiguredModelIsUnregistered_ThrowsWithoutFallback(string specifier, bool orPrimary)
+    [DataRow("removed/shared")]
+    [DataRow("removed-id")]
+    public void ResolveModel_WhenConfiguredModelIsUnregistered_ReturnsNull(string specifier)
     {
         var (manager, _, _) = CreateManager();
         var provider = new FakeLanguageModelProvider([CreateModel("removed", "shared", "removed-id")]);
@@ -680,17 +630,13 @@ public class ModelPurposeTests
         manager.SetModelForPurpose("review", specifier);
         manager.UnregisterLanguageModelProvider(provider);
 
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-        {
-            _ = orPrimary ? manager.GetModelForPurposeOrPrimary("review") : manager.GetModelForPurpose("review");
-        });
-        StringAssert.Contains(exception.Message, specifier);
+        Assert.IsNull(manager.ResolveModel("review"));
     }
 
     [DataTestMethod]
     [DataRow("removed/shared")]
     [DataRow("removed-id")]
-    public void GetModelForPurpose_WhenModelIsReregistered_ResolvesNewInstance(string specifier)
+    public void ResolveModel_WhenPurposeModelIsReregistered_ResolvesNewInstance(string specifier)
     {
         var (manager, _, _) = CreateManager();
         var provider = new FakeLanguageModelProvider([CreateModel("removed", "shared", "removed-id")]);
@@ -700,7 +646,71 @@ public class ModelPurposeTests
         var replacement = CreateModel("removed", "shared", "removed-id");
         manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([replacement]));
 
-        Assert.AreSame(replacement, manager.GetModelForPurpose("review"));
+        Assert.AreSame(replacement, manager.ResolveModel("review"));
+    }
+
+    [DataTestMethod]
+    [DataRow("secondary")]
+    [DataRow("secondary-id")]
+    [DataRow("test/secondary")]
+    [DataRow("test\\secondary")]
+    public void ResolveModel_WhenPurposeDoesNotMatch_ResolvesDirectModelSpecifier(string modelSpecifier)
+    {
+        var (manager, _, secondary) = CreateManager();
+        manager.SetModelForPurpose("review", "primary");
+
+        Assert.AreSame(secondary, manager.ResolveModel(modelSpecifier));
+    }
+
+    [DataTestMethod]
+    [DataRow("primary")]
+    [DataRow("primary-id")]
+    [DataRow("test/primary")]
+    [DataRow("test\\primary")]
+    public void ResolveModel_WhenPurposeConflictsWithModelSpecifier_PurposeTakesPriority(string purpose)
+    {
+        var (manager, _, secondary) = CreateManager();
+        manager.SetModelForPurpose(purpose, "secondary");
+
+        Assert.AreSame(secondary, manager.ResolveModel(purpose));
+    }
+
+    [TestMethod]
+    public void ResolveModel_WhenConflictingPurposeModelIsMissing_ReturnsNull()
+    {
+        var (manager, _, _) = CreateManager();
+        manager.SetModelForPurpose("primary", "missing");
+
+        Assert.IsNull(manager.ResolveModel("primary"));
+    }
+
+    [TestMethod]
+    public void ResolveModel_WhenMappedModelIsAlsoPurpose_ResolvesModelWithoutFollowingChain()
+    {
+        var (manager, primary, _) = CreateManager();
+        manager.SetModelForPurpose("review", "primary");
+        manager.SetModelForPurpose("primary", "secondary");
+
+        Assert.AreSame(primary, manager.ResolveModel("review"));
+    }
+
+    [TestMethod]
+    public void ResolveModel_WhenPurposeChainHasNoDirectModel_ReturnsNull()
+    {
+        var (manager, _, _) = CreateManager();
+        manager.SetModelForPurpose("review", "other-purpose");
+        manager.SetModelForPurpose("other-purpose", "secondary");
+
+        Assert.IsNull(manager.ResolveModel("review"));
+    }
+
+    [TestMethod]
+    public void ResolveModel_WhenPurposeMapsToItself_ResolvesDirectModel()
+    {
+        var (manager, primary, _) = CreateManager();
+        manager.SetModelForPurpose("primary", "primary");
+
+        Assert.AreSame(primary, manager.ResolveModel("primary"));
     }
 
     private static FakeLanguageModel CreateModel(string provider, string name, string id)

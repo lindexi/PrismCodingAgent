@@ -189,32 +189,6 @@ public class AgentApiEndpointManager : IHttpClientProvider
     }
 
     /// <summary>
-    /// 获取指定用途配置的模型；未配置时返回 <see langword="null"/>。用途区分大小写。
-    /// </summary>
-    /// <param name="purpose">非空白的用途标识。</param>
-    /// <returns>该用途配置的模型，或 <see langword="null"/>。</returns>
-    public ILanguageModel? GetModelForPurpose(string purpose)
-    {
-        ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
-        if (!_modelsByPurpose.TryGetValue(purpose, out var modelSpecifier))
-        {
-            return null;
-        }
-
-        return ResolveModel(modelSpecifier)
-            ?? throw new InvalidOperationException(
-                $"Model '{modelSpecifier}' configured for purpose '{purpose}' is not registered.");
-    }
-
-    /// <summary>
-    /// 获取指定用途配置的模型；未配置时返回当前的 <see cref="PrimaryModel"/>。
-    /// </summary>
-    /// <param name="purpose">非空白的用途标识。</param>
-    /// <returns>该用途配置的模型或当前首选模型。</returns>
-    public ILanguageModel GetModelForPurposeOrPrimary(string purpose)
-        => GetModelForPurpose(purpose) ?? PrimaryModel;
-
-    /// <summary>
     /// 根据模型名称或 ID 查找模型，可选择性指定提供商。
     /// </summary>
     /// <param name="modelNameOrId">模型名称或 ID。</param>
@@ -238,19 +212,24 @@ public class AgentApiEndpointManager : IHttpClientProvider
     }
 
     /// <summary>
-    /// 解析模型标识并查找匹配的模型。支持以下格式：
+    /// 解析用途或模型标识并查找匹配的模型。用途区分大小写，优先进行一次映射；模型标识支持以下格式：
     /// <list type="bullet">
     /// <item>"Provider/ModelName" 或 "Provider\ModelName" — 按提供商和模型名精确匹配</item>
     /// <item>"ModelName" 或 "ModelId" — 在所有提供商中按模型名或 ID 匹配</item>
     /// </list>
     /// </summary>
-    /// <param name="modelSpecifier">模型标识字符串。</param>
+    /// <param name="modelSpecifier">用途或模型标识字符串。</param>
     /// <returns>匹配的模型；未找到时返回 <see langword="null"/>。</returns>
     public ILanguageModel? ResolveModel(string modelSpecifier)
     {
         if (string.IsNullOrEmpty(modelSpecifier))
         {
             return null;
+        }
+
+        if (_modelsByPurpose.TryGetValue(modelSpecifier, out var mappedModelSpecifier))
+        {
+            modelSpecifier = mappedModelSpecifier;
         }
 
         // 支持 "Provider/ModelName" 或 "Provider\ModelName" 格式
