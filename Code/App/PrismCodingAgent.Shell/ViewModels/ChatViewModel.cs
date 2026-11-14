@@ -873,6 +873,34 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         _updateSessionTitleCommand?.RaiseCanExecuteChanged();
     }
 
+    /// <summary>获取生成当前会话标题预览的命令。</summary>
+    public ICommand GenerateSessionTitleCommand => _generateSessionTitleCommand ??= new SimpleAsyncCommand(
+        GenerateSessionTitlePreviewAsync,
+        () => _chatManager is not null && _subscribedSession is not null,
+        exceptionHandler: exception =>
+        {
+            Trace.TraceError($"[ChatViewModel][GenerateSessionTitle] {exception}");
+            _runStatusText = Localizations.Lang.Format(Lang.Current.TitleGenerationFailed, exception.Message);
+            OnPropertyChanged(nameof(StatusText));
+        });
+
+    private SimpleAsyncCommand? _generateSessionTitleCommand;
+
+    private async Task GenerateSessionTitlePreviewAsync()
+    {
+        if (_subscribedSession is not { } session || _chatManager is null)
+        {
+            return;
+        }
+
+        var generator = new SessionTitleGenerator(_chatManager.AgentApiEndpointManager);
+        string? title = await generator.GenerateTitlePreviewAsync(session).ConfigureAwait(true);
+        if (ReferenceEquals(session, _subscribedSession) && !string.IsNullOrWhiteSpace(title))
+        {
+            EditedSessionTitle = title;
+        }
+    }
+
     private bool CanUpdateSessionTitle()
         => _workTaskController is not null
            && !string.IsNullOrWhiteSpace(EditedSessionTitle)

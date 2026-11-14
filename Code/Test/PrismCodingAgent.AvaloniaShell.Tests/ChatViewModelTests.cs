@@ -126,6 +126,65 @@ public sealed class ChatViewModelTests
         Assert.AreEqual("更新后的标题", manager.SelectedSession.Title);
     }
 
+    [TestMethod]
+    public async Task GenerateTitleCommandShouldOnlyUpdatePreviewForUserSetTitle()
+    {
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
+            [new FakeLanguageModel(new FakeChatClient
+            {
+                OnGetResponseAsync = (_, _, _) => Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,
+                    new AIContent[] { new FunctionCallContent("title", SessionTitleGenerator.TitleSubmissionToolName,
+                        new Dictionary<string, object?> { ["title"] = "Generated preview" }) })))
+            })]));
+        manager.SelectedSession.SetTitle("Original", TitleSource.UserSet);
+        await manager.SelectedSession.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Current task"));
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var viewModel = new ChatViewModel(manager, application, "test");
+
+        await ((SimpleAsyncCommand)viewModel.GenerateSessionTitleCommand).ExecuteAsync();
+
+        Assert.AreEqual(("Generated preview", "Original"), (viewModel.EditedSessionTitle, manager.SelectedSession.Title));
+    }
+
+    [TestMethod]
+    public async Task GenerateTitleCommandShouldPreventReentry()
+    {
+        var response = new TaskCompletionSource<ChatResponse>();
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
+            [new FakeLanguageModel(new FakeChatClient { OnGetResponseAsync = (_, _, _) => response.Task })]));
+        await manager.SelectedSession.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var viewModel = new ChatViewModel(manager, application, "test");
+        var command = (SimpleAsyncCommand)viewModel.GenerateSessionTitleCommand;
+
+        Task pending = command.ExecuteAsync();
+        bool canExecuteDuringCall = command.CanExecute(null);
+        response.SetResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "unused")));
+        await pending;
+
+        Assert.IsFalse(canExecuteDuringCall);
+    }
+
+    [TestMethod]
+    public async Task GenerateTitleCommandShouldDisplayModelFailure()
+    {
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
+            [new FakeLanguageModel(new FakeChatClient
+            {
+                OnGetResponseAsync = (_, _, _) => throw new HttpRequestException("Title service unavailable")
+            })]));
+        await manager.SelectedSession.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var viewModel = new ChatViewModel(manager, application, "test");
+
+        await ((SimpleAsyncCommand)viewModel.GenerateSessionTitleCommand).ExecuteAsync();
+
+        Assert.AreEqual(Lang.Format(Lang.Current.TitleGenerationFailed, "Title service unavailable"), viewModel.StatusText);
+    }
+
     [TestMethod(DisplayName = "切换会话后旧消息集合不应继续更新当前界面")]
     [Timeout(5000)]
     public async Task SwitchingSessionShouldUnsubscribePreviousMessageCollection()

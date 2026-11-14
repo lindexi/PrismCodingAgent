@@ -129,10 +129,13 @@
                                Text="{Binding CurrentSessionText, Source={x:Static localizations:Lang.Current}}" />
                     <TextBlock Text="{Binding EditSessionTitleText, Source={x:Static localizations:Lang.Current}}"
                                Margin="0,0,0,8" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                         <TextBox x:Name="SessionTitleInput" MinWidth="0" Classes="Rounded"
                                  Text="{Binding EditedSessionTitle, UpdateSourceTrigger=PropertyChanged}"
                                  AutomationProperties.Name="{Binding EditSessionTitleText, Source={x:Static localizations:Lang.Current}}" />
+                        <Button x:Name="GenerateSessionTitleButton" Grid.Column="2" Height="32"
+                                Content="{Binding GenerateTitleText, Source={x:Static localizations:Lang.Current}}"
+                                Command="{Binding GenerateSessionTitleCommand}" />
                         <Button x:Name="UpdateSessionTitleButton" Grid.Column="1" Classes="Primary accent" Height="32"
                                 Content="{Binding UpdateTitleText, Source={x:Static localizations:Lang.Current}}"
                                 Command="{Binding UpdateSessionTitleCommand}" />
