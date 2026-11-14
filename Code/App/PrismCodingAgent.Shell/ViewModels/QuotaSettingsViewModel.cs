@@ -160,7 +160,7 @@ public sealed class QuotaSettingsViewModel : ViewModelBase, IDisposable, IAsyncD
                     await service.RefreshAsync(cancellationToken);
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(10), timeProvider, cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(30), timeProvider, cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

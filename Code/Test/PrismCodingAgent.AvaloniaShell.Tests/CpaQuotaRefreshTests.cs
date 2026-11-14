@@ -9,7 +9,7 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 public sealed class CpaQuotaRefreshTests
 {
     [TestMethod]
-    public async Task RefreshQueriesServicesSequentiallyThenWaitsTenSecondsAsync()
+    public async Task RefreshQueriesServicesSequentiallyThenWaitsThirtySecondsAsync()
     {
         await using var model = new QuotaSettingsViewModel();
         using var cancellation = new CancellationTokenSource();
@@ -18,7 +18,7 @@ public sealed class CpaQuotaRefreshTests
         TimerCallback? tick = null;
         object? tickState = null;
         clock.Setup(provider => provider.CreateTimer(It.IsAny<TimerCallback>(), It.IsAny<object>(),
-                TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan))
+                TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan))
             .Callback<TimerCallback, object, TimeSpan, TimeSpan>((callback, state, _, _) =>
             {
                 tick = callback;
