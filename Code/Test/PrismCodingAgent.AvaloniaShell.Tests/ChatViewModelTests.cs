@@ -127,7 +127,7 @@ public sealed class ChatViewModelTests
     }
 
     [TestMethod]
-    public async Task GenerateTitleCommandShouldOnlyUpdatePreviewForUserSetTitle()
+    public async Task GenerateTitleCommandShouldAutomaticallyUpdateUserSetTitle()
     {
         var manager = new CopilotChatManager();
         manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
@@ -144,7 +144,31 @@ public sealed class ChatViewModelTests
 
         await ((SimpleAsyncCommand)viewModel.GenerateSessionTitleCommand).ExecuteAsync();
 
-        Assert.AreEqual(("Generated preview", "Original"), (viewModel.EditedSessionTitle, manager.SelectedSession.Title));
+        Assert.AreEqual(("Generated preview", "Generated preview"), (viewModel.EditedSessionTitle, manager.SelectedSession.Title));
+    }
+
+    [TestMethod]
+    public async Task GenerateTitleCommandShouldUpdateOriginalSessionAfterSwitchingSession()
+    {
+        var response = new TaskCompletionSource<ChatResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var manager = new CopilotChatManager();
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
+            [new FakeLanguageModel(new FakeChatClient { OnGetResponseAsync = (_, _, _) => response.Task })]));
+        var originalSession = manager.SelectedSession;
+        await originalSession.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Original task"));
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var viewModel = new ChatViewModel(manager, application, "test");
+
+        Task pending = ((SimpleAsyncCommand)viewModel.GenerateSessionTitleCommand).ExecuteAsync();
+        await application.CreateNewSessionAsync();
+        string currentTitle = manager.SelectedSession.Title;
+        response.SetResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,
+            new AIContent[] { new FunctionCallContent("title", SessionTitleGenerator.TitleSubmissionToolName,
+                new Dictionary<string, object?> { ["title"] = "Generated title" }) })));
+        await pending;
+
+        Assert.AreEqual(("Generated title", currentTitle, currentTitle),
+            (originalSession.Title, manager.SelectedSession.Title, viewModel.EditedSessionTitle));
     }
 
     [TestMethod]

@@ -913,11 +913,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         _updateSessionTitleCommand?.RaiseCanExecuteChanged();
     }
 
-    /// <summary>获取生成当前会话标题预览的命令。</summary>
+    /// <summary>获取生成并更新当前会话标题的命令。</summary>
     public ICommand GenerateSessionTitleCommand => _generateSessionTitleCommand ??= new SimpleAsyncCommand
     (
-        GenerateSessionTitlePreviewAsync,
-        () => _chatManager is not null && _subscribedSession is not null,
+        GenerateSessionTitleAsync,
+        () => _chatManager is not null && _subscribedSession is not null && _workTaskController is not null,
         exceptionHandler: exception =>
         {
             Trace.TraceError($"[ChatViewModel][GenerateSessionTitle] {exception}");
@@ -928,18 +928,18 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     private SimpleAsyncCommand? _generateSessionTitleCommand;
 
-    private async Task GenerateSessionTitlePreviewAsync()
+    private async Task GenerateSessionTitleAsync()
     {
-        if (_subscribedSession is not { } session || _chatManager is null)
+        if (_subscribedSession is not { } session || _chatManager is null || _workTaskController is null)
         {
             return;
         }
 
         var generator = new SessionTitleGenerator(_chatManager.AgentApiEndpointManager);
         string? title = await generator.GenerateTitlePreviewAsync(session).ConfigureAwait(true);
-        if (ReferenceEquals(session, _subscribedSession) && !string.IsNullOrWhiteSpace(title))
+        if (!string.IsNullOrWhiteSpace(title))
         {
-            EditedSessionTitle = title;
+            await _workTaskController.RenameSessionAsync(session.SessionId, title).ConfigureAwait(true);
         }
     }
 
