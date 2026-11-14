@@ -75,6 +75,8 @@
     <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatAutomaticCompressionToggle" Grid.Column="1" AutomationProperties.Name="{Binding AutomaticCompressionText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding RunOptions.EnableAutomaticCompression, Mode=TwoWay}"/></Grid>
     <Border Height="1" Background="#ECEDEF"/>
     <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="44"/></Grid.ColumnDefinitions><TextBlock Text="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}"/><CheckBox x:Name="ChatResponsesApiToggle" Grid.Column="1" AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static l:Lang.Current}}" IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}"/></Grid>
+    <Border Height="1" Background="#ECEDEF"/>
+    <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding LanguageServerSettingsTitle, Source={x:Static l:Lang.Current}}"/><Button x:Name="StopLanguageServerButton" Grid.Column="1" Content="{Binding StopLanguageServerText, Source={x:Static l:Lang.Current}}" Command="{Binding StopLanguageServerCommand}"/></Grid>
     </StackPanel>
     <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
     <StackPanel MaxWidth="720">
@@ -101,11 +103,6 @@
      </Grid>
      <TextBlock x:Name="LoopConversationHint" Text="{Binding SelectedItem.DataContext, ElementName=LoopConversationSelector}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
     </StackPanel></Border>
-    </StackPanel>
-    <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
-    <StackPanel MaxWidth="720">
-    <TextBlock Style="{StaticResource SectionTitle}" Margin="0,12,0,8" Text="{Binding ChatServiceSection, Source={x:Static l:Lang.Current}}"/>
-    <Grid Style="{StaticResource SettingRow}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding LanguageServerSettingsTitle, Source={x:Static l:Lang.Current}}"/><Button x:Name="StopLanguageServerButton" Grid.Column="1" Content="{Binding StopLanguageServerText, Source={x:Static l:Lang.Current}}" Command="{Binding StopLanguageServerCommand}"/></Grid>
     </StackPanel>
     <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0"/>
     <StackPanel MaxWidth="720">

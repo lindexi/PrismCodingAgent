@@ -160,6 +160,15 @@
                                       AutomationProperties.Name="{Binding ResponsesApiText, Source={x:Static localizations:Lang.Current}}"
                                       IsChecked="{Binding IsResponsesApiEnabled, Mode=TwoWay}" />
                     </Grid>
+                    <Border Height="1" Background="#ECEDEF" />
+                    <Grid ColumnDefinitions="*,Auto" MinHeight="48">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
+                        <Button x:Name="StopLanguageServerButton" Grid.Column="1" Classes="Secondary"
+                                VerticalAlignment="Center"
+                                Content="{Binding StopLanguageServerText, Source={x:Static localizations:Lang.Current}}"
+                                Command="{Binding StopLanguageServerCommand}" />
+                    </Grid>
                 </StackPanel>
                 <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
                 <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
@@ -241,19 +250,6 @@
                                        Margin="0,0,0,4" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-                <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
-                <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
-                    <TextBlock Classes="SectionTitle" Margin="0,12,0,8"
-                               Text="{Binding ChatServiceSection, Source={x:Static localizations:Lang.Current}}" />
-                    <Grid ColumnDefinitions="*,Auto" MinHeight="48">
-                        <TextBlock Classes="OptionTitle"
-                                   Text="{Binding LanguageServerSettingsTitle, Source={x:Static localizations:Lang.Current}}" />
-                        <Button x:Name="StopLanguageServerButton" Grid.Column="1" Classes="Secondary"
-                                VerticalAlignment="Center"
-                                Content="{Binding StopLanguageServerText, Source={x:Static localizations:Lang.Current}}"
-                                Command="{Binding StopLanguageServerCommand}" />
-                    </Grid>
                 </StackPanel>
                 <Border Height="1" Background="#DDE2E8" Margin="0,12,0,0" />
                 <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
