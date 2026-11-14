@@ -405,6 +405,27 @@ internal sealed class CodingWorkTaskController
         }
     }
 
+    /// <summary>
+    /// 将通知添加到会话，并在当前没有活动操作时持久化会话。
+    /// </summary>
+    /// <remarks>当不存在活动操作时，会在添加通知后保存会话。</remarks>
+    /// <param name="session">要写入通知的聊天会话。</param>
+    /// <param name="notice">要添加到会话的通知条目。</param>
+    /// <returns>表示异步操作的任务。</returns>
+    internal async Task AddNoticeAsync(CopilotChatSession session, CopilotChatNotice notice)
+    {
+        await session.AddEntryAsync(notice);
+        if (!HasActiveOperation)
+        {
+            // 在没有活动操作时，立即保存会话以确保通知持久化。
+            await SaveSessionAsync(session);
+        }
+        else
+        {
+            // 还在聊天过程中，那就等聊天结束的时候统一保存就好了
+        }
+    }
+
     internal Task SaveSessionAsync(CopilotChatSession session) => _sessionStore.SaveSessionAsync(session, CancellationToken.None);
 
     private async Task RunSingleMessageAsync

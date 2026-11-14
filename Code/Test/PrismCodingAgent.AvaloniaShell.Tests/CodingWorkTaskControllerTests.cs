@@ -446,6 +446,44 @@ public sealed class CodingWorkTaskControllerTests
         }
     }
 
+    [TestMethod]
+    public async Task AddNoticeWhileIdleShouldSaveSession()
+    {
+        var manager = new CopilotChatManager();
+        var store = new TestSessionStore();
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+        using var viewModel = new ChatViewModel(manager, controller, "test");
+
+        await viewModel.AddSystemNoticeAsync(manager.SelectedSession, "Notice");
+
+        Assert.AreEqual(1, store.SaveCount);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task AddNoticeDuringActiveOperationShouldAppendWithoutSaving()
+    {
+        var manager = new CopilotChatManager();
+        var store = new TestSessionStore();
+        var runner = new ControlledCompressionRunner("empty");
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+        using var viewModel = new ChatViewModel(manager, controller, "test");
+        Task<bool> operation = controller.CompressConversationAsync();
+        await runner.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            await viewModel.AddSystemNoticeAsync(manager.SelectedSession, "Notice");
+
+            Assert.AreEqual(("Notice", 0),
+                (manager.SelectedSession.Entries.OfType<CopilotChatNotice>().Single().Content, store.SaveCount));
+        }
+        finally
+        {
+            runner.Release.TrySetResult();
+            await operation;
+        }
+    }
+
     private static string CreateTestDirectory()
     {
         string path = Path.Join(Path.GetTempPath(), $"CodingChatRoom.HistoryWorkspace.{Guid.NewGuid():N}");

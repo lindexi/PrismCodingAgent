@@ -940,6 +940,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         if (!string.IsNullOrWhiteSpace(title))
         {
             await _workTaskController.RenameSessionAsync(session.SessionId, title).ConfigureAwait(true);
+            await AddSystemMessageAsync(session,
+                Localizations.Lang.Format(Lang.Current.SessionTitleUpdated, session.Title)).ConfigureAwait(true);
         }
     }
 
@@ -1096,7 +1098,15 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     )
     {
         if (session is null) return;
-        await session.AddEntryAsync(new CopilotChatNotice(content, level));
-        if (_workTaskController is not null) await _workTaskController.SaveSessionAsync(session);
+        var notice = new CopilotChatNotice(content, level);
+        if (_workTaskController is not null)
+        {
+            await _workTaskController.AddNoticeAsync(session, notice);
+        }
+        else
+        {
+            // 兜底处理：如果工作任务控制器尚未初始化，则直接将系统消息添加到会话中。
+            await session.AddEntryAsync(notice);
+        }
     }
 }

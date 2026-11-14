@@ -169,6 +169,10 @@ public sealed class ChatViewModelTests
 
         Assert.AreEqual(("Generated title", currentTitle, currentTitle),
             (originalSession.Title, manager.SelectedSession.Title, viewModel.EditedSessionTitle));
+        Assert.AreEqual(PrismCodingAgent.CodingShell.Localizations.Lang.Format(
+                PrismCodingAgent.CodingShell.Localizations.Lang.Current.SessionTitleUpdated, "Generated title"),
+            originalSession.Entries.OfType<CopilotChatNotice>().Single().Content);
+        Assert.AreEqual(0, manager.SelectedSession.Entries.OfType<CopilotChatNotice>().Count());
     }
 
     [TestMethod]
