@@ -47,22 +47,27 @@
             </views:ChatMessageItemTemplateSelector.ImageItemTemplate>
             <views:ChatMessageItemTemplateSelector.ReasoningItemTemplate>
                 <DataTemplate DataType="model:CopilotChatReasoningItem" x:DataType="model:CopilotChatReasoningItem">
-                    <Expander Classes="ReasoningExpander"
+                    <views:DeferredExpander Classes="ReasoningExpander"
                               Margin="0,0,0,8"
+                              Details="{Binding}"
                               IsExpanded="False"
                               IsVisible="{Binding HasText}">
-                        <Expander.Header>
+                        <views:DeferredExpander.Header>
                             <TextBlock Text="{Binding ReasoningProcess, Source={x:Static localizations:Lang.Current}}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="#FF546E7A" />
-                        </Expander.Header>
-                        <Border Classes="ReasoningPanel">
-                            <TextBlock Text="{Binding Text}"
-                                       TextWrapping="Wrap"
-                                       Foreground="#FF546E7A" />
-                        </Border>
-                    </Expander>
+                        </views:DeferredExpander.Header>
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate x:DataType="model:CopilotChatReasoningItem">
+                                <Border Classes="ReasoningPanel">
+                                    <TextBlock Text="{Binding Text}"
+                                               TextWrapping="Wrap"
+                                               Foreground="#FF546E7A" />
+                                </Border>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
                 </DataTemplate>
             </views:ChatMessageItemTemplateSelector.ReasoningItemTemplate>
             <views:ChatMessageItemTemplateSelector.ApprovalToolItemTemplate>
@@ -112,8 +117,8 @@
             </views:ChatMessageItemTemplateSelector.ApprovalToolItemTemplate>
             <views:ChatMessageItemTemplateSelector.ToolItemTemplate>
                 <DataTemplate DataType="model:CopilotChatToolItem" x:DataType="model:CopilotChatToolItem">
-                    <Expander Margin="0,0,0,8">
-                        <Expander.Header>
+                    <views:DeferredExpander Margin="0,0,0,8" Details="{Binding}">
+                        <views:DeferredExpander.Header>
                             <Grid ColumnDefinitions="Auto,*,Auto"
                                   ColumnSpacing="8"
                                   ToolTip.Tip="{Binding ToolTipText}">
@@ -131,48 +136,56 @@
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            IsVisible="{Binding HasSecondaryText}" />
                             </Grid>
-                        </Expander.Header>
-                        <Border Classes="ToolPanel">
-                            <StackPanel Spacing="6">
-                                <StackPanel IsVisible="{Binding HasInputText}">
-                                    <TextBlock Classes="SecondaryLabel"
-                                               Text="{Binding ToolInputText, Source={x:Static localizations:Lang.Current}}" />
-                                    <TextBox Classes="ChatOutput" Text="{Binding InputText}" />
-                                </StackPanel>
-                                <ItemsControl ItemsSource="{Binding Details.MessageItems}" />
-                                <StackPanel IsVisible="{Binding HasOutputText}">
-                                    <TextBlock Classes="SecondaryLabel"
-                                               Text="{Binding ToolOutputText, Source={x:Static localizations:Lang.Current}}" />
-                                    <TextBox Classes="ChatOutput" Text="{Binding OutputText}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </Expander>
+                        </views:DeferredExpander.Header>
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate x:DataType="model:CopilotChatToolItem">
+                                <Border Classes="ToolPanel">
+                                    <StackPanel Spacing="6">
+                                        <StackPanel IsVisible="{Binding HasInputText}">
+                                            <TextBlock Classes="SecondaryLabel"
+                                                       Text="{Binding ToolInputText, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBox Classes="ChatOutput" Text="{Binding InputText}" />
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding Details.MessageItems}" />
+                                        <StackPanel IsVisible="{Binding HasOutputText}">
+                                            <TextBlock Classes="SecondaryLabel"
+                                                       Text="{Binding ToolOutputText, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBox Classes="ChatOutput" Text="{Binding OutputText}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
                 </DataTemplate>
             </views:ChatMessageItemTemplateSelector.ToolItemTemplate>
             <views:ChatMessageItemTemplateSelector.SubAgentItemTemplate>
                 <DataTemplate DataType="model:CopilotChatSubAgentItem" x:DataType="model:CopilotChatSubAgentItem">
-                    <Expander Margin="0,0,0,8" IsExpanded="True">
-                        <Expander.Header>
+                    <views:DeferredExpander Margin="0,0,0,8" Details="{Binding}" IsExpanded="True">
+                        <views:DeferredExpander.Header>
                             <TextBlock Text="{Binding DisplayName}" />
-                        </Expander.Header>
-                        <Border Classes="SubAgentPanel">
-                            <StackPanel Spacing="6">
-                                <StackPanel IsVisible="{Binding HasInputText}">
-                                    <TextBlock Classes="SecondaryLabel"
-                                               Text="{Binding TaskInput, Source={x:Static localizations:Lang.Current}}" />
-                                    <TextBox Classes="ChatOutput" Text="{Binding InputText}" />
-                                </StackPanel>
-                                <ItemsControl ItemsSource="{Binding MessageItems}"
-                                              IsVisible="{Binding HasMessageItems}" />
-                                <StackPanel IsVisible="{Binding HasOutputText}">
-                                    <TextBlock Classes="SecondaryLabel"
-                                               Text="{Binding ParentAgentOutput, Source={x:Static localizations:Lang.Current}}" />
-                                    <TextBox Classes="ChatOutput" Text="{Binding OutputText}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </Expander>
+                        </views:DeferredExpander.Header>
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate x:DataType="model:CopilotChatSubAgentItem">
+                                <Border Classes="SubAgentPanel">
+                                    <StackPanel Spacing="6">
+                                        <StackPanel IsVisible="{Binding HasInputText}">
+                                            <TextBlock Classes="SecondaryLabel"
+                                                       Text="{Binding TaskInput, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBox Classes="ChatOutput" Text="{Binding InputText}" />
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding MessageItems}"
+                                                      IsVisible="{Binding HasMessageItems}" />
+                                        <StackPanel IsVisible="{Binding HasOutputText}">
+                                            <TextBlock Classes="SecondaryLabel"
+                                                       Text="{Binding ParentAgentOutput, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBox Classes="ChatOutput" Text="{Binding OutputText}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
                 </DataTemplate>
             </views:ChatMessageItemTemplateSelector.SubAgentItemTemplate>
         </views:ChatMessageItemTemplateSelector>
