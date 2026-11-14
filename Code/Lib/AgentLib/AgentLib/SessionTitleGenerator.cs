@@ -142,5 +142,5 @@ public class SessionTitleGenerator
     public const int MaxMessages = 10;
 
     /// <summary>标题生成摘录的正文字符总预算。</summary>
-    public const int MaxContentCharacters = 4000;
+    public const int MaxContentCharacters = 5000;
 }
