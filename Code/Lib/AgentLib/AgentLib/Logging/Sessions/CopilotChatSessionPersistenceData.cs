@@ -54,6 +54,10 @@ public sealed record CopilotChatSessionPersistenceData
     /// </summary>
     public JsonElement? AgentSessionState { get; init; }
 
+    /// <summary>尚未被业务消费的附加 JSON 数据。</summary>
+    public IReadOnlyDictionary<string, JsonElement> AdditionalInfo { get; init; }
+        = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+
     /// <summary>
     /// 获取由存储恢复的原生 Responses 会话；旧文件没有此状态时为 null。
     /// </summary>

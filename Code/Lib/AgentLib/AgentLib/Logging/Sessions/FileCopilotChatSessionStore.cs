@@ -56,6 +56,16 @@ public sealed class FileCopilotChatSessionStore
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            var additionalInfo = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+            foreach (var item in session.AdditionalInfo)
+            {
+                var additionalInfoJsonElement = await item.Value.SerializeAsync(cancellationToken).ConfigureAwait(false);
+                // 调用 Clone 仅保险，浪费点也无所谓
+                additionalInfoJsonElement = additionalInfoJsonElement.Clone();
+
+                additionalInfo.Add(item.Key, additionalInfoJsonElement);
+            }
+
             string dayDirectory = Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"));
             Directory.CreateDirectory(dayDirectory);
             string filePath = Path.Join
@@ -76,6 +86,7 @@ public sealed class FileCopilotChatSessionStore
                 WorkTaskName = session.WorkTaskName,
                 Entries = session.Entries.ToArray(),
                 AgentSessionState = agentSessionState,
+                AdditionalInfo = additionalInfo,
                 ResponsesSession = session.ExistingResponsesSession,
             };
             await SessionDirectoryStorage.WriteAsync

@@ -67,6 +67,11 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
             await session.AddEntryAsync(entry).ConfigureAwait(false);
         }
 
+        foreach (var item in persistenceData.AdditionalInfo)
+        {
+            session.AdditionalInfo.Add(item.Key, new JsonSessionAdditionalInfo(item.Value));
+        }
+
         if (persistenceData.AgentSessionState is JsonElement agentSessionState)
         {
             IManualSendMessageContext context = await _chatManager

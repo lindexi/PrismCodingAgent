@@ -34,6 +34,17 @@ internal static class SessionDirectoryStorage
             File.Delete(Path.Join(directory, "AgentSession.json"));
         }
 
+        string additionalInfoPath = Path.Join(directory, "AdditionalInfo.json");
+        if (data.AdditionalInfo.Count > 0)
+        {
+            await File.WriteAllTextAsync(additionalInfoPath, JsonSerializer.Serialize(data.AdditionalInfo),
+                cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            File.Delete(additionalInfoPath);
+        }
+
         if (data.ResponsesSession is { } responsesSession)
         {
             var items = new JsonArray();
@@ -93,6 +104,18 @@ internal static class SessionDirectoryStorage
             responses = new CopilotResponsesSession();
             foreach (JsonNode? item in items) responses.AppendItem(ResponsesSessionJsonCodec.ReadItem(item!.ToJsonString()));
         }
+        var additionalInfo = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        string additionalInfoPath = Path.Join(directory, "AdditionalInfo.json");
+        if (File.Exists(additionalInfoPath))
+        {
+            using JsonDocument additionalDocument = JsonDocument.Parse(
+                await File.ReadAllTextAsync(additionalInfoPath, cancellationToken).ConfigureAwait(false));
+            foreach (JsonProperty item in additionalDocument.RootElement.EnumerateObject())
+            {
+                additionalInfo.Add(item.Name, item.Value.Clone());
+            }
+        }
+
         return new CopilotChatSessionPersistenceData
         {
             FormatVersion = (int)entry.Attribute("FormatVersion")!,
@@ -104,6 +127,7 @@ internal static class SessionDirectoryStorage
             WorkTaskName = (string?)entry.Attribute("WorkTaskName"),
             Entries = SessionHistoryXmlCodec.Read(document, resources),
             AgentSessionState = agentState,
+            AdditionalInfo = additionalInfo,
             ResponsesSession = responses,
         };
     }

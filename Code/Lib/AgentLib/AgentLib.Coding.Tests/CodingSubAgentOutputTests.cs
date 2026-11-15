@@ -269,6 +269,28 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    public async Task WhenSessionIsSavedToDiskThenNamedChildCanContinueAfterLoading()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "CodingSubAgentHistory", Guid.NewGuid().ToString("N"));
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(path);
+        var original = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
+        await store.SaveSessionAsync(original, null);
+        var data = await store.LoadSessionAsync(original.SessionId);
+        var loaded = new CopilotChatSession();
+        foreach (var item in data.AdditionalInfo)
+        {
+            loaded.AdditionalInfo.Add(item.Key, new JsonSessionAdditionalInfo(item.Value));
+        }
+        var nextTurn = new Scenario();
+
+        await (await nextTurn.StartAsync(agent, session: loaded)).CompletionTask;
+
+        Assert.IsTrue(nextTurn.RetryContainsFirstRound);
+    }
+
+    [TestMethod]
     public async Task WhenRestorationFailsThenOriginalAdditionalInfoIsPreserved()
     {
         var original = new CopilotChatSession();

@@ -13,6 +13,64 @@ public sealed class SessionDirectoryStorageTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    public async Task AdditionalInfoShouldSurviveSaveLoadAndSaveWithoutConsumption()
+    {
+        var store = new FileCopilotChatSessionStore(CreatePath());
+        var session = new CopilotChatSession();
+        session.AdditionalInfo.Add("test", new TestAdditionalInfo());
+        await store.SaveSessionAsync(session, null);
+        var loaded = await store.LoadSessionAsync(session.SessionId);
+        var reopened = new CopilotChatSession();
+        reopened.AdditionalInfo.Add("test", new JsonSessionAdditionalInfo(loaded.AdditionalInfo["test"]));
+
+        await store.SaveSessionAsync(reopened, null);
+        var savedAgain = await store.LoadSessionAsync(reopened.SessionId);
+
+        Assert.AreEqual(42, savedAgain.AdditionalInfo["test"].GetProperty("value").GetInt32());
+    }
+
+    [TestMethod]
+    public async Task AdditionalInfoShouldSurviveCompression()
+    {
+        string root = CreatePath();
+        var store = new FileCopilotChatSessionStore(root);
+        var session = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now.AddDays(-10), new EmptyCopilotChatLogger());
+        session.AdditionalInfo.Add("test", new TestAdditionalInfo());
+        await store.SaveSessionAsync(session, null);
+        string entry = Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories).Single();
+        await SessionDirectoryStorage.CompressAsync(entry, CancellationToken.None);
+
+        var loaded = await store.LoadSessionAsync(session.SessionId);
+
+        Assert.AreEqual(42, loaded.AdditionalInfo["test"].GetProperty("value").GetInt32());
+    }
+
+    [TestMethod]
+    public async Task RemovingAdditionalInfoShouldRemovePreviouslySavedData()
+    {
+        var store = new FileCopilotChatSessionStore(CreatePath());
+        var session = new CopilotChatSession();
+        session.AdditionalInfo.Add("test", new TestAdditionalInfo());
+        await store.SaveSessionAsync(session, null);
+        session.AdditionalInfo.Clear();
+
+        await store.SaveSessionAsync(session, null);
+        var loaded = await store.LoadSessionAsync(session.SessionId);
+
+        Assert.IsEmpty(loaded.AdditionalInfo);
+    }
+
+    private sealed class TestAdditionalInfo : ISessionAdditionalInfo
+    {
+        public async ValueTask<JsonElement> SerializeAsync(CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            cancellationToken.ThrowIfCancellationRequested();
+            return JsonSerializer.SerializeToElement(new { value = 42 });
+        }
+    }
+
+    [TestMethod]
     public async Task SavedSessionIdShouldMatchDirectoryName()
     {
         string root = CreatePath();
