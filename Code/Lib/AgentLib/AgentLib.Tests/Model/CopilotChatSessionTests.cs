@@ -16,7 +16,7 @@ public class CopilotChatSessionTests
     {
         var session = new CopilotChatSession();
         const string key = "test.attachment";
-        var value = new object();
+        var value = new JsonSessionAdditionalInfo(System.Text.Json.JsonSerializer.SerializeToElement("value"));
 
         session.AdditionalInfo.Add(key, value);
 
@@ -27,7 +27,8 @@ public class CopilotChatSessionTests
     public void CreateSubSessionDoesNotShareAdditionalInfo()
     {
         var session = new CopilotChatSession();
-        session.AdditionalInfo.Add("test.attachment", new object());
+        session.AdditionalInfo.Add("test.attachment",
+            new JsonSessionAdditionalInfo(System.Text.Json.JsonSerializer.SerializeToElement("value")));
 
         CopilotChatSession child = session.CreateSubSession();
 

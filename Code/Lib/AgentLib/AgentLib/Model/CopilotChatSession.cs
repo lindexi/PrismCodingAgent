@@ -51,8 +51,8 @@ public sealed class CopilotChatSession : NotifyBase
     public Guid SessionId { get; }
 
     /// <summary>随此会话实例保留的运行期附加信息，不参与历史存储。</summary>
-    public IDictionary<string, object> AdditionalInfo { get; }
-        = new Dictionary<string, object>(StringComparer.Ordinal);
+    public IDictionary<string, ISessionAdditionalInfo> AdditionalInfo { get; }
+        = new Dictionary<string, ISessionAdditionalInfo>(StringComparer.Ordinal);
 
     /// <summary>
     /// 创建当前子会话的父会话；根会话为 null。

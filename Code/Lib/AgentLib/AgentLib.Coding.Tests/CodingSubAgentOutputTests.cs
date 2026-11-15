@@ -1,5 +1,6 @@
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
 
@@ -233,6 +234,75 @@ public sealed class CodingSubAgentOutputTests
         await (await nextTurn.StartAsync(agent, session: session)).CompletionTask;
 
         Assert.IsTrue(nextTurn.RetryContainsFirstRound);
+    }
+
+    [TestMethod]
+    public async Task WhenAdditionalInfoIsSerializedThenItContainsChildModelHistory()
+    {
+        var session = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: session)).CompletionTask;
+
+        var state = await session.AdditionalInfo.Values.Single().SerializeAsync();
+        var restoredAgent = new Microsoft.Agents.AI.ChatClientAgent(new FakeChatClient());
+        var restored = await restoredAgent.DeserializeSessionAsync(state.GetProperty("worker"));
+        restored.TryGetInMemoryChatHistory(out var messages);
+
+        Assert.IsTrue(messages!.Any(message => message.Role == ChatRole.User && message.Text == "child task 1"));
+    }
+
+    [TestMethod]
+    public async Task WhenAdditionalInfoIsLoadedThenNamedChildContinuesItsHistory()
+    {
+        var original = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
+        var attachment = original.AdditionalInfo.Single();
+        var loaded = new CopilotChatSession();
+        loaded.AdditionalInfo.Add(attachment.Key,
+            new JsonSessionAdditionalInfo(await attachment.Value.SerializeAsync()));
+        var nextTurn = new Scenario();
+
+        await (await nextTurn.StartAsync(agent, session: loaded)).CompletionTask;
+
+        Assert.IsTrue(nextTurn.RetryContainsFirstRound);
+    }
+
+    [TestMethod]
+    public async Task WhenRestorationFailsThenOriginalAdditionalInfoIsPreserved()
+    {
+        var original = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
+        string key = original.AdditionalInfo.Keys.Single();
+        using var document = System.Text.Json.JsonDocument.Parse("{\"worker\":42}");
+        var raw = new JsonSessionAdditionalInfo(document.RootElement);
+        var loaded = new CopilotChatSession();
+        loaded.AdditionalInfo.Add(key, raw);
+
+        await (await new Scenario().StartAsync(agent, session: loaded)).CompletionTask;
+
+        Assert.AreSame(raw, loaded.AdditionalInfo[key]);
+    }
+
+    [TestMethod]
+    public async Task WhenRestoredChildIsSerializedAgainThenHistoryIsRetained()
+    {
+        var original = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
+        var attachment = original.AdditionalInfo.Single();
+        var loaded = new CopilotChatSession();
+        loaded.AdditionalInfo.Add(attachment.Key,
+            new JsonSessionAdditionalInfo(await attachment.Value.SerializeAsync()));
+        await (await new Scenario().StartAsync(agent, session: loaded)).CompletionTask;
+
+        var state = await loaded.AdditionalInfo[attachment.Key].SerializeAsync();
+        var restoredAgent = new ChatClientAgent(new FakeChatClient());
+        var restored = await restoredAgent.DeserializeSessionAsync(state.GetProperty("worker"));
+        restored.TryGetInMemoryChatHistory(out var messages);
+
+        Assert.AreEqual(2, messages!.Count(message => message.Role == ChatRole.User && message.Text == "child task 1"));
     }
 
     [TestMethod]

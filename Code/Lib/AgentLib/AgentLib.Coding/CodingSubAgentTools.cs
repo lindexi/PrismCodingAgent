@@ -14,8 +14,6 @@ internal sealed class CodingSubAgentTools
     CodingChatRunOptions options
 )
 {
-    private const string SessionsKey = "AgentLib.Coding.SubAgentSessions";
-
     internal ToolRegistration CreateRegistration() => new(
         AIFunctionFactory.Create(InvokeCodingSubAgent), CreatePresentation);
 
@@ -44,7 +42,8 @@ internal sealed class CodingSubAgentTools
         CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
             submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
 
-        var subSession = GetOrCreateSession(name);
+        var subSession = await CodingSubAgentSessions.GetOrCreateSessionAsync(
+            parentContext.Session, parentContext.ChatClient, name, cancellationToken).ConfigureAwait(false);
 
         var context = new CodingRunContext(parentContext.ChatClient,
             childMessage, subSession);
@@ -69,29 +68,4 @@ internal sealed class CodingSubAgentTools
         return submission.SubmittedText ?? string.Empty;
     }
 
-    private CopilotChatSession GetOrCreateSession(string? name)
-    {
-        CopilotChatSession? subSession;
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            subSession = parentContext.Session.CreateSubSession();
-        }
-        else
-        {
-            if (!parentContext.Session.AdditionalInfo.TryGetValue(SessionsKey, out object? value))
-            {
-                value = new Dictionary<string, CopilotChatSession>(StringComparer.Ordinal);
-                parentContext.Session.AdditionalInfo.Add(SessionsKey, value);
-            }
-
-            var sessions = (Dictionary<string, CopilotChatSession>)value;
-            if (!sessions.TryGetValue(name, out subSession))
-            {
-                subSession = parentContext.Session.CreateSubSession();
-                sessions.Add(name, subSession);
-            }
-        }
-
-        return subSession;
-    }
 }
