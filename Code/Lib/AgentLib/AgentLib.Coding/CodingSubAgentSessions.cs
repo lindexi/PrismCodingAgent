@@ -1,4 +1,4 @@
-using System.Diagnostics;
+ï»¿using System.Diagnostics;
 using System.Text.Json;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
@@ -29,8 +29,8 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
 
         if (!parent.AdditionalInfo.TryGetValue(SessionsKey, out ISessionAdditionalInfo? value))
         {
-            subAgentSessions = new CodingSubAgentSessions(chatClient);
-            parent.AdditionalInfo.Add(SessionsKey, subAgentSessions);
+            value = new CodingSubAgentSessions(chatClient);
+            parent.AdditionalInfo.Add(SessionsKey, value);
         }
 
         if (value is JsonSessionAdditionalInfo json)
@@ -63,11 +63,11 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
         }
         else
         {
-            // Î´ÖªµÄÇé¿ö
+            // æœªçŸ¥çš„æƒ…å†µ
 #if DEBUG
             Debugger.Break();
 #endif
-            // ¼òµ¥»ØÍËÂß¼­
+            // ç®€å•å›é€€é€»è¾‘
             return parent.CreateSubSession();
         }
 
