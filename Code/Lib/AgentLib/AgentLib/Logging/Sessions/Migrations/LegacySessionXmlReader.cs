@@ -57,14 +57,10 @@ internal static class LegacySessionXmlReader
             if ((string?)element.Element("Reason") is { Length: > 0 } reason) items.Add(new CopilotChatReasoningItem(reason));
             if ((string?)element.Element("Content") is { Length: > 0 } content) items.Add(new CopilotChatTextItem(content));
         }
-        return CopilotChatMessage.Restore(new CopilotChatMessageData
-        {
-            Role = new ChatRole((string?)element.Attribute("Role") ?? throw new InvalidDataException("消息缺少 Role 属性。")),
-            CreatedTime = ParseTime((string?)element.Attribute("CreatedTime")),
-            IsPresetInfo = (bool?)element.Attribute("IsPresetInfo") ?? false,
-            MessageItems = items,
-            TotalUsageDetails = ReadUsage(element.Element("UsageDetails")),
-        });
+        return CopilotChatMessage.Restore(
+            new ChatRole((string?)element.Attribute("Role") ?? throw new InvalidDataException("消息缺少 Role 属性。")),
+            ParseTime((string?)element.Attribute("CreatedTime")), (bool?)element.Attribute("IsPresetInfo") ?? false,
+            items, ReadUsage(element.Element("UsageDetails")));
     }
 
     private static ICopilotChatMessageItem ReadItem(XElement element) => element.Name.LocalName switch

@@ -226,20 +226,6 @@ internal sealed class CodingWorkTaskController
         }
     }
 
-    internal async Task CreateSessionFromMessageAsync(CopilotChatMessage message)
-    {
-        EnsureCanChangeSession();
-        Guid snapshotId = message.SessionSnapshotId
-            ?? throw new InvalidOperationException($"消息 {message.CreatedTime:o} 没有关联的会话快照。");
-        CopilotChatSession session = await _sessionStore.CreateSessionFromSnapshotAsync(
-            _chatManager.SelectedSession, snapshotId);
-        await _sessionStore.SaveSessionAsync(session);
-        await _workspaceController.ChangeWorkspaceAsync(session.WorkspacePath);
-        _chatManager.AddSession(session, select: true);
-        AddOrUpdateSummary(session, insertAtTop: true);
-        OnStateChanged();
-    }
-
     public async Task OpenSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
         EnsureCanChangeSession();
@@ -509,10 +495,9 @@ internal sealed class CodingWorkTaskController
             $"运行开始。工作任务={session.WorkTaskName ?? "未设置"}；工作任务Id={session.WorkTaskId?.ToString() ?? "未设置"}；工作路径={session.WorkspacePath ?? "未设置"}；自动压缩={options.EnableAutomaticCompression}；dotnet run={options.EnableDotNetRun}；思考强度={options.ReasoningEffort?.ToString() ?? "默认"}；调用方取消={cancellationToken.IsCancellationRequested}。"
         );
         Exception? runException = null;
-        ICodingAgentRunResult? runResult = null;
         try
         {
-            runResult = continuation is null
+            ICodingAgentRunResult runResult = continuation is null
                 ? await chatRunner.RunAsync(runContents, session.WorkspacePath, options, cancellationToken)
                 : await continuation.Runner.ContinueAsync(session, continuation.Assistant,
                     session.WorkspacePath, options, cancellationToken);
@@ -554,14 +539,7 @@ internal sealed class CodingWorkTaskController
             try
             {
                 await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "会话保存", "开始保存运行后的会话。");
-                if (runResult?.AssistantChatMessage is { } assistantMessage)
-                {
-                    await _sessionStore.SaveSnapshotAsync(session, assistantMessage, CancellationToken.None);
-                }
-                else
-                {
-                    await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
-                }
+                await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
                 AddOrUpdateSummary(session, insertAtTop: true);
                 await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "会话保存", "运行后的会话保存完成。");
             }

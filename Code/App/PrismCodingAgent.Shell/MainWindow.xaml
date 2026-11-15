@@ -39,9 +39,6 @@
             <ContextMenu.ItemContainerStyle>
                 <StaticResource ResourceKey="MessageMenuItem" />
             </ContextMenu.ItemContainerStyle>
-            <MenuItem Header="{Binding CreateSessionFromReply, Source={x:Static l:Lang.Current}}"
-                      Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
-                      CommandParameter="{Binding}" Click="CreateSessionFromMessageMenuItem_OnClick" />
             <MenuItem Header="{Binding CopyBody, Source={x:Static l:Lang.Current}}" Command="ApplicationCommands.Copy"
                       CommandParameter="{Binding Content}"
                       CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />

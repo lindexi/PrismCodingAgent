@@ -13,40 +13,6 @@ namespace AgentLib.Tests.Logging;
 public sealed class FileCopilotChatSessionStoreTests
 {
     [TestMethod]
-    public async Task SavingSnapshotShouldNotUpdateMainSession()
-    {
-        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Console.WriteLine(directory);
-        var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
-        session.SetTitle("original");
-        await store.SaveSessionAsync(session, null);
-        session.SetTitle("snapshot");
-        var data = await CopilotChatSessionPersistenceData.CaptureAsync(session, null);
-
-        await store.SaveSnapshotAsync(data, Guid.NewGuid());
-
-        Assert.AreEqual("original", (await store.LoadSessionAsync(session.SessionId)).Title);
-    }
-
-    [TestMethod]
-    public async Task SavingSessionShouldNotOverwriteExistingSnapshot()
-    {
-        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Console.WriteLine(directory);
-        var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
-        session.SetTitle("snapshot");
-        Guid snapshotId = Guid.NewGuid();
-        await store.SaveSnapshotAsync(await CopilotChatSessionPersistenceData.CaptureAsync(session, null), snapshotId);
-        session.SetTitle("latest");
-
-        await store.SaveSessionAsync(session, null);
-
-        Assert.AreEqual("snapshot", (await store.LoadSnapshotAsync(session, snapshotId)).Title);
-    }
-
-    [TestMethod]
     [DataRow(null)]
     [DataRow("/projects/sample")]
     public async Task SaveAndLoadShouldPreserveOptionalWorkspace(string? workspacePath)

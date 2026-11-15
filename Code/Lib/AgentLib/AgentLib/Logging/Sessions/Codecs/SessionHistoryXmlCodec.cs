@@ -35,22 +35,15 @@ internal static class SessionHistoryXmlCodec
     private static XElement WriteMessage(CopilotChatMessage message, SessionResources resources) =>
         new("Message", new XAttribute("Role", message.Role), new XAttribute("Author", message.Author),
             new XAttribute("CreatedTime", message.CreatedTime.ToString("o")), new XAttribute("IsPresetInfo", message.IsPresetInfo),
-            message.SessionSnapshotId is { } snapshotId ? new XAttribute("SessionSnapshotId", snapshotId) : null,
             new XElement("Content", message.Content), new XElement("Reason", message.Reason),
             new XElement("MessageItems", message.MessageItems.Select(item => WriteItem(item, resources))),
             message.TotalUsageDetails is { } usage ? WriteUsage(usage) : null);
 
     private static CopilotChatMessage ReadMessage(XElement element, SessionResources resources) =>
-        CopilotChatMessage.Restore(new CopilotChatMessageData
-        {
-            Role = new ChatRole((string?)element.Attribute("Role") ?? throw new InvalidDataException("消息缺少 Role。")),
-            CreatedTime = ReadTime(element),
-            IsPresetInfo = (bool?)element.Attribute("IsPresetInfo") ?? false,
-            MessageItems = (element.Element("MessageItems") ?? throw new InvalidDataException("消息缺少 MessageItems。"))
-                .Elements().Select(item => ReadItem(item, resources)).ToList(),
-            TotalUsageDetails = ReadUsage(element.Element("UsageDetails")),
-            SessionSnapshotId = (Guid?)element.Attribute("SessionSnapshotId"),
-        });
+        CopilotChatMessage.Restore(new ChatRole((string?)element.Attribute("Role") ?? throw new InvalidDataException("消息缺少 Role。")),
+            ReadTime(element), (bool?)element.Attribute("IsPresetInfo") ?? false,
+            (element.Element("MessageItems") ?? throw new InvalidDataException("消息缺少 MessageItems。"))
+                .Elements().Select(item => ReadItem(item, resources)).ToList(), ReadUsage(element.Element("UsageDetails")));
 
     private static XElement WriteItem(ICopilotChatMessageItem item, SessionResources resources) => item switch
     {

@@ -49,20 +49,6 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
         CopilotChatSessionPersistenceData persistenceData = await _store
             .LoadSessionAsync(sessionId, cancellationToken)
             .ConfigureAwait(false);
-        return await RestoreSessionAsync(persistenceData, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public async Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession source, Guid snapshotId,
-        CancellationToken cancellationToken = default)
-    {
-        var data = await _store.LoadSnapshotAsync(source, snapshotId, cancellationToken).ConfigureAwait(false);
-        return await RestoreSessionAsync(data with { SessionId = Guid.NewGuid(), StartedTime = DateTimeOffset.Now }, cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<CopilotChatSession> RestoreSessionAsync(CopilotChatSessionPersistenceData persistenceData,
-        CancellationToken cancellationToken)
-    {
         var session = new CopilotChatSession(persistenceData.SessionId, persistenceData.StartedTime, _chatManager.ChatLogger)
         {
             MainThreadDispatcher = _mainThreadDispatcher,
@@ -108,22 +94,6 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
 
     public async Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
     {
-        var data = await CaptureSessionAsync(session, cancellationToken).ConfigureAwait(false);
-        await _store.SaveSessionAsync(data, cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task SaveSnapshotAsync(CopilotChatSession session, CopilotChatMessage assistantMessage,
-        CancellationToken cancellationToken = default)
-    {
-        Guid snapshotId = Guid.NewGuid();
-        assistantMessage.AssociateSessionSnapshot(snapshotId);
-        var data = await CaptureSessionAsync(session, cancellationToken).ConfigureAwait(false);
-        await _store.SaveSnapshotAsync(data, snapshotId, cancellationToken).ConfigureAwait(false);
-        await _store.SaveSessionAsync(data, cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<CopilotChatSessionPersistenceData> CaptureSessionAsync(CopilotChatSession session, CancellationToken cancellationToken)
-    {
         ArgumentNullException.ThrowIfNull(session);
         JsonElement? agentSessionState = null;
         if (session.AgentSession is AgentSession agentSession)
@@ -140,6 +110,6 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
             agentSessionState = state.Clone();
         }
 
-        return await CopilotChatSessionPersistenceData.CaptureAsync(session, agentSessionState, cancellationToken).ConfigureAwait(false);
+        await _store.SaveSessionAsync(session, agentSessionState, cancellationToken).ConfigureAwait(false);
     }
 }
