@@ -191,6 +191,60 @@ public sealed class CodingSubAgentOutputTests
         Assert.AreEqual(string.Empty, message.Content);
     }
 
+    [TestMethod]
+    public async Task WhenSameNameIsCalledInAnotherParentTurnThenChildHistoryIsPreserved()
+    {
+        var session = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: session)).CompletionTask;
+        var nextTurn = new Scenario();
+
+        await (await nextTurn.StartAsync(agent, session: session)).CompletionTask;
+
+        Assert.IsTrue(nextTurn.RetryContainsFirstRound);
+    }
+
+    [TestMethod]
+    public async Task WhenAnotherNameIsCalledThenChildHistoryIsIndependent()
+    {
+        var session = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: session)).CompletionTask;
+        var nextTurn = new Scenario();
+
+        await (await nextTurn.StartAsync(agent, session: session, childName: "other")).CompletionTask;
+
+        Assert.IsFalse(nextTurn.RetryContainsFirstRound);
+    }
+
+    [TestMethod]
+    public async Task WhenSameNameIsCalledInAnotherParentSessionThenChildHistoryIsIndependent()
+    {
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent)).CompletionTask;
+        var otherParent = new Scenario();
+
+        await (await otherParent.StartAsync(agent)).CompletionTask;
+
+        Assert.IsFalse(otherParent.RetryContainsFirstRound);
+    }
+
+    [DataTestMethod]
+    [DataRow(null)]
+    [DataRow("")]
+    [DataRow(" ")]
+    public async Task WhenNameIsEmptyThenEachCallStartsWithoutChildHistory(string? name)
+    {
+        var session = new CopilotChatSession();
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: session, childName: name)).CompletionTask;
+        var nextTurn = new Scenario();
+
+        await (await nextTurn.StartAsync(agent, session: session, childName: name)).CompletionTask;
+
+        Assert.IsFalse(nextTurn.RetryContainsFirstRound);
+    }
+
     private static async IAsyncEnumerable<ChatResponseUpdate> EmptyAsync()
     {
         await Task.CompletedTask;
@@ -208,10 +262,14 @@ public sealed class CodingSubAgentOutputTests
         public string? ParentResult { get; private set; }
         private int _parentCalls;
 
-        public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default)
+        private string? _childName = "worker";
+
+        public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default,
+            CopilotChatSession? session = null, string? childName = "worker")
         {
+            _childName = childName;
             var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
-            return agent.RunAsync(new CodingRunContext(client, Message, new CopilotChatSession { MainThreadDispatcher = dispatcher }),
+            return agent.RunAsync(new CodingRunContext(client, Message, session ?? new CopilotChatSession { MainThreadDispatcher = dispatcher }),
                 [new TextContent("parent task")], null, new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
         }
 
@@ -225,7 +283,10 @@ public sealed class CodingSubAgentOutputTests
                 ParentResult = messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>().LastOrDefault()?.Result?.ToString();
                 if (_parentCalls++ < delegations)
                 {
-                    yield return Call("parent-" + _parentCalls, "InvokeCodingSubAgent", "prompt", "child task " + _parentCalls);
+                    yield return new ChatResponseUpdate(ChatRole.Assistant,
+                        [new FunctionCallContent("parent-" + _parentCalls, "InvokeCodingSubAgent",
+                            new Dictionary<string, object?> { ["name"] = _childName, ["prompt"] = "child task " + _parentCalls })])
+                    { FinishReason = ChatFinishReason.ToolCalls };
                 }
                 else
                 {

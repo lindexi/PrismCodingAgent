@@ -5,20 +5,28 @@ using Microsoft.Extensions.AI;
 
 namespace AgentLib.Coding;
 
-internal sealed class CodingSubAgentTools(
+internal sealed class CodingSubAgentTools
+(
     CodingAgent agent,
     CodingRunContext parentContext,
     CodingRunWorkspaceContext workspaceContext,
     IReadOnlyList<string> prompts,
-    CodingChatRunOptions options)
+    CodingChatRunOptions options
+)
 {
+    private const string SessionsKey = "AgentLib.Coding.SubAgentSessions";
+
     internal ToolRegistration CreateRegistration() => new(
         AIFunctionFactory.Create(InvokeCodingSubAgent));
 
     [Description("执行编程任务并返回提交的结果。")]
-    private async Task<string> InvokeCodingSubAgent(
+    private async Task<string> InvokeCodingSubAgent
+    (
+        [Description("子智能体名称。使用已有名称继续其上下文，使用新名称开始独立对话。")]
+        string? name,
         [Description("本次编程任务提示词。")] string prompt,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
         FunctionCallContent callContent = (FunctionInvokingChatClient.CurrentContext
@@ -32,7 +40,9 @@ internal sealed class CodingSubAgentTools(
         var submission = new GeneratedTextSubmissionTool();
         CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
             submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
-        var subSession = parentContext.Session.CreateSubSession();
+
+        var subSession = GetOrCreateSession(name);
+
         var context = new CodingRunContext(parentContext.ChatClient,
             childMessage, subSession);
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
@@ -54,5 +64,31 @@ internal sealed class CodingSubAgentTools(
         }
 
         return submission.SubmittedText ?? string.Empty;
+    }
+
+    private CopilotChatSession GetOrCreateSession(string? name)
+    {
+        CopilotChatSession? subSession;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            subSession = parentContext.Session.CreateSubSession();
+        }
+        else
+        {
+            if (!parentContext.Session.AdditionalInfo.TryGetValue(SessionsKey, out object? value))
+            {
+                value = new Dictionary<string, CopilotChatSession>(StringComparer.Ordinal);
+                parentContext.Session.AdditionalInfo.Add(SessionsKey, value);
+            }
+
+            var sessions = (Dictionary<string, CopilotChatSession>)value;
+            if (!sessions.TryGetValue(name, out subSession))
+            {
+                subSession = parentContext.Session.CreateSubSession();
+                sessions.Add(name, subSession);
+            }
+        }
+
+        return subSession;
     }
 }

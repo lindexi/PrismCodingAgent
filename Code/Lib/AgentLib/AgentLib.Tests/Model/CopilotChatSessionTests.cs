@@ -12,6 +12,29 @@ namespace AgentLib.Tests.Model;
 public class CopilotChatSessionTests
 {
     [TestMethod]
+    public void AdditionalInfoRetainsTheAttachedObject()
+    {
+        var session = new CopilotChatSession();
+        const string key = "test.attachment";
+        var value = new object();
+
+        session.AdditionalInfo.Add(key, value);
+
+        Assert.AreSame(value, session.AdditionalInfo[key]);
+    }
+
+    [TestMethod]
+    public void CreateSubSessionDoesNotShareAdditionalInfo()
+    {
+        var session = new CopilotChatSession();
+        session.AdditionalInfo.Add("test.attachment", new object());
+
+        CopilotChatSession child = session.CreateSubSession();
+
+        Assert.IsEmpty(child.AdditionalInfo);
+    }
+
+    [TestMethod]
     public async Task ResetModelContext_WhenBothBackendsHaveHistory_ClearsBoth()
     {
         var session = new CopilotChatSession();
