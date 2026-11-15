@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
@@ -53,7 +53,6 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            value = restored;
             parent.AdditionalInfo[SessionsKey] = restored;
             subAgentSessions = restored;
         }
@@ -87,7 +86,7 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
 
     public async ValueTask<JsonElement> SerializeAsync(CancellationToken cancellationToken = default)
     {
-        var states = new Dictionary<string, JsonElement?>(StringComparer.Ordinal);
+        var states = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         foreach (var item in _sessions)
         {
             cancellationToken.ThrowIfCancellationRequested();
