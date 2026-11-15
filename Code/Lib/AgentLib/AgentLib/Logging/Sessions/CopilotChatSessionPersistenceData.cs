@@ -11,6 +11,33 @@ namespace AgentLib.Logging.Sessions;
 /// </summary>
 public sealed record CopilotChatSessionPersistenceData
 {
+    /// <summary>捕获会话的完整持久化数据，代理协议状态由运行时提供。</summary>
+    public static async System.Threading.Tasks.Task<CopilotChatSessionPersistenceData> CaptureAsync(
+        CopilotChatSession session, JsonElement? agentSessionState,
+        System.Threading.CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        var additionalInfo = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var item in session.AdditionalInfo)
+        {
+            additionalInfo.Add(item.Key, (await item.Value.SerializeAsync(cancellationToken).ConfigureAwait(false)).Clone());
+        }
+        return new CopilotChatSessionPersistenceData
+        {
+            FormatVersion = FileCopilotChatSessionStore.CurrentFormatVersion,
+            SessionId = session.SessionId,
+            StartedTime = session.StartedTime,
+            Title = session.Title,
+            WorkspacePath = session.WorkspacePath,
+            WorkTaskId = session.WorkTaskId,
+            WorkTaskName = session.WorkTaskName,
+            Entries = System.Linq.Enumerable.ToArray(session.Entries),
+            AgentSessionState = agentSessionState,
+            AdditionalInfo = additionalInfo,
+            ResponsesSession = session.ExistingResponsesSession,
+        };
+    }
+
     /// <summary>
     /// 获取持久化格式版本。
     /// </summary>

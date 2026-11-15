@@ -99,6 +99,15 @@ public partial class ChatView : UserControl
             DispatcherPriority.Background);
     }
 
+    private async void CreateSessionFromMessageMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { CommandParameter: MessageItemViewModel message }
+            && DataContext is ChatViewModel viewModel)
+        {
+            await viewModel.CreateSessionFromMessageAsync(message);
+        }
+    }
+
     private async void CopyContentMenuItem_OnClick(object? sender, RoutedEventArgs e)
     {
         if (sender is MenuItem { CommandParameter: MessageItemViewModel message })

@@ -102,6 +102,8 @@ public sealed class CodingChatContinuationTests
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.SendMessageAsync(
             [new TextContent("original user")], new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }));
         var assistant = session.ChatMessages.Last();
+        Guid? firstSnapshotId = assistant.SessionSnapshotId;
+        Assert.IsNotNull(firstSnapshotId);
         var notice = (NoticeItemViewModel)viewModel.Messages.Last();
         var originalSession = session.AgentSession;
         var originalEntries = session.Entries.ToArray();
@@ -130,6 +132,8 @@ public sealed class CodingChatContinuationTests
         Assert.AreSame(notice.RetryCommand, latestNotice.RetryCommand);
         Assert.AreEqual(2, requests);
         Assert.AreEqual("AB", store.LastSavedAssistantContent);
+        Assert.IsNotNull(assistant.SessionSnapshotId);
+        Assert.AreNotEqual(firstSnapshotId, assistant.SessionSnapshotId);
         Assert.IsFalse(manager.IsChatting);
     }
 
@@ -142,6 +146,15 @@ public sealed class CodingChatContinuationTests
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(false);
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession source, Guid snapshotId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task SaveSnapshotAsync(CopilotChatSession session, CopilotChatMessage assistantMessage, CancellationToken cancellationToken = default)
+        {
+            assistantMessage.AssociateSessionSnapshot(Guid.NewGuid());
+            return SaveSessionAsync(session, cancellationToken);
+        }
+
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
         {
             LastSavedAssistantContent = session.ChatMessages.LastOrDefault()?.Content;

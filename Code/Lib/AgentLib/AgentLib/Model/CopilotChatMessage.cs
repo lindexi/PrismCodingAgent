@@ -25,6 +25,19 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
 
     private CopilotChatMessageResponseInfo? _responseInfo;
 
+    /// <summary>获取当前会话目录中的完整会话快照编号。</summary>
+    public Guid? SessionSnapshotId { get; private set; }
+
+    /// <summary>将助手消息关联到轮末完整会话快照。</summary>
+    public void AssociateSessionSnapshot(Guid snapshotId)
+    {
+        if (Role != ChatRole.Assistant)
+        {
+            throw new InvalidOperationException($"只有助手消息可以关联会话快照，当前角色为 {Role}。");
+        }
+        SessionSnapshotId = snapshotId;
+    }
+
     /// <summary>
     /// 助手消息的占位符文本，在流式响应开始前显示，收到首个更新后自动清除。
     /// </summary>
@@ -67,20 +80,14 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
         MessageItems.CollectionChanged += MessageItems_CollectionChanged;
     }
 
-    internal static CopilotChatMessage Restore(
-        ChatRole role,
-        DateTimeOffset createdTime,
-        bool isPresetInfo,
-        IEnumerable<ICopilotChatMessageItem> messageItems,
-        UsageDetails? totalUsageDetails)
+    internal static CopilotChatMessage Restore(CopilotChatMessageData data)
     {
-        ArgumentNullException.ThrowIfNull(messageItems);
-
-        var message = new CopilotChatMessage(role, createdTime, createdTime.ToString("HH:mm"), isPresetInfo)
+        var message = new CopilotChatMessage(data.Role, data.CreatedTime, data.CreatedTime.ToString("HH:mm"), data.IsPresetInfo)
         {
-            TotalUsageDetails = totalUsageDetails,
+            TotalUsageDetails = data.TotalUsageDetails,
+            SessionSnapshotId = data.SessionSnapshotId,
         };
-        foreach (ICopilotChatMessageItem messageItem in messageItems)
+        foreach (ICopilotChatMessageItem messageItem in data.MessageItems)
         {
             message.MessageItems.Add(messageItem);
         }
@@ -411,7 +418,10 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     /// <returns>深拷贝后的新消息实例。</returns>
     public CopilotChatMessage Clone()
     {
-        var clone = new CopilotChatMessage(Role, CreatedTime, TimeText, IsPresetInfo);
+        var clone = new CopilotChatMessage(Role, CreatedTime, TimeText, IsPresetInfo)
+        {
+            SessionSnapshotId = SessionSnapshotId,
+        };
         if (TotalUsageDetails is { } totalUsageDetails)
         {
             clone.TotalUsageDetails = CloneUsageDetails(totalUsageDetails);

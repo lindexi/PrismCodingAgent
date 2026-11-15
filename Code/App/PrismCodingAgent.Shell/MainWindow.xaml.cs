@@ -24,6 +24,15 @@ public partial class MainWindow : Window
         Closing += OnClosing;
     }
 
+    private async void CreateSessionFromMessageMenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.MenuItem { CommandParameter: MessageItemViewModel message }
+            && _scrollChat is { } viewModel)
+        {
+            await viewModel.CreateSessionFromMessageAsync(message);
+        }
+    }
+
     private void OnChatDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (_scrollChat is not null)

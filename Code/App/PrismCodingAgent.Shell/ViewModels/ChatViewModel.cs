@@ -1095,6 +1095,23 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
     }
 
+    internal async Task CreateSessionFromMessageAsync(MessageItemViewModel message)
+    {
+        CopilotChatSession? source = _chatManager?.SelectedSession;
+        try
+        {
+            if (_workTaskController is not null)
+            {
+                await _workTaskController.CreateSessionFromMessageAsync(message.Message);
+            }
+        }
+        catch (Exception exception)
+        {
+            await AddSystemMessageAsync(source,
+                Localizations.Lang.Format(Lang.Current.RunFailed, exception.Message), CopilotChatNoticeLevel.Error);
+        }
+    }
+
     private async Task AddSystemMessageAsync
     (
         CopilotChatSession? session, string content,

@@ -319,6 +319,9 @@
                                     <Border Classes="MessageBubbleAssistant" HorizontalAlignment="Stretch">
                                         <Border.ContextMenu>
                                             <ContextMenu>
+                                                <MenuItem Header="{Binding CreateSessionFromReply, Source={x:Static localizations:Lang.Current}}"
+                                                          Click="CreateSessionFromMessageMenuItem_OnClick"
+                                                          CommandParameter="{Binding}" />
                                                 <MenuItem
                                                     Header="{Binding CopyBody, Source={x:Static localizations:Lang.Current}}"
                                                     Click="CopyContentMenuItem_OnClick"

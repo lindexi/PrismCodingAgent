@@ -49,48 +49,23 @@ public sealed class FileCopilotChatSessionStore
     (
         CopilotChatSession session,
         JsonElement? agentSessionState,
-        CancellationToken cancellationToken = default
-    )
+        CancellationToken cancellationToken = default) =>
+        await SaveSessionAsync(await CopilotChatSessionPersistenceData.CaptureAsync(session, agentSessionState, cancellationToken)
+            .ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+
+    /// <summary>保存已捕获的完整会话数据。</summary>
+    public async Task SaveSessionAsync(CopilotChatSessionPersistenceData data, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(data);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var additionalInfo = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-            foreach (var item in session.AdditionalInfo)
-            {
-                var additionalInfoJsonElement = await item.Value.SerializeAsync(cancellationToken).ConfigureAwait(false);
-                // 调用 Clone 仅保险，浪费点也无所谓
-                additionalInfoJsonElement = additionalInfoJsonElement.Clone();
-
-                additionalInfo.Add(item.Key, additionalInfoJsonElement);
-            }
-
-            string dayDirectory = Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"));
-            Directory.CreateDirectory(dayDirectory);
-            string filePath = Path.Join
-                (dayDirectory, session.SessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+            string filePath = GetSessionPath(data.SessionId, data.StartedTime);
             if (File.Exists(filePath))
             {
                 await SessionDirectoryStorage.ExpandAsync(filePath, cancellationToken).ConfigureAwait(false);
             }
-
-            var data = new CopilotChatSessionPersistenceData
-            {
-                FormatVersion = CurrentFormatVersion,
-                SessionId = session.SessionId,
-                StartedTime = session.StartedTime,
-                Title = session.Title,
-                WorkspacePath = session.WorkspacePath,
-                WorkTaskId = session.WorkTaskId,
-                WorkTaskName = session.WorkTaskName,
-                Entries = session.Entries.ToArray(),
-                AgentSessionState = agentSessionState,
-                AdditionalInfo = additionalInfo,
-                ResponsesSession = session.ExistingResponsesSession,
-            };
-            await SessionDirectoryStorage.WriteAsync
-                (filePath, data, DateTimeOffset.Now, cancellationToken).ConfigureAwait(false);
+            await SessionDirectoryStorage.WriteAsync(filePath, data, DateTimeOffset.Now, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -170,6 +145,40 @@ public sealed class FileCopilotChatSessionStore
         return await SessionDirectoryStorage.ReadAsync(filePath, cancellationToken).ConfigureAwait(false);
     }
 
+    private string GetSessionPath(Guid sessionId, DateTimeOffset startedTime) =>
+        Path.Join(_sessionDirectory, startedTime.ToString("yyyyMMdd"), sessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+
+    /// <summary>在所属会话目录中写入独立的完整快照，不更新会话主文件。</summary>
+    public async Task SaveSnapshotAsync(CopilotChatSessionPersistenceData data, Guid snapshotId,
+        CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            string entryPath = GetSessionPath(data.SessionId, data.StartedTime);
+            if (File.Exists(entryPath))
+            {
+                await SessionDirectoryStorage.ExpandAsync(entryPath, cancellationToken).ConfigureAwait(false);
+            }
+            string snapshotPath = Path.Join(Path.GetDirectoryName(entryPath), "Snapshots", snapshotId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+            await SessionDirectoryStorage.WriteAsync(snapshotPath, data, DateTimeOffset.Now, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>读取指定会话目录中的完整快照。</summary>
+    public async Task<CopilotChatSessionPersistenceData> LoadSnapshotAsync(
+        CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+    {
+        string entryPath = GetSessionPath(session.SessionId, session.StartedTime);
+        await SessionDirectoryStorage.ExpandAsync(entryPath, cancellationToken).ConfigureAwait(false);
+        string snapshotPath = Path.Join(Path.GetDirectoryName(entryPath), "Snapshots", snapshotId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+        return await SessionDirectoryStorage.ReadAsync(snapshotPath, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// 删除会话历史及对应日志文件。
     /// </summary>
@@ -210,8 +219,9 @@ public sealed class FileCopilotChatSessionStore
     private IEnumerable<string> EnumerateEntryFiles() => Directory.EnumerateFiles
             (_sessionDirectory, "*.xml", SearchOption.AllDirectories)
         .Where
-        (file => Path.GetFileName(file) == SessionDirectoryStorage.EntryFileName
-                 || Path.GetFileName(file) != "History.xml" && Path.GetFileName(file).Contains('_')
+        (file => !Path.GetRelativePath(_sessionDirectory, file).Split(Path.DirectorySeparatorChar).Contains("Snapshots")
+                 && (Path.GetFileName(file) == SessionDirectoryStorage.EntryFileName
+                     || Path.GetFileName(file) != "History.xml" && Path.GetFileName(file).Contains('_'))
         );
 
     /// <summary>升级旧会话，并以 ZIP 压缩七天未更新的会话正文与资源。</summary>

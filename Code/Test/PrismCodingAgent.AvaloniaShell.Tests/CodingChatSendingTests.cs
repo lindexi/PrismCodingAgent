@@ -649,6 +649,15 @@ public sealed class CodingChatSendingTests
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession source, Guid snapshotId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task SaveSnapshotAsync(CopilotChatSession session, CopilotChatMessage assistantMessage, CancellationToken cancellationToken = default)
+        {
+            assistantMessage.AssociateSessionSnapshot(Guid.NewGuid());
+            return SaveSessionAsync(session, cancellationToken);
+        }
+
         public async Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
         {
             SaveStarted.TrySetResult();

@@ -30,4 +30,10 @@ internal interface ICodingChatSessionStore
     Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
     Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default);
+
+    Task SaveSnapshotAsync(CopilotChatSession session, CopilotChatMessage assistantMessage,
+        CancellationToken cancellationToken = default);
+
+    Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession source, Guid snapshotId,
+        CancellationToken cancellationToken = default);
 }
