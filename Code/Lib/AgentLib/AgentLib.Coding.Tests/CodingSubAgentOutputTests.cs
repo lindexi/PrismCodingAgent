@@ -30,6 +30,37 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    [Timeout(15000)]
+    public async Task WhenChildIsStreamingThenToolPresentationContainsItsName()
+    {
+        var scenario = new Scenario(pause: true);
+        await using var agent = new CodingAgent();
+        ICodingAgentRunResult run = await scenario.StartAsync(agent, childName: "reviewer");
+        await scenario.StreamPaused.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        try
+        {
+            Assert.AreEqual("reviewer", scenario.Message.MessageItems.OfType<CopilotChatToolItem>().Single().PrimaryText);
+        }
+        finally
+        {
+            scenario.Release.TrySetResult();
+            await run.CompletionTask;
+        }
+    }
+
+    [TestMethod]
+    public async Task WhenNamedChildIsReusedThenBothToolPresentationsContainItsName()
+    {
+        var scenario = new Scenario(delegations: 2);
+        await using var agent = new CodingAgent();
+
+        await (await scenario.StartAsync(agent, childName: "reviewer")).CompletionTask;
+
+        CollectionAssert.AreEqual(new[] { "reviewer", "reviewer" },
+            scenario.Message.MessageItems.OfType<CopilotChatToolItem>().Select(item => item.PrimaryText).ToArray());
+    }
+
+    [TestMethod]
     public async Task WhenChildCompletesThenReasoningAndToolProcessRemainInChild()
     {
         var scenario = new Scenario();

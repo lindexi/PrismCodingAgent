@@ -17,7 +17,10 @@ internal sealed class CodingSubAgentTools
     private const string SessionsKey = "AgentLib.Coding.SubAgentSessions";
 
     internal ToolRegistration CreateRegistration() => new(
-        AIFunctionFactory.Create(InvokeCodingSubAgent));
+        AIFunctionFactory.Create(InvokeCodingSubAgent), CreatePresentation);
+
+    private static ToolCallPresentation CreatePresentation(IDictionary<string, object?> arguments) =>
+        new(ToolCallPresentationFactory.GetString(arguments, "name"), null);
 
     [Description("执行编程任务并返回提交的结果。")]
     private async Task<string> InvokeCodingSubAgent
@@ -35,7 +38,7 @@ internal sealed class CodingSubAgentTools
         await parentContext.InvokeOutputAsync(() =>
         {
             parentContext.Output.ClearPlaceholder();
-            parentContext.Output.CreateToolItem(callContent).Details = childMessage;
+            parentContext.Output.CreateToolItem(callContent, new ToolCallPresentation(name, null)).Details = childMessage;
         }).ConfigureAwait(false);
         var submission = new GeneratedTextSubmissionTool();
         CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
