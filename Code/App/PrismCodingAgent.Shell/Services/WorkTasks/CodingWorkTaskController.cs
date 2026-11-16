@@ -193,6 +193,12 @@ internal sealed class CodingWorkTaskController
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
         CopilotChatSession session = _chatManager.ChatSessions.FirstOrDefault(item => item.SessionId == sessionId)
                                      ?? await _sessionStore.LoadSessionAsync(sessionId, cancellationToken);
+        await RenameSessionAsync(session, title, cancellationToken);
+    }
+
+    internal async Task RenameSessionAsync(CopilotChatSession session, string title, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
         string previousTitle = session.Title;
         try
         {

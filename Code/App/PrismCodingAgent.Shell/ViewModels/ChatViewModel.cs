@@ -943,7 +943,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         string? title = await generator.GenerateTitlePreviewAsync(session).ConfigureAwait(true);
         if (!string.IsNullOrWhiteSpace(title))
         {
-            await _workTaskController.RenameSessionAsync(session.SessionId, title).ConfigureAwait(true);
+            await _workTaskController.RenameSessionAsync(session, title).ConfigureAwait(true);
             await AddSystemMessageAsync(session,
                 Localizations.Lang.Format(Lang.Current.SessionTitleUpdated, session.Title)).ConfigureAwait(true);
         }

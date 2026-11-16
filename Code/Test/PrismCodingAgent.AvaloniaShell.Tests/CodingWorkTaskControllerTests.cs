@@ -81,6 +81,102 @@ public sealed class CodingWorkTaskControllerTests
         Assert.AreEqual(application.SelectedSessionId, application.Sessions[0].SessionId);
     }
 
+    [TestMethod]
+    public async Task CreateNewSessionShouldSwitchBeforeSavingPreviousSession()
+    {
+        var manager = new CopilotChatManager();
+        var previous = manager.SelectedSession;
+        await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var store = new TestSessionStore { SaveCompletion = completion.Task };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+
+        Task operation = controller.CreateNewSessionAsync();
+        bool switchedBeforeSaveCompleted = !ReferenceEquals(previous, manager.SelectedSession) && !operation.IsCompleted;
+        completion.SetResult();
+        await operation;
+
+        Assert.IsTrue(switchedBeforeSaveCompleted);
+    }
+
+    [TestMethod]
+    public async Task CreateNewSessionShouldUnloadSavedPreviousSession()
+    {
+        var manager = new CopilotChatManager();
+        var previous = manager.SelectedSession;
+        await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
+
+        await controller.CreateNewSessionAsync();
+
+        Assert.DoesNotContain(previous, manager.ChatSessions);
+    }
+
+    [TestMethod]
+    public async Task CreateNewSessionShouldKeepPreviousSummary()
+    {
+        var manager = new CopilotChatManager();
+        Guid previousId = manager.SelectedSession.SessionId;
+        await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
+
+        await controller.CreateNewSessionAsync();
+
+        Assert.IsTrue(controller.Sessions.Any(summary => summary.SessionId == previousId));
+    }
+
+    [TestMethod]
+    public async Task CreateNewSessionWhenSavingFailsShouldKeepPreviousSessionLoaded()
+    {
+        var manager = new CopilotChatManager();
+        var previous = manager.SelectedSession;
+        await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
+        var store = new TestSessionStore { SaveException = new IOException("save failed") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+
+        await controller.CreateNewSessionAsync();
+
+        Assert.Contains(previous, manager.ChatSessions);
+    }
+
+    [TestMethod]
+    public async Task CreateNewSessionWhenSavingFailsShouldNotifyNewSession()
+    {
+        var manager = new CopilotChatManager();
+        await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
+        var store = new TestSessionStore { SaveException = new IOException("save failed") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+
+        await controller.CreateNewSessionAsync();
+
+        Assert.HasCount(1, manager.SelectedSession.Entries.OfType<CopilotChatNotice>().ToArray());
+    }
+
+    [TestMethod]
+    public async Task OpenSessionShouldUnloadPreviousSession()
+    {
+        var manager = new CopilotChatManager();
+        var previous = manager.SelectedSession;
+        var target = CreateSession("history", "message", DateTimeOffset.Now);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(target));
+
+        await controller.OpenSessionAsync(target.SessionId);
+
+        Assert.DoesNotContain(previous, manager.ChatSessions);
+    }
+
+    [TestMethod]
+    public async Task OpenSessionFailureShouldNotifyCurrentSession()
+    {
+        var manager = new CopilotChatManager();
+        var store = new TestSessionStore { LoadException = new InvalidDataException("load failed") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => controller.OpenSessionAsync(Guid.NewGuid()));
+
+        Assert.HasCount(1, manager.SelectedSession.Entries.OfType<CopilotChatNotice>().ToArray());
+    }
+
     [TestMethod(DisplayName = "打开历史失败时应恢复旧选择")]
     [Timeout(5000)]
     public async Task OpenSessionAsyncFailureShouldKeepPreviousSelection()
@@ -580,6 +676,10 @@ public sealed class CodingWorkTaskControllerTests
 
         public Exception? DeleteException { get; init; }
 
+        public Exception? SaveException { get; init; }
+
+        public Task? SaveCompletion { get; init; }
+
         public int SaveCount { get; private set; }
 
         public CopilotChatSession? LastSavedSession { get; private set; }
@@ -629,7 +729,9 @@ public sealed class CodingWorkTaskControllerTests
         {
             SaveCount++;
             LastSavedSession = session;
-            return Task.CompletedTask;
+            if (SaveException is not null) return Task.FromException(SaveException);
+            _sessions[session.SessionId] = session;
+            return SaveCompletion ?? Task.CompletedTask;
         }
     }
 
