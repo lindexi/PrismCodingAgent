@@ -137,6 +137,7 @@ internal static class SessionDirectoryStorage
         XDocument entry = await ReadXmlAsync(entryPath, cancellationToken).ConfigureAwait(false);
         if ((string?)entry.Root!.Attribute("ContentStorage") == "Zip") return false;
         string directory = Path.GetDirectoryName(entryPath)!;
+        string[] contentDirectories = Directory.GetDirectories(directory);
         string[] files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
             .Where(file => file != entryPath && Path.GetFileName(file) != ArchiveFileName).ToArray();
         string archivePath = Path.Join(directory, ArchiveFileName);
@@ -154,7 +155,7 @@ internal static class SessionDirectoryStorage
         entry.Root.SetAttributeValue("ContentStorage", "Zip");
         await FileCopilotChatSessionStore.SaveDocumentAsync(entryPath, entry, cancellationToken).ConfigureAwait(false);
         foreach (string file in files) File.Delete(file);
-        foreach (string subdirectory in Directory.GetDirectories(directory)) Directory.Delete(subdirectory, recursive: true);
+        foreach (string subdirectory in contentDirectories) Directory.Delete(subdirectory, recursive: true);
         return true;
     }
 

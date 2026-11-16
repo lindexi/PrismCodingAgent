@@ -53,6 +53,36 @@ public sealed class FileCopilotChatSessionStore
     )
     {
         ArgumentNullException.ThrowIfNull(session);
+        await SaveAsync(session, agentSessionState,
+            Path.Join(GetSessionDirectory(session), SessionDirectoryStorage.EntryFileName), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>将完整会话及代理状态保存到所属会话目录的指定快照，同一 ID 覆盖保存。</summary>
+    public async Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, JsonElement? agentSessionState,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        await SaveAsync(session, agentSessionState,
+            GetSnapshotPath(session, snapshotId), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>从源会话目录读取指定快照的完整持久化数据。</summary>
+    public Task<CopilotChatSessionPersistenceData> LoadSnapshotAsync(CopilotChatSession sourceSession, Guid snapshotId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(sourceSession);
+        return SessionDirectoryStorage.ReadAsync(GetSnapshotPath(sourceSession, snapshotId), cancellationToken);
+    }
+
+    private string GetSessionDirectory(CopilotChatSession session) =>
+        Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"), session.SessionId.ToString("N"));
+
+    private string GetSnapshotPath(CopilotChatSession session, Guid snapshotId) =>
+        Path.Join(GetSessionDirectory(session), "Snapshots", snapshotId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+
+    private async Task SaveAsync(CopilotChatSession session, JsonElement? agentSessionState, string filePath,
+        CancellationToken cancellationToken)
+    {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -66,10 +96,6 @@ public sealed class FileCopilotChatSessionStore
                 additionalInfo.Add(item.Key, additionalInfoJsonElement);
             }
 
-            string dayDirectory = Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"));
-            Directory.CreateDirectory(dayDirectory);
-            string filePath = Path.Join
-                (dayDirectory, session.SessionId.ToString("N"), SessionDirectoryStorage.EntryFileName);
             if (File.Exists(filePath))
             {
                 await SessionDirectoryStorage.ExpandAsync(filePath, cancellationToken).ConfigureAwait(false);
@@ -209,6 +235,7 @@ public sealed class FileCopilotChatSessionStore
 
     private IEnumerable<string> EnumerateEntryFiles() => Directory.EnumerateFiles
             (_sessionDirectory, "*.xml", SearchOption.AllDirectories)
+        .Where(file => !Path.GetRelativePath(_sessionDirectory, file).Split(Path.DirectorySeparatorChar).Contains("Snapshots"))
         .Where
         (file => Path.GetFileName(file) == SessionDirectoryStorage.EntryFileName
                  || Path.GetFileName(file) != "History.xml" && Path.GetFileName(file).Contains('_')
