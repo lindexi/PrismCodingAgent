@@ -403,6 +403,9 @@ public sealed class HistoryInteractionTests
             => FailOpen ? Task.FromException<CopilotChatSession>(new System.IO.IOException("Open failed")) : Task.FromResult(Session);
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
+        public Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }

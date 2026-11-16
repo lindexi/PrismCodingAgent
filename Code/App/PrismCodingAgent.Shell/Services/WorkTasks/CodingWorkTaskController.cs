@@ -501,12 +501,14 @@ internal sealed class CodingWorkTaskController
             $"运行开始。工作任务={session.WorkTaskName ?? "未设置"}；工作任务Id={session.WorkTaskId?.ToString() ?? "未设置"}；工作路径={session.WorkspacePath ?? "未设置"}；自动压缩={options.EnableAutomaticCompression}；dotnet run={options.EnableDotNetRun}；思考强度={options.ReasoningEffort?.ToString() ?? "默认"}；调用方取消={cancellationToken.IsCancellationRequested}。"
         );
         Exception? runException = null;
+        CopilotChatMessage? assistantMessage = continuation?.Assistant;
         try
         {
             ICodingAgentRunResult runResult = continuation is null
                 ? await chatRunner.RunAsync(runContents, session.WorkspacePath, options, cancellationToken)
                 : await continuation.Runner.ContinueAsync(session, continuation.Assistant,
                     session.WorkspacePath, options, cancellationToken);
+            assistantMessage = runResult.AssistantChatMessage;
             await runResult.CompletionTask;
             await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "运行", "运行正常完成。");
         }
@@ -546,6 +548,10 @@ internal sealed class CodingWorkTaskController
             {
                 await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "会话保存", "开始保存运行后的会话。");
                 await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
+                if (assistantMessage is not null)
+                {
+                    await _sessionStore.SaveSnapshotAsync(session, assistantMessage.SessionSnapshotId, CancellationToken.None);
+                }
                 AddOrUpdateSummary(session, insertAtTop: true);
                 await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "会话保存", "运行后的会话保存完成。");
             }

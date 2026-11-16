@@ -580,6 +580,73 @@ public sealed class CodingWorkTaskControllerTests
         }
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task RunShouldSaveSnapshotOnlyAfterCompletion()
+    {
+        var manager = new CopilotChatManager();
+        var store = new TestSessionStore();
+        var completion = new TaskCompletionSource<string?>();
+        var runner = new LoopRunner { Completion = _ => completion.Task };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+
+        Task run = controller.SendMessageAsync("question");
+        Assert.AreEqual(0, store.SaveCount);
+        Assert.IsEmpty(store.SavedSnapshotIds);
+        completion.SetResult("answer");
+        await run;
+
+        CollectionAssert.AreEqual(runner.Assistants.Select(message => message.SessionSnapshotId).ToArray(), store.SavedSnapshotIds);
+        Assert.AreEqual(1, store.SaveCount);
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task RunWithoutAssistantShouldOnlySaveOrdinarySession()
+    {
+        var manager = new CopilotChatManager();
+        var store = new TestSessionStore();
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store,
+            new ControlledCompressionRunner("empty"));
+
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => controller.SendMessageAsync("question"));
+
+        Assert.IsEmpty(store.SavedSnapshotIds);
+        Assert.AreEqual(1, store.SaveCount);
+    }
+
+    [TestMethod]
+    public async Task FailedRunShouldSaveAssistantSnapshot()
+    {
+        var store = new TestSessionStore();
+        var runner = new LoopRunner { Failure = new InvalidOperationException("model failure") };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store, runner);
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.SendMessageAsync("question"));
+
+        Assert.AreEqual(1, store.SaveCount);
+        CollectionAssert.AreEqual(new[] { runner.Assistants.Single().SessionSnapshotId }, store.SavedSnapshotIds);
+    }
+
+    [TestMethod]
+    public async Task CancelledRunShouldSaveAssistantSnapshot()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var store = new TestSessionStore();
+        var runner = new LoopRunner { Completion = token =>
+        {
+            cancellation.Cancel();
+            return Task.FromCanceled<string?>(token);
+        } };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store, runner);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => controller.SendMessageAsync("question",
+            cancellationToken: cancellation.Token));
+
+        Assert.AreEqual(1, store.SaveCount);
+        CollectionAssert.AreEqual(new[] { runner.Assistants.Single().SessionSnapshotId }, store.SavedSnapshotIds);
+    }
+
     private static string CreateTestDirectory()
     {
         string path = Path.Join(Path.GetTempPath(), $"CodingChatRoom.HistoryWorkspace.{Guid.NewGuid():N}");
@@ -725,6 +792,14 @@ public sealed class CodingWorkTaskControllerTests
             return Task.FromResult(_sessions.Remove(sessionId));
         }
 
+        public List<Guid> SavedSnapshotIds { get; } = [];
+
+        public Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+        {
+            SavedSnapshotIds.Add(snapshotId);
+            return Task.CompletedTask;
+        }
+
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
         {
             SaveCount++;
@@ -812,6 +887,7 @@ public sealed class CodingWorkTaskControllerTests
         await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default, settings);
 
         CollectionAssert.AreEqual(new[] { 2, 0, 3 }, new[] { runner.Attempts, runner.Compactions, store.SaveCount });
+        CollectionAssert.AreEqual(runner.Assistants.Select(message => message.SessionSnapshotId).ToArray(), store.SavedSnapshotIds);
         CollectionAssert.AreEqual(new[] { 0, 0 }, historyCounts.ToArray());
     }
 
@@ -1026,6 +1102,7 @@ public sealed class CodingWorkTaskControllerTests
 
     private sealed class LoopRunner : ICodingChatRunner
     {
+        public List<CopilotChatMessage> Assistants { get; } = [];
         public int Attempts { get; private set; }
         public int Compactions { get; private set; }
         public bool CanCompact { get; init; } = true;
@@ -1039,8 +1116,10 @@ public sealed class CodingWorkTaskControllerTests
         {
             Attempts++;
             OnRun?.Invoke();
+            var assistant = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
+            Assistants.Add(assistant);
             return Task.FromResult<ICodingAgentRunResult>(new CompletedCodingAgentRunResult(
-                CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false),
+                assistant,
                 Completion?.Invoke(cancellationToken) ?? (Failure is null
                     ? Task.FromResult<string?>(string.Empty) : Task.FromException<string?>(Failure))));
         }

@@ -242,6 +242,9 @@ public sealed class MainWindowClosingTests
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(false);
+        public Task SaveSnapshotAsync(AgentLib.Model.CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task SaveSessionAsync(AgentLib.Model.CopilotChatSession session, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }

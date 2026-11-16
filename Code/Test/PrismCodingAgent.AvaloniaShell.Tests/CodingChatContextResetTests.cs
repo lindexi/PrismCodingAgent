@@ -109,6 +109,56 @@ public sealed class CodingChatContextResetTests
             || fixture.Requests[1].Contains("previous-assistant", StringComparison.Ordinal));
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    [Timeout(30000)]
+    public async Task RoundEndShouldSaveCompleteSnapshotAndOrdinarySession(bool responses)
+    {
+        await using var fixture = await Fixture.CreateAsync(responses);
+        var session = fixture.Manager.SelectedSession;
+        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+            fixture.Manager, new ImmediateDispatcher());
+        var controller = CodingWorkTaskControllerTestFactory.CreateApplication(fixture.Manager, store, fixture.Runner);
+
+        await controller.SendMessageAsync("previous-user",
+            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
+
+        var files = new FileCopilotChatSessionStore(fixture.Directory);
+        var snapshot = await files.LoadSnapshotAsync(session, session.ChatMessages.Last().SessionSnapshotId);
+        var ordinary = await files.LoadSessionAsync(session.SessionId);
+        CollectionAssert.AreEqual(session.Entries.Cast<CopilotChatMessage>().Select(message => message.Content).ToArray(),
+            snapshot.Entries.Cast<CopilotChatMessage>().Select(message => message.Content).ToArray());
+        Assert.AreEqual(ordinary.AgentSessionState?.GetRawText(), snapshot.AgentSessionState?.GetRawText());
+        Assert.AreEqual(ordinary.ResponsesSession?.Items.Count, snapshot.ResponsesSession?.Items.Count);
+        Assert.AreEqual(responses, snapshot.ResponsesSession?.Items.Count > 0);
+        Assert.AreEqual(!responses, snapshot.AgentSessionState.HasValue);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    [Timeout(30000)]
+    public async Task SaveSnapshotShouldNotOverwriteOrdinarySession(bool responses)
+    {
+        await using var fixture = await Fixture.CreateAsync(responses);
+        await fixture.RunAsync("previous-user");
+        var session = fixture.Manager.SelectedSession;
+        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+            fixture.Manager, new ImmediateDispatcher());
+        session.SetTitle("ordinary-session");
+        await store.SaveSessionAsync(session);
+        session.SetTitle("snapshot");
+        Guid snapshotId = session.ChatMessages.Last().SessionSnapshotId;
+
+        await store.SaveSnapshotAsync(session, snapshotId);
+
+        var files = new FileCopilotChatSessionStore(fixture.Directory);
+        var ordinary = await files.LoadSessionAsync(session.SessionId);
+        var snapshot = await files.LoadSnapshotAsync(session, snapshotId);
+        CollectionAssert.AreEqual(new[] { "ordinary-session", "snapshot" }, new[] { ordinary.Title, snapshot.Title });
+    }
+
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly CodingAgent _agent;

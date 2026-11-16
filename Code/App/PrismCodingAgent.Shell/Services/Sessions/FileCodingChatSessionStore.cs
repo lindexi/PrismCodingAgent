@@ -94,6 +94,20 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
 
     public async Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
     {
+        JsonElement? agentSessionState = await SerializeAgentSessionAsync(session, cancellationToken).ConfigureAwait(false);
+        await _store.SaveSessionAsync(session, agentSessionState, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>保存包含代理状态的会话快照。</summary>
+    public async Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId,
+        CancellationToken cancellationToken = default)
+    {
+        JsonElement? agentSessionState = await SerializeAgentSessionAsync(session, cancellationToken).ConfigureAwait(false);
+        await _store.SaveSnapshotAsync(session, snapshotId, agentSessionState, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<JsonElement?> SerializeAgentSessionAsync(CopilotChatSession session, CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(session);
         JsonElement? agentSessionState = null;
         if (session.AgentSession is AgentSession agentSession)
@@ -110,6 +124,6 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
             agentSessionState = state.Clone();
         }
 
-        await _store.SaveSessionAsync(session, agentSessionState, cancellationToken).ConfigureAwait(false);
+        return agentSessionState;
     }
 }

@@ -130,20 +130,32 @@ public sealed class CodingChatContinuationTests
         Assert.AreSame(notice.RetryCommand, latestNotice.RetryCommand);
         Assert.AreEqual(2, requests);
         Assert.AreEqual("AB", store.LastSavedAssistantContent);
+        Assert.AreEqual(2, store.SaveCount);
+        CollectionAssert.AreEqual(new[] { assistant.SessionSnapshotId, assistant.SessionSnapshotId }, store.SavedSnapshotIds);
         Assert.IsFalse(manager.IsChatting);
     }
 
     private sealed class SessionStore : ICodingChatSessionStore
     {
         public string? LastSavedAssistantContent { get; private set; }
+        public int SaveCount { get; private set; }
         public Task<IReadOnlyList<CopilotChatSessionSummary>> ListSessionsAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<CopilotChatSessionSummary>>([]);
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(false);
+        public List<Guid> SavedSnapshotIds { get; } = [];
+
+        public Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+        {
+            SavedSnapshotIds.Add(snapshotId);
+            return Task.CompletedTask;
+        }
+
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
         {
+            SaveCount++;
             LastSavedAssistantContent = session.ChatMessages.LastOrDefault()?.Content;
             return Task.CompletedTask;
         }
