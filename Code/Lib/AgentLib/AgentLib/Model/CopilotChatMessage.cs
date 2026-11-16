@@ -19,6 +19,11 @@ namespace AgentLib.Model;
 public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
 {
     /// <summary>
+    /// 消息创建时分配的固定会话快照标识，持久化恢复和克隆时保留。
+    /// </summary>
+    public Guid SessionSnapshotId { get; }
+
+    /// <summary>
     /// 此消息的 Responses 信息，首次访问时创建；访问不会修改消息内容。
     /// </summary>
     public CopilotChatMessageResponseInfo ResponseInfo => _responseInfo ??= new(this);
@@ -47,6 +52,7 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     {
         ArgumentNullException.ThrowIfNull(contents);
         Role = role;
+        SessionSnapshotId = Guid.NewGuid();
         MessageItems.CollectionChanged += MessageItems_CollectionChanged;
 
         AppendContents(contents);
@@ -58,10 +64,11 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     /// <summary>
     /// 克隆构造，用于深拷贝已有消息。
     /// </summary>
-    private CopilotChatMessage(ChatRole role, DateTimeOffset createdTime, string timeText, bool isPresetInfo)
+    private CopilotChatMessage(ChatRole role, DateTimeOffset createdTime, bool isPresetInfo, Guid sessionSnapshotId)
     {
         Role = role;
         CreatedTime = createdTime;
+        SessionSnapshotId = sessionSnapshotId;
 
         IsPresetInfo = isPresetInfo;
         MessageItems.CollectionChanged += MessageItems_CollectionChanged;
@@ -72,11 +79,12 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
         DateTimeOffset createdTime,
         bool isPresetInfo,
         IEnumerable<ICopilotChatMessageItem> messageItems,
-        UsageDetails? totalUsageDetails)
+        UsageDetails? totalUsageDetails,
+        Guid sessionSnapshotId)
     {
         ArgumentNullException.ThrowIfNull(messageItems);
 
-        var message = new CopilotChatMessage(role, createdTime, createdTime.ToString("HH:mm"), isPresetInfo)
+        var message = new CopilotChatMessage(role, createdTime, isPresetInfo, sessionSnapshotId)
         {
             TotalUsageDetails = totalUsageDetails,
         };
@@ -411,7 +419,7 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     /// <returns>深拷贝后的新消息实例。</returns>
     public CopilotChatMessage Clone()
     {
-        var clone = new CopilotChatMessage(Role, CreatedTime, TimeText, IsPresetInfo);
+        var clone = new CopilotChatMessage(Role, CreatedTime, IsPresetInfo, SessionSnapshotId);
         if (TotalUsageDetails is { } totalUsageDetails)
         {
             clone.TotalUsageDetails = CloneUsageDetails(totalUsageDetails);

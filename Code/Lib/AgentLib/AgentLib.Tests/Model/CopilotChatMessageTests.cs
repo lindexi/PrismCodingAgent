@@ -8,6 +8,50 @@ namespace AgentLib.Tests.Model;
 public class CopilotChatMessageTests
 {
     [TestMethod]
+    public void ConstructorShouldAllocateSessionSnapshotId()
+    {
+        var message = new CopilotChatMessage(ChatRole.User, string.Empty);
+
+        Assert.AreNotEqual(Guid.Empty, message.SessionSnapshotId);
+    }
+
+    [TestMethod]
+    public void ConstructorsShouldAllocateDistinctSessionSnapshotIds()
+    {
+        var first = new CopilotChatMessage(ChatRole.User, string.Empty);
+        var second = new CopilotChatMessage(ChatRole.Assistant, Array.Empty<AIContent>());
+
+        Assert.AreNotEqual(first.SessionSnapshotId, second.SessionSnapshotId);
+    }
+
+    [TestMethod]
+    public void AppendTextShouldPreserveSessionSnapshotId()
+    {
+        var message = new CopilotChatMessage(ChatRole.Assistant, Array.Empty<AIContent>());
+        Guid id = message.SessionSnapshotId;
+
+        message.AppendText("answer");
+
+        Assert.AreEqual(id, message.SessionSnapshotId);
+    }
+
+    [TestMethod]
+    public void SessionSnapshotIdShouldHaveNoSetter()
+    {
+        Assert.IsNull(typeof(CopilotChatMessage).GetProperty(nameof(CopilotChatMessage.SessionSnapshotId))!.SetMethod);
+    }
+
+    [TestMethod]
+    public void CloneShouldPreserveSessionSnapshotId()
+    {
+        var message = new CopilotChatMessage(ChatRole.Assistant, "answer");
+
+        CopilotChatMessage clone = message.Clone();
+
+        Assert.AreEqual(message.SessionSnapshotId, clone.SessionSnapshotId);
+    }
+
+    [TestMethod]
     [Description("追加文本时应与最后一个文本片段合并并更新正文内容")]
     public void AppendText_WhenLastItemIsText_MergesIntoSingleTextItem()
     {

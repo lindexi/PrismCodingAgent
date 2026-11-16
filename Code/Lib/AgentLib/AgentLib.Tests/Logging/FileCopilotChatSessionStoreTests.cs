@@ -13,6 +13,80 @@ namespace AgentLib.Tests.Logging;
 public sealed class FileCopilotChatSessionStoreTests
 {
     [TestMethod]
+    public async Task SaveAndLoadShouldPreserveMessageAndToolDetailsSessionSnapshotIds()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Console.WriteLine(directory);
+        var store = new FileCopilotChatSessionStore(directory);
+        var session = new CopilotChatSession();
+        var message = new CopilotChatMessage(ChatRole.Assistant, "answer");
+        var details = new CopilotChatMessage(ChatRole.Assistant, "details");
+        message.CreateToolItem(new FunctionCallContent("call-1", "ReadFile")).Details = details;
+        await session.AddMessageAsync(message);
+
+        await store.SaveSessionAsync(session, null);
+        CopilotChatSessionPersistenceData loaded = await store.LoadSessionAsync(session.SessionId);
+        CopilotChatMessage restored = loaded.Entries.OfType<CopilotChatMessage>().Single();
+        CopilotChatMessage restoredDetails = restored.MessageItems.OfType<CopilotChatToolItem>().Single().Details!;
+
+        Assert.AreEqual((message.SessionSnapshotId, details.SessionSnapshotId),
+            (restored.SessionSnapshotId, restoredDetails.SessionSnapshotId));
+    }
+
+    [TestMethod]
+    public async Task HistoryWithoutSessionSnapshotIdShouldAllocateAndPersistNewId()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Console.WriteLine(directory);
+        var store = new FileCopilotChatSessionStore(directory);
+        var session = new CopilotChatSession();
+        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
+        await store.SaveSessionAsync(session, null);
+        string historyPath = Directory.GetFiles(directory, "History.xml", SearchOption.AllDirectories).Single();
+        XDocument history = XDocument.Load(historyPath);
+        history.Descendants("Message").Attributes("SessionSnapshotId").Remove();
+        history.Save(historyPath);
+
+        CopilotChatSessionPersistenceData loaded = await store.LoadSessionAsync(session.SessionId);
+        CopilotChatMessage restored = loaded.Entries.OfType<CopilotChatMessage>().Single();
+
+        Assert.AreNotEqual(Guid.Empty, restored.SessionSnapshotId);
+        var reopened = new CopilotChatSession();
+        await reopened.AddMessageAsync(restored);
+        await store.SaveSessionAsync(reopened, null);
+        CopilotChatSessionPersistenceData savedAgain = await store.LoadSessionAsync(reopened.SessionId);
+        Assert.AreEqual(restored.SessionSnapshotId,
+            savedAgain.Entries.OfType<CopilotChatMessage>().Single().SessionSnapshotId);
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    [DataRow(3)]
+    [DataRow(4)]
+    public async Task LegacyMigrationWithoutSessionSnapshotIdShouldAllocateAndPersistNewId(int version)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Console.WriteLine(directory);
+        Directory.CreateDirectory(directory);
+        Guid sessionId = Guid.NewGuid();
+        var message = new CopilotChatMessage(ChatRole.User, "question");
+        XElement root = LegacySessionXmlFixture.CreateRootElement(sessionId, DateTimeOffset.Now,
+            "title", version, [message], null);
+        root.Descendants("Message").Attributes("SessionSnapshotId").Remove();
+        await File.WriteAllTextAsync(Path.Combine(directory, $"history_{sessionId:N}.xml"), root.ToString());
+        var store = new FileCopilotChatSessionStore(directory);
+
+        CopilotChatSessionPersistenceData loaded = await store.LoadSessionAsync(sessionId);
+        Guid id = loaded.Entries.OfType<CopilotChatMessage>().Single().SessionSnapshotId;
+        CopilotChatSessionPersistenceData loadedAgain = await store.LoadSessionAsync(sessionId);
+
+        Assert.AreNotEqual(Guid.Empty, id);
+        Assert.AreNotEqual(message.SessionSnapshotId, id);
+        Assert.AreEqual(id, loadedAgain.Entries.OfType<CopilotChatMessage>().Single().SessionSnapshotId);
+    }
+
+    [TestMethod]
     [DataRow(null)]
     [DataRow("/projects/sample")]
     public async Task SaveAndLoadShouldPreserveOptionalWorkspace(string? workspacePath)
