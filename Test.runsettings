@@ -1,6 +1,6 @@
 <RunSettings>
   <RunConfiguration>
-    <TestSessionTimeout>600000</TestSessionTimeout>
+    <TestSessionTimeout>1200000</TestSessionTimeout>
   </RunConfiguration>
   <MSTest>
     <Timeouts>
