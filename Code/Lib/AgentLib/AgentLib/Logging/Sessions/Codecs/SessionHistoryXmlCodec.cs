@@ -35,7 +35,7 @@ internal static class SessionHistoryXmlCodec
     private static XElement WriteMessage(CopilotChatMessage message, SessionResources resources) =>
         new("Message", new XAttribute("Role", message.Role), new XAttribute("Author", message.Author),
             new XAttribute("CreatedTime", message.CreatedTime.ToString("o")), new XAttribute("IsPresetInfo", message.IsPresetInfo),
-            new XAttribute("SessionSnapshotId", message.SessionSnapshotId),
+            new XAttribute("SessionSnapshotId", message.SessionSnapshotId.ToString()),
             new XElement("Content", message.Content), new XElement("Reason", message.Reason),
             new XElement("MessageItems", message.MessageItems.Select(item => WriteItem(item, resources))),
             message.TotalUsageDetails is { } usage ? WriteUsage(usage) : null);
@@ -45,7 +45,8 @@ internal static class SessionHistoryXmlCodec
             ReadTime(element), (bool?)element.Attribute("IsPresetInfo") ?? false,
             (element.Element("MessageItems") ?? throw new InvalidDataException("消息缺少 MessageItems。"))
                 .Elements().Select(item => ReadItem(item, resources)).ToList(), ReadUsage(element.Element("UsageDetails")),
-            (Guid?)element.Attribute("SessionSnapshotId") ?? Guid.NewGuid());
+            (Guid?)element.Attribute("SessionSnapshotId") is { } snapshotId
+                ? new SessionSnapshotId(snapshotId) : SessionSnapshotId.NewId());
 
     private static XElement WriteItem(ICopilotChatMessageItem item, SessionResources resources) => item switch
     {

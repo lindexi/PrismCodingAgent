@@ -60,7 +60,7 @@ internal static class LegacySessionXmlReader
         return CopilotChatMessage.Restore(
             new ChatRole((string?)element.Attribute("Role") ?? throw new InvalidDataException("消息缺少 Role 属性。")),
             ParseTime((string?)element.Attribute("CreatedTime")), (bool?)element.Attribute("IsPresetInfo") ?? false,
-            items, ReadUsage(element.Element("UsageDetails")), Guid.NewGuid());
+            items, ReadUsage(element.Element("UsageDetails")), SessionSnapshotId.NewId());
     }
 
     private static ICopilotChatMessageItem ReadItem(XElement element) => element.Name.LocalName switch

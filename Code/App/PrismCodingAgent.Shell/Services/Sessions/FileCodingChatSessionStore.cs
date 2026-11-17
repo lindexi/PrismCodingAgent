@@ -49,7 +49,23 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
         CopilotChatSessionPersistenceData persistenceData = await _store
             .LoadSessionAsync(sessionId, cancellationToken)
             .ConfigureAwait(false);
-        var session = new CopilotChatSession(persistenceData.SessionId, persistenceData.StartedTime, _chatManager.ChatLogger)
+        return await RestoreSessionAsync(persistenceData, persistenceData.SessionId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>从源会话的指定快照恢复具有独立身份的新会话。</summary>
+    public async Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId,
+        CancellationToken cancellationToken = default)
+    {
+        CopilotChatSessionPersistenceData persistenceData = await _store
+            .LoadSnapshotAsync(sourceSession, snapshotId, cancellationToken)
+            .ConfigureAwait(false);
+        return await RestoreSessionAsync(persistenceData, Guid.NewGuid(), cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<CopilotChatSession> RestoreSessionAsync(CopilotChatSessionPersistenceData persistenceData,
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var session = new CopilotChatSession(sessionId, persistenceData.StartedTime, _chatManager.ChatLogger)
         {
             MainThreadDispatcher = _mainThreadDispatcher,
             WorkspacePath = persistenceData.WorkspacePath,
@@ -99,7 +115,7 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
     }
 
     /// <summary>保存包含代理状态的会话快照。</summary>
-    public async Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId,
+    public async Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId,
         CancellationToken cancellationToken = default)
     {
         JsonElement? agentSessionState = await SerializeAgentSessionAsync(session, cancellationToken).ConfigureAwait(false);

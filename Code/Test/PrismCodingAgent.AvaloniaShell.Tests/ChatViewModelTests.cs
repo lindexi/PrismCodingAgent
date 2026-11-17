@@ -1083,10 +1083,13 @@ public sealed class ChatViewModelTests
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+        public Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)

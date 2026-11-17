@@ -21,6 +21,35 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [TestClass]
 public sealed class CodingWorkTaskControllerTests
 {
+    [TestMethod]
+    public async Task CreateSessionFromSnapshotShouldSaveSelectAndUnloadPreviousSession()
+    {
+        var manager = new CopilotChatManager();
+        var previous = manager.SelectedSession;
+        var source = CreateSession("source", "history", DateTimeOffset.Now);
+        var restored = CreateSession("snapshot", "restored", DateTimeOffset.Now);
+        restored.WorkspacePath = Path.GetTempPath();
+        var store = new TestSessionStore(source) { SnapshotSession = restored };
+        var workspace = new CodingWorkspaceController(new TestMainThreadDispatcher());
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, workspaceController: workspace);
+        Guid workTaskId = Guid.NewGuid();
+        application.SetWorkTask(workTaskId, "current-task");
+        var snapshotId = SessionSnapshotId.NewId();
+
+        await application.CreateSessionFromSnapshotAsync(source.SessionId, snapshotId);
+
+        Assert.AreEqual((source, snapshotId), store.SnapshotRequest);
+        Assert.AreSame(restored, manager.SelectedSession);
+        Assert.AreEqual(restored.SessionId, application.Sessions[0].SessionId);
+        Assert.AreEqual(workTaskId, restored.WorkTaskId);
+        Assert.AreEqual("current-task", restored.WorkTaskName);
+        Assert.AreEqual(Path.GetFullPath(restored.WorkspacePath), workspace.NextRunWorkspacePath);
+        Assert.AreEqual(2, store.SaveCount);
+        Assert.AreSame(previous, store.LastSavedSession);
+        Assert.IsFalse(manager.ChatSessions.Contains(previous));
+        Assert.HasCount(0, store.SavedSnapshotIds);
+    }
+
     [TestMethod(DisplayName = "应用创建时应立即提供一个可复用空会话")]
     [Timeout(5000)]
     public void ApplicationCreationShouldImmediatelyProvideReusableEmptySession()
@@ -782,6 +811,15 @@ public sealed class CodingWorkTaskControllerTests
             return Task.FromResult(_sessions[sessionId]);
         }
 
+        public CopilotChatSession? SnapshotSession { get; init; }
+        public (CopilotChatSession Source, SessionSnapshotId SnapshotId)? SnapshotRequest { get; private set; }
+
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        {
+            SnapshotRequest = (sourceSession, snapshotId);
+            return Task.FromResult(SnapshotSession ?? throw new NotSupportedException());
+        }
+
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
         {
             if (DeleteException is not null)
@@ -792,9 +830,9 @@ public sealed class CodingWorkTaskControllerTests
             return Task.FromResult(_sessions.Remove(sessionId));
         }
 
-        public List<Guid> SavedSnapshotIds { get; } = [];
+        public List<SessionSnapshotId> SavedSnapshotIds { get; } = [];
 
-        public Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+        public Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
         {
             SavedSnapshotIds.Add(snapshotId);
             return Task.CompletedTask;

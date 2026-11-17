@@ -21,7 +21,7 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     /// <summary>
     /// 消息创建时分配的固定会话快照标识，持久化恢复和克隆时保留。
     /// </summary>
-    public Guid SessionSnapshotId { get; }
+    public SessionSnapshotId SessionSnapshotId { get; }
 
     /// <summary>
     /// 此消息的 Responses 信息，首次访问时创建；访问不会修改消息内容。
@@ -52,7 +52,7 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     {
         ArgumentNullException.ThrowIfNull(contents);
         Role = role;
-        SessionSnapshotId = Guid.NewGuid();
+        SessionSnapshotId = SessionSnapshotId.NewId();
         MessageItems.CollectionChanged += MessageItems_CollectionChanged;
 
         AppendContents(contents);
@@ -64,7 +64,7 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
     /// <summary>
     /// 克隆构造，用于深拷贝已有消息。
     /// </summary>
-    private CopilotChatMessage(ChatRole role, DateTimeOffset createdTime, bool isPresetInfo, Guid sessionSnapshotId)
+    private CopilotChatMessage(ChatRole role, DateTimeOffset createdTime, bool isPresetInfo, SessionSnapshotId sessionSnapshotId)
     {
         Role = role;
         CreatedTime = createdTime;
@@ -80,7 +80,7 @@ public sealed class CopilotChatMessage : CopilotChatEntry, ICopilotChatOutput
         bool isPresetInfo,
         IEnumerable<ICopilotChatMessageItem> messageItems,
         UsageDetails? totalUsageDetails,
-        Guid sessionSnapshotId)
+        SessionSnapshotId sessionSnapshotId)
     {
         ArgumentNullException.ThrowIfNull(messageItems);
 

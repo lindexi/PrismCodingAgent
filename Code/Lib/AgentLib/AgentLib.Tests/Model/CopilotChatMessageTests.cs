@@ -12,7 +12,7 @@ public class CopilotChatMessageTests
     {
         var message = new CopilotChatMessage(ChatRole.User, string.Empty);
 
-        Assert.AreNotEqual(Guid.Empty, message.SessionSnapshotId);
+        Assert.AreNotEqual(new SessionSnapshotId(Guid.Empty), message.SessionSnapshotId);
     }
 
     [TestMethod]
@@ -28,7 +28,7 @@ public class CopilotChatMessageTests
     public void AppendTextShouldPreserveSessionSnapshotId()
     {
         var message = new CopilotChatMessage(ChatRole.Assistant, Array.Empty<AIContent>());
-        Guid id = message.SessionSnapshotId;
+        SessionSnapshotId id = message.SessionSnapshotId;
 
         message.AppendText("answer");
 

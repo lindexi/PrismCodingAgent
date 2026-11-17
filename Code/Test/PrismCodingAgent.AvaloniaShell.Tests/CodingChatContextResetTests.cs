@@ -149,7 +149,7 @@ public sealed class CodingChatContextResetTests
         session.SetTitle("ordinary-session");
         await store.SaveSessionAsync(session);
         session.SetTitle("snapshot");
-        Guid snapshotId = session.ChatMessages.Last().SessionSnapshotId;
+        SessionSnapshotId snapshotId = session.ChatMessages.Last().SessionSnapshotId;
 
         await store.SaveSnapshotAsync(session, snapshotId);
 
@@ -157,6 +157,56 @@ public sealed class CodingChatContextResetTests
         var ordinary = await files.LoadSessionAsync(session.SessionId);
         var snapshot = await files.LoadSnapshotAsync(session, snapshotId);
         CollectionAssert.AreEqual(new[] { "ordinary-session", "snapshot" }, new[] { ordinary.Title, snapshot.Title });
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    [Timeout(30000)]
+    public async Task SnapshotSessionShouldRestoreIndependentHistoryAndContinue(bool responses)
+    {
+        await using var fixture = await Fixture.CreateAsync(responses);
+        await fixture.RunAsync("previous-user");
+        var source = fixture.Manager.SelectedSession;
+        source.SetTitle("snapshot-title");
+        source.WorkspacePath = fixture.Directory;
+        source.AdditionalInfo.Add("marker", new JsonSessionAdditionalInfo(JsonSerializer.SerializeToElement("snapshot-value")));
+        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+            fixture.Manager, new ImmediateDispatcher());
+        SessionSnapshotId snapshotId = source.ChatMessages.Last().SessionSnapshotId;
+        var snapshotMessageIds = source.ChatMessages.Select(message => message.SessionSnapshotId).ToArray();
+        int snapshotEntryCount = source.Entries.Count;
+        await store.SaveSnapshotAsync(source, snapshotId);
+        await fixture.RunAsync("after-snapshot-user");
+        int sourceMessageCount = source.ChatMessages.Count;
+        var restored = await store.CreateSessionFromSnapshotAsync(source, snapshotId);
+
+        Assert.AreNotEqual(source.SessionId, restored.SessionId);
+        Assert.AreEqual("snapshot-title", restored.Title);
+        Assert.AreEqual(fixture.Directory, restored.WorkspacePath);
+        Assert.AreEqual("snapshot-value", (await restored.AdditionalInfo["marker"].SerializeAsync()).GetString());
+        CollectionAssert.AreEqual(snapshotMessageIds,
+            restored.ChatMessages.Select(message => message.SessionSnapshotId).ToArray());
+        Assert.AreNotSame(source.ChatMessages[0], restored.ChatMessages[0]);
+        Assert.AreNotSame(source.AdditionalInfo["marker"], restored.AdditionalInfo["marker"]);
+        if (responses)
+            Assert.AreNotSame(source.ResponsesSession, restored.ResponsesSession);
+        else
+            Assert.AreNotSame(source.AgentSession, restored.AgentSession);
+
+        fixture.Manager.AddSession(restored, select: true);
+        await fixture.RunAsync("continued-user");
+        StringAssert.Contains(fixture.Requests[2], "previous-user");
+        StringAssert.Contains(fixture.Requests[2], "previous-assistant");
+        Assert.IsFalse(fixture.Requests[2].Contains("after-snapshot-user", StringComparison.Ordinal));
+        Assert.AreEqual(sourceMessageCount, source.ChatMessages.Count);
+        await store.SaveSessionAsync(restored);
+        string restoredDirectory = Path.Combine(fixture.Directory, restored.StartedTime.ToString("yyyyMMdd"), restored.SessionId.ToString("N"));
+        Assert.IsFalse(System.IO.Directory.Exists(Path.Combine(restoredDirectory, "Snapshots")));
+        var loaded = await store.LoadSessionAsync(restored.SessionId);
+        Assert.AreEqual(restored.ChatMessages.Count, loaded.ChatMessages.Count);
+        var snapshot = await new FileCopilotChatSessionStore(fixture.Directory).LoadSnapshotAsync(source, snapshotId);
+        Assert.AreEqual(snapshotEntryCount, snapshot.Entries.Count);
     }
 
     private sealed class Fixture : IAsyncDisposable

@@ -401,9 +401,11 @@ public sealed class HistoryInteractionTests
             => throw new NotSupportedException();
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => FailOpen ? Task.FromException<CopilotChatSession>(new System.IO.IOException("Open failed")) : Task.FromResult(Session);
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
-        public Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+        public Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)

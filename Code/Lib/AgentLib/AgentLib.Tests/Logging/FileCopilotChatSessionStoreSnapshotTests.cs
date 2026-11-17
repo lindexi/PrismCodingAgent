@@ -63,7 +63,7 @@ public sealed class FileCopilotChatSessionStoreSnapshotTests
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
         var session = new CopilotChatSession();
-        Guid snapshotId = Guid.NewGuid();
+        var snapshotId = SessionSnapshotId.NewId();
         session.AdditionalInfo.Add("test", new JsonSessionAdditionalInfo(JsonSerializer.SerializeToElement(7)));
         session.ResponsesSession.AppendItem(ResponseItem.CreateUserMessageItem("old input"));
         await store.SaveSnapshotAsync(session, snapshotId, JsonSerializer.SerializeToElement(new { turn = 1 }));
@@ -105,7 +105,7 @@ public sealed class FileCopilotChatSessionStoreSnapshotTests
     {
         var store = new FileCopilotChatSessionStore(CreatePath());
         var session = new CopilotChatSession();
-        await store.SaveSnapshotAsync(session, Guid.NewGuid(), null);
+        await store.SaveSnapshotAsync(session, SessionSnapshotId.NewId(), null);
         if (saveOrdinaryHistory)
         {
             await store.SaveSessionAsync(session, null);
@@ -129,7 +129,7 @@ public sealed class FileCopilotChatSessionStoreSnapshotTests
         var store = new FileCopilotChatSessionStore(root);
         var session = new CopilotChatSession();
         await store.SaveSessionAsync(session, null);
-        await store.SaveSnapshotAsync(session, Guid.NewGuid(), null);
+        await store.SaveSnapshotAsync(session, SessionSnapshotId.NewId(), null);
 
         await store.DeleteSessionAsync(session.SessionId);
 
@@ -142,7 +142,7 @@ public sealed class FileCopilotChatSessionStoreSnapshotTests
         var store = new FileCopilotChatSessionStore(CreatePath());
         var session = new CopilotChatSession();
         await store.SaveSessionAsync(session, null);
-        Guid snapshotId = Guid.NewGuid();
+        var snapshotId = SessionSnapshotId.NewId();
 
         await Assert.ThrowsExactlyAsync<DirectoryNotFoundException>(() => store.LoadSnapshotAsync(session, snapshotId));
     }

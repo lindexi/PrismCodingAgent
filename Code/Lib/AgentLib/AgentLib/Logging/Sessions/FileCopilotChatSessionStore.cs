@@ -58,7 +58,7 @@ public sealed class FileCopilotChatSessionStore
     }
 
     /// <summary>将完整会话及代理状态保存到所属会话目录的指定快照，同一 ID 覆盖保存。</summary>
-    public async Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, JsonElement? agentSessionState,
+    public async Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId, JsonElement? agentSessionState,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(session);
@@ -67,7 +67,7 @@ public sealed class FileCopilotChatSessionStore
     }
 
     /// <summary>从源会话目录读取指定快照的完整持久化数据。</summary>
-    public Task<CopilotChatSessionPersistenceData> LoadSnapshotAsync(CopilotChatSession sourceSession, Guid snapshotId,
+    public Task<CopilotChatSessionPersistenceData> LoadSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(sourceSession);
@@ -77,8 +77,8 @@ public sealed class FileCopilotChatSessionStore
     private string GetSessionDirectory(CopilotChatSession session) =>
         Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"), session.SessionId.ToString("N"));
 
-    private string GetSnapshotPath(CopilotChatSession session, Guid snapshotId) =>
-        Path.Join(GetSessionDirectory(session), "Snapshots", snapshotId.ToString("N"), SessionDirectoryStorage.EntryFileName);
+    private string GetSnapshotPath(CopilotChatSession session, SessionSnapshotId snapshotId) =>
+        Path.Join(GetSessionDirectory(session), "Snapshots", snapshotId.ToDirectoryName(), SessionDirectoryStorage.EntryFileName);
 
     private async Task SaveAsync(CopilotChatSession session, JsonElement? agentSessionState, string filePath,
         CancellationToken cancellationToken)

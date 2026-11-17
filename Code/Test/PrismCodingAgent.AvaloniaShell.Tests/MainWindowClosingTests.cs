@@ -240,9 +240,11 @@ public sealed class MainWindowClosingTests
             => Task.FromResult<IReadOnlyList<AgentLib.Logging.Sessions.CopilotChatSessionSummary>>([]);
         public Task<AgentLib.Model.CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
+        public Task<AgentLib.Model.CopilotChatSession> CreateSessionFromSnapshotAsync(AgentLib.Model.CopilotChatSession sourceSession, AgentLib.Model.SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(false);
-        public Task SaveSnapshotAsync(AgentLib.Model.CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default)
+        public Task SaveSnapshotAsync(AgentLib.Model.CopilotChatSession session, AgentLib.Model.SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
         public Task SaveSessionAsync(AgentLib.Model.CopilotChatSession session, CancellationToken cancellationToken = default)

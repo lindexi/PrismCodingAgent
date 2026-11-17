@@ -27,9 +27,13 @@ internal interface ICodingChatSessionStore
 
     Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
+    /// <summary>从源会话的指定快照创建独立会话。</summary>
+    Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
     Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default);
 
-    Task SaveSnapshotAsync(CopilotChatSession session, Guid snapshotId, CancellationToken cancellationToken = default);
+    Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default);
 }

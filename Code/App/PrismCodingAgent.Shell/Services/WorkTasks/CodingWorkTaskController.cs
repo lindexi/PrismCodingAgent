@@ -283,6 +283,27 @@ internal sealed class CodingWorkTaskController
         await SaveAndUnloadSessionAsync(previousSession);
     }
 
+    /// <summary>从指定源会话快照创建、保存并选中新会话。</summary>
+    public async Task CreateSessionFromSnapshotAsync(Guid sourceSessionId, SessionSnapshotId snapshotId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureCanChangeSession();
+        CopilotChatSession sourceSession = _chatManager.ChatSessions.FirstOrDefault(session => session.SessionId == sourceSessionId)
+            ?? await _sessionStore.LoadSessionAsync(sourceSessionId, cancellationToken);
+        CopilotChatSession newSession = await _sessionStore
+            .CreateSessionFromSnapshotAsync(sourceSession, snapshotId, cancellationToken);
+        ApplyWorkTaskMetadata(newSession);
+        await _workspaceController.ChangeWorkspaceAsync(newSession.WorkspacePath, cancellationToken);
+        await _sessionStore.SaveSessionAsync(newSession, cancellationToken);
+
+        CopilotChatSession previousSession = _chatManager.SelectedSession;
+        AddOrUpdateSummary(previousSession, insertAtTop: false);
+        _chatManager.AddSession(newSession, select: true);
+        AddOrUpdateSummary(newSession, insertAtTop: true);
+        OnStateChanged();
+        await SaveAndUnloadSessionAsync(previousSession);
+    }
+
     private async Task SaveAndUnloadSessionAsync(CopilotChatSession session)
     {
         try

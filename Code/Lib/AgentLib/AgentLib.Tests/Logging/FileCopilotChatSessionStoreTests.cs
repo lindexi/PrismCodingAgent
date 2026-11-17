@@ -34,6 +34,24 @@ public sealed class FileCopilotChatSessionStoreTests
     }
 
     [TestMethod]
+    public async Task SaveShouldWriteSessionSnapshotIdAsGuidAttribute()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Console.WriteLine(directory);
+        var store = new FileCopilotChatSessionStore(directory);
+        var session = new CopilotChatSession();
+        var message = new CopilotChatMessage(ChatRole.User, "question");
+        await session.AddMessageAsync(message);
+
+        await store.SaveSessionAsync(session, null);
+
+        string historyPath = Directory.GetFiles(directory, "History.xml", SearchOption.AllDirectories).Single();
+        XDocument history = XDocument.Load(historyPath);
+        Assert.AreEqual(message.SessionSnapshotId.Value,
+            (Guid)history.Descendants("Message").Single().Attribute("SessionSnapshotId")!);
+    }
+
+    [TestMethod]
     public async Task HistoryWithoutSessionSnapshotIdShouldAllocateAndPersistNewId()
     {
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -50,7 +68,7 @@ public sealed class FileCopilotChatSessionStoreTests
         CopilotChatSessionPersistenceData loaded = await store.LoadSessionAsync(session.SessionId);
         CopilotChatMessage restored = loaded.Entries.OfType<CopilotChatMessage>().Single();
 
-        Assert.AreNotEqual(Guid.Empty, restored.SessionSnapshotId);
+        Assert.AreNotEqual(new SessionSnapshotId(Guid.Empty), restored.SessionSnapshotId);
         var reopened = new CopilotChatSession();
         await reopened.AddMessageAsync(restored);
         await store.SaveSessionAsync(reopened, null);
@@ -78,10 +96,10 @@ public sealed class FileCopilotChatSessionStoreTests
         var store = new FileCopilotChatSessionStore(directory);
 
         CopilotChatSessionPersistenceData loaded = await store.LoadSessionAsync(sessionId);
-        Guid id = loaded.Entries.OfType<CopilotChatMessage>().Single().SessionSnapshotId;
+        SessionSnapshotId id = loaded.Entries.OfType<CopilotChatMessage>().Single().SessionSnapshotId;
         CopilotChatSessionPersistenceData loadedAgain = await store.LoadSessionAsync(sessionId);
 
-        Assert.AreNotEqual(Guid.Empty, id);
+        Assert.AreNotEqual(new SessionSnapshotId(Guid.Empty), id);
         Assert.AreNotEqual(message.SessionSnapshotId, id);
         Assert.AreEqual(id, loadedAgain.Entries.OfType<CopilotChatMessage>().Single().SessionSnapshotId);
     }
