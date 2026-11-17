@@ -82,6 +82,11 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void OnCopyMessageText(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.MenuItem { CommandParameter: string text }) Clipboard.SetText(text);
+    }
+
     private void OnMessageImageClick(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.Button { CommandParameter: AgentLib.Model.CopilotChatImageItem image } button)

@@ -45,19 +45,34 @@
             <MenuItem Header="{Binding CopyMessage, Source={x:Static l:Lang.Current}}"
                       Command="ApplicationCommands.Copy" CommandParameter="{Binding FullContent}"
                       CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static l:Lang.Current}}"
+                      Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
+                      Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
         </ContextMenu>
         <DataTemplate x:Key="MessageText">
             <views:MessageTextBox FontFamily="Microsoft YaHei UI" FontSize="13"
+                                  Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                   MessageText="{Binding Text, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True"
                                   TextWrapping="Wrap" Background="Transparent" BorderThickness="0" Padding="2"
                                   MinHeight="0" VerticalContentAlignment="Top" HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Disabled" Margin="0,0,0,8"
                                   Visibility="{Binding HasText, Converter={StaticResource BooleanVisibility}}">
                 <TextBox.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="{Binding CopyBody, Source={x:Static l:Lang.Current}}"
-                                  Command="ApplicationCommands.Copy"
+                    <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Command="ApplicationCommands.Cut"
                                   CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        <MenuItem Command="ApplicationCommands.Copy"
+                                  CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        <MenuItem Command="ApplicationCommands.Paste"
+                                  CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        <Separator />
+                        <MenuItem Header="{Binding CopyBody, Source={x:Static l:Lang.Current}}"
+                                  Click="OnCopyMessageText" CommandParameter="{Binding Content}" />
+                        <MenuItem Header="{Binding CopyMessage, Source={x:Static l:Lang.Current}}"
+                                  Click="OnCopyMessageText" CommandParameter="{Binding FullContent}" />
+                        <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static l:Lang.Current}}"
+                                  Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
+                                  Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
                     </ContextMenu>
                 </TextBox.ContextMenu>
             </views:MessageTextBox>

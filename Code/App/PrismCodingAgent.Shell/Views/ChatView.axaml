@@ -7,6 +7,31 @@
              x:Class="PrismCodingAgent.CodingShell.Views.ChatView"
              x:DataType="vm:ChatViewModel">
     <UserControl.Styles>
+        <Style Selector="TextBox.ChatOutput" x:CompileBindings="False">
+            <Setter Property="Tag" Value="{Binding $parent[ItemsControl].DataContext}" />
+            <Setter Property="ContextMenu">
+                <ContextMenu PlacementTarget="{Binding $parent[TextBox]}"
+                             DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="{Binding CutText, Source={x:Static localizations:Lang.Current}}"
+                              Command="{Binding $parent[ContextMenu].PlacementTarget.Cut}"
+                              IsEnabled="{Binding $parent[ContextMenu].PlacementTarget.CanCut}" />
+                    <MenuItem Header="{Binding CopyText, Source={x:Static localizations:Lang.Current}}"
+                              Command="{Binding $parent[ContextMenu].PlacementTarget.Copy}"
+                              IsEnabled="{Binding $parent[ContextMenu].PlacementTarget.CanCopy}" />
+                    <MenuItem Header="{Binding PasteText, Source={x:Static localizations:Lang.Current}}"
+                              Command="{Binding $parent[ContextMenu].PlacementTarget.Paste}"
+                              IsEnabled="{Binding $parent[ContextMenu].PlacementTarget.CanPaste}" />
+                    <Separator />
+                    <MenuItem Header="{Binding CopyBody, Source={x:Static localizations:Lang.Current}}"
+                              Click="CopyContentMenuItem_OnClick" CommandParameter="{Binding}" />
+                    <MenuItem Header="{Binding CopyMessage, Source={x:Static localizations:Lang.Current}}"
+                              Click="CopyFullMessageMenuItem_OnClick" CommandParameter="{Binding}" />
+                    <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static localizations:Lang.Current}}"
+                              IsVisible="{Binding IsAssistantMessage}"
+                              Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
+                </ContextMenu>
+            </Setter>
+        </Style>
         <Style Selector="Grid.ModelSettings">
             <Setter Property="IsVisible" Value="False" />
         </Style>
@@ -327,6 +352,8 @@
                                                     Header="{Binding CopyMessage, Source={x:Static localizations:Lang.Current}}"
                                                     Click="CopyFullMessageMenuItem_OnClick"
                                                     CommandParameter="{Binding}" />
+                                                <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static localizations:Lang.Current}}"
+                                                          Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
                                             </ContextMenu>
                                         </Border.ContextMenu>
                                         <ItemsControl ItemsSource="{Binding MessageItems}" />

@@ -56,7 +56,8 @@ public sealed class WpfFinalProjectionTests
                 await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
                 Assert.IsTrue(((MenuItem)menu.Items[0]).IsEnabled);
                 await screenshots.CaptureSurfaceAsync(menu, $"production-{(index == 0 ? "user" : "assistant")}-complete-copy-menu-rendering-not-click");
-                Assert.AreEqual(2, menu.Items.Count);
+                Assert.AreEqual(3, menu.Items.Count);
+                Assert.AreEqual(index == 1 ? Visibility.Visible : Visibility.Collapsed, ((MenuItem)menu.Items[2]).Visibility);
                 Assert.AreEqual(projections[index].FullContent, ((MenuItem)menu.Items[1]).CommandParameter);
                 menu.IsOpen = false;
             }

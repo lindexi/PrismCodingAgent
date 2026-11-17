@@ -21,6 +21,122 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [TestClass]
 public sealed class ChatViewModelTests
 {
+    [TestMethod]
+    public async Task SnapshotCommandShouldSelectCreatedSessionAsync()
+    {
+        var manager = new CopilotChatManager();
+        var source = manager.SelectedSession;
+        var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot body");
+        await source.AddMessageAsync(message);
+        var restored = new CopilotChatSession { WorkspacePath = Path.GetTempPath() };
+        var store = new EmptySessionStore { SnapshotSession = restored };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+        using var model = new ChatViewModel(manager, controller, "ready");
+        var projection = model.Messages.OfType<MessageItemViewModel>().Single(item => item.Message == message);
+
+        projection.CreateSessionFromSnapshotCommand.Execute(null);
+        await WaitUntilAsync(() => model.CurrentSessionId == restored.SessionId);
+
+        Assert.AreEqual(1, store.SnapshotRequestCount);
+        Assert.AreSame(restored, manager.SelectedSession);
+        Assert.AreEqual((source, message.SessionSnapshotId), store.SnapshotRequest);
+        Assert.AreEqual(restored.SessionId, model.CurrentSessionId);
+    }
+
+    [TestMethod]
+    public async Task SnapshotCommandFailureShouldKeepSourceAndShowLocalizedNoticeAsync()
+    {
+        var manager = new CopilotChatManager();
+        var source = manager.SelectedSession;
+        var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot body");
+        await source.AddMessageAsync(message);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var model = new ChatViewModel(manager, controller, "ready");
+        var projection = model.Messages.OfType<MessageItemViewModel>().Single(item => item.Message == message);
+
+        projection.CreateSessionFromSnapshotCommand.Execute(null);
+        await WaitUntilAsync(() => source.Entries.OfType<CopilotChatNotice>()
+            .Any(notice => notice.Content == Lang.Current.HistoryOperationFailed));
+
+        Assert.AreSame(source, manager.SelectedSession);
+        var notice = source.Entries.OfType<CopilotChatNotice>().Single();
+        Assert.AreEqual(Lang.Current.HistoryOperationFailed, notice.Content);
+        Assert.AreEqual(CopilotChatNoticeLevel.Error, notice.Level);
+        Assert.IsTrue(projection.CreateSessionFromSnapshotCommand.CanExecute(null));
+    }
+
+    [TestMethod]
+    public async Task SnapshotFailureWithNoticeSaveFailureShouldShowErrorStatusAsync()
+    {
+        var manager = new CopilotChatManager();
+        var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot body");
+        await manager.SelectedSession.AddMessageAsync(message);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager,
+            new EmptySessionStore { SaveFailure = new IOException("Storage unavailable.") });
+        using var model = new ChatViewModel(manager, controller, "ready");
+        var projection = model.Messages.OfType<MessageItemViewModel>().Single(item => item.Message == message);
+
+        projection.CreateSessionFromSnapshotCommand.Execute(null);
+        await WaitUntilAsync(() => model.StatusText == Lang.Current.HistoryOperationFailed);
+
+        Assert.AreEqual(Lang.Current.HistoryOperationFailed, model.StatusText);
+    }
+
+    [TestMethod]
+    public void SnapshotRequestShouldRaiseEventOnceSynchronously()
+    {
+        using var item = new MessageItemViewModel(new CopilotChatMessage(ChatRole.Assistant, "snapshot"));
+        var requests = new List<(object? Sender, EventArgs Args)>();
+        item.CreateSessionFromSnapshotRequested += (sender, args) => requests.Add((sender, args));
+
+        item.CreateSessionFromSnapshotCommand.Execute(null);
+
+        CollectionAssert.AreEqual(new[] { ((object?)item, EventArgs.Empty) }, requests);
+    }
+
+    [TestMethod]
+    public void SnapshotRequestShouldIgnoreMenuParameter()
+    {
+        using var item = new MessageItemViewModel(new CopilotChatMessage(ChatRole.Assistant, "snapshot"));
+        using var other = new MessageItemViewModel(new CopilotChatMessage(ChatRole.Assistant, "other"));
+        object? requested = null;
+        item.CreateSessionFromSnapshotRequested += (sender, _) => requested = sender;
+
+        item.CreateSessionFromSnapshotCommand.Execute(other);
+
+        Assert.AreSame(item, requested);
+    }
+
+    [TestMethod]
+    public async Task RemovedProjectionShouldNotRequestSnapshotAsync()
+        => await AssertReleasedProjectionAsync((session, _, message) => session.Entries.Remove(message));
+
+    [TestMethod]
+    public async Task ResetProjectionShouldNotRequestSnapshotAsync()
+        => await AssertReleasedProjectionAsync((session, _, _) => session.Entries.Clear());
+
+    [TestMethod]
+    public async Task DisposedChatShouldNotRequestSnapshotAsync()
+        => await AssertReleasedProjectionAsync((_, model, _) => model.Dispose());
+
+    private static async Task AssertReleasedProjectionAsync(Action<CopilotChatSession, ChatViewModel, CopilotChatMessage> release)
+    {
+        var manager = new CopilotChatManager();
+        var source = manager.SelectedSession;
+        var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot");
+        await source.AddMessageAsync(message);
+        var store = new EmptySessionStore();
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+        using var model = new ChatViewModel(manager, controller, "ready");
+        var projection = model.Messages.OfType<MessageItemViewModel>().Single(item => item.Message == message);
+
+        release(source, model, message);
+        projection.CreateSessionFromSnapshotCommand.Execute(null);
+
+        Assert.AreEqual(0, store.SnapshotRequestCount);
+        Assert.IsFalse(projection.CreateSessionFromSnapshotCommand.CanExecute(null));
+    }
+
     [TestMethod(DisplayName = "用户消息应靠右且 Copilot 消息应靠左")]
     [Timeout(5000)]
     public void MessageProjectionShouldExposeUserAndAssistantAlignment()
@@ -1077,6 +1193,10 @@ public sealed class ChatViewModelTests
 
     private sealed class EmptySessionStore : ICodingChatSessionStore
     {
+        public int SnapshotRequestCount { get; private set; }
+        public CopilotChatSession? SnapshotSession { get; init; }
+        public IOException? SaveFailure { get; init; }
+        public (CopilotChatSession, SessionSnapshotId)? SnapshotRequest { get; private set; }
         public Task<IReadOnlyList<CopilotChatSessionSummary>> ListSessionsAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<CopilotChatSessionSummary>>([]);
 
@@ -1084,7 +1204,11 @@ public sealed class ChatViewModelTests
             => throw new NotSupportedException();
 
         public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
+        {
+            SnapshotRequestCount++;
+            SnapshotRequest = (sourceSession, snapshotId);
+            return SnapshotSession is { } session ? Task.FromResult(session) : throw new IOException("Snapshot unavailable.");
+        }
 
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
@@ -1093,6 +1217,6 @@ public sealed class ChatViewModelTests
             => Task.CompletedTask;
 
         public Task SaveSessionAsync(CopilotChatSession session, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+            => SaveFailure is { } exception ? Task.FromException(exception) : Task.CompletedTask;
     }
 }

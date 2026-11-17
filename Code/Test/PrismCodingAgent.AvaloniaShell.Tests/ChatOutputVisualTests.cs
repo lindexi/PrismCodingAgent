@@ -27,6 +27,44 @@ public sealed class ChatOutputVisualTests
     }
 
     [TestMethod]
+    public async Task MessageTextMenuShouldKeepSelectionCopyAndMessageCommandsAsync()
+    {
+        using var model = new ChatViewModel();
+        using var message = new MessageItemViewModel(new AgentLib.Model.CopilotChatMessage(
+            Microsoft.Extensions.AI.ChatRole.Assistant, "body text"));
+        model.Messages.Add(message);
+        var view = new ChatView { DataContext = model };
+        var window = new Window { Width = 1150, Height = 700, Content = view };
+        window.Show();
+        try
+        {
+            var textBox = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view)
+                .OfType<TextBox>().Single(control => control.Classes.Contains("ChatOutput"));
+            textBox.Focus();
+            textBox.SelectionStart = 0;
+            textBox.SelectionEnd = 4;
+            var menu = textBox.ContextMenu!;
+            menu.Open(textBox);
+            var items = menu.Items.OfType<MenuItem>().ToArray();
+            Assert.AreSame(message, textBox.Tag, $"Tag={textBox.Tag?.GetType().Name}; Menu={menu.DataContext?.GetType().Name}");
+            Assert.IsFalse(items[0].IsEnabled);
+            Assert.IsFalse(items[2].IsEnabled);
+            Assert.IsNotNull(items[1].Command);
+            Assert.AreSame(message, items[3].CommandParameter);
+            Assert.AreSame(message, items[4].CommandParameter);
+            Assert.AreSame(message.CreateSessionFromSnapshotCommand, items[5].Command);
+            menu.Close();
+            window.KeyPress(Avalonia.Input.Key.C, Avalonia.Input.RawInputModifiers.Control, Avalonia.Input.PhysicalKey.C, "c");
+            Assert.AreEqual("body", await Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(window.Clipboard!));
+            Assert.AreEqual("body text", textBox.Text);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [TestMethod]
     public void FocusedChatOutputShouldNotRenderBlueOuterBorder()
     {
         var textBox = new TextBox

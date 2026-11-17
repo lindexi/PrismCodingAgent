@@ -1062,7 +1062,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
 
     private ChatEntryViewModel CreateEntryViewModel(CopilotChatEntry entry) => entry switch
     {
-        CopilotChatMessage message => new MessageItemViewModel(message),
+        CopilotChatMessage message => CreateMessageViewModel(message),
         CopilotChatNotice notice when _workTaskController is { } controller => new NoticeItemViewModel
         (
             notice, RetryChatCommand, controller.HasChatContinuation(notice)
@@ -1070,6 +1070,43 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         CopilotChatNotice notice => new NoticeItemViewModel(notice),
         _ => throw new ArgumentException(nameof(entry)),
     };
+
+    private MessageItemViewModel CreateMessageViewModel(CopilotChatMessage message)
+    {
+        var item = new MessageItemViewModel(message);
+        item.CreateSessionFromSnapshotRequested += OnCreateSessionFromSnapshotRequested;
+        return item;
+
+        void OnCreateSessionFromSnapshotRequested(object? sender, EventArgs e)
+        {
+            _ = CreateSessionFromSnapshotAsync();
+        }
+
+        async Task CreateSessionFromSnapshotAsync()
+        {
+            if (_workTaskController?.CanChangeSession != true || _subscribedSession is null) return;
+            CopilotChatSession sourceSession = _subscribedSession;
+            try
+            {
+                await _workTaskController.CreateSessionFromSnapshotAsync(sourceSession.SessionId, item.Message.SessionSnapshotId);
+            }
+            catch (Exception exception)
+            {
+                Trace.TraceError("[ChatViewModel][CreateSessionFromSnapshot] SessionId={0} SnapshotId={1} Exception={2}",
+                    sourceSession.SessionId, item.Message.SessionSnapshotId, exception);
+                try
+                {
+                    await AddSystemMessageAsync(sourceSession, Lang.Current.HistoryOperationFailed, CopilotChatNoticeLevel.Error);
+                }
+                catch (Exception noticeException)
+                {
+                    Trace.TraceError("[ChatViewModel][CreateSessionFromSnapshotNotice] Exception={0}", noticeException);
+                    _runStatusText = Lang.Current.HistoryOperationFailed;
+                    OnPropertyChanged(nameof(StatusText));
+                }
+            }
+        }
+    }
 
     private async Task ContinueChatAsync(CopilotChatNotice? notice)
     {

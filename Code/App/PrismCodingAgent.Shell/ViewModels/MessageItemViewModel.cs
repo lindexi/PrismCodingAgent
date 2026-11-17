@@ -23,6 +23,9 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
     {
         ArgumentNullException.ThrowIfNull(message);
         _message = message;
+        CreateSessionFromSnapshotCommand = new SimpleCommand(
+            () => CreateSessionFromSnapshotRequested?.Invoke(this, EventArgs.Empty),
+            () => !_isDisposed && IsAssistantMessage);
         _message.PropertyChanged += OnMessagePropertyChanged;
         Lang.Current.PropertyChanged += OnLanguageChanged;
     }
@@ -31,6 +34,12 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
     /// 获取底层聊天消息。
     /// </summary>
     public CopilotChatMessage Message => _message;
+
+    /// <summary>获取从此消息快照新建会话的命令。</summary>
+    public System.Windows.Input.ICommand CreateSessionFromSnapshotCommand { get; }
+
+    /// <summary>请求从此消息快照新建会话。</summary>
+    public event EventHandler? CreateSessionFromSnapshotRequested;
 
     /// <summary>
     /// 获取作者显示名。
@@ -114,7 +123,9 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
 
         _message.PropertyChanged -= OnMessagePropertyChanged;
         Lang.Current.PropertyChanged -= OnLanguageChanged;
+        CreateSessionFromSnapshotRequested = null;
         _isDisposed = true;
+        ((SimpleCommand)CreateSessionFromSnapshotCommand).RaiseCanExecuteChanged();
     }
 
     private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(nameof(UsageSummaryText));
