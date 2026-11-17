@@ -48,7 +48,16 @@ public sealed class FinalProjectionScreenshotTests
                 menu.Open(bubbles[index]);
                 Dispatcher.UIThread.RunJobs();
                 window.UpdateLayout();
-                Assert.AreEqual(2, menu.Items.Count);
+                var actions = menu.Items.OfType<MenuItem>().ToArray();
+                var copyBody = actions.Single(action => Equals(action.Header, Lang.Current.CopyBody));
+                var copyMessage = actions.Single(action => Equals(action.Header, Lang.Current.CopyMessage));
+                Assert.AreSame(projections[index], copyBody.CommandParameter);
+                Assert.AreSame(projections[index], copyMessage.CommandParameter);
+                if (projections[index].IsAssistantMessage)
+                {
+                    var createSession = actions.Single(action => Equals(action.Header, Lang.Current.CreateSessionFromHere));
+                    Assert.AreSame(projections[index].CreateSessionFromSnapshotCommand, createSession.Command);
+                }
                 var root = menu;
                 CaptureControl(root, $"0{index + 2}-production-{(index == 0 ? "user" : "assistant")}-complete-copy-menu-rendering-not-click");
                 menu.Close();

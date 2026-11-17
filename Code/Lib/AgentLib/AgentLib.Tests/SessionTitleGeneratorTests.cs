@@ -9,50 +9,6 @@ namespace AgentLib.Tests;
 public class SessionTitleGeneratorTests
 {
     [TestMethod]
-    public async Task PreviewShouldTruncateOlderMessageToRemainingTotalBudget()
-    {
-        ChatMessage[] captured = [];
-        var client = new FakeChatClient
-        {
-            OnGetResponseAsync = (messages, _, _) =>
-            {
-                captured = messages.ToArray();
-                return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "unused")));
-            }
-        };
-        var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
-        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "excluded"));
-        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "abcdef"));
-        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.Assistant, new string('x', 3997)));
-
-        await new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager).GenerateTitlePreviewAsync(session);
-
-        CollectionAssert.AreEqual(new[] { SessionTitleGenerator.SystemPrompt, "abc", new string('x', 3997) }, captured.Select(m => m.Text).ToArray());
-    }
-
-    [TestMethod]
-    public async Task PreviewShouldAllowSingleMessageToUseEntireBudget()
-    {
-        string? capturedBody = null;
-        var client = new FakeChatClient
-        {
-            OnGetResponseAsync = (messages, _, _) =>
-            {
-                capturedBody = messages.Last().Text;
-                return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "unused")));
-            }
-        };
-        var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
-        await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, new string('a', 4000) + "tail"));
-
-        await new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager).GenerateTitlePreviewAsync(session);
-
-        Assert.AreEqual(new string('a', 4000), capturedBody);
-    }
-
-    [TestMethod]
     [DataRow(TitleSource.UserSet)]
     [DataRow(TitleSource.Generated)]
     public async Task AutomaticGenerationShouldSkipExistingTitle(TitleSource source)

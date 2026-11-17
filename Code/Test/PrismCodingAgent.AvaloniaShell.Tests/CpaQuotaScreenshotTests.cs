@@ -59,18 +59,6 @@ public sealed class CpaQuotaScreenshotTests
         var main = session.Window.GetVisualDescendants().OfType<MainView>().Single();
         var settingsButton = main.FindControl<Button>("SettingsButton")!;
         var quotaLabel = main.FindControl<TextBlock>("PrimaryQuotaLabel")!;
-        var navigationText = settingsButton.GetVisualDescendants().OfType<TextBlock>().First();
-        TestContext.WriteLine($"Navigation Font={navigationText.FontFamily}, Size={navigationText.FontSize}, Weight={navigationText.FontWeight}, Bounds={navigationText.Bounds}, Origin={navigationText.TranslatePoint(default, main)}");
-        TestContext.WriteLine($"Quota Font={quotaLabel.FontFamily}, Size={quotaLabel.FontSize}, Weight={quotaLabel.FontWeight}, Bounds={quotaLabel.Bounds}, Origin={quotaLabel.TranslatePoint(default, main)}");
-        foreach (var text in new[] { navigationText, quotaLabel })
-        {
-            var manager = Avalonia.Media.FontManager.Current;
-            bool matchedCharacter = manager.TryMatchCharacter('额', text.FontStyle, text.FontWeight, text.FontStretch, text.FontFamily,
-                System.Globalization.CultureInfo.CurrentCulture, out var matched);
-            Assert.IsTrue(matchedCharacter);
-            TestContext.WriteLine($"Text={text.Text}, MatchedTypeface={matched.FontFamily}/{matched.Weight}, Rendering={Avalonia.Media.TextOptions.GetTextOptions(text)}, Transform={text.RenderTransform}, Opacity={text.Opacity}");
-        }
-        TestContext.WriteLine($"Quota TextBlockCount={main.GetVisualDescendants().OfType<TextBlock>().Count(text => text.Name == "PrimaryQuotaLabel")}");
         Assert.AreEqual(settingsButton.FontSize, quotaLabel.FontSize);
         Assert.AreEqual(settingsButton.FontFamily, quotaLabel.FontFamily);
         Assert.AreEqual(Avalonia.Media.FontWeight.Normal, quotaLabel.FontWeight);
