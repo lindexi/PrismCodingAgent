@@ -38,8 +38,8 @@ public sealed partial class ChatRoomManager : NotifyBase, IAsyncDisposable
     /// 使用指定的会话创建聊天室管理器。
     /// </summary>
     /// <param name="session">聊天室会话。</param>
-    public ChatRoomManager(ChatRoomSession session)
-        : this(session, new ChatRoomRoleFactory(session?.MainThreadDispatcher))
+    public ChatRoomManager(ChatRoomSession session, AgentLib.Logging.Sessions.FileCopilotChatSessionStore sessionStore)
+        : this(session, new ChatRoomRoleFactory(sessionStore, session?.MainThreadDispatcher))
     {
     }
 
@@ -55,8 +55,8 @@ public sealed partial class ChatRoomManager : NotifyBase, IAsyncDisposable
     /// <summary>
     /// 使用新生成的会话创建聊天室管理器。
     /// </summary>
-    public ChatRoomManager()
-        : this(new ChatRoomSession())
+    public ChatRoomManager(AgentLib.Logging.Sessions.FileCopilotChatSessionStore sessionStore)
+        : this(new ChatRoomSession(), sessionStore)
     {
     }
 

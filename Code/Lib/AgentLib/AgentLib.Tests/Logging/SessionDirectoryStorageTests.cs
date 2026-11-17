@@ -16,12 +16,12 @@ public sealed class SessionDirectoryStorageTests
     public async Task AdditionalInfoShouldSurviveSaveLoadAndSaveWithoutConsumption()
     {
         var store = new FileCopilotChatSessionStore(CreatePath());
-        var session = new CopilotChatSession();
-        session.AdditionalInfo.Add("test", new TestAdditionalInfo());
+        var session = CreateSession(store);
+        session.AdditionalInfo.Set("test", new TestAdditionalInfo());
         await store.SaveSessionAsync(session, null);
         var loaded = await store.LoadSessionAsync(session.SessionId);
-        var reopened = new CopilotChatSession();
-        reopened.AdditionalInfo.Add("test", new JsonSessionAdditionalInfo(loaded.AdditionalInfo["test"]));
+        var reopened = new CopilotChatSession(store.CreateStorage(loaded.SessionId, loaded.StartedTime), loaded.SessionId, loaded.StartedTime, new EmptyCopilotChatLogger());
+        reopened.AdditionalInfo.Set("test", new JsonSessionAdditionalInfo(loaded.AdditionalInfo["test"]));
 
         await store.SaveSessionAsync(reopened, null);
         var savedAgain = await store.LoadSessionAsync(reopened.SessionId);
@@ -34,8 +34,8 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now.AddDays(-10), new EmptyCopilotChatLogger());
-        session.AdditionalInfo.Add("test", new TestAdditionalInfo());
+        var session = CreateSession(store, DateTimeOffset.Now.AddDays(-10));
+        session.AdditionalInfo.Set("test", new TestAdditionalInfo());
         await store.SaveSessionAsync(session, null);
         string entry = Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories).Single();
         await SessionDirectoryStorage.CompressAsync(entry, CancellationToken.None);
@@ -49,8 +49,8 @@ public sealed class SessionDirectoryStorageTests
     public async Task RemovingAdditionalInfoShouldRemovePreviouslySavedData()
     {
         var store = new FileCopilotChatSessionStore(CreatePath());
-        var session = new CopilotChatSession();
-        session.AdditionalInfo.Add("test", new TestAdditionalInfo());
+        var session = CreateSession(store);
+        session.AdditionalInfo.Set("test", new TestAdditionalInfo());
         await store.SaveSessionAsync(session, null);
         session.AdditionalInfo.Clear();
 
@@ -60,9 +60,16 @@ public sealed class SessionDirectoryStorageTests
         Assert.IsEmpty(loaded.AdditionalInfo);
     }
 
+    private static CopilotChatSession CreateSession(FileCopilotChatSessionStore store, DateTimeOffset? startedTime = null)
+    {
+        Guid id = Guid.NewGuid();
+        DateTimeOffset started = startedTime ?? DateTimeOffset.Now;
+        return new CopilotChatSession(store.CreateStorage(id, started), id, started, new EmptyCopilotChatLogger());
+    }
+
     private sealed class TestAdditionalInfo : ISessionAdditionalInfo
     {
-        public async ValueTask<JsonElement> SerializeAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<JsonElement> SerializeAsync(ISessionStorage storage, CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
@@ -75,7 +82,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession();
+        var session = CreateSession(store);
 
         await store.SaveSessionAsync(session, null);
 
@@ -89,7 +96,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession();
+        var session = CreateSession(store);
         byte[] image = [1, 2, 3];
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User,
             [new TextContent("preview"), new DataContent(image, "image/png"), new DataContent(image, "image/png")]));
@@ -113,7 +120,7 @@ public sealed class SessionDirectoryStorageTests
         Guid id = Guid.NewGuid();
         DateTimeOffset started = DateTimeOffset.Now.AddDays(-10);
         string legacy = Path.Join(root, $"20260101_120000_{id:N}.xml");
-        var session = new CopilotChatSession(id, started, new EmptyCopilotChatLogger());
+        var session = new CopilotChatSession(new FileSessionStorage(Path.Join(root, started.ToString("yyyyMMdd"), id.ToString("N"))), id, started, new EmptyCopilotChatLogger());
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "legacy text"));
         var document = new XDocument(LegacySessionXmlFixture.CreateRootElement(id, started, "Legacy", 4, session.Entries, null));
         await FileCopilotChatSessionStore.SaveDocumentAsync(legacy, document);
@@ -140,7 +147,7 @@ public sealed class SessionDirectoryStorageTests
     public async Task OrganizeShouldLeaveRecentSessionExpandedAndBeRepeatable()
     {
         var store = new FileCopilotChatSessionStore(CreatePath());
-        await store.SaveSessionAsync(new CopilotChatSession(), null);
+        await store.SaveSessionAsync(CreateSession(store), null);
 
         Assert.AreEqual((0, 0), await store.OrganizeAsync());
         Assert.AreEqual((0, 0), await store.OrganizeAsync());
@@ -151,7 +158,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession();
+        var session = CreateSession(store);
         using JsonDocument json = JsonDocument.Parse("""{"messages":[{"type":"input_image","image_url":"data:image/png;base64,AQID"}]}""");
 
         await store.SaveSessionAsync(session, json.RootElement);
@@ -167,7 +174,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession();
+        var session = CreateSession(store);
         await store.SaveSessionAsync(session, null);
         string entry = Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories).Single();
         XDocument document = XDocument.Load(entry);
@@ -185,7 +192,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession();
+        var session = CreateSession(store);
         using JsonDocument state = JsonDocument.Parse("""{"contents":[{"$type":"data","data":"AQID","mediaType":"image/png"},{"$type":"text","text":"data:image/png;base64,AQID"}]}""");
 
         await store.SaveSessionAsync(session, state.RootElement);
@@ -204,7 +211,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         Directory.CreateDirectory(root);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(root));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Preserved message"));
         string legacy = Path.Join(root, $"20260101_120000_{session.SessionId:N}.xml");
         var document = new XDocument(LegacySessionXmlFixture.CreateRootElement(session.SessionId,
@@ -225,8 +232,8 @@ public sealed class SessionDirectoryStorageTests
     public async Task LoadShouldRejectFutureVersionBeforeReadingContent()
     {
         string root = CreatePath();
-        var session = new CopilotChatSession();
         var store = new FileCopilotChatSessionStore(root);
+        var session = CreateSession(store);
         await store.SaveSessionAsync(session, null);
         string entry = Directory.GetFiles(root, "Session.xml", SearchOption.AllDirectories).Single();
         XDocument document = XDocument.Load(entry);
@@ -242,7 +249,7 @@ public sealed class SessionDirectoryStorageTests
     {
         string root = CreatePath();
         var store = new FileCopilotChatSessionStore(root);
-        var session = new CopilotChatSession();
+        var session = CreateSession(store);
         var message = CopilotChatMessage.CreateAssistant(string.Empty, false);
         var detail = CopilotChatMessage.CreateAssistant(string.Empty, false);
         detail.MessageItems.Add(new CopilotChatImageItem(BinaryData.FromBytes(new byte[] { 1, 2, 3 }), "image/png"));

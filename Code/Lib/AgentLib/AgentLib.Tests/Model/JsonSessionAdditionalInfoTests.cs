@@ -15,7 +15,7 @@ public sealed class JsonSessionAdditionalInfoTests
             info = new JsonSessionAdditionalInfo(document.RootElement);
         }
 
-        JsonElement result = await info.SerializeAsync();
+        JsonElement result = await info.SerializeAsync(new AgentLib.Logging.Sessions.FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
 
         Assert.AreEqual("worker", result.GetProperty("name").GetString());
     }
@@ -29,6 +29,6 @@ public sealed class JsonSessionAdditionalInfoTests
         cancellation.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-            await info.SerializeAsync(cancellation.Token));
+            await info.SerializeAsync(new AgentLib.Logging.Sessions.FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))), cancellation.Token));
     }
 }

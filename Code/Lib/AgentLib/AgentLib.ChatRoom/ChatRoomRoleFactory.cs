@@ -10,6 +10,7 @@ namespace AgentLib.ChatRoom;
 public sealed class ChatRoomRoleFactory : IChatRoomRoleFactory
 {
     private readonly IMainThreadDispatcher? _mainThreadDispatcher;
+    private readonly AgentLib.Logging.Sessions.FileCopilotChatSessionStore _sessionStore;
     private readonly IReadOnlyDictionary<ChatRoomRoleExecutionKind, IChatRoomRoleExecutorFactory> _executorFactories;
 
     /// <summary>
@@ -18,10 +19,11 @@ public sealed class ChatRoomRoleFactory : IChatRoomRoleFactory
     /// <param name="mainThreadDispatcher">可选的主线程调度器。</param>
     /// <param name="roslynLanguageServerCommand">Roslyn Language Server 启动命令。</param>
     public ChatRoomRoleFactory(
+        AgentLib.Logging.Sessions.FileCopilotChatSessionStore sessionStore,
         IMainThreadDispatcher? mainThreadDispatcher = null,
         string roslynLanguageServerCommand = "roslyn-language-server")
         : this(
-            mainThreadDispatcher,
+            sessionStore, mainThreadDispatcher,
             [
                 new StandardChatRoomRoleExecutorFactory(),
                 new CodingChatRoomRoleExecutorFactory(roslynLanguageServerCommand),
@@ -30,9 +32,11 @@ public sealed class ChatRoomRoleFactory : IChatRoomRoleFactory
     }
 
     internal ChatRoomRoleFactory(
+        AgentLib.Logging.Sessions.FileCopilotChatSessionStore sessionStore,
         IMainThreadDispatcher? mainThreadDispatcher,
         IEnumerable<IChatRoomRoleExecutorFactory> executorFactories)
     {
+        _sessionStore = sessionStore;
         ArgumentNullException.ThrowIfNull(executorFactories);
         _mainThreadDispatcher = mainThreadDispatcher;
         var factories = new Dictionary<ChatRoomRoleExecutionKind, IChatRoomRoleExecutorFactory>();
@@ -108,7 +112,7 @@ public sealed class ChatRoomRoleFactory : IChatRoomRoleFactory
                 $"执行器工厂为 {definition.ExecutionKind} 返回了声明为 {executor.ExecutionKind} 的执行器。");
         }
 
-        return new ChatRoomRole(definition, null, executor)
+        return new ChatRoomRole(definition, null, executor, _sessionStore)
         {
             MainThreadDispatcher = _mainThreadDispatcher,
         };

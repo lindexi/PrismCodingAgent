@@ -21,10 +21,16 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [TestClass]
 public sealed class CodingWorkTaskControllerTests
 {
+    private static CopilotChatManager CreateManager()
+    {
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        return new CopilotChatManager();
+    }
+
     [TestMethod]
     public async Task CreateSessionFromSnapshotShouldSaveSelectAndUnloadPreviousSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var previous = manager.SelectedSession;
         var source = CreateSession("source", "history", DateTimeOffset.Now);
         var restored = CreateSession("snapshot", "restored", DateTimeOffset.Now);
@@ -34,11 +40,10 @@ public sealed class CodingWorkTaskControllerTests
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, workspaceController: workspace);
         Guid workTaskId = Guid.NewGuid();
         application.SetWorkTask(workTaskId, "current-task");
-        var snapshotId = SessionSnapshotId.NewId();
+        var message = source.ChatMessages[0];
+        await application.CreateSessionFromSnapshotAsync(source, message);
 
-        await application.CreateSessionFromSnapshotAsync(source.SessionId, snapshotId);
-
-        Assert.AreEqual((source, snapshotId), store.SnapshotRequest);
+        Assert.AreEqual((source, message), store.SnapshotRequest);
         Assert.AreSame(restored, manager.SelectedSession);
         Assert.AreEqual(restored.SessionId, application.Sessions[0].SessionId);
         Assert.AreEqual(workTaskId, restored.WorkTaskId);
@@ -54,7 +59,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public void ApplicationCreationShouldImmediatelyProvideReusableEmptySession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
 
         Assert.HasCount(1, application.Sessions);
@@ -69,7 +74,7 @@ public sealed class CodingWorkTaskControllerTests
         CopilotChatSession older = CreateSession("较早会话", "较早消息", DateTimeOffset.Now.AddHours(-1));
         CopilotChatSession newer = CreateSession("最近会话", "最近消息", DateTimeOffset.Now);
         var store = new TestSessionStore(older, newer);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         Guid initialSessionId = manager.SelectedSession.SessionId;
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store);
 
@@ -83,7 +88,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public async Task CreateNewSessionAsyncShouldReuseTrulyEmptySession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
         await application.InitializeAsync();
         Guid emptySessionId = application.SelectedSessionId;
@@ -98,7 +103,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public async Task CreateNewSessionAsyncFromNonEmptySessionShouldInsertAtTop()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
         await application.InitializeAsync();
         await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "现有问题"));
@@ -113,7 +118,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task CreateNewSessionShouldSwitchBeforeSavingPreviousSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var previous = manager.SelectedSession;
         await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -131,7 +136,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task CreateNewSessionShouldUnloadSavedPreviousSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var previous = manager.SelectedSession;
         await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
@@ -144,7 +149,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task CreateNewSessionShouldKeepPreviousSummary()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         Guid previousId = manager.SelectedSession.SessionId;
         await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore());
@@ -157,7 +162,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task CreateNewSessionWhenSavingFailsShouldKeepPreviousSessionLoaded()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var previous = manager.SelectedSession;
         await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
         var store = new TestSessionStore { SaveException = new IOException("save failed") };
@@ -171,7 +176,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task CreateNewSessionWhenSavingFailsShouldNotifyNewSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         await manager.AppendMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
         var store = new TestSessionStore { SaveException = new IOException("save failed") };
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
@@ -184,7 +189,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task OpenSessionShouldUnloadPreviousSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var previous = manager.SelectedSession;
         var target = CreateSession("history", "message", DateTimeOffset.Now);
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(target));
@@ -197,7 +202,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task OpenSessionFailureShouldNotifyCurrentSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore { LoadException = new InvalidDataException("load failed") };
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
 
@@ -212,7 +217,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         CopilotChatSession persisted = CreateSession("历史会话", "消息", DateTimeOffset.Now);
         var store = new TestSessionStore(persisted) { LoadException = new InvalidDataException("加载失败") };
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store);
         Guid previousSessionId = manager.SelectedSession.SessionId;
 
@@ -229,7 +234,7 @@ public sealed class CodingWorkTaskControllerTests
         persisted.WorkspacePath = workspacePath;
         var workspaceController = new CodingWorkspaceController(new TestMainThreadDispatcher());
         var application = CodingChatApplicationTestFactory.CreateApplication(
-            new CopilotChatManager(),
+            CreateManager(),
             new TestSessionStore(persisted),
             workspaceController: workspaceController);
 
@@ -244,7 +249,7 @@ public sealed class CodingWorkTaskControllerTests
         string previousWorkspacePath = CreateTestDirectory();
         CopilotChatSession persisted = CreateSession("历史会话", "消息", DateTimeOffset.Now);
         persisted.WorkspacePath = Path.Join(CreateTestDirectory(), "missing");
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         Guid previousSessionId = manager.SelectedSession.SessionId;
         var workspaceController = new CodingWorkspaceController(new TestMainThreadDispatcher());
         await workspaceController.ChangeWorkspaceAsync(previousWorkspacePath);
@@ -266,7 +271,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         CopilotChatSession persisted = CreateSession("损坏会话", "消息", DateTimeOffset.Now);
         var store = new TestSessionStore(persisted) { LoadException = new InvalidDataException("不应加载") };
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         CopilotChatSession initialSession = manager.SelectedSession;
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store);
 
@@ -281,7 +286,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         CopilotChatSession persisted = CreateSession("历史会话", "消息", DateTimeOffset.Now);
         var store = new TestSessionStore(persisted) { DeleteException = new IOException("删除失败") };
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store);
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), store);
         await application.InitializeAsync();
 
         await Assert.ThrowsExactlyAsync<IOException>(() => application.DeleteSessionAsync(persisted.SessionId));
@@ -294,7 +299,7 @@ public sealed class CodingWorkTaskControllerTests
     public async Task ActiveRunShouldDisableSessionCommands()
     {
         var runner = new ControllableRunner();
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(), runner);
         await application.InitializeAsync();
         var viewModel = new SessionListViewModel(application);
         var shell = MainViewModel.CreateForTests(viewModel, new ChatViewModel());
@@ -429,7 +434,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         var runner = new ControllableRunner();
         var application = CodingChatApplicationTestFactory.CreateApplication(
-            new CopilotChatManager(),
+            CreateManager(),
             new TestSessionStore(),
             runner);
         var retryDelayStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -458,7 +463,7 @@ public sealed class CodingWorkTaskControllerTests
     public void HistoryShouldNotLoadWhenViewModelIsCreated()
     {
         var store = new TestSessionStore();
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store);
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), store);
         _ = new SessionListViewModel(application);
         Assert.AreEqual(0, store.ListCount);
     }
@@ -466,8 +471,8 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task RepeatedHistoryLoadsShouldNotDuplicateSessions()
     {
-        var session = new CopilotChatSession();
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(session));
+        var session = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage);
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(session));
         var viewModel = new SessionListViewModel(application);
         await viewModel.LoadAsync();
         await viewModel.LoadAsync();
@@ -479,9 +484,9 @@ public sealed class CodingWorkTaskControllerTests
     [DataRow("projects/sample")]
     public async Task HistorySearchShouldMatchTitleOrWorkspace(string query)
     {
-        var session = new CopilotChatSession { WorkspacePath = "/projects/sample" };
+        var session = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage) { WorkspacePath = "/projects/sample" };
         session.SetTitle("Custom title");
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(session));
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(session));
         var viewModel = new SessionListViewModel(application);
         await viewModel.LoadAsync();
         viewModel.SearchText = query;
@@ -492,12 +497,12 @@ public sealed class CodingWorkTaskControllerTests
     [DataRow("Refactor history")]
     public async Task HistorySearchShouldMatchWorkTaskName(string query)
     {
-        var session = new CopilotChatSession
+        var session = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage)
         {
             WorkTaskId = Guid.NewGuid(),
             WorkTaskName = query,
         };
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(session));
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(session));
         var viewModel = new SessionListViewModel(application);
         await viewModel.LoadAsync();
 
@@ -510,8 +515,8 @@ public sealed class CodingWorkTaskControllerTests
     public async Task HistorySearchShouldMatchWorkTaskId()
     {
         Guid workTaskId = Guid.NewGuid();
-        var session = new CopilotChatSession { WorkTaskId = workTaskId, WorkTaskName = "Task" };
-        var application = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(session));
+        var session = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage) { WorkTaskId = workTaskId, WorkTaskName = "Task" };
+        var application = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(session));
         var viewModel = new SessionListViewModel(application);
         await viewModel.LoadAsync();
 
@@ -523,8 +528,8 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task RenameShouldPersistTitleWithoutSwitchingSession()
     {
-        var session = new CopilotChatSession();
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
+        var session = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage);
         var store = new TestSessionStore(session);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store);
         await application.RenameSessionAsync(session.SessionId, "Updated title");
@@ -534,8 +539,8 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task RenameShouldKeepCurrentSelection()
     {
-        var session = new CopilotChatSession();
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
+        var session = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage);
         Guid selectedId = manager.SelectedSession.SessionId;
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(session));
         await application.RenameSessionAsync(session.SessionId, "Updated title");
@@ -546,7 +551,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public async Task UpdateTitleDuringActiveOperationShouldUpdateTitleAndSummaryWithoutSaving()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var runner = new ControlledCompressionRunner("empty");
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -574,7 +579,7 @@ public sealed class CodingWorkTaskControllerTests
     [TestMethod]
     public async Task AddNoticeWhileIdleShouldSaveSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
         using var viewModel = new ChatViewModel(manager, controller, "test");
@@ -588,7 +593,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public async Task AddNoticeDuringActiveOperationShouldAppendWithoutSaving()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var runner = new ControlledCompressionRunner("empty");
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -613,7 +618,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public async Task RunShouldSaveSnapshotOnlyAfterCompletion()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var completion = new TaskCompletionSource<string?>();
         var runner = new LoopRunner { Completion = _ => completion.Task };
@@ -633,7 +638,7 @@ public sealed class CodingWorkTaskControllerTests
     [Timeout(5000)]
     public async Task RunWithoutAssistantShouldOnlySaveOrdinarySession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store,
             new ControlledCompressionRunner("empty"));
@@ -649,7 +654,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         var store = new TestSessionStore();
         var runner = new LoopRunner { Failure = new InvalidOperationException("model failure") };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store, runner);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), store, runner);
 
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.SendMessageAsync("question"));
 
@@ -667,7 +672,7 @@ public sealed class CodingWorkTaskControllerTests
             cancellation.Cancel();
             return Task.FromCanceled<string?>(token);
         } };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store, runner);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), store, runner);
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => controller.SendMessageAsync("question",
             cancellationToken: cancellation.Token));
@@ -685,7 +690,8 @@ public sealed class CodingWorkTaskControllerTests
 
     private static CopilotChatSession CreateSession(string title, string content, DateTimeOffset startedTime)
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), startedTime, new NullChatLogger());
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var session = new CopilotChatSession(store.CreateStorage(Guid.NewGuid(), startedTime));
         session.SetTitle(title);
         session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, content)).GetAwaiter().GetResult();
         return session;
@@ -693,7 +699,7 @@ public sealed class CodingWorkTaskControllerTests
 
     private static CopilotChatManager CreateChatManager(FakeChatClient chatClient)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var model = new FakeLanguageModel(chatClient)
         {
             ModelDefinition = new ModelDefinition
@@ -713,7 +719,7 @@ public sealed class CodingWorkTaskControllerTests
     [DataRow("cancel")]
     public async Task CompressionExitShouldPublishIdleAfterClearingCancellation(string outcome)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new ControlledCompressionRunner(outcome);
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         bool notifiedIdle = false;
@@ -812,11 +818,11 @@ public sealed class CodingWorkTaskControllerTests
         }
 
         public CopilotChatSession? SnapshotSession { get; init; }
-        public (CopilotChatSession Source, SessionSnapshotId SnapshotId)? SnapshotRequest { get; private set; }
+        public (CopilotChatSession Source, CopilotChatMessage Message)? SnapshotRequest { get; private set; }
 
-        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message, CancellationToken cancellationToken = default)
         {
-            SnapshotRequest = (sourceSession, snapshotId);
+            SnapshotRequest = (sourceSession, message);
             return Task.FromResult(SnapshotSession ?? throw new NotSupportedException());
         }
 
@@ -854,7 +860,7 @@ public sealed class CodingWorkTaskControllerTests
     [DataRow(LoopConversationMode.Append, 0, 0)]
     public async Task LoopShouldProcessContextOnlyBetweenAttempts(LoopConversationMode mode, int compactions, int resets)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var session = manager.SelectedSession;
         var historyCounts = new List<int>();
         var runner = new LoopRunner
@@ -882,7 +888,7 @@ public sealed class CodingWorkTaskControllerTests
     public async Task FailedAttemptShouldConsumeLastIteration()
     {
         var runner = new LoopRunner { Failure = new InvalidOperationException("Run failed") };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(), runner);
 
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.RunLoopIterationAsync(
             "Continue", CodingChatRunOptions.Default, new CodingLoopOptions { MaximumIterations = 1 }));
@@ -894,7 +900,7 @@ public sealed class CodingWorkTaskControllerTests
     public async Task UnavailableLoopCompactionShouldStopBeforeNextAttempt()
     {
         var runner = new LoopRunner { CanCompact = false };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(), runner);
 
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.RunLoopIterationAsync(
             "Continue", CodingChatRunOptions.Default, new CodingLoopOptions { MaximumIterations = 2 }));
@@ -906,7 +912,7 @@ public sealed class CodingWorkTaskControllerTests
     public async Task LoopShouldConsumeLatestModeAndAttemptLimit()
     {
         var settings = new CodingLoopOptions { MaximumIterations = 3 };
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var historyCounts = new List<int>();
         var store = new TestSessionStore();
         var runner = new LoopRunner
@@ -935,7 +941,7 @@ public sealed class CodingWorkTaskControllerTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         var runner = new LoopRunner();
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), new TestSessionStore(), runner);
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(), new TestSessionStore(), runner);
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => controller.RunLoopIterationAsync(
             "Continue", CodingChatRunOptions.Default, new CodingLoopOptions(), cancellationToken: cancellation.Token));
@@ -983,7 +989,7 @@ public sealed class CodingWorkTaskControllerTests
             runToken = token;
             return completion.Task;
         } };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
@@ -1010,7 +1016,7 @@ public sealed class CodingWorkTaskControllerTests
             clock.Advance(TimeSpan.FromMinutes(2));
             settings.MaximumDurationMinutes = 0;
         } };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default, settings);
@@ -1029,7 +1035,7 @@ public sealed class CodingWorkTaskControllerTests
             await Task.Delay(Timeout.Infinite, token);
             return null;
         } };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
@@ -1048,7 +1054,7 @@ public sealed class CodingWorkTaskControllerTests
         var clock = new LoopClock();
         using var cancellation = new CancellationTokenSource();
         var runner = new LoopRunner { Failure = new InvalidOperationException("Retry") };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
@@ -1067,7 +1073,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         var clock = new LoopClock();
         var runner = new LoopRunner { OnRun = () => clock.Advance(TimeSpan.FromMinutes(71583)) };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
@@ -1091,7 +1097,7 @@ public sealed class CodingWorkTaskControllerTests
                 return completion.Task;
             },
         };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         Task run = controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,
@@ -1113,7 +1119,7 @@ public sealed class CodingWorkTaskControllerTests
     {
         var clock = new LoopClock();
         var runner = new LoopRunner { OnRun = () => clock.Advance(TimeSpan.FromMinutes(71583)) };
-        var controller = CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(),
+        var controller = CodingChatApplicationTestFactory.CreateApplication(CreateManager(),
             new TestSessionStore(), runner, timeProvider: clock.Provider);
 
         await controller.RunLoopIterationAsync("Continue", CodingChatRunOptions.Default,

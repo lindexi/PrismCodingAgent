@@ -53,7 +53,7 @@ public sealed class ChatRoomRoleExecutorTests
     public async Task StandardWorkspaceToolShouldWaitForApprovalBeforeChangingPath()
     {
         string workspacePath = CreateTestDirectory();
-        await using var workspaceManager = new ChatRoomManager();
+        await using var workspaceManager = new ChatRoomManager(TestSessionStorage.Create());
         var client = new FakeChatClient
         {
             OnGetStreamingResponseAsync = (_, options, cancellationToken) => InvokeToolAsync(
@@ -93,7 +93,7 @@ public sealed class ChatRoomRoleExecutorTests
     public async Task StandardWorkspaceToolShouldNotChangePathWhenRejected()
     {
         string workspacePath = CreateTestDirectory();
-        await using var workspaceManager = new ChatRoomManager();
+        await using var workspaceManager = new ChatRoomManager(TestSessionStorage.Create());
         var client = new FakeChatClient
         {
             OnGetStreamingResponseAsync = (_, options, cancellationToken) => InvokeToolAsync(
@@ -130,7 +130,7 @@ public sealed class ChatRoomRoleExecutorTests
     public async Task StandardWorkspaceToolShouldNotChangePathWhenApprovalIsCanceled()
     {
         string workspacePath = CreateTestDirectory();
-        await using var workspaceManager = new ChatRoomManager();
+        await using var workspaceManager = new ChatRoomManager(TestSessionStorage.Create());
         var client = new FakeChatClient
         {
             OnGetStreamingResponseAsync = (_, options, cancellationToken) => InvokeToolAsync(
@@ -255,7 +255,7 @@ public sealed class ChatRoomRoleExecutorTests
         FakeChatClient client,
         IMainThreadDispatcher? mainThreadDispatcher = null)
     {
-        var chatManager = new CopilotChatManager
+        var chatManager = new CopilotChatManager()
         {
             MainThreadDispatcher = mainThreadDispatcher,
         };

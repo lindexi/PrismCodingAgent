@@ -47,7 +47,7 @@ public sealed class CodingImageAnalysisToolsTests
     [TestMethod]
     public async Task AnalyzeImageAsyncWhenInstructionIsEmptyShouldReturnFailureReason()
     {
-        var tools = new CodingImageAnalysisTools(new CopilotChatManager());
+        var tools = new CodingImageAnalysisTools(CreateChatManager(new FakeChatClient()));
 
         string result = await tools.AnalyzeImageAsync(["image.png"], " ");
 
@@ -58,7 +58,7 @@ public sealed class CodingImageAnalysisToolsTests
     public async Task AnalyzeImageAsyncWhenFileDoesNotExistShouldReturnFailureReason()
     {
         string imagePath = Path.Join(Path.GetTempPath(), $"missing-image-{Guid.NewGuid():N}.png");
-        var tools = new CodingImageAnalysisTools(new CopilotChatManager());
+        var tools = new CodingImageAnalysisTools(CreateChatManager(new FakeChatClient()));
 
         string result = await tools.AnalyzeImageAsync([imagePath], "描述图片");
 
@@ -71,7 +71,7 @@ public sealed class CodingImageAnalysisToolsTests
     {
         string filePath = Path.Join(Path.GetTempPath(), $"coding-image-analysis-{Guid.NewGuid():N}.txt");
         await File.WriteAllTextAsync(filePath, "not an image");
-        var tools = new CodingImageAnalysisTools(new CopilotChatManager());
+        var tools = new CodingImageAnalysisTools(CreateChatManager(new FakeChatClient()));
 
         string result = await tools.AnalyzeImageAsync([filePath], "描述图片");
 
@@ -122,6 +122,7 @@ public sealed class CodingImageAnalysisToolsTests
 
     private static CopilotChatManager CreateChatManager(FakeChatClient client)
     {
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         var manager = new CopilotChatManager();
         var model = new FakeLanguageModel(client)
         {

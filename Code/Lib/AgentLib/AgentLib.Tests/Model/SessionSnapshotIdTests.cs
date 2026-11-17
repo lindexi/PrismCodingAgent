@@ -41,11 +41,11 @@ public class SessionSnapshotIdTests
     }
 
     [TestMethod]
-    public void ToDirectoryNameShouldReturnNFormatGuidText()
+    public void ToFileNameShouldReturnNFormatId()
     {
         var id = new SessionSnapshotId(new Guid("00112233-4455-6677-8899-aabbccddeeff"));
 
-        Assert.AreEqual("00112233445566778899aabbccddeeff", id.ToDirectoryName());
+        Assert.AreEqual("00112233445566778899aabbccddeeff", id.ToFileName());
     }
 
     [TestMethod]

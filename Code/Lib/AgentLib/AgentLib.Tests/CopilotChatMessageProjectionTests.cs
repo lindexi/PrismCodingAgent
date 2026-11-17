@@ -11,7 +11,8 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void ProjectionInstanceIsStableAndSharedWithManager()
     {
-        var manager = new CopilotChatManager();
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new AgentLib.Logging.EmptyCopilotChatLogger(), store);
         var projection = manager.ChatMessages;
         int originalCount = projection.Count;
         manager.SelectedSession.Entries.Add(Message("message"));
@@ -22,7 +23,7 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void NoticeChangesDoNotNotifyMessages()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var changes = new List<NotifyCollectionChangedEventArgs>();
         ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += (_, e) => changes.Add(e);
         session.Entries.Add(new CopilotChatNotice("first"));
@@ -126,7 +127,7 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void PropertyOnlySubscriberReceivesCountAndIndexerChanges()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var properties = new List<string?>();
         PropertyChangedEventHandler handler = (_, e) => properties.Add(e.PropertyName);
         ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += handler;
@@ -139,7 +140,8 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void SwitchingSessionsNotifiesBindingAndAllowsRebinding()
     {
-        var manager = new CopilotChatManager();
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new AgentLib.Logging.EmptyCopilotChatLogger(), store);
         var oldSession = manager.SelectedSession;
         var projection = manager.ChatMessages;
         var changes = new List<NotifyCollectionChangedEventArgs>();
@@ -154,7 +156,7 @@ public class CopilotChatMessageProjectionTests
             ((INotifyCollectionChanged)projection).CollectionChanged += handler;
             bindingChanges++;
         };
-        var newSession = new CopilotChatSession();
+        var newSession = new CopilotChatSession(CreateStorage());
         manager.SelectedSession = newSession;
         manager.SelectedSession = newSession;
         oldSession.Entries.Add(Message("old"));
@@ -250,7 +252,7 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void RemovingCollectionSubscriberKeepsPropertySubscription()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var properties = new List<string?>();
         NotifyCollectionChangedEventHandler collectionHandler = (_, _) => Assert.Fail("Unsubscribed handler invoked.");
         ((INotifyCollectionChanged)session.ChatMessages).CollectionChanged += collectionHandler;
@@ -263,7 +265,7 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void RemovingPropertySubscriberKeepsCollectionSubscription()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var changes = Observe(session);
         PropertyChangedEventHandler propertyHandler = (_, _) => Assert.Fail("Unsubscribed handler invoked.");
         ((INotifyPropertyChanged)session.ChatMessages).PropertyChanged += propertyHandler;
@@ -401,7 +403,7 @@ public class CopilotChatMessageProjectionTests
     [TestMethod]
     public void RepeatedAppendMaintainsFilteredIndicesWithoutObservers()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var expected = new List<CopilotChatMessage>();
         for (int i = 0; i < 256; i++)
         {
@@ -428,11 +430,13 @@ public class CopilotChatMessageProjectionTests
         CollectionAssert.AreEqual(session.Entries.OfType<CopilotChatMessage>().ToArray(), session.ChatMessages.ToArray());
     }
 
+    private static ISessionStorage CreateStorage() => new AgentLib.Logging.Sessions.FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+
     private static CopilotChatMessage Message(string text) => new(ChatRole.User, text);
 
     private static CopilotChatSession CreateSession()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         session.Entries.Add(new CopilotChatNotice("first"));
         session.Entries.Add(Message("one"));
         session.Entries.Add(new CopilotChatNotice("middle"));

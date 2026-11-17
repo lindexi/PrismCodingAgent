@@ -1088,7 +1088,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             CopilotChatSession sourceSession = _subscribedSession;
             try
             {
-                await _workTaskController.CreateSessionFromSnapshotAsync(sourceSession.SessionId, item.Message.SessionSnapshotId);
+                await _workTaskController.CreateSessionFromSnapshotAsync(sourceSession, item.Message);
             }
             catch (Exception exception)
             {

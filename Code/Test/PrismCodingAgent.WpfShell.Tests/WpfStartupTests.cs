@@ -108,11 +108,11 @@ public sealed class WpfStartupTests
         {
             new { Id = taskId, DisplayName = "History task", WorkspacePath = (string?)null, ModelReference = (string?)null, ReasoningEffort = (string?)null, IsArchived = false },
         }));
-        var session = new AgentLib.Model.CopilotChatSession { WorkTaskId = taskId, WorkTaskName = "History task" };
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
+        var session = new AgentLib.Model.CopilotChatSession(store.CreateStorage(Guid.NewGuid(), DateTimeOffset.Now)) { WorkTaskId = taskId, WorkTaskName = "History task" };
         session.SetTitle("Persisted conversation");
         await session.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.User, "Persisted question"));
         await session.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, "Persisted answer"));
-        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
         await store.SaveSessionAsync(session, null);
         var window = (MainWindow)await ((App)Application.Current).OpenAsync(["--data-directory", root]);
         var model = (MainViewModel)window.DataContext;

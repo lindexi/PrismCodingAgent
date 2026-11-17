@@ -14,13 +14,19 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [TestClass]
 public sealed class CodingChatSendingTests
 {
+    private static CopilotChatManager CreateManager(ICopilotChatLogger? logger = null)
+    {
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        return logger is null ? new CopilotChatManager() : new CopilotChatManager(logger, store);
+    }
+
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldSelectRequestedRunner(bool useResponses)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var codingRunner = new TestCodingChatRunner(manager);
         var responsesRunner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(
@@ -41,7 +47,7 @@ public sealed class CodingChatSendingTests
     public async Task SendMessageAsyncShouldUseCommittedWorkspacePath()
     {
         string workspacePath = CreateTestDirectory();
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var workspaceController = new CodingWorkspaceController(new ImmediateMainThreadDispatcher());
         await workspaceController.ChangeWorkspaceAsync(workspacePath, CancellationToken.None);
@@ -64,7 +70,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldEnableAutomaticCompressionByDefault()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -81,7 +87,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldAllowDisablingAutomaticCompression()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -100,7 +106,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldAllowEnablingDotNetRun()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -119,7 +125,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldPassReasoningEffortToRunner()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -138,7 +144,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldPreserveMultimodalContentOrder()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -164,7 +170,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldRunOnceAndSaveCompletedSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -192,7 +198,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncWhileActiveShouldUpdateCurrentAssistantMessage()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -211,7 +217,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncWhileFinalizingShouldRejectSecondRun()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore { BlockSave = true };
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -236,7 +242,7 @@ public sealed class CodingChatSendingTests
     {
         using var handler = new InterruptedResponseHandler(receivePartialResponse);
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(
@@ -339,7 +345,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task StopActiveRunShouldCancelCompletionTask()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -357,7 +363,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncFailureShouldRestoreAvailableState()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -375,7 +381,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task RunFailureShouldTakePrecedenceOverPersistenceFailure()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore { SaveException = new IOException("保存失败") };
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -399,7 +405,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task RunFailureShouldTakePrecedenceOverDiagnosticFailure()
     {
-        var manager = new CopilotChatManager(new FailureDiagnosticLogger());
+        var manager = CreateManager(new FailureDiagnosticLogger());
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
         await application.InitializeAsync();
@@ -434,7 +440,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task PersistenceFailureShouldBeThrownAfterSuccessfulRun()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore { SaveException = new IOException("保存失败") };
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -453,7 +459,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task EmptyResponseShouldSaveAssistantMessageWithoutPlaceholder()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -472,7 +478,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldSaveCapturedSessionInstance()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore();
         var runner = new TestCodingChatRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
@@ -480,7 +486,7 @@ public sealed class CodingChatSendingTests
         CopilotChatSession runningSession = manager.SelectedSession;
         Task sendTask = application.SendMessageAsync("检查代码");
         await runner.Started.Task;
-        var otherSession = new CopilotChatSession();
+        var otherSession = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage);
         manager.AddSession(otherSession, select: true);
 
         runner.Complete("完成");
@@ -586,7 +592,7 @@ public sealed class CodingChatSendingTests
     [Timeout(5000)]
     public async Task CompressionSaveShouldRemainActiveUntilSaveCompletes()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var store = new TestSessionStore { BlockSave = true };
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
         bool notifiedIdle = false;
@@ -646,7 +652,7 @@ public sealed class CodingChatSendingTests
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)

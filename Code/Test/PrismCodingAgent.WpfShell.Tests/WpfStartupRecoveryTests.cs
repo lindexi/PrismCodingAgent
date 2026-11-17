@@ -35,7 +35,7 @@ public sealed class WpfStartupRecoveryTests
         var sessions = new List<CopilotChatSession>();
         foreach (var (taskId, title) in new[] { (first, "First conversation"), (first, "Second conversation"), (second, "Other task conversation") })
         {
-            var session = new CopilotChatSession
+            var session = new CopilotChatSession(store.CreateStorage(Guid.NewGuid(), DateTimeOffset.Now))
             {
                 WorkTaskId = taskId,
                 WorkTaskName = taskId == first ? "Configured task" : "Independent task",

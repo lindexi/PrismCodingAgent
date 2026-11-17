@@ -21,14 +21,20 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [TestClass]
 public sealed class ChatViewModelTests
 {
+    private static CopilotChatManager CreateManager()
+    {
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        return new CopilotChatManager();
+    }
+
     [TestMethod]
     public async Task SnapshotCommandShouldSelectCreatedSessionAsync()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var source = manager.SelectedSession;
         var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot body");
         await source.AddMessageAsync(message);
-        var restored = new CopilotChatSession { WorkspacePath = Path.GetTempPath() };
+        var restored = new CopilotChatSession(CreateManager().SelectedSession.AdditionalInfo.Storage) { WorkspacePath = Path.GetTempPath() };
         var store = new EmptySessionStore { SnapshotSession = restored };
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
         using var model = new ChatViewModel(manager, controller, "ready");
@@ -46,7 +52,7 @@ public sealed class ChatViewModelTests
     [TestMethod]
     public async Task SnapshotCommandFailureShouldKeepSourceAndShowLocalizedNoticeAsync()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var source = manager.SelectedSession;
         var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot body");
         await source.AddMessageAsync(message);
@@ -68,7 +74,7 @@ public sealed class ChatViewModelTests
     [TestMethod]
     public async Task SnapshotFailureWithNoticeSaveFailureShouldShowErrorStatusAsync()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot body");
         await manager.SelectedSession.AddMessageAsync(message);
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager,
@@ -121,7 +127,7 @@ public sealed class ChatViewModelTests
 
     private static async Task AssertReleasedProjectionAsync(Action<CopilotChatSession, ChatViewModel, CopilotChatMessage> release)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var source = manager.SelectedSession;
         var message = new CopilotChatMessage(ChatRole.Assistant, "snapshot");
         await source.AddMessageAsync(message);
@@ -219,7 +225,7 @@ public sealed class ChatViewModelTests
     [TestMethod(DisplayName = "会话标题编辑值应初始化为当前会话标题")]
     public void EditedSessionTitleShouldStartWithCurrentSessionTitle()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.SelectedSession.SetTitle("当前标题");
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型");
@@ -230,7 +236,7 @@ public sealed class ChatViewModelTests
     [TestMethod(DisplayName = "更新会话标题命令应修改当前会话标题")]
     public async Task UpdateSessionTitleCommandShouldRenameCurrentSession()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型")
         {
@@ -245,7 +251,7 @@ public sealed class ChatViewModelTests
     [TestMethod]
     public async Task GenerateTitleCommandShouldAutomaticallyUpdateUserSetTitle()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
             [new FakeLanguageModel(new FakeChatClient
             {
@@ -267,7 +273,7 @@ public sealed class ChatViewModelTests
     public async Task GenerateTitleCommandShouldUpdateOriginalSessionAfterSwitchingSession()
     {
         var response = new TaskCompletionSource<ChatResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
             [new FakeLanguageModel(new FakeChatClient { OnGetResponseAsync = (_, _, _) => response.Task })]));
         var originalSession = manager.SelectedSession;
@@ -295,7 +301,7 @@ public sealed class ChatViewModelTests
     public async Task GenerateTitleCommandShouldPreventReentry()
     {
         var response = new TaskCompletionSource<ChatResponse>();
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
             [new FakeLanguageModel(new FakeChatClient { OnGetResponseAsync = (_, _, _) => response.Task })]));
         await manager.SelectedSession.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
@@ -314,7 +320,7 @@ public sealed class ChatViewModelTests
     [TestMethod]
     public async Task GenerateTitleCommandShouldDisplayModelFailure()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
             [new FakeLanguageModel(new FakeChatClient
             {
@@ -333,7 +339,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task SwitchingSessionShouldUnsubscribePreviousMessageCollection()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
         await application.InitializeAsync();
         CopilotChatSession previousSession = manager.SelectedSession;
@@ -352,7 +358,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public void SelectingModelShouldUpdateInMemoryPrimaryModel()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var firstModel = new FakeLanguageModel(new FakeChatClient())
         {
             ModelDefinition = new ModelDefinition { Provider = "fake", ModelId = "first", ModelName = "First" },
@@ -407,7 +413,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public void ApprovalActionsShouldDelegateToChatManager()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型");
         var approvedItem = new CopilotChatApprovalToolItem("approved", "write_file", "path=a.cs");
@@ -423,7 +429,7 @@ public sealed class ChatViewModelTests
     [TestMethod(DisplayName = "空闲时停止 LSP 命令应可用并处理无活动服务")]
     public async Task StopLanguageServerCommandWhenIdleShouldHandleMissingService()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new ImmediateRunner(manager);
         await using var agent = new CodingAgent();
         var application = new CodingWorkTaskController(
@@ -445,7 +451,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task SendCommandShouldRunAndClearInput()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new ImmediateRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -465,7 +471,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task SendingMessageShouldNotifyBeforeRunnerStarts()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new ImmediateRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -482,7 +488,7 @@ public sealed class ChatViewModelTests
     [TestMethod]
     public void EmptyInputShouldNotNotifyMessageSending()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), new ImmediateRunner(manager));
         using var model = new ChatViewModel(manager, application, "test");
         int notifications = 0;
@@ -497,7 +503,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task InterruptionShouldShowSubmissionFeedbackAndKeepSendAvailable()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new CancelableRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -527,7 +533,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task InterruptionDuringLoopIterationShouldUseActiveRun()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new CancelableRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -555,7 +561,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task LoopIterationShouldUseAutomaticCompressionOption()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new CompletingRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -579,7 +585,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task LoopIterationShouldFinishCurrentRunWhenOptionIsCleared()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new CompletingRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -606,7 +612,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public void LoopIterationShouldRequireTextPrompt()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), new ImmediateRunner(manager));
         using var viewModel = new ChatViewModel(manager, application, "当前模型：测试模型");
         Assert.IsTrue(viewModel.TryAddImageAttachment("sample.png", new byte[] { 1, 2, 3 }));
@@ -620,7 +626,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task ImageOnlyMessageShouldSendAndClearAttachments()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new ImmediateRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -653,7 +659,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task SendFailureShouldAppendSystemMessage()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new FailingRunner(new InvalidOperationException("模型失败"));
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -673,7 +679,7 @@ public sealed class ChatViewModelTests
     [Timeout(5000)]
     public async Task StopCommandShouldCancelActiveRun()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new CancelableRunner(manager);
         var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await application.InitializeAsync();
@@ -781,7 +787,7 @@ public sealed class ChatViewModelTests
     public async Task ApplyWorkspaceCommandShouldCommitInputAndRefreshStatus()
     {
         string workspacePath = CreateTestDirectory();
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var workspaceController = new CodingWorkspaceController(new ImmediateMainThreadDispatcher());
         var application = CodingChatApplicationTestFactory.CreateApplication(
             manager,
@@ -810,7 +816,7 @@ public sealed class ChatViewModelTests
     public async Task WorkspaceFailureShouldAppendSystemMessage()
     {
         string missingPath = Path.Join(Path.GetTempPath(), $"CodingChatRoom.MissingWorkspace.{Guid.NewGuid():N}");
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var workspaceController = new CodingWorkspaceController(new ImmediateMainThreadDispatcher());
         var application = CodingChatApplicationTestFactory.CreateApplication(
             manager,
@@ -841,7 +847,7 @@ public sealed class ChatViewModelTests
 
     private static CopilotChatManager CreateManagerWithModels(params string[] modelNames)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var models = modelNames.Select(modelName => new FakeLanguageModel(new FakeChatClient())
         {
             ModelDefinition = new ModelDefinition
@@ -958,7 +964,7 @@ public sealed class ChatViewModelTests
 
     private static CopilotChatManager CreateChatManager(FakeChatClient chatClient)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var model = new FakeLanguageModel(chatClient)
         {
             ModelDefinition = new ModelDefinition
@@ -994,7 +1000,7 @@ public sealed class ChatViewModelTests
     [Timeout(10000)]
     public async Task SendShouldPassSharedSettingsInstance()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new SettingsRunner(manager);
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await controller.InitializeAsync();
@@ -1009,7 +1015,7 @@ public sealed class ChatViewModelTests
     [Timeout(10000)]
     public async Task LoopShouldConsumeLatestSettingsOnNextIteration()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new SettingsRunner(manager);
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await controller.InitializeAsync();
@@ -1035,7 +1041,7 @@ public sealed class ChatViewModelTests
     [Timeout(10000)]
     public async Task NewLoopShouldInitializeCurrentStateWithoutChangingNextRunPreference()
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var runner = new SettingsRunner(manager);
         var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
         await controller.InitializeAsync();
@@ -1203,10 +1209,10 @@ public sealed class ChatViewModelTests
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message, CancellationToken cancellationToken = default)
         {
             SnapshotRequestCount++;
-            SnapshotRequest = (sourceSession, snapshotId);
+            SnapshotRequest = (sourceSession, message.SessionSnapshotId);
             return SnapshotSession is { } session ? Task.FromResult(session) : throw new IOException("Snapshot unavailable.");
         }
 

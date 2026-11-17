@@ -167,6 +167,6 @@ public sealed class MentionParserTests
             IsHuman = false,
         };
 
-        return new ChatRoomRole(definition);
+        return new ChatRoomRole(definition, TestSessionStorage.Create());
     }
 }

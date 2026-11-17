@@ -15,7 +15,8 @@ internal sealed class CopilotChatManagerTestContext
         PrimaryChatClient = primaryChatClient ?? throw new ArgumentNullException(nameof(primaryChatClient));
         FlashChatClient = flashChatClient;
 
-        ChatManager = new CopilotChatManager(new EmptyCopilotChatLogger());
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        ChatManager = new CopilotChatManager();
         ChatManager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([CreatePrimaryModel()]));
 
         if (flashChatClient is not null)

@@ -21,7 +21,7 @@ public class SessionTitleGeneratorTests
             }
         };
         var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "excluded"));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "abcdef"));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.Assistant, new string('x', 3997)));
@@ -44,7 +44,7 @@ public class SessionTitleGeneratorTests
             }
         };
         var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, new string('a', 4000) + "tail"));
 
         await new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager).GenerateTitlePreviewAsync(session);
@@ -67,7 +67,7 @@ public class SessionTitleGeneratorTests
             }
         };
         var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         session.SetTitle("Original", source);
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
 
@@ -89,7 +89,7 @@ public class SessionTitleGeneratorTests
             }
         };
         var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.System, "system"));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.Tool, "tool"));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.Assistant, new AIContent[]
@@ -113,7 +113,7 @@ public class SessionTitleGeneratorTests
                     new Dictionary<string, object?> { ["title"] = "New title" }) })))
         };
         var context = CopilotChatManagerTestContext.Create(client);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         session.SetTitle("Original", TitleSource.UserSet);
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
         var generator = new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager);
@@ -138,7 +138,7 @@ public class SessionTitleGeneratorTests
         var context = CopilotChatManagerTestContext.Create(Client("primary"), Client("flash"));
         var manager = context.ChatManager.AgentApiEndpointManager;
         var generator = new SessionTitleGenerator(manager);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
 
         await generator.GenerateTitlePreviewAsync(session);
@@ -164,7 +164,7 @@ public class SessionTitleGeneratorTests
         };
         var context = CopilotChatManagerTestContext.Create(chatClient);
         var generator = new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         var expected = new List<(ChatRole Role, string Content)>
         {
             (ChatRole.System, SessionTitleGenerator.SystemPrompt)
@@ -200,7 +200,7 @@ public class SessionTitleGeneratorTests
         };
         var context = CopilotChatManagerTestContext.Create(chatClient);
         var generator = new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
         await session.AddMessageAsync(CopilotChatMessage.CreateAssistant("Greeting", isPresetInfo: true));
         await session.AddEntryAsync(new CopilotChatNotice("Error", CopilotChatNoticeLevel.Error));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.Assistant, string.Empty));
@@ -224,7 +224,7 @@ public class SessionTitleGeneratorTests
         };
         var context = CopilotChatManagerTestContext.Create(chatClient);
         var generator = new SessionTitleGenerator(context.ChatManager.AgentApiEndpointManager);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(context.ChatManager.SelectedSession.AdditionalInfo.Storage);
 
         await generator.GenerateTitleAsync(session);
 

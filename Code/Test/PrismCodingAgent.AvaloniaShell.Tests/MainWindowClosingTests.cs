@@ -114,6 +114,7 @@ public sealed class MainWindowClosingTests
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var runner = new WaitingRunner(entered, cancelled, release);
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(System.IO.Path.Join(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         var controller = CodingWorkTaskControllerTestFactory.CreateApplication(new CopilotChatManager(),
             new EmptySessionStore(), runner);
         Task run = controller.SendMessageAsync("offline");
@@ -240,7 +241,7 @@ public sealed class MainWindowClosingTests
             => Task.FromResult<IReadOnlyList<AgentLib.Logging.Sessions.CopilotChatSessionSummary>>([]);
         public Task<AgentLib.Model.CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
-        public Task<AgentLib.Model.CopilotChatSession> CreateSessionFromSnapshotAsync(AgentLib.Model.CopilotChatSession sourceSession, AgentLib.Model.SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        public Task<AgentLib.Model.CopilotChatSession> CreateSessionFromSnapshotAsync(AgentLib.Model.CopilotChatSession sourceSession, AgentLib.Model.CopilotChatMessage message, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(false);

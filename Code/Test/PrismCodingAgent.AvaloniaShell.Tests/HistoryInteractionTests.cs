@@ -12,6 +12,12 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [AvaloniaTestClass]
 public sealed class HistoryInteractionTests
 {
+    private static CopilotChatManager CreateManager()
+    {
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        return new CopilotChatManager();
+    }
+
     [TestMethod]
     public void SessionSubtitleShouldIncludeOnlyFullTimestamp()
     {
@@ -56,8 +62,8 @@ public sealed class HistoryInteractionTests
         var secondStore = new StreamingStore(targetSessionId);
         firstStore.Continue.TrySetResult();
         secondStore.Continue.TrySetResult();
-        var firstManager = new CopilotChatManager();
-        var secondManager = new CopilotChatManager();
+        var firstManager = CreateManager();
+        var secondManager = CreateManager();
         var firstSessions = new SessionListViewModel(
             CodingChatApplicationTestFactory.CreateApplication(firstManager, firstStore));
         var secondSessions = new SessionListViewModel(
@@ -344,7 +350,7 @@ public sealed class HistoryInteractionTests
     }
 
     private static SessionListViewModel CreateViewModel(StreamingStore store) => new(
-        CodingChatApplicationTestFactory.CreateApplication(new CopilotChatManager(), store));
+        CodingChatApplicationTestFactory.CreateApplication(CreateManager(), store));
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
@@ -364,7 +370,10 @@ public sealed class HistoryInteractionTests
 
         public StreamingStore(Guid sessionId)
         {
-            Session = new CopilotChatSession(sessionId, DateTimeOffset.Now, new NullChatLogger());
+            var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+            DateTimeOffset startedTime = DateTimeOffset.Now;
+            Session = new CopilotChatSession(store.CreateStorage(sessionId, startedTime), sessionId, startedTime,
+                new CopilotChatManager().ChatLogger);
         }
 
         public CopilotChatSession Session { get; }
@@ -401,7 +410,7 @@ public sealed class HistoryInteractionTests
             => throw new NotSupportedException();
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => FailOpen ? Task.FromException<CopilotChatSession>(new System.IO.IOException("Open failed")) : Task.FromResult(Session);
-        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(true);

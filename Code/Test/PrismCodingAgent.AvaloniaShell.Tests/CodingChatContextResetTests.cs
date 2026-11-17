@@ -48,7 +48,7 @@ public sealed class CodingChatContextResetTests
         await fixture.RunAsync("previous-user");
         var session = fixture.Manager.SelectedSession;
         var entries = session.Entries.ToArray();
-        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+        var store = new FileCodingChatSessionStore(fixture.StorageStore,
             fixture.Manager, new ImmediateDispatcher());
         await store.SaveSessionAsync(session);
 
@@ -94,7 +94,7 @@ public sealed class CodingChatContextResetTests
         await using var fixture = await Fixture.CreateAsync(responses);
         await fixture.RunAsync("previous-user");
         var session = fixture.Manager.SelectedSession;
-        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+        var store = new FileCodingChatSessionStore(fixture.StorageStore,
             fixture.Manager, new ImmediateDispatcher());
         await store.SaveSessionAsync(session);
 
@@ -113,11 +113,11 @@ public sealed class CodingChatContextResetTests
     [DataRow(false)]
     [DataRow(true)]
     [Timeout(30000)]
-    public async Task RoundEndShouldSaveCompleteSnapshotAndOrdinarySession(bool responses)
+    public async Task RoundEndShouldSaveMainStateSnapshotAndOrdinarySession(bool responses)
     {
         await using var fixture = await Fixture.CreateAsync(responses);
         var session = fixture.Manager.SelectedSession;
-        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+        var store = new FileCodingChatSessionStore(fixture.StorageStore,
             fixture.Manager, new ImmediateDispatcher());
         var controller = CodingWorkTaskControllerTestFactory.CreateApplication(fixture.Manager, store, fixture.Runner);
 
@@ -125,14 +125,12 @@ public sealed class CodingChatContextResetTests
             new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
 
         var files = new FileCopilotChatSessionStore(fixture.Directory);
-        var snapshot = await files.LoadSnapshotAsync(session, session.ChatMessages.Last().SessionSnapshotId);
+        var snapshot = await SessionSnapshots.Get(session).ReadSnapshotAsync(session, session.ChatMessages.Last().SessionSnapshotId);
         var ordinary = await files.LoadSessionAsync(session.SessionId);
-        CollectionAssert.AreEqual(session.Entries.Cast<CopilotChatMessage>().Select(message => message.Content).ToArray(),
-            snapshot.Entries.Cast<CopilotChatMessage>().Select(message => message.Content).ToArray());
-        Assert.AreEqual(ordinary.AgentSessionState?.GetRawText(), snapshot.AgentSessionState?.GetRawText());
-        Assert.AreEqual(ordinary.ResponsesSession?.Items.Count, snapshot.ResponsesSession?.Items.Count);
-        Assert.AreEqual(responses, snapshot.ResponsesSession?.Items.Count > 0);
-        Assert.AreEqual(!responses, snapshot.AgentSessionState.HasValue);
+        Assert.AreEqual(ordinary.AgentSessionState?.GetRawText(), snapshot.AgentState?.GetRawText());
+        Assert.AreEqual(ordinary.ResponsesSession?.Items.Count, snapshot.Responses?.Items.Count);
+        Assert.AreEqual(responses, snapshot.Responses?.Items.Count > 0);
+        Assert.AreEqual(!responses, snapshot.AgentState.HasValue);
     }
 
     [TestMethod]
@@ -144,7 +142,7 @@ public sealed class CodingChatContextResetTests
         await using var fixture = await Fixture.CreateAsync(responses);
         await fixture.RunAsync("previous-user");
         var session = fixture.Manager.SelectedSession;
-        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+        var store = new FileCodingChatSessionStore(fixture.StorageStore,
             fixture.Manager, new ImmediateDispatcher());
         session.SetTitle("ordinary-session");
         await store.SaveSessionAsync(session);
@@ -155,8 +153,10 @@ public sealed class CodingChatContextResetTests
 
         var files = new FileCopilotChatSessionStore(fixture.Directory);
         var ordinary = await files.LoadSessionAsync(session.SessionId);
-        var snapshot = await files.LoadSnapshotAsync(session, snapshotId);
-        CollectionAssert.AreEqual(new[] { "ordinary-session", "snapshot" }, new[] { ordinary.Title, snapshot.Title });
+        Assert.AreEqual("ordinary-session", ordinary.Title);
+        Assert.AreEqual("snapshot", session.Title);
+        var snapshot = await SessionSnapshots.Get(session).ReadSnapshotAsync(session, snapshotId);
+        Assert.AreEqual(!responses, snapshot.AgentState.HasValue);
     }
 
     [TestMethod]
@@ -170,25 +170,26 @@ public sealed class CodingChatContextResetTests
         var source = fixture.Manager.SelectedSession;
         source.SetTitle("snapshot-title");
         source.WorkspacePath = fixture.Directory;
-        source.AdditionalInfo.Add("marker", new JsonSessionAdditionalInfo(JsonSerializer.SerializeToElement("snapshot-value")));
-        var store = new FileCodingChatSessionStore(fixture.Directory, fixture.Directory,
+        source.AdditionalInfo.Set("marker", new JsonSessionAdditionalInfo(JsonSerializer.SerializeToElement("snapshot-value")));
+        var store = new FileCodingChatSessionStore(fixture.StorageStore,
             fixture.Manager, new ImmediateDispatcher());
         SessionSnapshotId snapshotId = source.ChatMessages.Last().SessionSnapshotId;
         var snapshotMessageIds = source.ChatMessages.Select(message => message.SessionSnapshotId).ToArray();
+        var snapshotMessage = source.ChatMessages.Last();
         int snapshotEntryCount = source.Entries.Count;
         await store.SaveSnapshotAsync(source, snapshotId);
         await fixture.RunAsync("after-snapshot-user");
         int sourceMessageCount = source.ChatMessages.Count;
-        var restored = await store.CreateSessionFromSnapshotAsync(source, snapshotId);
+        var restored = await store.CreateSessionFromSnapshotAsync(source, snapshotMessage);
 
         Assert.AreNotEqual(source.SessionId, restored.SessionId);
-        Assert.AreEqual("snapshot-title", restored.Title);
+        Assert.AreEqual("previous-user", restored.Title);
         Assert.AreEqual(fixture.Directory, restored.WorkspacePath);
-        Assert.AreEqual("snapshot-value", (await restored.AdditionalInfo["marker"].SerializeAsync()).GetString());
+        Assert.IsFalse(restored.AdditionalInfo.TryGetValue("marker", out _));
         CollectionAssert.AreEqual(snapshotMessageIds,
             restored.ChatMessages.Select(message => message.SessionSnapshotId).ToArray());
         Assert.AreNotSame(source.ChatMessages[0], restored.ChatMessages[0]);
-        Assert.AreNotSame(source.AdditionalInfo["marker"], restored.AdditionalInfo["marker"]);
+        Assert.AreEqual(snapshotEntryCount, restored.Entries.Count);
         if (responses)
             Assert.AreNotSame(source.ResponsesSession, restored.ResponsesSession);
         else
@@ -205,8 +206,8 @@ public sealed class CodingChatContextResetTests
         Assert.IsFalse(System.IO.Directory.Exists(Path.Combine(restoredDirectory, "Snapshots")));
         var loaded = await store.LoadSessionAsync(restored.SessionId);
         Assert.AreEqual(restored.ChatMessages.Count, loaded.ChatMessages.Count);
-        var snapshot = await new FileCopilotChatSessionStore(fixture.Directory).LoadSnapshotAsync(source, snapshotId);
-        Assert.AreEqual(snapshotEntryCount, snapshot.Entries.Count);
+        var snapshot = await SessionSnapshots.Get(source).ReadSnapshotAsync(source, snapshotId);
+        Assert.AreEqual(!responses, snapshot.AgentState.HasValue);
     }
 
     private sealed class Fixture : IAsyncDisposable
@@ -219,7 +220,8 @@ public sealed class CodingChatContextResetTests
         {
             Directory = directory;
             InstructionsPath = Path.Combine(directory, "instructions.md");
-            Manager = new CopilotChatManager();
+            StorageStore = new FileCopilotChatSessionStore(directory);
+            Manager = new CopilotChatManager(new AgentLib.Logging.FileCopilotChatLogger(Path.Join(directory, "Logs")), StorageStore);
             _client = new FakeChatClient
             {
                 OnGetStreamingResponseAsync = (messages, _, cancellationToken) =>
@@ -251,6 +253,7 @@ public sealed class CodingChatContextResetTests
             }
         }
 
+        internal FileCopilotChatSessionStore StorageStore { get; }
         internal string Directory { get; }
         internal string InstructionsPath { get; }
         internal CopilotChatManager Manager { get; }

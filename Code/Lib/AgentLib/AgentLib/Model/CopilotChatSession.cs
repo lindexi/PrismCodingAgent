@@ -27,8 +27,8 @@ public sealed class CopilotChatSession : NotifyBase
     /// <summary>
     /// 使用新的会话 ID 和当前时间创建会话。
     /// </summary>
-    public CopilotChatSession()
-        : this(Guid.NewGuid(), DateTimeOffset.Now, new EmptyCopilotChatLogger())
+    public CopilotChatSession(ISessionStorage storage)
+        : this(storage, Guid.NewGuid(), DateTimeOffset.Now, new EmptyCopilotChatLogger())
     {
     }
 
@@ -36,9 +36,11 @@ public sealed class CopilotChatSession : NotifyBase
     /// <param name="sessionId">会话唯一标识符。</param>
     /// <param name="startedTime">会话开始时间。</param>
     /// <param name="chatLogger">用于创建该会话日志的记录器。</param>
-    public CopilotChatSession(Guid sessionId, DateTimeOffset startedTime, ICopilotChatLogger chatLogger)
+    public CopilotChatSession(ISessionStorage storage, Guid sessionId, DateTimeOffset startedTime, ICopilotChatLogger chatLogger)
     {
         ArgumentNullException.ThrowIfNull(chatLogger);
+        ArgumentNullException.ThrowIfNull(storage);
+        AdditionalInfo = new SessionAdditionalInfo(storage);
         ChatMessages = new CopilotChatMessageProjection(Entries);
         SessionId = sessionId;
         StartedTime = startedTime;
@@ -50,9 +52,8 @@ public sealed class CopilotChatSession : NotifyBase
     /// </summary>
     public Guid SessionId { get; }
 
-    /// <summary>随此会话实例保留的运行期附加信息，不参与历史存储。</summary>
-    public IDictionary<string, ISessionAdditionalInfo> AdditionalInfo { get; }
-        = new Dictionary<string, ISessionAdditionalInfo>(StringComparer.Ordinal);
+    /// <summary>会话附加信息及其资源存储。</summary>
+    public SessionAdditionalInfo AdditionalInfo { get; }
 
     /// <summary>
     /// 创建当前子会话的父会话；根会话为 null。
@@ -67,7 +68,7 @@ public sealed class CopilotChatSession : NotifyBase
     /// <summary>
     /// 创建独立的子会话，沿用当前工作任务、工作路径和线程调度器，不复制消息或模型历史。
     /// </summary>
-    public CopilotChatSession CreateSubSession() => new()
+    public CopilotChatSession CreateSubSession() => new(AdditionalInfo.Storage)
     {
         ParentSession = this,
         Logger = this.Logger,

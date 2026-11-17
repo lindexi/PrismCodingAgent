@@ -18,7 +18,7 @@ public sealed class FileCopilotChatSessionStoreTests
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(directory));
         var message = new CopilotChatMessage(ChatRole.Assistant, "answer");
         var details = new CopilotChatMessage(ChatRole.Assistant, "details");
         message.CreateToolItem(new FunctionCallContent("call-1", "ReadFile")).Details = details;
@@ -39,7 +39,7 @@ public sealed class FileCopilotChatSessionStoreTests
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(directory));
         var message = new CopilotChatMessage(ChatRole.User, "question");
         await session.AddMessageAsync(message);
 
@@ -57,7 +57,7 @@ public sealed class FileCopilotChatSessionStoreTests
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(directory));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "question"));
         await store.SaveSessionAsync(session, null);
         string historyPath = Directory.GetFiles(directory, "History.xml", SearchOption.AllDirectories).Single();
@@ -69,7 +69,7 @@ public sealed class FileCopilotChatSessionStoreTests
         CopilotChatMessage restored = loaded.Entries.OfType<CopilotChatMessage>().Single();
 
         Assert.AreNotEqual(new SessionSnapshotId(Guid.Empty), restored.SessionSnapshotId);
-        var reopened = new CopilotChatSession();
+        var reopened = new CopilotChatSession(new FileSessionStorage(directory));
         await reopened.AddMessageAsync(restored);
         await store.SaveSessionAsync(reopened, null);
         CopilotChatSessionPersistenceData savedAgain = await store.LoadSessionAsync(reopened.SessionId);
@@ -112,7 +112,7 @@ public sealed class FileCopilotChatSessionStoreTests
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession { WorkspacePath = workspacePath };
+        var session = new CopilotChatSession(new FileSessionStorage(directory)) { WorkspacePath = workspacePath };
         await store.SaveSessionAsync(session, null);
         CopilotChatSessionPersistenceData data = await store.LoadSessionAsync(session.SessionId);
         Assert.AreEqual(workspacePath, data.WorkspacePath);
@@ -169,7 +169,7 @@ public sealed class FileCopilotChatSessionStoreTests
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
         Guid workTaskId = Guid.NewGuid();
-        var session = new CopilotChatSession
+        var session = new CopilotChatSession(new FileSessionStorage(directory))
         {
             WorkTaskId = workTaskId,
             WorkTaskName = "Refactor history",
@@ -188,7 +188,7 @@ public sealed class FileCopilotChatSessionStoreTests
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
         Guid workTaskId = Guid.NewGuid();
-        var session = new CopilotChatSession
+        var session = new CopilotChatSession(new FileSessionStorage(directory))
         {
             WorkTaskId = workTaskId,
             WorkTaskName = "Refactor history",
@@ -208,7 +208,7 @@ public sealed class FileCopilotChatSessionStoreTests
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession { WorkspacePath = workspacePath };
+        var session = new CopilotChatSession(new FileSessionStorage(directory)) { WorkspacePath = workspacePath };
         await store.SaveSessionAsync(session, null);
         var summaries = await store.ListSessionsAsync();
         Assert.AreEqual(workspacePath, summaries.Single().WorkspacePath);
@@ -222,7 +222,7 @@ public sealed class FileCopilotChatSessionStoreTests
         var store = new FileCopilotChatSessionStore(temporaryDirectory.SessionPath, temporaryDirectory.LogPath);
         Guid sessionId = Guid.NewGuid();
         DateTimeOffset startedTime = new(2026, 4, 13, 8, 30, 0, TimeSpan.FromHours(8));
-        var session = new CopilotChatSession(sessionId, startedTime, new EmptyCopilotChatLogger());
+        var session = new CopilotChatSession(store.CreateStorage(sessionId, startedTime), sessionId, startedTime, new EmptyCopilotChatLogger());
         session.SetTitle("历史会话标题", TitleSource.UserSet);
 
         var userMessage = new CopilotChatMessage(ChatRole.User,
@@ -467,7 +467,7 @@ public sealed class FileCopilotChatSessionStoreTests
 
     private static CopilotChatSession CreateSession(DateTimeOffset startedTime, string title, string content)
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), startedTime, new EmptyCopilotChatLogger());
+        var session = new CopilotChatSession(new FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))), Guid.NewGuid(), startedTime, new EmptyCopilotChatLogger());
         session.SetTitle(title, TitleSource.UserSet);
         session.AddMessage(new CopilotChatMessage(ChatRole.User, content));
         return session;

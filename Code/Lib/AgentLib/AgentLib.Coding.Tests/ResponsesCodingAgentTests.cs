@@ -22,7 +22,7 @@ public sealed class ResponsesCodingAgentTests
     {
         using var handler = new StreamingHandler();
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -63,7 +63,7 @@ public sealed class ResponsesCodingAgentTests
     {
         using var handler = new StreamingHandler { ReturnToolCall = toolCall, TotalTokens = 300000, OutputTokens = 10000 };
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         var provider = new JsonConfigurationOpenAIProtocolLanguageModelProvider(
@@ -107,7 +107,7 @@ public sealed class ResponsesCodingAgentTests
     {
         using var handler = new StreamingHandler { NullTerminalAnnotations = nullTerminalAnnotations };
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -143,7 +143,7 @@ public sealed class ResponsesCodingAgentTests
         Console.WriteLine(path);
         using var handler = new StreamingHandler { ReturnToolCall = true, TotalTokens = totalTokens, OutputTokens = outputTokens };
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -177,7 +177,8 @@ public sealed class ResponsesCodingAgentTests
         using var handler = new StreamingHandler { ReturnToolCall = true };
         using var http = new HttpClient(handler);
         var logger = new RecordingChatLogger();
-        var manager = new CopilotChatManager(logger);
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(logger, store);
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -212,7 +213,7 @@ public sealed class ResponsesCodingAgentTests
         Directory.CreateDirectory(path);
         using var handler = new StreamingHandler { ReturnToolCall = toolCall, BlockFirstRequest = true };
         using var http = new HttpClient(handler);
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -245,7 +246,7 @@ public sealed class ResponsesCodingAgentTests
         using var handler = new StreamingHandler { ReturnToolCall = true, WebToolName = name, WebParameter = parameter };
         using var http = new HttpClient(handler);
         using var webHttp = new HttpClient();
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
@@ -347,9 +348,15 @@ public sealed class ResponsesCodingAgentTests
         Assert.AreSame(reasoning, session.Items[1]);
     }
 
+    private static CopilotChatManager CreateManager()
+    {
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        return new CopilotChatManager();
+    }
+
     private static CopilotChatManager CreateHistoryTestManager(HttpClient http)
     {
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = http;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""

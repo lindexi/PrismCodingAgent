@@ -15,7 +15,7 @@ public class ChatNoticeTests
     [TestMethod]
     public async Task NoticesDoNotAffectMessageProjectionOrTitle()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
         await session.AddEntryAsync(new CopilotChatNotice("notice"));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "title"));
 
@@ -93,7 +93,7 @@ public class ChatNoticeTests
     public async Task NoticeDispatchDoesNotRequireDispatcherToReportAccess()
     {
         var dispatcher = new InlineDispatcher();
-        var session = new CopilotChatSession { MainThreadDispatcher = dispatcher };
+        var session = new CopilotChatSession(new FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")))) { MainThreadDispatcher = dispatcher };
         await session.AddEntryAsync(new CopilotChatNotice("notice"));
 
         Assert.AreEqual(1, dispatcher.InvocationCount);

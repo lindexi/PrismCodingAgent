@@ -13,7 +13,8 @@ public sealed class ManualSendMessageContextThreadingTests
     {
         var dispatcher = new RecordingMainThreadDispatcher();
         var context = CopilotChatManagerTestContext.Create(new FakeChatClient());
-        var manager = new CopilotChatManager
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new AgentLib.Logging.EmptyCopilotChatLogger(), store)
         {
             MainThreadDispatcher = dispatcher,
         };
@@ -32,7 +33,8 @@ public sealed class ManualSendMessageContextThreadingTests
     public void MainThreadDispatcher_ShouldBeAssignedToInitialSession()
     {
         var dispatcher = new RecordingMainThreadDispatcher();
-        var manager = new CopilotChatManager
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new AgentLib.Logging.EmptyCopilotChatLogger(), store)
         {
             MainThreadDispatcher = dispatcher,
         };
@@ -44,7 +46,8 @@ public sealed class ManualSendMessageContextThreadingTests
     public void CreateNewSession_ShouldAssignMainThreadDispatcher()
     {
         var dispatcher = new RecordingMainThreadDispatcher();
-        var manager = new CopilotChatManager
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new AgentLib.Logging.EmptyCopilotChatLogger(), store)
         {
             MainThreadDispatcher = dispatcher,
         };

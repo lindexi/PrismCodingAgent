@@ -15,6 +15,8 @@ namespace AgentLib.Coding.Tests;
 [TestClass]
 public sealed class CodingAgentTests
 {
+    private static ISessionStorage CreateStorage() => new AgentLib.Logging.Sessions.FileSessionStorage(CreateTestDirectory());
+
     [TestMethod(DisplayName = "运行应立即返回流式消息并使用工作区缓存工具")]
     [Timeout(10000)]
     public async Task RunAsyncShouldReturnStreamingMessageAndUseWorkspaceTools()
@@ -35,7 +37,7 @@ public sealed class CodingAgentTests
                 value => capturedOptions = value,
                 cancellationToken),
         };
-        CodingRunContext context = CreateContext(client, new CopilotChatSession { WorkspacePath = defaultWorkspace });
+        CodingRunContext context = CreateContext(client, new CopilotChatSession(CreateStorage()) { WorkspacePath = defaultWorkspace });
         AITool codingTool = AIFunctionFactory.Create(() => "coding", "coding_only");
         await using var agent = CreateAgent(CreateProvider("coding-workspace", [codingTool]));
         IReadOnlyList<AIContent> contents =
@@ -95,7 +97,7 @@ public sealed class CodingAgentTests
             },
         };
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        CodingRunContext context = CreateContext(client, new CopilotChatSession());
+        CodingRunContext context = CreateContext(client, new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult result = await agent.RunAsync(context, "开始任务", "workspace");
         await firstCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -119,7 +121,7 @@ public sealed class CodingAgentTests
                 InterleavedStreamAsync(cancellationToken),
         };
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        CodingRunContext context = CreateContext(client, new CopilotChatSession());
+        CodingRunContext context = CreateContext(client, new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult result = await agent.RunAsync(context, "检查顺序", "workspace");
         Assert.AreEqual("正文一正文二", await result.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
@@ -143,7 +145,7 @@ public sealed class CodingAgentTests
                 observedMessageCounts,
                 cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider("workspace", []));
         CodingRunContext firstContext = CreateContext(client, session);
 
@@ -172,7 +174,7 @@ public sealed class CodingAgentTests
                 [],
                 cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider("workspace", []));
 
         ICodingAgentRunResult first = await agent.RunAsync(
@@ -207,7 +209,7 @@ public sealed class CodingAgentTests
                 [],
                 cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider("workspace", []), instructionsPath);
 
         ICodingAgentRunResult result = await agent.RunAsync(
@@ -241,8 +243,8 @@ public sealed class CodingAgentTests
                 _ => { },
                 cancellationToken),
         };
-        var firstSession = new CopilotChatSession();
-        var secondSession = new CopilotChatSession();
+        var firstSession = new CopilotChatSession(CreateStorage());
+        var secondSession = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider("workspace", []));
         ICodingAgentRunResult first = await agent.RunAsync(
             CreateContext(client, firstSession),
@@ -272,7 +274,7 @@ public sealed class CodingAgentTests
                 [],
                 cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider("workspace", []));
 
         CodingRunContext failingContext = CreateContext(client, session);
@@ -299,7 +301,7 @@ public sealed class CodingAgentTests
         };
         await using var agent = new CodingAgent();
         var context = new CodingRunContext(client, CopilotChatMessage.CreateAssistant(
-            CopilotChatMessage.PlaceholderContent, isPresetInfo: false), new CopilotChatSession());
+            CopilotChatMessage.PlaceholderContent, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("任务")], null);
         InvalidOperationException exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
@@ -331,7 +333,7 @@ public sealed class CodingAgentTests
                 tools => secondRunTools = tools,
                 cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent(new CodingAgentOptions
         {
             LanguageServerCommand = $"missing-roslyn-{Guid.NewGuid():N}",
@@ -382,7 +384,7 @@ public sealed class CodingAgentTests
                 tools => secondRunTools = tools,
                 cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var sandboxToolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
         await using var agent = new CodingAgent(new CodingAgentOptions
         {
@@ -417,7 +419,7 @@ public sealed class CodingAgentTests
             OnGetStreamingResponseAsync = (_, _, cancellationToken) => EmptyStreamAsync(cancellationToken),
         };
         await using var agent = CreateAgent(CreateProvider("workspace", []));
-        CodingRunContext context = CreateContext(client, new CopilotChatSession());
+        CodingRunContext context = CreateContext(client, new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult result = await agent.RunAsync(context, "任务", "workspace");
 
@@ -440,7 +442,7 @@ public sealed class CodingAgentTests
                     ? WaitForCancellationAsync(messages, options, streamStarted, cancellationToken)
                     : ImmediateStreamAsync(messages, [], cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider(workspacePath, []));
         using var cancellationTokenSource = new CancellationTokenSource();
         ICodingAgentRunResult canceledRun = await agent.RunAsync(
@@ -474,7 +476,7 @@ public sealed class CodingAgentTests
                     ? ThrowingStreamAsync(new InvalidOperationException("模型失败"), cancellationToken)
                     : ImmediateStreamAsync(messages, [], cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider(workspacePath, []));
         ICodingAgentRunResult failedRun = await agent.RunAsync(
             CreateContext(client, session),
@@ -506,7 +508,7 @@ public sealed class CodingAgentTests
                 streamStarted,
                 releaseStream),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var agent = CreateAgent(CreateProvider("workspace", []));
         ICodingAgentRunResult run = await agent.RunAsync(
             CreateContext(client, session),
@@ -540,7 +542,7 @@ public sealed class CodingAgentTests
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent,
             isPresetInfo: false);
-        var observer = new CompressionToolCallObserver(new CodingRunContext(client, assistantMessage, new CopilotChatSession()), reducer);
+        var observer = new CompressionToolCallObserver(new CodingRunContext(client, assistantMessage, new CopilotChatSession(CreateStorage())), reducer);
 
         await observer.ReduceAsync(
             [new ChatMessage(ChatRole.Assistant, "需要压缩")],
@@ -566,7 +568,7 @@ public sealed class CodingAgentTests
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent,
             isPresetInfo: false);
-        var observer = new CompressionToolCallObserver(new CodingRunContext(client, assistantMessage, new CopilotChatSession()), reducer);
+        var observer = new CompressionToolCallObserver(new CodingRunContext(client, assistantMessage, new CopilotChatSession(CreateStorage())), reducer);
 
         await observer.ReduceAsync(
             [new ChatMessage(ChatRole.Assistant, "需要压缩")],

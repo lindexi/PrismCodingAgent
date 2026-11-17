@@ -76,7 +76,8 @@ public sealed class ChatRoomService : IAsyncDisposable
         _mainThreadDispatcher = mainThreadDispatcher;
         _modelProviderService = modelProviderService;
         _persistencePath = persistencePath;
-        _roleFactory = roleFactory ?? new ChatRoomRoleFactory(mainThreadDispatcher);
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(System.IO.Path.Join(persistencePath, "AgentSessions"));
+        _roleFactory = roleFactory ?? new ChatRoomRoleFactory(store, mainThreadDispatcher);
     }
 
     /// <summary>

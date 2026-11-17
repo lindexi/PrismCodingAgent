@@ -68,6 +68,7 @@ public sealed class FinalProjectionScreenshotTests
     public void ApprovalDecisionRendersWithoutInput(bool approve)
     {
         var approval = new CopilotChatApprovalToolItem("fixture", "inspect_preview", "{\"path\":\"预览/示例.txt\",\"execute\":false}", "仅审阅拟议预览，不执行工具。", "代码预览审批");
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(System.IO.Path.Join(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         var manager = new CopilotChatManager();
         if (approve) manager.ApproveToolExecution(approval);
         else manager.RejectToolExecution(approval, "本次仅检查界面，暂不执行。 ");

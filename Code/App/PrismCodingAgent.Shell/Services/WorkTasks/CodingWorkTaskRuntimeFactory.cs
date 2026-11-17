@@ -45,7 +45,8 @@ internal static class CodingWorkTaskRuntimeFactory
         ILanguageModel? primaryModel = endpointManager.GetSupportedModels().Count > 0 ? endpointManager.PrimaryModel : null;
 
         var chatLogger = new FileCopilotChatLogger(paths.LogDirectory);
-        var chatManager = new CopilotChatManager(chatLogger)
+        var fileStore = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(paths.SessionDirectory.FullName, paths.LogDirectory);
+        var chatManager = new CopilotChatManager(chatLogger, fileStore)
         {
             AgentApiEndpointManager = endpointManager,
             MainThreadDispatcher = mainThreadDispatcher,
@@ -88,8 +89,7 @@ internal static class CodingWorkTaskRuntimeFactory
         var workspaceController = new CodingWorkspaceController(mainThreadDispatcher);
         var sessionStore = new FileCodingChatSessionStore
         (
-            paths.SessionDirectory.FullName,
-            paths.LogDirectory,
+            fileStore,
             chatManager,
             mainThreadDispatcher
         );

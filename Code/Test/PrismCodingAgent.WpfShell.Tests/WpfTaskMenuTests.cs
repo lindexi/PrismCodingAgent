@@ -211,7 +211,7 @@ public sealed class WpfTaskMenuTests
             await reopenedScreenshots.CaptureAsync("saved-tasks-reopened");
             WorkTaskItemViewModel target = restored.WorkTasks[0];
             var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
-            var history = new AgentLib.Model.CopilotChatSession { WorkTaskId = target.Id, WorkTaskName = target.DisplayName };
+            var history = new AgentLib.Model.CopilotChatSession(store.CreateStorage(Guid.NewGuid(), DateTimeOffset.Now)) { WorkTaskId = target.Id, WorkTaskName = target.DisplayName };
             history.SetTitle("Retained task history");
             await history.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.User, "Retained task history"));
             await store.SaveSessionAsync(history, null);
@@ -252,7 +252,7 @@ public sealed class WpfTaskMenuTests
             await WpfInput.ClickAsync((Button)reopened.FindName("NewTaskButton"));
             await WpfInput.WaitAsync(() => restored.WorkTasks.Count == 2, "Delete target creation failed.");
             WorkTaskItemViewModel deleteTarget = restored.ActiveWorkTask;
-            var deletedHistory = new AgentLib.Model.CopilotChatSession { WorkTaskId = deleteTarget.Id, WorkTaskName = deleteTarget.DisplayName };
+            var deletedHistory = new AgentLib.Model.CopilotChatSession(store.CreateStorage(Guid.NewGuid(), DateTimeOffset.Now)) { WorkTaskId = deleteTarget.Id, WorkTaskName = deleteTarget.DisplayName };
             deletedHistory.SetTitle("Retained deleted task history");
             await deletedHistory.AddEntryAsync(new AgentLib.Model.CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.User, "Retained deleted task history"));
             await store.SaveSessionAsync(deletedHistory, null);

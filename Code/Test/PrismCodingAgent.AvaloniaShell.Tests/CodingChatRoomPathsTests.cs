@@ -132,7 +132,8 @@ public sealed class CodingChatRoomPathsTests
     public void ArchiveDirectoryShouldBelongToSpecifiedSession()
     {
         var paths = CodingChatRoomPaths.Create(CreateRoot());
-        var session = new AgentLib.Model.CopilotChatSession();
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(paths.SessionDirectory.FullName);
+        var session = new AgentLib.Model.CopilotChatSession(store.CreateStorage(Guid.NewGuid(), DateTimeOffset.Now));
 
         Assert.AreEqual(Path.Join(paths.SessionDirectory.FullName,
             session.StartedTime.ToString("yyyyMMdd"), session.SessionId.ToString("N")),

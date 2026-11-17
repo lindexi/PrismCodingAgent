@@ -1046,7 +1046,7 @@ public sealed class ChatRoomManagerIntegrationTests
 
     private static ChatRoomManager CreateManager()
     {
-        return new ChatRoomManager();
+        return new ChatRoomManager(TestSessionStorage.Create());
     }
 
     /// <summary>
@@ -1195,7 +1195,7 @@ public sealed class ChatRoomManagerIntegrationTests
             ModelProviderId = string.IsNullOrEmpty(modelProviderId) ? null : modelProviderId,
         };
 
-        return new ChatRoomRole(definition);
+        return new ChatRoomRole(definition, TestSessionStorage.Create());
     }
 
     /// <summary>

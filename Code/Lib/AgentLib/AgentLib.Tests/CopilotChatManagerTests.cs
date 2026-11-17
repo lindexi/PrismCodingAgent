@@ -12,6 +12,7 @@ public class CopilotChatManagerTests
     [Ignore("这是需要真实 LLM 服务的手动调试测试，避免常规测试运行。")]
     public async Task InnerTest()
     {
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         var copilotChatManager = new CopilotChatManager();
         copilotChatManager.AgentApiEndpointManager.LoadConfiguration(LindexiAgentConfiguration.LoadDefault());
 

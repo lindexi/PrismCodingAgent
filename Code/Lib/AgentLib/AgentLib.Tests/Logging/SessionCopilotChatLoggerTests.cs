@@ -91,7 +91,7 @@ public sealed class SessionCopilotChatLoggerTests
     {
         string path = CreateLogPath();
         Guid sessionId = Guid.NewGuid();
-        var session = new CopilotChatSession(sessionId, DateTimeOffset.Now, new FileCopilotChatLogger(path));
+        var session = new CopilotChatSession(new AgentLib.Logging.Sessions.FileSessionStorage(path), sessionId, DateTimeOffset.Now, new FileCopilotChatLogger(path));
 
         await session.Logger.LogDiagnosticAsync("Run", "Root diagnostic");
 
@@ -103,7 +103,7 @@ public sealed class SessionCopilotChatLoggerTests
     public async Task ChildSessionLogger_WhenUsed_WritesToParentLog()
     {
         string path = CreateLogPath();
-        var parent = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, new FileCopilotChatLogger(path));
+        var parent = new CopilotChatSession(new AgentLib.Logging.Sessions.FileSessionStorage(path), Guid.NewGuid(), DateTimeOffset.Now, new FileCopilotChatLogger(path));
         CopilotChatSession child = parent.CreateSubSession();
 
         await child.Logger.LogDiagnosticAsync("Run", "Child diagnostic");
@@ -116,7 +116,8 @@ public sealed class SessionCopilotChatLoggerTests
     public async Task ManagerCreatedSessionLogger_WhenUsed_WritesToConfiguredLog()
     {
         string path = CreateLogPath();
-        var manager = new CopilotChatManager(new FileCopilotChatLogger(path));
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(path);
+        var manager = new CopilotChatManager(new FileCopilotChatLogger(path), store);
 
         await manager.SelectedSession.Logger.LogDiagnosticAsync("Run", "Manager diagnostic");
 
@@ -128,7 +129,8 @@ public sealed class SessionCopilotChatLoggerTests
     public async Task BranchedSessionLogger_WhenUsed_WritesToBranchLog()
     {
         string path = CreateLogPath();
-        var manager = new CopilotChatManager(new FileCopilotChatLogger(path));
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(path);
+        var manager = new CopilotChatManager(new FileCopilotChatLogger(path), store);
         var message = new CopilotChatMessage(ChatRole.User, "Branch point");
         await manager.SelectedSession.AddMessageAsync(message);
         manager.CreateSessionFromMessage(message);

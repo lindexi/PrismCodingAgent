@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
@@ -10,6 +9,7 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
 {
     private const string SessionsKey = "AgentLib.Coding.SubAgentSessions";
     private readonly Dictionary<string, CopilotChatSession> _sessions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _paths = new(StringComparer.Ordinal);
     private readonly ChatClientAgent _serializationAgent;
 
     private CodingSubAgentSessions(IChatClient chatClient)
@@ -20,88 +20,50 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
     internal static async Task<CopilotChatSession> GetOrCreateSessionAsync(CopilotChatSession parent,
         IChatClient chatClient, string? name, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return parent.CreateSubSession();
-        }
+        if (string.IsNullOrWhiteSpace(name)) return parent.CreateSubSession();
 
-        CodingSubAgentSessions subAgentSessions;
-
-        if (!parent.AdditionalInfo.TryGetValue(SessionsKey, out ISessionAdditionalInfo? value))
-        {
-            value = new CodingSubAgentSessions(chatClient);
-            parent.AdditionalInfo.Add(SessionsKey, value);
-        }
-
-        if (value is JsonSessionAdditionalInfo json)
+        parent.AdditionalInfo.TryGetValue(SessionsKey, out ISessionAdditionalInfo? value);
+        if (value is not CodingSubAgentSessions)
         {
             var restored = new CodingSubAgentSessions(chatClient);
-            foreach (JsonProperty item in json.Value.EnumerateObject())
+            if (value is JsonSessionAdditionalInfo json)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var session = parent.CreateSubSession();
-                if (item.Value.ValueKind != JsonValueKind.Null)
-                {
-                    ChatClientAgent agent = restored._serializationAgent;
-                    var deserializeSession = await agent
-                        .DeserializeSessionAsync(item.Value, cancellationToken: cancellationToken)
-                        .ConfigureAwait(false);
-                    session.SetAgentSession(deserializeSession);
-                }
-
-                restored._sessions.Add(item.Name, session);
+                foreach (JsonProperty item in json.Value.EnumerateObject())
+                    restored._paths.Add(item.Name, item.Value.GetString()!);
             }
-
-            cancellationToken.ThrowIfCancellationRequested();
-            parent.AdditionalInfo[SessionsKey] = restored;
-            subAgentSessions = restored;
+            parent.AdditionalInfo.Set(SessionsKey, restored);
+            value = restored;
         }
-        else if(value is CodingSubAgentSessions existing)
+
+        var sessions = (CodingSubAgentSessions)value;
+        if (sessions._sessions.TryGetValue(name, out CopilotChatSession? existing)) return existing;
+
+        var session = parent.CreateSubSession();
+        if (sessions._paths.TryGetValue(name, out string? path))
         {
-            subAgentSessions = existing;
+            using Stream stream = parent.AdditionalInfo.Storage.OpenRead(path);
+            using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+            session.SetAgentSession(await sessions._serializationAgent.DeserializeSessionAsync(document.RootElement,
+                cancellationToken: cancellationToken).ConfigureAwait(false));
         }
         else
         {
-            // 未知的情况
-#if DEBUG
-            Debugger.Break();
-#endif
-            // 简单回退逻辑
-            return parent.CreateSubSession();
+            sessions._paths.Add(name, $"SubAgentSessions/{session.SessionId:N}.json");
         }
-
-        return subAgentSessions.GetOrCreate(name, parent);
-    }
-
-    private CopilotChatSession GetOrCreate(string name, CopilotChatSession parent)
-    {
-        if (!_sessions.TryGetValue(name, out CopilotChatSession? session))
-        {
-            session = parent.CreateSubSession();
-            _sessions.Add(name, session);
-        }
-
+        sessions._sessions.Add(name, session);
         return session;
     }
 
-    public async ValueTask<JsonElement> SerializeAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<JsonElement> SerializeAsync(ISessionStorage storage, CancellationToken cancellationToken = default)
     {
-        var states = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         foreach (var item in _sessions)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var agentSession = item.Value.AgentSession;
-
-            if (agentSession is null)
-            {
-                continue;
-            }
-
-            var serializeSession = await _serializationAgent.SerializeSessionAsync(agentSession, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-            states.Add(item.Key, serializeSession);
+            if (item.Value.AgentSession is not { } agentSession) continue;
+            JsonElement state = await _serializationAgent.SerializeSessionAsync(agentSession,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+            using Stream stream = storage.OpenWrite(_paths[item.Key]);
+            await JsonSerializer.SerializeAsync(stream, state, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
-
-        return JsonSerializer.SerializeToElement(states);
+        return JsonSerializer.SerializeToElement(_paths);
     }
 }

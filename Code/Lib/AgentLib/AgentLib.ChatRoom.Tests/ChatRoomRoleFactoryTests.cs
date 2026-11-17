@@ -13,7 +13,7 @@ public sealed class ChatRoomRoleFactoryTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateRoleShouldKeepDefinition()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
         ChatRoomRoleDefinition definition = CreateDefinition();
 
         ChatRoomRole role = factory.CreateRole(definition);
@@ -26,7 +26,7 @@ public sealed class ChatRoomRoleFactoryTests
     public void CreateRoleShouldSetMainThreadDispatcher()
     {
         var dispatcher = new Mock<IMainThreadDispatcher>();
-        var factory = new ChatRoomRoleFactory(dispatcher.Object);
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create(), dispatcher.Object);
 
         ChatRoomRole role = factory.CreateRole(CreateDefinition());
 
@@ -37,7 +37,7 @@ public sealed class ChatRoomRoleFactoryTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateStandardRoleShouldUseStandardExecutor()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
 
         ChatRoomRole role = factory.CreateRole(CreateDefinition());
 
@@ -49,7 +49,7 @@ public sealed class ChatRoomRoleFactoryTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateCodingRoleShouldUseCodingExecutor()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "coding-role",
@@ -67,7 +67,7 @@ public sealed class ChatRoomRoleFactoryTests
     [TestMethod(DisplayName = "人类角色不能使用 Coding 执行种类")]
     public void CreateRoleShouldRejectHumanCodingDefinition()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "coding-human",
@@ -81,7 +81,7 @@ public sealed class ChatRoomRoleFactoryTests
     [TestMethod(DisplayName = "未知执行种类应被拒绝")]
     public void CreateRoleShouldRejectUnknownExecutionKind()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "unknown-role",
@@ -95,7 +95,7 @@ public sealed class ChatRoomRoleFactoryTests
     public void ConstructorShouldRejectDuplicateExecutionKindFactories()
     {
         Assert.ThrowsExactly<ArgumentException>(() => new ChatRoomRoleFactory(
-            null,
+            TestSessionStorage.Create(), null,
             [
                 new RecordingExecutorFactory(ChatRoomRoleExecutionKind.Standard),
                 new RecordingExecutorFactory(ChatRoomRoleExecutionKind.Standard),
@@ -107,7 +107,7 @@ public sealed class ChatRoomRoleFactoryTests
     public void ConstructorShouldRejectNullExecutorFactory()
     {
         Assert.ThrowsExactly<ArgumentNullException>(() => new ChatRoomRoleFactory(
-            null,
+            TestSessionStorage.Create(), null,
             [null!]));
     }
 
@@ -116,7 +116,7 @@ public sealed class ChatRoomRoleFactoryTests
     public void ConstructorShouldRejectUnknownFactoryExecutionKind()
     {
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new ChatRoomRoleFactory(
-            null,
+            TestSessionStorage.Create(), null,
             [new RecordingExecutorFactory((ChatRoomRoleExecutionKind)99)]));
     }
 
@@ -124,7 +124,7 @@ public sealed class ChatRoomRoleFactoryTests
     public void CreateRoleShouldFailWhenFactoryRegistrationIsMissing()
     {
         var factory = new ChatRoomRoleFactory(
-            null,
+            TestSessionStorage.Create(), null,
             [new RecordingExecutorFactory(ChatRoomRoleExecutionKind.Standard)]);
         var definition = new ChatRoomRoleDefinition
         {
@@ -140,7 +140,7 @@ public sealed class ChatRoomRoleFactoryTests
     {
         var executor = new RecordingExecutor(ChatRoomRoleExecutionKind.Coding);
         var factory = new ChatRoomRoleFactory(
-            null,
+            TestSessionStorage.Create(), null,
             [new RecordingExecutorFactory(ChatRoomRoleExecutionKind.Standard, executor)]);
 
         Assert.ThrowsExactly<InvalidOperationException>(() => factory.CreateRole(CreateDefinition()));
@@ -152,7 +152,7 @@ public sealed class ChatRoomRoleFactoryTests
     public void CreateRoleShouldFailWhenFactoryReturnsNullExecutor()
     {
         var factory = new ChatRoomRoleFactory(
-            null,
+            TestSessionStorage.Create(), null,
             [new NullExecutorFactory(ChatRoomRoleExecutionKind.Standard)]);
 
         Assert.ThrowsExactly<InvalidOperationException>(() => factory.CreateRole(CreateDefinition()));
@@ -217,7 +217,7 @@ public sealed class ChatRoomRoleFactoryTests
         public ChatRoomRole CreateRole(ChatRoomRoleDefinition definition)
         {
             LastDefinition = definition;
-            LastRole = new ChatRoomRole(definition);
+            LastRole = new ChatRoomRole(definition, TestSessionStorage.Create());
             return LastRole;
         }
     }

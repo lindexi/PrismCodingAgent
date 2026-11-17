@@ -26,7 +26,8 @@ public sealed class ResponsesImageToolLiveTests
         using var recorder = new ImageRequestRecorder();
         using var httpClient = new HttpClient(recorder);
         string key = (await File.ReadAllTextAsync(keyPath, cancellation.Token)).Trim();
-        var manager = new CopilotChatManager(new EmptyCopilotChatLogger());
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new EmptyCopilotChatLogger(), store);
         manager.AgentApiEndpointManager.HttpClient?.Dispose();
         manager.AgentApiEndpointManager.HttpClient = httpClient;
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString(JsonSerializer.Serialize(new

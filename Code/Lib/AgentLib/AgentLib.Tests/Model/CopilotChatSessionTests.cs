@@ -14,11 +14,11 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void AdditionalInfoRetainsTheAttachedObject()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         const string key = "test.attachment";
         var value = new JsonSessionAdditionalInfo(System.Text.Json.JsonSerializer.SerializeToElement("value"));
 
-        session.AdditionalInfo.Add(key, value);
+        session.AdditionalInfo.Set(key, value);
 
         Assert.AreSame(value, session.AdditionalInfo[key]);
     }
@@ -26,8 +26,8 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSessionDoesNotShareAdditionalInfo()
     {
-        var session = new CopilotChatSession();
-        session.AdditionalInfo.Add("test.attachment",
+        var session = new CopilotChatSession(CreateStorage());
+        session.AdditionalInfo.Set("test.attachment",
             new JsonSessionAdditionalInfo(System.Text.Json.JsonSerializer.SerializeToElement("value")));
 
         CopilotChatSession child = session.CreateSubSession();
@@ -38,7 +38,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public async Task ResetModelContext_WhenBothBackendsHaveHistory_ClearsBoth()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         using var client = new AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes.FakeChatClient();
         var agent = client.AsAIAgent();
         var agentSession = await agent.CreateSessionAsync();
@@ -57,7 +57,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void ResetModelContext_WhenUninitialized_DoesNotCreateContext()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
 
         session.ResetModelContext();
         session.ResetModelContext();
@@ -69,7 +69,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public async Task ResetModelContext_WhenTimelineExists_PreservesEntriesAndMetadata()
     {
-        var session = new CopilotChatSession
+        var session = new CopilotChatSession(CreateStorage())
         {
             WorkspacePath = "workspace",
             WorkTaskId = Guid.NewGuid(),
@@ -104,7 +104,7 @@ public class CopilotChatSessionTests
     [Description("添加首条用户消息后应根据内容自动生成会话标题")]
     public async Task AddMessage_WhenFirstUserMessageAdded_UpdatesTitleFromContent()
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), new DateTimeOffset(2025, 1, 2, 3, 4, 0, TimeSpan.Zero), new EmptyCopilotChatLogger());
+        var session = new CopilotChatSession(CreateStorage(), Guid.NewGuid(), new DateTimeOffset(2025, 1, 2, 3, 4, 0, TimeSpan.Zero), new EmptyCopilotChatLogger());
         var message = new CopilotChatMessage(ChatRole.User, "   这是   一个  标题   ");
 
         await session.AddMessageAsync(message);
@@ -117,7 +117,7 @@ public class CopilotChatSessionTests
     [Description("长标题应保留完整内容，由界面按宽度显示")]
     public async Task AddMessage_WhenUserMessageIsTooLong_PreservesTitle()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var message = new CopilotChatMessage(ChatRole.User, "1234567890123456789012345");
 
         await session.AddMessageAsync(message);
@@ -129,7 +129,7 @@ public class CopilotChatSessionTests
     [Description("添加系统消息或预设用户消息时不应覆盖默认标题")]
     public async Task AddMessage_WhenMessageIsNotEligibleForTitle_KeepsDefaultTitle()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var systemMessage = new CopilotChatMessage(ChatRole.System, "系统提示");
         var presetUserMessage = new CopilotChatMessage(ChatRole.User, "用户预设")
         {
@@ -146,7 +146,7 @@ public class CopilotChatSessionTests
     [Description("标题确定后再次添加新的用户消息不应重复覆盖现有标题")]
     public async Task AddMessage_WhenTitleAlreadyGenerated_DoesNotOverwriteTitle()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
 
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "第一个标题"));
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "第二个标题"));
@@ -159,7 +159,7 @@ public class CopilotChatSessionTests
     public async Task AddMessage_WhenDispatcherRequiresDispatch_InvokesDispatcher()
     {
         var dispatcher = new RecordingMainThreadDispatcher();
-        var session = new CopilotChatSession()
+        var session = new CopilotChatSession(CreateStorage())
         {
             MainThreadDispatcher = dispatcher,
         };
@@ -172,7 +172,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenCreated_HasIndependentIdentity()
     {
-        var parent = new CopilotChatSession();
+        var parent = new CopilotChatSession(CreateStorage());
 
         CopilotChatSession child = parent.CreateSubSession();
 
@@ -182,7 +182,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenCreated_ReferencesImmediateParent()
     {
-        var parent = new CopilotChatSession().CreateSubSession();
+        var parent = new CopilotChatSession(CreateStorage()).CreateSubSession();
 
         CopilotChatSession child = parent.CreateSubSession();
 
@@ -192,7 +192,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenCreated_InheritsExecutionEnvironment()
     {
-        var parent = new CopilotChatSession
+        var parent = new CopilotChatSession(CreateStorage())
         {
             WorkTaskId = Guid.NewGuid(),
             WorkTaskName = "Task",
@@ -210,7 +210,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public async Task CreateSubSession_WhenParentHasMessages_DoesNotCopyMessages()
     {
-        var parent = new CopilotChatSession();
+        var parent = new CopilotChatSession(CreateStorage());
         await parent.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Parent message"));
 
         CopilotChatSession child = parent.CreateSubSession();
@@ -221,7 +221,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public async Task CreateSubSession_WhenChildReceivesMessage_DoesNotChangeParentMessages()
     {
-        var parent = new CopilotChatSession();
+        var parent = new CopilotChatSession(CreateStorage());
         CopilotChatSession child = parent.CreateSubSession();
 
         await child.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "Child message"));
@@ -232,18 +232,18 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenParentHasTitle_KeepsDefaultTitle()
     {
-        var parent = new CopilotChatSession();
+        var parent = new CopilotChatSession(CreateStorage());
         parent.SetTitle("Parent title");
 
         CopilotChatSession child = parent.CreateSubSession();
 
-        Assert.AreEqual(new CopilotChatSession().Title, child.Title);
+        Assert.AreEqual(new CopilotChatSession(CreateStorage()).Title, child.Title);
     }
 
     [TestMethod]
     public async Task CreateSubSession_WhenParentHasAgentSession_DoesNotShareModelHistory()
     {
-        var parent = new CopilotChatSession();
+        var parent = new CopilotChatSession(CreateStorage());
         var client = new AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes.FakeChatClient();
         var agent = client.AsAIAgent();
         parent.SetAgentSession(await agent.CreateSessionAsync());
@@ -256,7 +256,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenCreated_DoesNotShareResponsesSession()
     {
-        var parent = new CopilotChatSession();
+        var parent = new CopilotChatSession(CreateStorage());
 
         CopilotChatSession child = parent.CreateSubSession();
 
@@ -269,7 +269,7 @@ public class CopilotChatSessionTests
         var logger = new RecordingChatLogger();
         Guid sessionId = Guid.NewGuid();
 
-        var session = new CopilotChatSession(sessionId, DateTimeOffset.Now, logger);
+        var session = new CopilotChatSession(CreateStorage(), sessionId, DateTimeOffset.Now, logger);
 
         Assert.AreEqual(session.SessionId, logger.SessionId);
     }
@@ -277,7 +277,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void Logger_WhenNotProvided_ReusesInstanceWithinSession()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
 
         ISessionCopilotChatLogger logger = session.Logger;
 
@@ -287,7 +287,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public async Task Logger_WhenNotProvided_CompletesDiagnosticWithoutConfiguration()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
 
         Task logging = session.Logger.LogDiagnosticAsync("Run", "[Run] Failed.", new InvalidOperationException("Failed"));
         await logging;
@@ -298,7 +298,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenParentHasLogger_InheritsLogger()
     {
-        var parent = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, new RecordingChatLogger());
+        var parent = new CopilotChatSession(CreateStorage(), Guid.NewGuid(), DateTimeOffset.Now, new RecordingChatLogger());
         ISessionCopilotChatLogger logger = parent.Logger;
 
         CopilotChatSession child = parent.CreateSubSession();
@@ -309,7 +309,7 @@ public class CopilotChatSessionTests
     [TestMethod]
     public void CreateSubSession_WhenNested_InheritsRootLogger()
     {
-        var root = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, new RecordingChatLogger());
+        var root = new CopilotChatSession(CreateStorage(), Guid.NewGuid(), DateTimeOffset.Now, new RecordingChatLogger());
         ISessionCopilotChatLogger logger = root.Logger;
 
         CopilotChatSession child = root.CreateSubSession().CreateSubSession();
@@ -322,10 +322,13 @@ public class CopilotChatSessionTests
     {
         var logger = new RecordingChatLogger();
 
-        var session = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, logger);
+        var session = new CopilotChatSession(CreateStorage(), Guid.NewGuid(), DateTimeOffset.Now, logger);
 
         Assert.AreSame(logger.SessionLogger, session.Logger);
     }
+
+    private static ISessionStorage CreateStorage() =>
+        new AgentLib.Logging.Sessions.FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
 
     private sealed class RecordingChatLogger : ICopilotChatLogger
     {

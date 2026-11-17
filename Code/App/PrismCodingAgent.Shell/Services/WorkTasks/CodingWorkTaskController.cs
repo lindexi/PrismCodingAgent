@@ -284,14 +284,12 @@ internal sealed class CodingWorkTaskController
     }
 
     /// <summary>从指定源会话快照创建、保存并选中新会话。</summary>
-    public async Task CreateSessionFromSnapshotAsync(Guid sourceSessionId, SessionSnapshotId snapshotId,
+    public async Task CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message,
         CancellationToken cancellationToken = default)
     {
         EnsureCanChangeSession();
-        CopilotChatSession sourceSession = _chatManager.ChatSessions.FirstOrDefault(session => session.SessionId == sourceSessionId)
-            ?? await _sessionStore.LoadSessionAsync(sourceSessionId, cancellationToken);
         CopilotChatSession newSession = await _sessionStore
-            .CreateSessionFromSnapshotAsync(sourceSession, snapshotId, cancellationToken);
+            .CreateSessionFromSnapshotAsync(sourceSession, message, cancellationToken);
         ApplyWorkTaskMetadata(newSession);
         await _workspaceController.ChangeWorkspaceAsync(newSession.WorkspacePath, cancellationToken);
         await _sessionStore.SaveSessionAsync(newSession, cancellationToken);
@@ -568,11 +566,11 @@ internal sealed class CodingWorkTaskController
             try
             {
                 await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "会话保存", "开始保存运行后的会话。");
-                await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
                 if (assistantMessage is not null)
                 {
                     await _sessionStore.SaveSnapshotAsync(session, assistantMessage.SessionSnapshotId, CancellationToken.None);
                 }
+                await _sessionStore.SaveSessionAsync(session, CancellationToken.None);
                 AddOrUpdateSummary(session, insertAtTop: true);
                 await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "会话保存", "运行后的会话保存完成。");
             }

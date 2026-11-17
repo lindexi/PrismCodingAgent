@@ -27,6 +27,7 @@ public sealed class ChatRoomRole : NotifyBase, IAsyncDisposable
 {
     private IMainThreadDispatcher? _mainThreadDispatcher;
     private CopilotChatManager? _chatManager;
+    private readonly AgentLib.Logging.Sessions.FileCopilotChatSessionStore _sessionStore;
     private readonly AgentApiEndpointManager _endpointManager;
     private readonly IChatRoomRoleExecutor _executor;
     private readonly HashSet<ILanguageModelProvider> _registeredModelProviders = new(ReferenceEqualityComparer.Instance);
@@ -44,16 +45,17 @@ public sealed class ChatRoomRole : NotifyBase, IAsyncDisposable
     /// 自定义的 API 终结点管理器。为 <see langword="null"/> 时创建新的默认实例。
     /// 传入自定义实例可实现多角色共享同一 provider。
     /// </param>
-    public ChatRoomRole(ChatRoomRoleDefinition definition, AgentApiEndpointManager? endpointManager = null)
-        : this(definition, endpointManager, new StandardChatRoomRoleExecutor())
+    public ChatRoomRole(ChatRoomRoleDefinition definition, AgentLib.Logging.Sessions.FileCopilotChatSessionStore sessionStore, AgentApiEndpointManager? endpointManager = null)
+        : this(definition, endpointManager, new StandardChatRoomRoleExecutor(), sessionStore)
     {
     }
 
     internal ChatRoomRole(
         ChatRoomRoleDefinition definition,
         AgentApiEndpointManager? endpointManager,
-        IChatRoomRoleExecutor executor)
+        IChatRoomRoleExecutor executor, AgentLib.Logging.Sessions.FileCopilotChatSessionStore sessionStore)
     {
+        _sessionStore = sessionStore;
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(executor);
         ValidateExecutionConfiguration(definition, executor);
@@ -133,7 +135,7 @@ public sealed class ChatRoomRole : NotifyBase, IAsyncDisposable
     /// </summary>
     public string? WorkspacePath => ChatManager.WorkspacePath;
 
-    private CopilotChatManager ChatManager => _chatManager ??= new CopilotChatManager
+    private CopilotChatManager ChatManager => _chatManager ??= new CopilotChatManager(new FileCopilotChatLogger(), _sessionStore)
     {
         AgentApiEndpointManager = _endpointManager,
         MainThreadDispatcher = _mainThreadDispatcher,

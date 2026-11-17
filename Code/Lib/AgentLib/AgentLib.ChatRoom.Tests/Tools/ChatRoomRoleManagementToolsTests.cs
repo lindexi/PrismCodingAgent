@@ -58,7 +58,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 使用已注册提供商时新角色应获得模型")]
     public async Task CreateCharacter_WithRegisteredProviders_NewRoleHasModels()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("test-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -89,7 +89,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 输入有效时应添加角色")]
     public async Task CreateCharacter_ValidInputs_RoleAddedToRoles()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("test-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -122,7 +122,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 新角色默认仅在被提及时参与")]
     public async Task CreateCharacter_NewRoleDefaultsToMentionOnly()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("test-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -149,7 +149,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 角色名为空时应返回错误")]
     public async Task CreateCharacter_WithEmptyRoleName_ReturnsError()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction createTool = GetTool(tools, "create_character");
@@ -172,7 +172,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 人设为空时应返回错误")]
     public async Task CreateCharacter_WithEmptySystemPrompt_ReturnsError()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction createTool = GetTool(tools, "create_character");
@@ -195,14 +195,14 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "list_characters 有角色时应返回格式化表格")]
     public async Task ListCharacters_WithRoles_ReturnsFormattedTable()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         await manager.AddRoleAsync(new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "architect",
             RoleName = "架构师",
             SystemPrompt = "关注系统设计",
-        }));
+        }, TestSessionStorage.Create()));
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction listTool = GetTool(tools, "list_characters");
@@ -217,7 +217,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "list_characters 无角色时应返回空列表提示")]
     public async Task ListCharacters_WithNoRoles_ReturnsEmptyMessage()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction listTool = GetTool(tools, "list_characters");
@@ -232,14 +232,14 @@ public sealed class ChatRoomRoleManagementToolsTests
     [Timeout(5000)]
     public async Task EditCharacter_ExistingRole_UpdatesProperties()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var role = new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "原角色名",
             SystemPrompt = "原人设",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
         ChatRoomRole? updatedRole = null;
         manager.RoleUpdated += (_, value) => updatedRole = value;
@@ -270,7 +270,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [Timeout(5000)]
     public async Task EditCharacter_CodingRole_PreservesRuntimeAndExecutionKind()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var executor = new TestRoleExecutor(ChatRoomRoleExecutionKind.Coding);
         var role = new ChatRoomRole(new ChatRoomRoleDefinition
@@ -279,7 +279,7 @@ public sealed class ChatRoomRoleManagementToolsTests
             ExecutionKind = ChatRoomRoleExecutionKind.Coding,
             RoleName = "编程角色",
             SystemPrompt = string.Empty,
-        }, null, executor);
+        }, null, executor, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         AIFunction editTool = GetTool(ChatRoomRoleManagementTools.CreateTools(manager), "edit_character");
@@ -304,7 +304,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "edit_character 角色不存在时应返回错误")]
     public async Task EditCharacter_NonExistentRole_ReturnsError()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction editTool = GetTool(tools, "edit_character");
@@ -327,7 +327,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 仅指定提供商时应保留提供商标识")]
     public async Task CreateCharacter_WithOnlyModelProviderId_PreservesProviderId()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("custom-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -355,7 +355,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 同时指定模型和提供商时应保留两者")]
     public async Task CreateCharacter_WithBothModelIdAndProviderId_PreservesBoth()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("custom-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -383,7 +383,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 空白模型配置应视为空值")]
     public async Task CreateCharacter_WithWhitespaceModelProviderId_TreatedAsNull()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("default-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -411,7 +411,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 无模型提供商时应失败且不保留角色")]
     public async Task CreateCharacter_WithoutProviders_ReturnsErrorAndRoleNotAdded()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction createTool = GetTool(tools, "create_character");
@@ -434,7 +434,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 已注册提供商时应通过模型可用性校验")]
     public async Task CreateCharacter_WithRegisteredProviders_NewRolePassesEnsureModelAvailable()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("test-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -461,7 +461,7 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "create_character 角色名含空格时返回错误提示且不创建角色")]
     public async Task CreateCharacter_UnparsableRoleName_ReturnsErrorAndRoleNotAdded()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         Mock<ILanguageModelProvider> mockProvider = CreateMockProvider("test-provider");
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
@@ -489,14 +489,14 @@ public sealed class ChatRoomRoleManagementToolsTests
     [TestMethod(DisplayName = "edit_character 修改为不可解析角色名时返回错误提示且不修改角色名")]
     public async Task EditCharacter_UnparsableRoleName_ReturnsErrorAndRoleNameUnchanged()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         await manager.AddRoleAsync(new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "原角色名",
             SystemPrompt = "原人设",
-        }));
+        }, TestSessionStorage.Create()));
 
         IReadOnlyList<AITool> tools = ChatRoomRoleManagementTools.CreateTools(manager);
         AIFunction editTool = GetTool(tools, "edit_character");

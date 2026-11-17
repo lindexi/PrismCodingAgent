@@ -27,7 +27,7 @@ public sealed class ChatRoomRoleTests
             ExecutionKind = ChatRoomRoleExecutionKind.Coding,
         };
 
-        Assert.ThrowsExactly<ArgumentException>(() => new ChatRoomRole(definition));
+        Assert.ThrowsExactly<ArgumentException>(() => new ChatRoomRole(definition, TestSessionStorage.Create()));
     }
 
     [TestMethod(DisplayName = "定义与执行器种类不一致时应立即失败")]
@@ -40,14 +40,14 @@ public sealed class ChatRoomRoleTests
         };
         var executor = new RecordingExecutor(ChatRoomRoleExecutionKind.Coding);
 
-        Assert.ThrowsExactly<ArgumentException>(() => new ChatRoomRole(definition, null, executor));
+        Assert.ThrowsExactly<ArgumentException>(() => new ChatRoomRole(definition, null, executor, TestSessionStorage.Create()));
     }
 
     [TestMethod(DisplayName = "SpeakAsync 应只委托统一执行器并复用同一流式消息")]
     public async Task SpeakAsync_ShouldDelegateToExecutorAndReuseMessage()
     {
         var executor = new RecordingExecutor(ChatRoomRoleExecutionKind.Standard);
-        await using var role = new ChatRoomRole(CreateDefinition("test-provider"), null, executor);
+        await using var role = new ChatRoomRole(CreateDefinition("test-provider"), null, executor, TestSessionStorage.Create());
         RegisterFakeModel(role, "test-provider");
         AITool additionalTool = AIFunctionFactory.Create(() => string.Empty, "additional_tool");
 
@@ -69,7 +69,7 @@ public sealed class ChatRoomRoleTests
     public async Task SetWorkspaceDuringSpeakingShouldNotWaitForSpeakingToComplete()
     {
         var executor = new RecordingExecutor(ChatRoomRoleExecutionKind.Standard);
-        await using var role = new ChatRoomRole(CreateDefinition("test-provider"), null, executor);
+        await using var role = new ChatRoomRole(CreateDefinition("test-provider"), null, executor, TestSessionStorage.Create());
         RegisterFakeModel(role, "test-provider");
         ChatRoomSpeakResult? result = await role.SpeakAsync(["开始"]);
         Assert.IsNotNull(result);
@@ -90,7 +90,7 @@ public sealed class ChatRoomRoleTests
         await using var role = new ChatRoomRole(
             CreateDefinition("test-provider"),
             null,
-            new ThrowingExecutor(new OperationCanceledException("内部超时")));
+            new ThrowingExecutor(new OperationCanceledException("内部超时")), TestSessionStorage.Create());
         RegisterFakeModel(role, "test-provider");
 
         await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => role.SpeakAsync(["开始"]));
@@ -127,8 +127,8 @@ public sealed class ChatRoomRoleTests
             new CodingChatRoomRoleExecutor(new CodingAgent(new CodingAgentOptions
             {
                 LanguageServerCommand = $"missing-roslyn-{Guid.NewGuid():N}",
-            })));
-        await using var manager = new ChatRoomManager();
+            })), TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>
         {
             ["test-provider"] = provider,
@@ -163,7 +163,7 @@ public sealed class ChatRoomRoleTests
     public async Task DisposeAsyncShouldBeIdempotent()
     {
         var executor = new RecordingExecutor(ChatRoomRoleExecutionKind.Standard);
-        var role = new ChatRoomRole(CreateDefinition(), null, executor);
+        var role = new ChatRoomRole(CreateDefinition(), null, executor, TestSessionStorage.Create());
 
         await role.DisposeAsync();
         await role.DisposeAsync();
@@ -174,7 +174,7 @@ public sealed class ChatRoomRoleTests
     [TestMethod]
     public void Constructor_WithNullDefinition_ThrowsArgumentNullException()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new ChatRoomRole(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ChatRoomRole(null!, TestSessionStorage.Create()));
     }
 
     private static ChatRoomRoleDefinition CreateDefinition(string? providerId = null) => new()
@@ -287,7 +287,7 @@ public sealed class ChatRoomRoleTests
             RoleName = "Test Role",
         };
 
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         Assert.AreSame(definition, role.Definition);
     }
@@ -301,7 +301,7 @@ public sealed class ChatRoomRoleTests
             RoleName = "Test Role",
         };
 
-        var role = new ChatRoomRole(definition, endpointManager: null);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create(), endpointManager: null);
 
         Assert.IsNotNull(role.EndpointManager);
     }
@@ -316,7 +316,7 @@ public sealed class ChatRoomRoleTests
         };
         var endpointManager = new AgentApiEndpointManager();
 
-        var role = new ChatRoomRole(definition, endpointManager);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create(), endpointManager);
 
         Assert.AreSame(endpointManager, role.EndpointManager);
     }
@@ -329,7 +329,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
         };
         var endpointManager = new AgentApiEndpointManager();
-        var role = new ChatRoomRole(definition, endpointManager);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create(), endpointManager);
 
         var result = role.EndpointManager;
 
@@ -343,7 +343,7 @@ public sealed class ChatRoomRoleTests
         {
             RoleId = "role-1",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         var result = role.EndpointManager;
 
@@ -358,7 +358,7 @@ public sealed class ChatRoomRoleTests
         {
             RoleId = "role-1",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         Assert.IsNull(role.MainThreadDispatcher);
     }
@@ -372,7 +372,7 @@ public sealed class ChatRoomRoleTests
         };
         var mockDispatcher = new Mock<IMainThreadDispatcher>();
 
-        var role = new ChatRoomRole(definition)
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create())
         {
             MainThreadDispatcher = mockDispatcher.Object,
         };
@@ -388,7 +388,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await role.InitializeAsync();
     }
@@ -403,7 +403,7 @@ public sealed class ChatRoomRoleTests
             RoleName = "Test Role",
             SkillFolders = { missingSkillFolder },
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await role.InitializeAsync();
     }
@@ -416,7 +416,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentNullException>(
             () => role.SpeakAsync(null!));
@@ -432,7 +432,7 @@ public sealed class ChatRoomRoleTests
             ModelProviderId = "test-provider",
             ModelId = "test-model",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await role.InitializeAsync();
     }
@@ -445,7 +445,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => role.SpeakAsync(Array.Empty<string>()));
@@ -459,7 +459,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => role.SpeakAsync(new[] { "   " }));
@@ -473,7 +473,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentNullException>(
             () => role.SpeakFirstAsync(null!));
@@ -487,7 +487,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => role.SpeakFirstAsync(string.Empty));
@@ -501,7 +501,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => role.SpeakFirstAsync("   "));
@@ -515,7 +515,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         Assert.ThrowsExactly<InvalidOperationException>(() => role.EnsureModelAvailable());
     }
@@ -528,7 +528,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         var mockProvider = new Mock<ILanguageModelProvider>();
         var mockModel = new Mock<ILanguageModel>();
@@ -548,7 +548,7 @@ public sealed class ChatRoomRoleTests
             RoleId = "role-1",
             RoleName = "我的测试角色",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(
             () => role.EnsureModelAvailable());

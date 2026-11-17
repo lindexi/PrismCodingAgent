@@ -19,8 +19,7 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
 
     public FileCodingChatSessionStore
     (
-        string sessionDirectory,
-        string logDirectory,
+        FileCopilotChatSessionStore store,
         CopilotChatManager chatManager,
         IMainThreadDispatcher mainThreadDispatcher
     )
@@ -29,7 +28,7 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
         ArgumentNullException.ThrowIfNull(mainThreadDispatcher);
         _chatManager = chatManager;
         _mainThreadDispatcher = mainThreadDispatcher;
-        _store = new FileCopilotChatSessionStore(sessionDirectory, logDirectory);
+        _store = store;
     }
 
     public Task<IReadOnlyList<CopilotChatSessionSummary>> ListSessionsAsync
@@ -53,19 +52,37 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
     }
 
     /// <summary>从源会话的指定快照恢复具有独立身份的新会话。</summary>
-    public async Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId,
+    public async Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message,
         CancellationToken cancellationToken = default)
     {
-        CopilotChatSessionPersistenceData persistenceData = await _store
-            .LoadSnapshotAsync(sourceSession, snapshotId, cancellationToken)
-            .ConfigureAwait(false);
-        return await RestoreSessionAsync(persistenceData, Guid.NewGuid(), cancellationToken).ConfigureAwait(false);
+        int entryIndex = sourceSession.Entries.IndexOf(message);
+        Guid sessionId = Guid.NewGuid();
+        DateTimeOffset startedTime = DateTimeOffset.Now;
+        var state = await SessionSnapshots.Get(sourceSession)
+            .ReadSnapshotAsync(sourceSession, message.SessionSnapshotId, cancellationToken).ConfigureAwait(false);
+        var session = new CopilotChatSession(_store.CreateStorage(sessionId, startedTime),
+            sessionId, startedTime, _chatManager.ChatLogger)
+        {
+            MainThreadDispatcher = _mainThreadDispatcher,
+            WorkspacePath = sourceSession.WorkspacePath,
+            ResponsesSession = state.Responses,
+        };
+        if (state.AgentState is { } agentState)
+            await RestoreAgentSessionAsync(session, agentState, cancellationToken).ConfigureAwait(false);
+        for (int i = 0; i <= entryIndex; i++)
+        {
+            CopilotChatEntry entry = sourceSession.Entries[i];
+            await session.AddEntryAsync(entry is CopilotChatMessage chatMessage ? chatMessage.Clone() :
+                new CopilotChatNotice(((CopilotChatNotice)entry).Content, ((CopilotChatNotice)entry).Level, entry.CreatedTime)).ConfigureAwait(false);
+        }
+        return session;
     }
 
     private async Task<CopilotChatSession> RestoreSessionAsync(CopilotChatSessionPersistenceData persistenceData,
         Guid sessionId, CancellationToken cancellationToken)
     {
-        var session = new CopilotChatSession(sessionId, persistenceData.StartedTime, _chatManager.ChatLogger)
+        var session = new CopilotChatSession(_store.CreateStorage(sessionId, persistenceData.StartedTime),
+            sessionId, persistenceData.StartedTime, _chatManager.ChatLogger)
         {
             MainThreadDispatcher = _mainThreadDispatcher,
             WorkspacePath = persistenceData.WorkspacePath,
@@ -85,21 +102,12 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
 
         foreach (var item in persistenceData.AdditionalInfo)
         {
-            session.AdditionalInfo.Add(item.Key, new JsonSessionAdditionalInfo(item.Value));
+            session.AdditionalInfo.Set(item.Key, new JsonSessionAdditionalInfo(item.Value));
         }
 
         if (persistenceData.AgentSessionState is JsonElement agentSessionState)
         {
-            IManualSendMessageContext context = await _chatManager
-                .CreateManualSendMessageContextAsync(cancellationToken)
-                .ConfigureAwait(false);
-            ChatClientAgent agent = await context
-                .GetChatClientAgentAsync(cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-            AgentSession agentSession = await agent
-                .DeserializeSessionAsync(agentSessionState, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-            session.SetAgentSession(agentSession);
+            await RestoreAgentSessionAsync(session, agentSessionState, cancellationToken).ConfigureAwait(false);
         }
 
         return session;
@@ -119,7 +127,14 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
         CancellationToken cancellationToken = default)
     {
         JsonElement? agentSessionState = await SerializeAgentSessionAsync(session, cancellationToken).ConfigureAwait(false);
-        await _store.SaveSnapshotAsync(session, snapshotId, agentSessionState, cancellationToken).ConfigureAwait(false);
+        await SessionSnapshots.Get(session).SaveSnapshotAsync(session, snapshotId, agentSessionState, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task RestoreAgentSessionAsync(CopilotChatSession session, JsonElement state, CancellationToken cancellationToken)
+    {
+        IManualSendMessageContext context = await _chatManager.CreateManualSendMessageContextAsync(cancellationToken).ConfigureAwait(false);
+        ChatClientAgent agent = await context.GetChatClientAgentAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        session.SetAgentSession(await agent.DeserializeSessionAsync(state, cancellationToken: cancellationToken).ConfigureAwait(false));
     }
 
     private async Task<JsonElement?> SerializeAgentSessionAsync(CopilotChatSession session, CancellationToken cancellationToken)

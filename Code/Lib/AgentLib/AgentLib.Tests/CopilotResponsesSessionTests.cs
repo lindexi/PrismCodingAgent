@@ -68,7 +68,7 @@ public sealed class CopilotResponsesSessionTests
     [TestMethod]
     public void SessionShouldReuseResponsesState()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
 
         Assert.AreSame(session.ResponsesSession, session.ResponsesSession);
     }
@@ -76,7 +76,7 @@ public sealed class CopilotResponsesSessionTests
     [TestMethod]
     public void DisplayMessagesShouldNotPopulateNativeHistory()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
         session.Entries.Add(CopilotChatMessage.CreateUser("display only"));
 
         Assert.HasCount(0, session.ResponsesSession.Items);
@@ -101,7 +101,7 @@ public sealed class CopilotResponsesSessionTests
         string directory = Path.Combine(Path.GetTempPath(), $"responses-store-{Guid.NewGuid():N}");
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(directory));
         session.ResponsesSession.AppendItem(ResponseItem.CreateUserMessageItem("input"));
         session.ResponsesSession.AppendItem(ResponseItem.CreateReasoningItem("reasoning"));
         session.ResponsesSession.AppendItem(ResponseItem.CreateFunctionCallItem("call_image", "load_image", BinaryData.FromString("{}")));
@@ -114,7 +114,7 @@ public sealed class CopilotResponsesSessionTests
 
         await store.SaveSessionAsync(session, null);
         var data = await store.LoadSessionAsync(session.SessionId);
-        var restored = new CopilotChatSession(data.SessionId, data.StartedTime, new EmptyCopilotChatLogger()) { ResponsesSession = data.ResponsesSession };
+        var restored = new CopilotChatSession(store.CreateStorage(data.SessionId, data.StartedTime), data.SessionId, data.StartedTime, new EmptyCopilotChatLogger()) { ResponsesSession = data.ResponsesSession };
 
         CopilotResponsesSession restoredState = restored.ResponsesSession
             ?? throw new InvalidOperationException("Restored state missing.");
@@ -128,7 +128,7 @@ public sealed class CopilotResponsesSessionTests
         string directory = Path.Combine(Path.GetTempPath(), $"responses-compacted-store-{Guid.NewGuid():N}");
         Console.WriteLine(directory);
         var store = new FileCopilotChatSessionStore(directory);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(directory));
         session.ResponsesSession.AppendItem(ResponseItem.CreateUserMessageItem("old input"));
         session.ResponsesSession.AppendItem(ResponseItem.CreateAssistantMessageItem("old answer"));
         var compacted = ModelReaderWriter.Read<ResponseItem>(BinaryData.FromString("""
@@ -139,7 +139,7 @@ public sealed class CopilotResponsesSessionTests
         await store.SaveSessionAsync(session, null);
 
         var data = await store.LoadSessionAsync(session.SessionId);
-        var restored = new CopilotChatSession(data.SessionId, data.StartedTime, new EmptyCopilotChatLogger()) { ResponsesSession = data.ResponsesSession };
+        var restored = new CopilotChatSession(store.CreateStorage(data.SessionId, data.StartedTime), data.SessionId, data.StartedTime, new EmptyCopilotChatLogger()) { ResponsesSession = data.ResponsesSession };
         var state = restored.ResponsesSession ?? throw new InvalidDataException("Stored state missing.");
         var next = ResponseItem.CreateUserMessageItem("next input");
         state.AppendItem(next);
@@ -153,7 +153,7 @@ public sealed class CopilotResponsesSessionTests
     {
         string directory = Path.Combine(Path.GetTempPath(), $"responses-store-{Guid.NewGuid():N}");
         Console.WriteLine(directory);
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(new FileSessionStorage(directory));
         var store = new FileCopilotChatSessionStore(directory);
 
         await store.SaveSessionAsync(session, null);

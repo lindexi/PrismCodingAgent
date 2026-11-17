@@ -104,7 +104,7 @@ public sealed class WpfHistoryTests
         var store = new FileCopilotChatSessionStore(Path.Combine(root, "Sessions"));
         string title = Lang.Current.IetfLanguageTag == "en" ? "Stored conversation" : "已存储的历史会话";
         string body = Lang.Current.IetfLanguageTag == "en" ? "Actual stored answer for the selected conversation." : "所选会话真实存储的回答正文。";
-        var stored = new CopilotChatSession { WorkTaskId = otherId, WorkTaskName = "Other task" };
+        var stored = new CopilotChatSession(store.CreateStorage(Guid.NewGuid(), DateTimeOffset.Now)) { WorkTaskId = otherId, WorkTaskName = "Other task" };
         stored.SetTitle(title);
         await stored.AddEntryAsync(new CopilotChatMessage(ChatRole.User, title));
         await stored.AddEntryAsync(new CopilotChatMessage(ChatRole.Assistant, body));

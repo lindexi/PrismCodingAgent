@@ -165,7 +165,8 @@ public sealed class ResponsesLiveApiTests
                 }
             }
         });
-        var manager = new CopilotChatManager(new EmptyCopilotChatLogger());
+        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var manager = new CopilotChatManager(new EmptyCopilotChatLogger(), store);
         manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString(json));
         return manager;
     }

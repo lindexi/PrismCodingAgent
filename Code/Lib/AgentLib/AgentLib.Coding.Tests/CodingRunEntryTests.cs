@@ -8,10 +8,12 @@ namespace AgentLib.Coding.Tests;
 [TestClass]
 public sealed class CodingRunEntryTests
 {
+    private static ISessionStorage CreateStorage() => new AgentLib.Logging.Sessions.FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+
     [TestMethod]
     public void CodingRunContextWhenCreatedShouldKeepProvidedSession()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
 
         var context = new CodingRunContext(new FakeChatClient(), message, session);
@@ -34,7 +36,7 @@ public sealed class CodingRunEntryTests
         {
             OnGetStreamingResponseAsync = (_, _, cancellationToken) => RespondAsync(cancellationToken),
         };
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         var context = new CodingRunContext(client,
             CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), session);
         await using var agent = new CodingAgent();
@@ -59,7 +61,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var context = new CodingRunContext(client,
-            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession());
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [], null);
         await run.CompletionTask;
@@ -76,7 +78,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var context = new CodingRunContext(client,
-            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession());
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")], null);
 
@@ -87,7 +89,7 @@ public sealed class CodingRunEntryTests
     public void CodingRunContextWhenCreatedShouldUseAssistantMessageAsOutput()
     {
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
-        var context = new CodingRunContext(new FakeChatClient(), message, new CopilotChatSession());
+        var context = new CodingRunContext(new FakeChatClient(), message, new CopilotChatSession(CreateStorage()));
 
         Assert.AreSame(message, context.Output);
     }
@@ -101,7 +103,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var message = CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var context = new CodingRunContext(client, message, new CopilotChatSession());
+        var context = new CodingRunContext(client, message, new CopilotChatSession(CreateStorage()));
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")], null);
         await run.CompletionTask;
@@ -123,7 +125,7 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
-        var context = new CodingRunContext(client, message, new CopilotChatSession());
+        var context = new CodingRunContext(client, message, new CopilotChatSession(CreateStorage()));
         var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
         ICodingAgentRunResult first = await agent.RunAsync(context, [new TextContent("task")], null, options);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => first.CompletionTask);
@@ -162,7 +164,7 @@ public sealed class CodingRunEntryTests
         await using var agent = new CodingAgent(new CodingAgentOptions
             { AdditionalToolSources = [new DeepSeekWebToolSource(http, null)] });
         var context = new CodingRunContext(client,
-            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession());
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
         string workspace = Path.Combine(Path.GetTempPath(), $"web-chat-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workspace);
         Console.WriteLine(workspace);

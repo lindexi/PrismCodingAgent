@@ -12,7 +12,7 @@ public sealed class JsonSessionAdditionalInfo : ISessionAdditionalInfo
     public JsonElement Value { get; }
 
     /// <inheritdoc />
-    public ValueTask<JsonElement> SerializeAsync(CancellationToken cancellationToken = default)
+    public ValueTask<JsonElement> SerializeAsync(ISessionStorage storage, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         return new(Value);

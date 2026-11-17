@@ -6,5 +6,5 @@ namespace AgentLib.Model;
 public interface ISessionAdditionalInfo
 {
     /// <summary>异步导出附加信息，返回值不依赖已释放的 JSON 文档。</summary>
-    ValueTask<JsonElement> SerializeAsync(CancellationToken cancellationToken = default);
+    ValueTask<JsonElement> SerializeAsync(ISessionStorage storage, CancellationToken cancellationToken = default);
 }

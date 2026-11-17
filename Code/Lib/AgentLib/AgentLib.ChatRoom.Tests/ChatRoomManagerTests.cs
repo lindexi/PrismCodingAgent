@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using AgentLib.ChatRoom;
 using AgentLib.ChatRoom.Model;
 using AgentLib.ChatRoom.Services;
@@ -21,7 +21,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void Constructor_WithNullSession_ThrowsArgumentNullException()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new ChatRoomManager(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ChatRoomManager((ChatRoomSession)null!, TestSessionStorage.Create()));
     }
 
     [TestMethod]
@@ -29,23 +29,23 @@ public sealed class ChatRoomManagerTests
     {
         var session = new ChatRoomSession();
 
-        var manager = new ChatRoomManager(session);
+        var manager = new ChatRoomManager(session, TestSessionStorage.Create());
 
         Assert.AreSame(session, manager.Session);
     }
 
     [TestMethod]
-    public void Constructor_Parameterless_CreatesNonNullSession()
+    public void Constructor_WithStorage_CreatesNonNullSession()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.IsNotNull(manager.Session);
     }
 
     [TestMethod]
-    public void Constructor_Parameterless_SessionHasNonEmptyId()
+    public void Constructor_WithStorage_SessionHasNonEmptyId()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.AreNotEqual(Guid.Empty, manager.Session.SessionId);
     }
@@ -53,7 +53,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void IsRunning_DefaultValue_IsFalse()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.IsFalse(manager.IsRunning);
     }
@@ -61,7 +61,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void CanStartLoop_WhenNotRunningAndNoRoles_ReturnsFalse()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.IsFalse(manager.CanStartLoop);
     }
@@ -81,7 +81,7 @@ public sealed class ChatRoomManagerTests
             SkillFolders = ["skill-folder"],
         };
         await using ChatRoomManager manager = await CreateManagerWithRolesAsync(
-            new ChatRoomRole(definition, null, executor));
+            new ChatRoomRole(definition, null, executor, TestSessionStorage.Create()));
         ChatRoomRole role = manager.Roles.Single();
         IChatRoomRoleExecutor originalExecutor = role.Executor;
         ChatRoomRole? updatedRole = null;
@@ -119,7 +119,7 @@ public sealed class ChatRoomManagerTests
         ChatRoomRole role = new ChatRoomRole(
             definition,
             null,
-            new TestChatRoomRoleExecutor(ChatRoomRoleExecutionKind.Coding));
+            new TestChatRoomRoleExecutor(ChatRoomRoleExecutionKind.Coding), TestSessionStorage.Create());
         await using ChatRoomManager manager = await CreateManagerWithRolesAsync(role);
 
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => manager.UpdateRoleAsync(
@@ -136,7 +136,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task CanStartLoop_WhenNotRunningAndHasRoles_ReturnsTrue()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var definition = new ChatRoomRoleDefinition
         {
@@ -144,7 +144,7 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             IsHuman = false,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.IsTrue(manager.CanStartLoop);
@@ -153,7 +153,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task CanStartLoop_WhenNotRunningAndHasMultipleRoles_ReturnsTrue()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var definition1 = new ChatRoomRoleDefinition
         {
@@ -165,8 +165,8 @@ public sealed class ChatRoomManagerTests
             RoleId = "role-2",
             RoleName = "Role 2",
         };
-        await manager.AddRoleAsync(new ChatRoomRole(definition1));
-        await manager.AddRoleAsync(new ChatRoomRole(definition2));
+        await manager.AddRoleAsync(new ChatRoomRole(definition1, TestSessionStorage.Create()));
+        await manager.AddRoleAsync(new ChatRoomRole(definition2, TestSessionStorage.Create()));
 
         Assert.IsTrue(manager.CanStartLoop);
     }
@@ -174,7 +174,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void CanStop_WhenNotRunning_ReturnsFalse()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.IsFalse(manager.CanStop);
     }
@@ -182,7 +182,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task IsRunning_AfterStartAutoLoopWithoutTrigger_ChangesToTrueThenFalse()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var changedProperties = new List<string>();
         ((INotifyPropertyChanged)manager).PropertyChanged += (_, args) =>
@@ -199,14 +199,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task CanStartLoop_WhenRoleRemovedAfterBeingAdded_ReturnsFalse()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.IsTrue(manager.CanStartLoop);
@@ -219,7 +219,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void CurrentSpeaker_DefaultValue_IsNull()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.IsNull(manager.CurrentSpeaker);
     }
@@ -227,7 +227,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void IsSpeaking_DefaultValue_IsFalse()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.IsFalse(manager.IsSpeaking);
     }
@@ -235,7 +235,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StepAsync_NullRole_ThrowsArgumentNullException()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => manager.StepAsync(null!));
     }
@@ -243,14 +243,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StepAsync_HumanRole_ReturnsNull()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "human-1",
             RoleName = "Human",
             IsHuman = true,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         ChatRoomMessage? result = await manager.StepAsync(role);
 
@@ -262,14 +262,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StepAsync_NonHumanRole_ClearsCurrentSpeakerInFinally()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
             IsHuman = false,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         await manager.StepAsync(role);
 
@@ -280,14 +280,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StepAsync_NonHumanRole_FiresOnSpeakingChangedEvent()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
             IsHuman = false,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         var speakingEvents = new List<SpeakingChangedEventArgs>();
         manager.OnSpeakingChanged += (_, args) => speakingEvents.Add(args);
@@ -308,14 +308,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StepAsync_NonHumanRole_FiresIsSpeakingPropertyChanged()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
             IsHuman = false,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         var propertyChanges = new List<string?>();
         ((INotifyPropertyChanged)manager).PropertyChanged += (_, args) => propertyChanges.Add(args.PropertyName);
@@ -334,8 +334,8 @@ public sealed class ChatRoomManagerTests
             RoleId = "assistant",
             RoleName = "助手",
             ModelProviderId = "test-provider",
-        }, null, executor);
-        await using var manager = new ChatRoomManager();
+        }, null, executor, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("第一条", "human-1", "用户甲");
@@ -364,8 +364,8 @@ public sealed class ChatRoomManagerTests
             ModelProviderId = "test-provider",
             ParticipationMode = participationMode,
             IsManagerRole = isManagerRole,
-        }, null, executor);
-        await using var manager = new ChatRoomManager();
+        }, null, executor, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("@助手 请处理", "human", "用户");
@@ -393,14 +393,14 @@ public sealed class ChatRoomManagerTests
             RoleId = "first",
             RoleName = "甲",
             ModelProviderId = "test-provider",
-        }, null, firstExecutor);
+        }, null, firstExecutor, TestSessionStorage.Create());
         var secondRole = new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "second",
             RoleName = "乙",
             ModelProviderId = "test-provider",
-        });
-        await using var manager = new ChatRoomManager();
+        }, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(firstRole);
         await manager.AddRoleAsync(secondRole);
@@ -421,8 +421,8 @@ public sealed class ChatRoomManagerTests
             RoleId = "assistant",
             RoleName = "助手",
             ModelProviderId = "test-provider",
-        }, null, executor);
-        await using var manager = new ChatRoomManager();
+        }, null, executor, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.Session.AddMessageAsync(ChatRoomMessage.CreateAssistant("自身历史", "assistant", "助手"));
@@ -445,8 +445,8 @@ public sealed class ChatRoomManagerTests
             RoleId = "assistant",
             RoleName = "助手",
             ModelProviderId = "test-provider",
-        }, null, executor);
-        await using var manager = new ChatRoomManager();
+        }, null, executor, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("实际问题", "human", "用户");
@@ -471,14 +471,14 @@ public sealed class ChatRoomManagerTests
             RoleId = "assistant",
             RoleName = "助手",
             ModelProviderId = "test-provider",
-        }, null, executor);
+        }, null, executor, TestSessionStorage.Create());
         var secondRole = new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "second",
             RoleName = "第二助手",
             ModelProviderId = "test-provider",
-        });
-        await using var manager = new ChatRoomManager();
+        }, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("单 AI 消息", "human", "用户");
@@ -505,8 +505,8 @@ public sealed class ChatRoomManagerTests
             RoleId = "single",
             RoleName = "单助手",
             ModelProviderId = "test-provider",
-        }, null, singleExecutor);
-        await using var singleManager = new ChatRoomManager();
+        }, null, singleExecutor, TestSessionStorage.Create());
+        await using var singleManager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(singleManager, new FakeChatClient());
         await singleManager.AddRoleAsync(singleRole);
         await singleManager.HumanInterjectAsync("问题", "human", "用户");
@@ -523,8 +523,8 @@ public sealed class ChatRoomManagerTests
             RoleId = "first",
             RoleName = "甲",
             ModelProviderId = "test-provider",
-        }, null, multiExecutor);
-        await using var multiManager = new ChatRoomManager();
+        }, null, multiExecutor, TestSessionStorage.Create());
+        await using var multiManager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(multiManager, new FakeChatClient());
         await multiManager.AddRoleAsync(multiRole);
         await multiManager.AddRoleAsync(new ChatRoomRole(new ChatRoomRoleDefinition
@@ -532,7 +532,7 @@ public sealed class ChatRoomManagerTests
             RoleId = "second",
             RoleName = "乙",
             ModelProviderId = "test-provider",
-        }));
+        }, TestSessionStorage.Create()));
         await multiManager.HumanInterjectAsync("问题", "human", "用户");
         _ = await multiManager.StepAsync(multiRole);
 
@@ -545,14 +545,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StepAsync_NonHumanRole_WhenSpeakThrows_FiresOnRoleSpeakFailedAndReturnsSystemMessage()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         var definition = new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
             IsHuman = false,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         // 需要先添加消息，使 BuildIncrementalUserMessages 返回非空内容，否则 StepAsync 会提前返回 null
         await manager.HumanInterjectAsync("测试消息", "human", "Human");
@@ -586,8 +586,8 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "test-provider",
         };
-        var role = new ChatRoomRole(definition);
-        await using var manager = new ChatRoomManager();
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, client);
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("测试消息", "human", "Human");
@@ -622,8 +622,8 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "test-provider",
         };
-        var role = new ChatRoomRole(definition);
-        await using var manager = new ChatRoomManager
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create())
         {
             Persistence = new ChatRoomPersistence(persistencePath),
         };
@@ -661,8 +661,8 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "test-provider",
         };
-        var role = new ChatRoomRole(definition, null, executor);
-        await using var manager = new ChatRoomManager();
+        var role = new ChatRoomRole(definition, null, executor, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("测试消息", "human", "Human");
@@ -695,8 +695,8 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "test-provider",
         };
-        var role = new ChatRoomRole(definition, null, executor);
-        await using var manager = new ChatRoomManager();
+        var role = new ChatRoomRole(definition, null, executor, TestSessionStorage.Create());
+        await using var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("测试消息", "human", "Human");
@@ -719,7 +719,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task StartAutoLoopAsync_WithoutTrigger_CleansUpCurrentSpeakerAndIsSpeaking()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await manager.StartAutoLoopAsync();
 
@@ -730,7 +730,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task HumanInterjectAsync_NullContent_ThrowsArgumentNullException()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
             manager.HumanInterjectAsync(null!, "human-1", "Human"));
@@ -739,7 +739,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task HumanInterjectAsync_ValidContent_AppendsMessageAndFiresEvent()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         ChatRoomMessage? receivedMessage = null;
         manager.OnMessageAdded += (_, msg) => receivedMessage = msg;
 
@@ -757,7 +757,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task HumanInterjectAsync_AddsMessageToSession()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await manager.HumanInterjectAsync("Test message", "human-1", "Human");
 
@@ -769,7 +769,7 @@ public sealed class ChatRoomManagerTests
     [Timeout(300, CooperativeCancellation = true)]
     public void Stop_WhenNotRunning_DoesNotThrow()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         manager.Stop();
 
@@ -779,7 +779,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void RegisterRoleModelProviders_NullDictionary_ThrowsArgumentNullException()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         Assert.ThrowsExactly<ArgumentNullException>(() =>
             manager.RegisterRoleModelProviders(null!));
@@ -788,7 +788,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void RegisterRoleModelProviders_EmptyRoles_DoesNotThrow()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         var providers = new Dictionary<string, ILanguageModelProvider>();
 
         manager.RegisterRoleModelProviders(providers);
@@ -799,7 +799,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RegisterRoleModelProviders_RoleWithNullModelProviderId_RegistersAllProviders()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var definition = new ChatRoomRoleDefinition
         {
@@ -807,7 +807,7 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = null,
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         var mockProvider = new Mock<ILanguageModelProvider>();
@@ -826,7 +826,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RegisterRoleModelProviders_RoleWithEmptyModelProviderId_RegistersAllProviders()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var definition = new ChatRoomRoleDefinition
         {
@@ -834,7 +834,7 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         var mockProvider = new Mock<ILanguageModelProvider>();
@@ -853,7 +853,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RegisterRoleModelProviders_MatchingProvider_RegistersOnEndpointManager()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockModel = new Mock<ILanguageModel>();
         mockModel.SetupGet(m => m.ModelDefinition)
@@ -874,7 +874,7 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "my-provider",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         // 无论 ModelProviderId 为何值，都注册所有可用提供商
@@ -884,7 +884,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RegisterRoleModelProviders_ProviderNotInDictionary_ThrowsPrimaryModelNotFound()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockModel = new Mock<ILanguageModel>();
         mockModel.SetupGet(m => m.ModelDefinition)
@@ -905,7 +905,7 @@ public sealed class ChatRoomManagerTests
             RoleName = "Test Role",
             ModelProviderId = "missing-provider",
         };
-        var role = new ChatRoomRole(definition);
+        var role = new ChatRoomRole(definition, TestSessionStorage.Create());
 
         // 新逻辑：所有提供商都会注册，但找不到 ModelProviderId 匹配的首选模型时抛出异常
         await Assert.ThrowsExactlyAsync<PrimaryModelNotFoundException>(() => manager.AddRoleAsync(role));
@@ -914,7 +914,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RegisterRoleModelProviders_MultipleRoles_AllProvidersRegistered()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockModelA = new Mock<ILanguageModel>();
         mockModelA.SetupGet(m => m.ModelDefinition)
@@ -952,9 +952,9 @@ public sealed class ChatRoomManagerTests
             RoleName = "Role 3",
             ModelProviderId = "provider-b",
         };
-        await manager.AddRoleAsync(new ChatRoomRole(definition1));
-        await manager.AddRoleAsync(new ChatRoomRole(definition2));
-        await manager.AddRoleAsync(new ChatRoomRole(definition3));
+        await manager.AddRoleAsync(new ChatRoomRole(definition1, TestSessionStorage.Create()));
+        await manager.AddRoleAsync(new ChatRoomRole(definition2, TestSessionStorage.Create()));
+        await manager.AddRoleAsync(new ChatRoomRole(definition3, TestSessionStorage.Create()));
 
         // 新逻辑：每个角色都注册所有可用提供商
         mockProviderA.Verify(p => p.GetSupportedModels(), Times.Exactly(3));
@@ -964,7 +964,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task SaveAsync_PersistenceIsNull_ReturnsImmediately()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await manager.SaveAsync();
 
@@ -974,13 +974,13 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task SaveAsync_PersistenceIsNull_DoesNotThrow()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         await manager.AddRoleAsync(new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test",
-        }));
+        }, TestSessionStorage.Create()));
 
         await manager.SaveAsync();
 
@@ -990,7 +990,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task LoadAsync_PersistenceIsNull_ReturnsImmediately()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await manager.LoadAsync("some-session-id");
 
@@ -1000,13 +1000,13 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task LoadAsync_PersistenceIsNull_DoesNotThrow()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         await manager.AddRoleAsync(new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test",
-        }));
+        }, TestSessionStorage.Create()));
 
         await manager.LoadAsync("some-session-id");
 
@@ -1026,8 +1026,8 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void SpeakingChangedEventArgs_BothNotNull_SetsPropertiesCorrectly()
     {
-        var previous = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "prev", RoleName = "Prev" });
-        var current = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "curr", RoleName = "Curr" });
+        var previous = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "prev", RoleName = "Prev" }, TestSessionStorage.Create());
+        var current = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "curr", RoleName = "Curr" }, TestSessionStorage.Create());
 
         var args = new SpeakingChangedEventArgs(previous, current);
 
@@ -1038,7 +1038,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void SpeakingChangedEventArgs_PreviousNullCurrentNotNull_SetsPropertiesCorrectly()
     {
-        var current = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "curr", RoleName = "Curr" });
+        var current = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "curr", RoleName = "Curr" }, TestSessionStorage.Create());
 
         var args = new SpeakingChangedEventArgs(null, current);
 
@@ -1049,7 +1049,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public void SpeakingChangedEventArgs_PreviousNotNullCurrentNull_SetsPropertiesCorrectly()
     {
-        var previous = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "prev", RoleName = "Prev" });
+        var previous = new ChatRoomRole(new ChatRoomRoleDefinition { RoleId = "prev", RoleName = "Prev" }, TestSessionStorage.Create());
 
         var args = new SpeakingChangedEventArgs(previous, null);
 
@@ -1060,7 +1060,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task AddRoleAsync_AfterRegisterProviders_NewRoleGetsModels()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockProvider = new Mock<ILanguageModelProvider>();
         var mockModel = new Mock<ILanguageModel>();
@@ -1075,7 +1075,7 @@ public sealed class ChatRoomManagerTests
         {
             RoleId = "role-1",
             RoleName = "Test Role",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.HasCount(1, role.EndpointManager.GetSupportedModels());
@@ -1084,7 +1084,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task AddRoleAsync_AfterRegisterProviders_NewRolePassesEnsureModelAvailable()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockProvider = new Mock<ILanguageModelProvider>();
         var mockModel = new Mock<ILanguageModel>();
@@ -1099,7 +1099,7 @@ public sealed class ChatRoomManagerTests
         {
             RoleId = "role-1",
             RoleName = "Test Role",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         role.EnsureModelAvailable();
@@ -1108,14 +1108,14 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task AddRoleAsync_BeforeRegisterProviders_NewRoleHasNoModels()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
 
         var role = new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.HasCount(0, role.EndpointManager.GetSupportedModels());
@@ -1124,7 +1124,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task AddRoleAsync_WithSpecificModelProviderId_RegistersAllProvidersAndSetsPrimary()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockModelA = new Mock<ILanguageModel>();
         mockModelA.SetupGet(m => m.ModelDefinition)
@@ -1153,7 +1153,7 @@ public sealed class ChatRoomManagerTests
             RoleId = "role-1",
             RoleName = "Test Role",
             ModelProviderId = "provider-a",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         // 新逻辑：所有提供商都注册，但首选模型由 ModelProviderId 决定
@@ -1166,7 +1166,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task AddRoleAsync_HumanRole_SkipsModelRegistration()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockProvider = new Mock<ILanguageModelProvider>();
         mockProvider.Setup(p => p.GetSupportedModels())
@@ -1181,7 +1181,7 @@ public sealed class ChatRoomManagerTests
             RoleId = "human-1",
             RoleName = "Human",
             IsHuman = true,
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.HasCount(0, role.EndpointManager.GetSupportedModels());
@@ -1191,7 +1191,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task AddRoleAsync_NullRole_ThrowsArgumentNullException()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => manager.AddRoleAsync((ChatRoomRole)null!));
     }
@@ -1199,13 +1199,13 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RemoveRoleAsync_ExistingRole_RemovesFromRoles()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         var role = new ChatRoomRole(new ChatRoomRoleDefinition
         {
             RoleId = "role-1",
             RoleName = "Test Role",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.HasCount(1, manager.Roles);
@@ -1218,7 +1218,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RemoveRoleAsync_NonExistentRole_DoesNotThrow()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await manager.RemoveRoleAsync("non-existent");
     }
@@ -1226,7 +1226,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RemoveRoleAsync_EmptyRoleId_ThrowsArgumentException()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         await Assert.ThrowsExactlyAsync<ArgumentException>(() => manager.RemoveRoleAsync(""));
     }
@@ -1234,7 +1234,7 @@ public sealed class ChatRoomManagerTests
     [TestMethod]
     public async Task RegisterRoleModelProviders_StoresProvidersForFutureAddRole()
     {
-        var manager = new ChatRoomManager();
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
 
         var mockProvider = new Mock<ILanguageModelProvider>();
         var mockModel = new Mock<ILanguageModel>();
@@ -1251,7 +1251,7 @@ public sealed class ChatRoomManagerTests
         {
             RoleId = "role-1",
             RoleName = "Test Role",
-        });
+        }, TestSessionStorage.Create());
         await manager.AddRoleAsync(role);
 
         Assert.HasCount(1, role.EndpointManager.GetSupportedModels());
@@ -1281,7 +1281,7 @@ public sealed class ChatRoomManagerTests
         {
             var persistence = new ChatRoomPersistence(tempFolder);
             var session = new ChatRoomSession();
-            var manager = new ChatRoomManager(session)
+            var manager = new ChatRoomManager(session, TestSessionStorage.Create())
             {
                 Persistence = persistence,
             };
@@ -1293,7 +1293,7 @@ public sealed class ChatRoomManagerTests
                 RoleName = "持久化角色",
                 SystemPrompt = "你是一个测试角色",
             };
-            await manager.AddRoleAsync(new ChatRoomRole(roleDef));
+            await manager.AddRoleAsync(new ChatRoomRole(roleDef, TestSessionStorage.Create()));
 
             await manager.HumanInterjectAsync("你好", "human", "用户");
 
@@ -1303,7 +1303,7 @@ public sealed class ChatRoomManagerTests
             // 用新的 manager 从磁盘加载
             var persistence2 = new ChatRoomPersistence(tempFolder);
             var loadedSession = new ChatRoomSession();
-            var loadedManager = new ChatRoomManager(loadedSession)
+            var loadedManager = new ChatRoomManager(loadedSession, TestSessionStorage.Create())
             {
                 Persistence = persistence2,
             };
@@ -1337,7 +1337,7 @@ public sealed class ChatRoomManagerTests
         {
             var persistence = new ChatRoomPersistence(tempFolder);
             var session = new ChatRoomSession();
-            var manager = new ChatRoomManager(session)
+            var manager = new ChatRoomManager(session, TestSessionStorage.Create())
             {
                 Persistence = persistence,
             };
@@ -1356,7 +1356,7 @@ public sealed class ChatRoomManagerTests
             // 用新的 manager 从磁盘加载
             var persistence2 = new ChatRoomPersistence(tempFolder);
             var loadedSession = new ChatRoomSession();
-            var loadedManager = new ChatRoomManager(loadedSession)
+            var loadedManager = new ChatRoomManager(loadedSession, TestSessionStorage.Create())
             {
                 Persistence = persistence2,
             };
@@ -1387,7 +1387,7 @@ public sealed class ChatRoomManagerTests
         try
         {
             var persistence = new ChatRoomPersistence(tempFolder);
-            var manager = new ChatRoomManager
+            var manager = new ChatRoomManager(TestSessionStorage.Create())
             {
                 Persistence = persistence,
             };
@@ -1398,11 +1398,11 @@ public sealed class ChatRoomManagerTests
                 RoleId = "auto-save-role",
                 RoleName = "自动保存角色",
             };
-            await manager.AddRoleAsync(new ChatRoomRole(roleDef));
+            await manager.AddRoleAsync(new ChatRoomRole(roleDef, TestSessionStorage.Create()));
 
             // Act — 重新从磁盘加载，验证是否已自动持久化
             var persistence2 = new ChatRoomPersistence(tempFolder);
-            var loadedManager = new ChatRoomManager
+            var loadedManager = new ChatRoomManager(TestSessionStorage.Create())
             {
                 Persistence = persistence2,
             };
@@ -1428,7 +1428,7 @@ public sealed class ChatRoomManagerTests
         try
         {
             var persistence = new ChatRoomPersistence(tempFolder);
-            var manager = new ChatRoomManager
+            var manager = new ChatRoomManager(TestSessionStorage.Create())
             {
                 Persistence = persistence,
             };
@@ -1444,15 +1444,15 @@ public sealed class ChatRoomManagerTests
                 RoleId = "role-remove",
                 RoleName = "删除角色",
             };
-            await manager.AddRoleAsync(new ChatRoomRole(roleDef1));
-            await manager.AddRoleAsync(new ChatRoomRole(roleDef2));
+            await manager.AddRoleAsync(new ChatRoomRole(roleDef1, TestSessionStorage.Create()));
+            await manager.AddRoleAsync(new ChatRoomRole(roleDef2, TestSessionStorage.Create()));
 
             // Act — 删除角色
             await manager.RemoveRoleAsync("role-remove");
 
             // 从磁盘重新加载
             var persistence2 = new ChatRoomPersistence(tempFolder);
-            var loadedManager = new ChatRoomManager
+            var loadedManager = new ChatRoomManager(TestSessionStorage.Create())
             {
                 Persistence = persistence2,
             };
@@ -1478,7 +1478,7 @@ public sealed class ChatRoomManagerTests
         try
         {
             var persistence = new ChatRoomPersistence(tempFolder);
-            var manager = new ChatRoomManager
+            var manager = new ChatRoomManager(TestSessionStorage.Create())
             {
                 Persistence = persistence,
             };
@@ -1488,7 +1488,7 @@ public sealed class ChatRoomManagerTests
 
             // 从磁盘重新加载
             var persistence2 = new ChatRoomPersistence(tempFolder);
-            var loadedManager = new ChatRoomManager
+            var loadedManager = new ChatRoomManager(TestSessionStorage.Create())
             {
                 Persistence = persistence2,
             };
@@ -1631,8 +1631,8 @@ public sealed class ChatRoomManagerTests
             RoleName = "角色一",
             ModelProviderId = "test-provider",
         };
-        var role = new ChatRoomRole(definition, null, roleExecutor);
-        var manager = new ChatRoomManager();
+        var role = new ChatRoomRole(definition, null, roleExecutor, TestSessionStorage.Create());
+        var manager = new ChatRoomManager(TestSessionStorage.Create());
         RegisterFakeModel(manager, new FakeChatClient());
         await manager.AddRoleAsync(role);
         await manager.HumanInterjectAsync("开始", "human", "用户");
@@ -1664,7 +1664,7 @@ public sealed class ChatRoomManagerTests
 
     private static async Task<ChatRoomManager> CreateManagerWithRolesAsync(params ChatRoomRole[] roles)
     {
-        var manager = new ChatRoomManager(new ChatRoomSession(), new ChatRoomRoleFactory());
+        var manager = new ChatRoomManager(new ChatRoomSession(), new ChatRoomRoleFactory(TestSessionStorage.Create()));
         manager.RegisterRoleModelProviders(new Dictionary<string, ILanguageModelProvider>());
         foreach (ChatRoomRole role in roles)
         {
@@ -1686,8 +1686,8 @@ public sealed class ChatRoomManagerTests
         };
 
         return executor is null
-            ? new ChatRoomRole(definition)
-            : new ChatRoomRole(definition, null, executor);
+            ? new ChatRoomRole(definition, TestSessionStorage.Create())
+            : new ChatRoomRole(definition, null, executor, TestSessionStorage.Create());
     }
 
     private static string CreateWorkspacePath()

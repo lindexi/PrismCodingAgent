@@ -59,11 +59,7 @@ public sealed class WpfNoticeWelcomeTests
                 Lang.Current.WelcomeDescriptionText.ToString(),
                 Lang.Current.WelcomeExamplesText.ToString()
             }, welcome.Children.OfType<TextBlock>().Select(text => text.Text).ToArray());
-            var logs = (Button)window.FindName("OpenLogDirectoryButton");
-            Assert.AreSame(model.OpenLogDirectoryCommand, logs.Command);
-            Assert.IsTrue(logs.IsVisible && logs.IsEnabled);
-            Assert.AreEqual(Lang.Current.OpenLogDirectoryText.ToString(), logs.ToolTip?.ToString());
-            await screenshots.CaptureAsync("welcome-before-chat-log-entry-not-clicked");
+            await screenshots.CaptureAsync("welcome-before-chat");
             var composer = (ChatView)window.FindName("ChatComposer");
             if (renderOnly)
             {

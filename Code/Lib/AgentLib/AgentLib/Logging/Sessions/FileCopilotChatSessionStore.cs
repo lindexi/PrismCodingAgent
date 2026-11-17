@@ -57,28 +57,12 @@ public sealed class FileCopilotChatSessionStore
             Path.Join(GetSessionDirectory(session), SessionDirectoryStorage.EntryFileName), cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>将完整会话及代理状态保存到所属会话目录的指定快照，同一 ID 覆盖保存。</summary>
-    public async Task SaveSnapshotAsync(CopilotChatSession session, SessionSnapshotId snapshotId, JsonElement? agentSessionState,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(session);
-        await SaveAsync(session, agentSessionState,
-            GetSnapshotPath(session, snapshotId), cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>从源会话目录读取指定快照的完整持久化数据。</summary>
-    public Task<CopilotChatSessionPersistenceData> LoadSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(sourceSession);
-        return SessionDirectoryStorage.ReadAsync(GetSnapshotPath(sourceSession, snapshotId), cancellationToken);
-    }
+    /// <summary>为指定会话身份创建附加资源存储。</summary>
+    public ISessionStorage CreateStorage(Guid sessionId, DateTimeOffset startedTime) =>
+        new FileSessionStorage(Path.Join(_sessionDirectory, startedTime.ToString("yyyyMMdd"), sessionId.ToString("N")));
 
     private string GetSessionDirectory(CopilotChatSession session) =>
         Path.Join(_sessionDirectory, session.StartedTime.ToString("yyyyMMdd"), session.SessionId.ToString("N"));
-
-    private string GetSnapshotPath(CopilotChatSession session, SessionSnapshotId snapshotId) =>
-        Path.Join(GetSessionDirectory(session), "Snapshots", snapshotId.ToDirectoryName(), SessionDirectoryStorage.EntryFileName);
 
     private async Task SaveAsync(CopilotChatSession session, JsonElement? agentSessionState, string filePath,
         CancellationToken cancellationToken)
@@ -86,20 +70,12 @@ public sealed class FileCopilotChatSessionStore
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var additionalInfo = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-            foreach (var item in session.AdditionalInfo)
-            {
-                var additionalInfoJsonElement = await item.Value.SerializeAsync(cancellationToken).ConfigureAwait(false);
-                // 调用 Clone 仅保险，浪费点也无所谓
-                additionalInfoJsonElement = additionalInfoJsonElement.Clone();
-
-                additionalInfo.Add(item.Key, additionalInfoJsonElement);
-            }
-
             if (File.Exists(filePath))
             {
                 await SessionDirectoryStorage.ExpandAsync(filePath, cancellationToken).ConfigureAwait(false);
             }
+
+            var additionalInfo = await session.AdditionalInfo.SerializeAsync(cancellationToken).ConfigureAwait(false);
 
             var data = new CopilotChatSessionPersistenceData
             {

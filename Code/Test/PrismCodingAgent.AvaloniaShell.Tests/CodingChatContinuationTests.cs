@@ -16,6 +16,12 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 [TestClass]
 public sealed class CodingChatContinuationTests
 {
+    private static CopilotChatManager CreateManager()
+    {
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        return new CopilotChatManager();
+    }
+
     [TestMethod]
     [Timeout(10000)]
     public async Task ContinueAsyncAfterFailedRunShouldReuseSessionAndAssistantWithoutAddingEntries()
@@ -29,7 +35,7 @@ public sealed class CodingChatContinuationTests
                 return RespondAsync(requests.Count, cancellationToken);
             },
         };
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var model = new FakeLanguageModel(client)
         {
             ModelDefinition = new ModelDefinition
@@ -83,7 +89,7 @@ public sealed class CodingChatContinuationTests
             OnGetStreamingResponseAsync = (_, _, cancellationToken) =>
                 RespondAsync(++requests, cancellationToken, continueCompletion.Task, failContinuation),
         };
-        var manager = new CopilotChatManager();
+        var manager = CreateManager();
         var model = new FakeLanguageModel(client)
         {
             ModelDefinition = new ModelDefinition
@@ -143,7 +149,7 @@ public sealed class CodingChatContinuationTests
             => Task.FromResult<IReadOnlyList<CopilotChatSessionSummary>>([]);
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
-        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, SessionSnapshotId snapshotId, CancellationToken cancellationToken = default)
+        public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
         public Task<bool> DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
             => Task.FromResult(false);

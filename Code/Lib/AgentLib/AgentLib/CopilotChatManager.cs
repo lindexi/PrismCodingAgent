@@ -1,6 +1,7 @@
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Logging;
+using AgentLib.Logging.Sessions;
 using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Agents.AI;
@@ -33,11 +34,13 @@ public class CopilotChatManager : NotifyBase
     private readonly SessionTitleGenerator _titleGenerator;
     private readonly IMainThreadDispatcher? _mainThreadDispatcher;
 
+    private readonly FileCopilotChatSessionStore _sessionStore;
+
     /// <summary>
-    /// 使用空日志记录器创建管理器。
+    /// 创建管理器。
     /// </summary>
     public CopilotChatManager()
-        : this(new EmptyCopilotChatLogger())
+        : this(new EmptyCopilotChatLogger(), new FileCopilotChatSessionStore("."))
     {
         // 无参构造，让 XAML 系开森
     }
@@ -46,8 +49,9 @@ public class CopilotChatManager : NotifyBase
     /// 使用指定的聊天日志记录器创建管理器。
     /// </summary>
     /// <param name="chatLogger">聊天日志记录器。</param>
-    public CopilotChatManager(ICopilotChatLogger chatLogger)
+    public CopilotChatManager(ICopilotChatLogger chatLogger, FileCopilotChatSessionStore sessionStore)
     {
+        _sessionStore = sessionStore;
         ChatLogger = chatLogger;
         _toolManager = new CopilotToolManager(this.AgentApiEndpointManager);
         _titleGenerator = new SessionTitleGenerator(AgentApiEndpointManager);
@@ -301,7 +305,9 @@ public class CopilotChatManager : NotifyBase
             throw new InvalidOperationException("在当前的会话中找不到所选的聊天消息。");
         }
 
-        var newSession = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, ChatLogger)
+        Guid sessionId = Guid.NewGuid();
+        DateTimeOffset startedTime = DateTimeOffset.Now;
+        var newSession = new CopilotChatSession(_sessionStore.CreateStorage(sessionId, startedTime), sessionId, startedTime, ChatLogger)
         {
             MainThreadDispatcher = MainThreadDispatcher,
         };
@@ -833,7 +839,9 @@ public class CopilotChatManager : NotifyBase
 
     private CopilotChatSession CreateSession()
     {
-        var session = new CopilotChatSession(Guid.NewGuid(), DateTimeOffset.Now, ChatLogger)
+        Guid sessionId = Guid.NewGuid();
+        DateTimeOffset startedTime = DateTimeOffset.Now;
+        var session = new CopilotChatSession(_sessionStore.CreateStorage(sessionId, startedTime), sessionId, startedTime, ChatLogger)
         {
             MainThreadDispatcher = MainThreadDispatcher,
         };

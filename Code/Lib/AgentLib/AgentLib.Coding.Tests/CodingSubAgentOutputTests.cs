@@ -9,6 +9,15 @@ namespace AgentLib.Coding.Tests;
 [TestClass]
 public sealed class CodingSubAgentOutputTests
 {
+    private static ISessionStorage CreateStorage() => new AgentLib.Logging.Sessions.FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+
+    private static async Task<AgentSession> ReadChildAsync(CopilotChatSession session, System.Text.Json.JsonElement index)
+    {
+        using Stream stream = session.AdditionalInfo.Storage.OpenRead(index.GetProperty("worker").GetString()!);
+        using var document = await System.Text.Json.JsonDocument.ParseAsync(stream);
+        return await new ChatClientAgent(new FakeChatClient()).DeserializeSessionAsync(document.RootElement);
+    }
+
     [TestMethod]
     [Timeout(15000)]
     public async Task WhenChildIsStreamingThenParentTreeContainsTextBeforeCompletion()
@@ -183,7 +192,7 @@ public sealed class CodingSubAgentOutputTests
         var message = CopilotChatMessage.CreateAssistant(string.Empty, false);
         CopilotChatSubAgentItem child = message.CreateSubAgentItem("child", "task");
         var compatibilityMessage = CopilotChatMessage.CreateAssistant(string.Empty, false);
-        var context = new CodingRunContext(new FakeChatClient(), compatibilityMessage, new CopilotChatSession(), output: child);
+        var context = new CodingRunContext(new FakeChatClient(), compatibilityMessage, new CopilotChatSession(CreateStorage()), output: child);
         context.Output.AppendText("stream");
         Assert.AreEqual(string.Empty, context.AssistantChatMessage.Content);
     }
@@ -217,7 +226,7 @@ public sealed class CodingSubAgentOutputTests
         var client = new FakeChatClient { OnGetStreamingResponseAsync = (_, _, _) => EmptyAsync() };
         await using var agent = new CodingAgent();
         ICodingAgentRunResult run = await agent.RunAsync(new CodingRunContext(client, message,
-            new CopilotChatSession { MainThreadDispatcher = dispatcher }), [new TextContent("task")], null);
+            new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher }), [new TextContent("task")], null);
         await run.CompletionTask;
         Assert.IsFalse(outsideDispatcher);
         Assert.AreEqual(string.Empty, message.Content);
@@ -226,7 +235,7 @@ public sealed class CodingSubAgentOutputTests
     [TestMethod]
     public async Task WhenSameNameIsCalledInAnotherParentTurnThenChildHistoryIsPreserved()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: session)).CompletionTask;
         var nextTurn = new Scenario();
@@ -237,15 +246,14 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
-    public async Task WhenAdditionalInfoIsSerializedThenItContainsChildModelHistory()
+    public async Task WhenAdditionalInfoIsSerializedThenItIndexesChildModelResource()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: session)).CompletionTask;
 
-        var state = await session.AdditionalInfo.Values.Single().SerializeAsync();
-        var restoredAgent = new Microsoft.Agents.AI.ChatClientAgent(new FakeChatClient());
-        var restored = await restoredAgent.DeserializeSessionAsync(state.GetProperty("worker"));
+        var state = await session.AdditionalInfo.Single().Value.SerializeAsync(session.AdditionalInfo.Storage);
+        var restored = await ReadChildAsync(session, state);
         restored.TryGetInMemoryChatHistory(out var messages);
 
         Assert.IsTrue(messages!.Any(message => message.Role == ChatRole.User && message.Text == "child task 1"));
@@ -254,13 +262,13 @@ public sealed class CodingSubAgentOutputTests
     [TestMethod]
     public async Task WhenAdditionalInfoIsLoadedThenNamedChildContinuesItsHistory()
     {
-        var original = new CopilotChatSession();
+        var original = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
         var attachment = original.AdditionalInfo.Single();
-        var loaded = new CopilotChatSession();
-        loaded.AdditionalInfo.Add(attachment.Key,
-            new JsonSessionAdditionalInfo(await attachment.Value.SerializeAsync()));
+        var loaded = new CopilotChatSession(original.AdditionalInfo.Storage);
+        loaded.AdditionalInfo.Set(attachment.Key,
+            new JsonSessionAdditionalInfo(await attachment.Value.SerializeAsync(original.AdditionalInfo.Storage)));
         var nextTurn = new Scenario();
 
         await (await nextTurn.StartAsync(agent, session: loaded)).CompletionTask;
@@ -273,15 +281,17 @@ public sealed class CodingSubAgentOutputTests
     {
         string path = Path.Combine(Path.GetTempPath(), "CodingSubAgentHistory", Guid.NewGuid().ToString("N"));
         var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(path);
-        var original = new CopilotChatSession();
+        Guid id = Guid.NewGuid();
+        DateTimeOffset started = DateTimeOffset.Now;
+        var original = new CopilotChatSession(store.CreateStorage(id, started), id, started, new CopilotChatManager().ChatLogger);
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
         await store.SaveSessionAsync(original, null);
         var data = await store.LoadSessionAsync(original.SessionId);
-        var loaded = new CopilotChatSession();
+        var loaded = new CopilotChatSession(store.CreateStorage(data.SessionId, data.StartedTime), data.SessionId, data.StartedTime, new CopilotChatManager().ChatLogger);
         foreach (var item in data.AdditionalInfo)
         {
-            loaded.AdditionalInfo.Add(item.Key, new JsonSessionAdditionalInfo(item.Value));
+            loaded.AdditionalInfo.Set(item.Key, new JsonSessionAdditionalInfo(item.Value));
         }
         var nextTurn = new Scenario();
 
@@ -291,37 +301,19 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
-    public async Task WhenRestorationFailsThenOriginalAdditionalInfoIsPreserved()
-    {
-        var original = new CopilotChatSession();
-        await using var agent = new CodingAgent();
-        await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
-        string key = original.AdditionalInfo.Keys.Single();
-        using var document = System.Text.Json.JsonDocument.Parse("{\"worker\":42}");
-        var raw = new JsonSessionAdditionalInfo(document.RootElement);
-        var loaded = new CopilotChatSession();
-        loaded.AdditionalInfo.Add(key, raw);
-
-        await (await new Scenario().StartAsync(agent, session: loaded)).CompletionTask;
-
-        Assert.AreSame(raw, loaded.AdditionalInfo[key]);
-    }
-
-    [TestMethod]
     public async Task WhenRestoredChildIsSerializedAgainThenHistoryIsRetained()
     {
-        var original = new CopilotChatSession();
+        var original = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
         var attachment = original.AdditionalInfo.Single();
-        var loaded = new CopilotChatSession();
-        loaded.AdditionalInfo.Add(attachment.Key,
-            new JsonSessionAdditionalInfo(await attachment.Value.SerializeAsync()));
+        var loaded = new CopilotChatSession(original.AdditionalInfo.Storage);
+        loaded.AdditionalInfo.Set(attachment.Key,
+            new JsonSessionAdditionalInfo(await attachment.Value.SerializeAsync(original.AdditionalInfo.Storage)));
         await (await new Scenario().StartAsync(agent, session: loaded)).CompletionTask;
 
-        var state = await loaded.AdditionalInfo[attachment.Key].SerializeAsync();
-        var restoredAgent = new ChatClientAgent(new FakeChatClient());
-        var restored = await restoredAgent.DeserializeSessionAsync(state.GetProperty("worker"));
+        var state = await loaded.AdditionalInfo[attachment.Key].SerializeAsync(loaded.AdditionalInfo.Storage);
+        var restored = await ReadChildAsync(loaded, state);
         restored.TryGetInMemoryChatHistory(out var messages);
 
         Assert.AreEqual(2, messages!.Count(message => message.Role == ChatRole.User && message.Text == "child task 1"));
@@ -330,7 +322,7 @@ public sealed class CodingSubAgentOutputTests
     [TestMethod]
     public async Task WhenAnotherNameIsCalledThenChildHistoryIsIndependent()
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: session)).CompletionTask;
         var nextTurn = new Scenario();
@@ -358,7 +350,7 @@ public sealed class CodingSubAgentOutputTests
     [DataRow(" ")]
     public async Task WhenNameIsEmptyThenEachCallStartsWithoutChildHistory(string? name)
     {
-        var session = new CopilotChatSession();
+        var session = new CopilotChatSession(CreateStorage());
         await using var agent = new CodingAgent();
         await (await new Scenario().StartAsync(agent, session: session, childName: name)).CompletionTask;
         var nextTurn = new Scenario();
@@ -392,7 +384,7 @@ public sealed class CodingSubAgentOutputTests
         {
             _childName = childName;
             var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
-            return agent.RunAsync(new CodingRunContext(client, Message, session ?? new CopilotChatSession { MainThreadDispatcher = dispatcher }),
+            return agent.RunAsync(new CodingRunContext(client, Message, session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher }),
                 [new TextContent("parent task")], null, new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
         }
 

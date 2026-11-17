@@ -11,7 +11,7 @@ public sealed class CodingAssistantChatRoomMappingTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateDefinitionShouldUseCodingAssistantKind()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
 
         ChatRoomRoleDefinition definition = factory.CreateCodingAssistantDefinition();
 
@@ -24,7 +24,7 @@ public sealed class CodingAssistantChatRoomMappingTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateRuntimeTemplateShouldUseFixedTemplateId()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
 
         RoleTemplate template = factory.CreateCodingAssistantRuntimeTemplate();
 
@@ -37,7 +37,7 @@ public sealed class CodingAssistantChatRoomMappingTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateDefinitionShouldNotShareMutableState()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
 
         ChatRoomRoleDefinition first = factory.CreateCodingAssistantDefinition();
         first.RoleName = "已修改";
@@ -50,7 +50,7 @@ public sealed class CodingAssistantChatRoomMappingTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateRoleShouldAttachRuntimeTools()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
 
         ChatRoomRole role = factory.CreateRole(factory.CreateCodingAssistantDefinition());
 
@@ -61,7 +61,7 @@ public sealed class CodingAssistantChatRoomMappingTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateRoleShouldAttachIndependentRuntimeTools()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
 
         ChatRoomRole first = factory.CreateRole(factory.CreateCodingAssistantDefinition());
         ChatRoomRole second = factory.CreateRole(factory.CreateCodingAssistantDefinition());
@@ -73,7 +73,7 @@ public sealed class CodingAssistantChatRoomMappingTests
     [Timeout(5000, CooperativeCancellation = true)]
     public void CreateRuntimeTemplateShouldSerializeWithoutSourceField()
     {
-        var factory = new ChatRoomRoleFactory();
+        var factory = new ChatRoomRoleFactory(TestSessionStorage.Create());
         RoleTemplate template = factory.CreateCodingAssistantRuntimeTemplate();
 
         string json = JsonSerializer.Serialize(template, RoleTemplateJsonSerializerContext.Default.RoleTemplate);
