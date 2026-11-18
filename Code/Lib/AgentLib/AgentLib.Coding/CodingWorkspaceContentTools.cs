@@ -32,7 +32,7 @@ internal sealed class CodingWorkspaceContentTools
         new(AIFunctionFactory.Create(LoadImageAsync, "load_image"), arguments => ToolCallPresentationFactory.ForPath(arguments, "filePath"))
     ];
 
-    [Description("从代码工作区内的图片文件加载多模态图片内容。")]
+    [Description("从图片文件加载多模态图片内容。")]
     internal async Task<DataContent> LoadImageAsync(
         [Description("图片文件路径。可以传绝对路径；相对路径则相对于代码工作区。")]
         string filePath,
@@ -43,18 +43,8 @@ internal sealed class CodingWorkspaceContentTools
             throw new ArgumentException("图片文件路径不能为空。", nameof(filePath));
         }
 
-        string fullPath = Path.GetFullPath(Path.IsPathRooted(filePath)
-            ? filePath
-            : Path.Join(_workspacePath, filePath));
-        EnsurePathInsideWorkspace(fullPath);
-        if (!File.Exists(fullPath))
-        {
-            throw new FileNotFoundException("指定的图片文件不存在。", fullPath);
-        }
-
-        DataContent content = await DataContent.LoadFromAsync(
-            fullPath,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+        DataContent content = await LoadImageContentAsync(filePath, _workspacePath, cancellationToken)
+            .ConfigureAwait(false);
         if (content.MediaType is null || !content.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException("指定文件不是受支持的图片文件。");
@@ -63,15 +53,12 @@ internal sealed class CodingWorkspaceContentTools
         return content;
     }
 
-    private void EnsurePathInsideWorkspace(string path)
+    internal static ValueTask<DataContent> LoadImageContentAsync(
+        string filePath, string? workspacePath, CancellationToken cancellationToken)
     {
-        string relativePath = Path.GetRelativePath(_workspacePath, path);
-        if (Path.IsPathRooted(relativePath)
-            || relativePath.Equals("..", StringComparison.Ordinal)
-            || relativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-            || relativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal))
-        {
-            throw new UnauthorizedAccessException("图片文件必须位于工作区内。");
-        }
+        string fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) || workspacePath is null
+            ? filePath
+            : Path.Join(workspacePath, filePath));
+        return DataContent.LoadFromAsync(fullPath, cancellationToken: cancellationToken);
     }
 }

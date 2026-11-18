@@ -15,23 +15,32 @@ internal sealed class CodingSubAgentTools
 )
 {
     internal ToolRegistration CreateRegistration() => new(
-        AIFunctionFactory.Create(InvokeCodingSubAgent), CreatePresentation);
+        AIFunctionFactory.Create(InvokeCodingSubAgentAsync, "InvokeCodingSubAgent"), CreatePresentation);
 
     private static ToolCallPresentation CreatePresentation(IDictionary<string, object?> arguments) =>
         new(ToolCallPresentationFactory.GetString(arguments, "name"), null);
 
     [Description("执行编程任务并返回提交的结果。")]
-    private async Task<string> InvokeCodingSubAgent
+    private async Task<string> InvokeCodingSubAgentAsync
     (
         [Description("子智能体名称。使用已有名称继续其上下文，使用新名称开始独立对话。")]
         string? name,
         [Description("本次编程任务提示词。")] string prompt,
-        CancellationToken cancellationToken
+        [Description("提供给编程子智能体的图片文件路径列表。可以传绝对路径；相对路径以代码工作区为基准。")]
+        string[]? imageFilePaths = null,
+        CancellationToken cancellationToken = default
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
         FunctionCallContent callContent = (FunctionInvokingChatClient.CurrentContext
             ?? throw new InvalidOperationException("编程委托必须在模型工具调用中执行。")).CallContent;
+        List<AIContent> contents = [new TextContent(prompt)];
+        foreach (string filePath in imageFilePaths ?? [])
+        {
+            contents.Add(await CodingWorkspaceContentTools.LoadImageContentAsync(
+                filePath, workspaceContext.WorkspacePath, cancellationToken).ConfigureAwait(false));
+        }
+
         var childMessage = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
         await parentContext.InvokeOutputAsync(() =>
         {
@@ -48,7 +57,7 @@ internal sealed class CodingSubAgentTools
         var context = new CodingRunContext(parentContext.ChatClient,
             childMessage, subSession);
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
-        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent(prompt)], childTools,
+        ICodingAgentRunResult run = await agent.RunAsync(context, contents, childTools,
             childPrompts, options, cancellationToken).ConfigureAwait(false);
         await run.CompletionTask.ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();

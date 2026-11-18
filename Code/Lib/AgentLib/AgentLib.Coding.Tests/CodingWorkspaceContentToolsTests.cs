@@ -34,9 +34,11 @@ public sealed class CodingWorkspaceContentToolsTests
         Assert.AreEqual("image/png", content.MediaType);
     }
 
-    [TestMethod(DisplayName = "加载工作区外图片应拒绝访问")]
+    [TestMethod(DisplayName = "加载工作区外图片应返回图片 DataContent")]
+    [DataRow(false)]
+    [DataRow(true)]
     [Timeout(5000, CooperativeCancellation = true)]
-    public async Task LoadImageAsync_WhenImageIsOutsideWorkspace_ThrowsUnauthorizedAccessException()
+    public async Task LoadImageAsync_WhenImageIsOutsideWorkspace_ReturnsDataContent(bool useRelativePath)
     {
         string testRoot = CreateTestDirectory();
         string workspacePath = Path.Join(testRoot, "workspace");
@@ -45,8 +47,10 @@ public sealed class CodingWorkspaceContentToolsTests
         await File.WriteAllBytesAsync(imagePath, PngBytes, TestContext.CancellationToken);
         var tools = new CodingWorkspaceContentTools(workspacePath);
 
-        await Assert.ThrowsExactlyAsync<UnauthorizedAccessException>(
-            () => tools.LoadImageAsync(imagePath, TestContext.CancellationToken));
+        string filePath = useRelativePath ? Path.GetRelativePath(workspacePath, imagePath) : imagePath;
+        DataContent content = await tools.LoadImageAsync(filePath, TestContext.CancellationToken);
+
+        CollectionAssert.AreEqual(PngBytes, content.Data.ToArray());
     }
 
     [TestMethod(DisplayName = "加载非图片文件应拒绝返回内容")]

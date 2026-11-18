@@ -59,6 +59,30 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    public async Task WhenImagePathsAreProvidedThenChildReceivesPromptAndImagesInOrder()
+    {
+        string testRoot = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        string workspacePath = Path.Join(testRoot, "workspace");
+        Directory.CreateDirectory(workspacePath);
+        string outsidePath = Path.Join(testRoot, "outside.ico");
+        await File.WriteAllBytesAsync(Path.Join(workspacePath, "inside.png"), [1]);
+        await File.WriteAllBytesAsync(outsidePath, [2]);
+        var scenario = new Scenario();
+        await using var agent = new CodingAgent();
+
+        await (await scenario.StartAsync(agent, workspacePath: workspacePath,
+            imageFilePaths: ["inside.png", outsidePath])).CompletionTask;
+
+        CollectionAssert.AreEqual(new object[] { "child task 1", (byte)1, (byte)2 },
+            scenario.FirstChildUserMessage?.Contents.Select(content => content switch
+            {
+                TextContent text => (object)text.Text,
+                DataContent image => image.Data.ToArray().Single(),
+                _ => content,
+            }).ToArray());
+    }
+
+    [TestMethod]
     public async Task WhenNamedChildIsReusedThenBothToolPresentationsContainItsName()
     {
         var scenario = new Scenario(delegations: 2);
@@ -375,17 +399,21 @@ public sealed class CodingSubAgentOutputTests
         public int ChildRounds { get; private set; }
         public bool RetryContainsFirstRound { get; private set; }
         public string? ParentResult { get; private set; }
+        public ChatMessage? FirstChildUserMessage { get; private set; }
         private int _parentCalls;
 
         private string? _childName = "worker";
+        private string[]? _imageFilePaths;
 
         public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default,
-            CopilotChatSession? session = null, string? childName = "worker")
+            CopilotChatSession? session = null, string? childName = "worker", string? workspacePath = null,
+            string[]? imageFilePaths = null)
         {
             _childName = childName;
+            _imageFilePaths = imageFilePaths;
             var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
             return agent.RunAsync(new CodingRunContext(client, Message, session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher }),
-                [new TextContent("parent task")], null, new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
+                [new TextContent("parent task")], workspacePath, new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
         }
 
         private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages,
@@ -398,9 +426,13 @@ public sealed class CodingSubAgentOutputTests
                 ParentResult = messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>().LastOrDefault()?.Result?.ToString();
                 if (_parentCalls++ < delegations)
                 {
+                    var arguments = new Dictionary<string, object?> { ["name"] = _childName, ["prompt"] = "child task " + _parentCalls };
+                    if (_imageFilePaths is not null)
+                    {
+                        arguments["imageFilePaths"] = System.Text.Json.JsonSerializer.SerializeToElement(_imageFilePaths);
+                    }
                     yield return new ChatResponseUpdate(ChatRole.Assistant,
-                        [new FunctionCallContent("parent-" + _parentCalls, "InvokeCodingSubAgent",
-                            new Dictionary<string, object?> { ["name"] = _childName, ["prompt"] = "child task " + _parentCalls })])
+                        [new FunctionCallContent("parent-" + _parentCalls, "InvokeCodingSubAgent", arguments)])
                     { FinishReason = ChatFinishReason.ToolCalls };
                 }
                 else
@@ -416,6 +448,7 @@ public sealed class CodingSubAgentOutputTests
                 yield break;
             }
 
+            FirstChildUserMessage ??= messages.Last(message => message.Role == ChatRole.User);
             ChildRounds++;
             yield return new ChatResponseUpdate(ChatRole.Assistant,
                 [new UsageContent(new UsageDetails { InputTokenCount = 7, OutputTokenCount = 3 })]);
