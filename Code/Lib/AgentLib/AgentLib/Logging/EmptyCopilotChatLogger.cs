@@ -4,7 +4,7 @@ namespace AgentLib.Logging;
 
 class EmptyCopilotChatLogger : ICopilotChatLogger
 {
-    public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => new SessionLogger();
+    public ISessionCopilotChatLogger CreateSessionLogger(string logName) => new SessionLogger();
 
     private sealed class SessionLogger : ISessionCopilotChatLogger
     {

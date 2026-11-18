@@ -5,7 +5,7 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 
 internal sealed class NullChatLogger : ICopilotChatLogger, ISessionCopilotChatLogger
 {
-    public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => this;
+    public ISessionCopilotChatLogger CreateSessionLogger(string logName) => this;
 
     public Task LogMessageAsync(Guid sessionId, CopilotChatMessage chatMessage) => Task.CompletedTask;
 

@@ -44,7 +44,7 @@ public sealed class CopilotChatSession : NotifyBase
         ChatMessages = new CopilotChatMessageProjection(Entries);
         SessionId = sessionId;
         StartedTime = startedTime;
-        Logger = chatLogger.CreateSessionLogger(sessionId);
+        Logger = chatLogger.CreateSessionLogger(sessionId.ToString("N"));
     }
 
     /// <summary>

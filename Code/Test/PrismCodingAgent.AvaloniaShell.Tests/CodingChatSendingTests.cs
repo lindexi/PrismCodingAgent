@@ -501,7 +501,7 @@ public sealed class CodingChatSendingTests
 
     private sealed class FailureDiagnosticLogger : ICopilotChatLogger
     {
-        public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => new SessionLogger(this, sessionId);
+        public ISessionCopilotChatLogger CreateSessionLogger(string logName) => new SessionLogger(this, Guid.ParseExact(logName, "N"));
 
         private sealed class SessionLogger(FailureDiagnosticLogger logger, Guid sessionId) : ISessionCopilotChatLogger
         {

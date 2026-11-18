@@ -40,7 +40,6 @@ public class FileCopilotChatLoggerTests
         string logFile = GetSingleFile(logPath, "*.log");
         string logContent = await File.ReadAllTextAsync(logFile);
 
-        StringAssert.Contains(logContent, $"SessionId: {sessionId}");
         StringAssert.Contains(logContent, "Copilot:");
         StringAssert.Contains(logContent, "测试内容");
         StringAssert.Contains(logContent, "推理内容");

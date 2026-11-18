@@ -271,7 +271,7 @@ public class CopilotChatSessionTests
 
         var session = new CopilotChatSession(CreateStorage(), sessionId, DateTimeOffset.Now, logger);
 
-        Assert.AreEqual(session.SessionId, logger.SessionId);
+        Assert.AreEqual(session.SessionId.ToString("N"), logger.LogName);
     }
 
     [TestMethod]
@@ -332,13 +332,13 @@ public class CopilotChatSessionTests
 
     private sealed class RecordingChatLogger : ICopilotChatLogger
     {
-        public Guid SessionId { get; private set; }
+        public string? LogName { get; private set; }
         public ISessionCopilotChatLogger SessionLogger { get; } =
-            new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid());
+            new EmptyCopilotChatLogger().CreateSessionLogger("Test");
 
-        public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId)
+        public ISessionCopilotChatLogger CreateSessionLogger(string logName)
         {
-            SessionId = sessionId;
+            LogName = logName;
             return SessionLogger;
         }
 

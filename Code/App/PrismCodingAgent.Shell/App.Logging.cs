@@ -18,7 +18,7 @@ public partial class App
     private FileCopilotChatLogger InitializeLogging(CodingChatRoomPaths paths)
     {
         var logger = new FileCopilotChatLogger(paths.LogDirectory);
-        ProcessLogger = logger.CreateSessionLogger(Guid.NewGuid());
+        ProcessLogger = logger.CreateSessionLogger($"Main_{Environment.ProcessId}");
         return logger;
     }
 }

@@ -216,6 +216,7 @@ public sealed class WpfStartupTests
             string logFile = Directory.EnumerateFiles(Path.Combine(root, "Logs"), "*.log", SearchOption.AllDirectories).Single();
             string log = await File.ReadAllTextAsync(logFile);
 
+            StringAssert.EndsWith(Path.GetFileName(logFile), $"_Main_{Environment.ProcessId}.log");
             StringAssert.Contains(log, $"Main ProcessId={Environment.ProcessId}；应用初始化失败。");
         }
         finally

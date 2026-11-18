@@ -17,7 +17,7 @@ namespace AgentLib.Logging;
 public sealed class FileCopilotChatLogger : ICopilotChatLogger
 {
     private readonly SemaphoreSlim _writeLock = new(1, 1);
-    private readonly Dictionary<Guid, string> _sessionLogFilePathMap = [];
+    private readonly Dictionary<string, string> _logFilePaths = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 使用默认日志目录创建日志记录器。
@@ -43,21 +43,28 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
     public string ChatLogFolder { get; }
 
     /// <inheritdoc/>
-    public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => new SessionLogger(this, sessionId);
-
-    private sealed class SessionLogger(FileCopilotChatLogger logger, Guid sessionId) : ISessionCopilotChatLogger
+    public ISessionCopilotChatLogger CreateSessionLogger(string logName)
     {
-        public Task LogMessageAsync(CopilotChatMessage chatMessage) => logger.LogMessageAsync(sessionId, chatMessage);
+        ArgumentHelper.ThrowIfNullOrWhiteSpace(logName);
+        return new SessionLogger(this, logName);
+    }
+
+    private sealed class SessionLogger(FileCopilotChatLogger logger, string logName) : ISessionCopilotChatLogger
+    {
+        public Task LogMessageAsync(CopilotChatMessage chatMessage) => logger.WriteMessageAsync(logName, chatMessage);
 
         public Task LogDiagnosticAsync(string category, string message, Exception? exception = null) =>
-            logger.LogDiagnosticAsync(sessionId, category, message, exception);
+            logger.WriteDiagnosticAsync(logName, category, message, exception);
     }
 
     /// <inheritdoc/>
     public Task LogMessageAsync(Guid sessionId, CopilotChatMessage chatMessage)
+        => WriteMessageAsync(sessionId.ToString("N"), chatMessage);
+
+    private Task WriteMessageAsync(string logName, CopilotChatMessage chatMessage)
     {
         ArgumentNullException.ThrowIfNull(chatMessage);
-        return AppendAsync(sessionId, chatMessage.CreatedTime, builder =>
+        return AppendAsync(logName, chatMessage.CreatedTime, builder =>
         {
             builder.Append(chatMessage.Author).AppendLine(":");
             builder.AppendLine(chatMessage.FullContent);
@@ -76,10 +83,13 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
 
     /// <inheritdoc/>
     public Task LogDiagnosticAsync(Guid sessionId, string category, string message, Exception? exception = null)
+        => WriteDiagnosticAsync(sessionId.ToString("N"), category, message, exception);
+
+    private Task WriteDiagnosticAsync(string logName, string category, string message, Exception? exception)
     {
         ArgumentHelper.ThrowIfNullOrWhiteSpace(category);
         ArgumentHelper.ThrowIfNullOrWhiteSpace(message);
-        return AppendAsync(sessionId, DateTimeOffset.Now, builder =>
+        return AppendAsync(logName, DateTimeOffset.Now, builder =>
         {
             builder.Append("诊断/").Append(category).AppendLine(":");
             builder.AppendLine(message);
@@ -91,20 +101,13 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
         });
     }
 
-    private async Task AppendAsync(Guid sessionId, DateTimeOffset createdTime, Action<StringBuilder> appendContent)
+    private async Task AppendAsync(string logName, DateTimeOffset createdTime, Action<StringBuilder> appendContent)
     {
         await _writeLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            string logFilePath = GetSessionLogFilePath(sessionId, createdTime);
-            bool isNewFile = !File.Exists(logFilePath);
+            string logFilePath = GetLogFilePath(logName, createdTime);
             var builder = new StringBuilder();
-            if (isNewFile)
-            {
-                builder.AppendLine($"SessionId: {sessionId}");
-                builder.AppendLine();
-            }
-
             builder.Append('[')
                 .Append(createdTime.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"))
                 .AppendLine("]");
@@ -118,9 +121,9 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
         }
     }
 
-    private string GetSessionLogFilePath(Guid sessionId, DateTimeOffset createdTime)
+    private string GetLogFilePath(string logName, DateTimeOffset createdTime)
     {
-        if (_sessionLogFilePathMap.TryGetValue(sessionId, out string? logFilePath))
+        if (_logFilePaths.TryGetValue(logName, out string? logFilePath))
         {
             return logFilePath;
         }
@@ -128,8 +131,8 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
         string dayFolderPath = Path.Join(ChatLogFolder, createdTime.ToString("yyyyMMdd"));
         Directory.CreateDirectory(dayFolderPath);
 
-        logFilePath = Path.Join(dayFolderPath, $"{createdTime:yyyyMMdd_HHmmss}_{sessionId:N}.log");
-        _sessionLogFilePathMap[sessionId] = logFilePath;
+        logFilePath = Path.Join(dayFolderPath, $"{createdTime:yyyyMMdd_HHmmss}_{logName}.log");
+        _logFilePaths[logName] = logFilePath;
         return logFilePath;
     }
 

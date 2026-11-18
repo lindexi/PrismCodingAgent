@@ -403,7 +403,7 @@ public sealed class ResponsesCodingAgentTests
     {
         public RecordingSessionLogger SessionLogger { get; } = new();
 
-        public ISessionCopilotChatLogger CreateSessionLogger(Guid sessionId) => SessionLogger;
+        public ISessionCopilotChatLogger CreateSessionLogger(string logName) => SessionLogger;
 
         public Task LogMessageAsync(Guid sessionId, CopilotChatMessage chatMessage) => Task.CompletedTask;
 

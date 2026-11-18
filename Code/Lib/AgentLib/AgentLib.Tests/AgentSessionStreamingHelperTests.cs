@@ -43,7 +43,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
         List<AgentResponseUpdate> updates = await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(
-            CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()))).ConfigureAwait(false);
+            CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test"))).ConfigureAwait(false);
 
         Assert.AreEqual(2, callCount);
         Assert.AreEqual($"{PartialAssistantText}{CompletedAssistantText}", string.Concat(updates.Select(update => update.Text)));
@@ -76,7 +76,7 @@ public class AgentSessionStreamingHelperTests
         ChatClientAgent agent = CreateAgent(fakeChatClient);
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
-        await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()))).ConfigureAwait(false);
+        await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test"))).ConfigureAwait(false);
 
         Assert.AreEqual(2, callCount);
         Assert.IsNotNull(retryMessages);
@@ -109,7 +109,7 @@ public class AgentSessionStreamingHelperTests
             ]),
         ]);
 
-        await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()))).ConfigureAwait(false);
+        await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test"))).ConfigureAwait(false);
 
         Assert.IsNotNull(receivedMessages);
         ChatMessage resultMessage = receivedMessages.Single(message => message.Contents.OfType<FunctionResultContent>().Any());
@@ -226,7 +226,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
         HttpRequestException actualException = await Assert.ThrowsExactlyAsync<HttpRequestException>(() =>
-            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid())))).ConfigureAwait(false);
+            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test")))).ConfigureAwait(false);
 
         Assert.AreEqual(6, callCount);
         Assert.AreSame(expectedExceptions[^1], actualException);
@@ -254,7 +254,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
         List<AgentResponseUpdate> updates = await CollectUpdatesAsync(
-            agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()))).ConfigureAwait(false);
+            agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test"))).ConfigureAwait(false);
 
         Assert.AreEqual(7, callCount);
         Assert.AreEqual($"{PartialAssistantText}{CompletedAssistantText}", string.Concat(updates.Select(update => update.Text)));
@@ -277,7 +277,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
         InvalidOperationException actualException = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
-            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid())))).ConfigureAwait(false);
+            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test")))).ConfigureAwait(false);
 
         Assert.AreEqual(1, callCount);
         Assert.AreSame(expectedException, actualException);
@@ -298,7 +298,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
         await Assert.ThrowsExactlyAsync<TaskCanceledException>(() =>
-            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid())))).ConfigureAwait(false);
+            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test")))).ConfigureAwait(false);
 
         Assert.AreEqual(11, callCount);
     }
@@ -321,7 +321,7 @@ public class AgentSessionStreamingHelperTests
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(
-                CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()), cancellationTokenSource.Token))).ConfigureAwait(false);
+                CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test"), cancellationTokenSource.Token))).ConfigureAwait(false);
 
         Assert.AreEqual(1, callCount);
     }
@@ -341,7 +341,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
 
         await Assert.ThrowsExactlyAsync<TaskCanceledException>(() =>
-            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid())))).ConfigureAwait(false);
+            CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test")))).ConfigureAwait(false);
 
         Assert.AreEqual(11, callCount);
     }
@@ -360,7 +360,7 @@ public class AgentSessionStreamingHelperTests
         AgentSession session = await agent.CreateSessionAsync().ConfigureAwait(false);
         session.SetInMemoryChatHistory([.. history]);
 
-        await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger(Guid.NewGuid()))).ConfigureAwait(false);
+        await CollectUpdatesAsync(agent.RunWithHistoryCompletionAsync(CreateInputMessages(), session, new EmptyCopilotChatLogger().CreateSessionLogger("Test"))).ConfigureAwait(false);
 
         Assert.IsNotNull(receivedMessages);
         return receivedMessages;
