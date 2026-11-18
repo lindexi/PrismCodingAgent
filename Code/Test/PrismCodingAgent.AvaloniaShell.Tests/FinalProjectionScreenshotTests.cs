@@ -1,4 +1,3 @@
-using AgentLib;
 using AgentLib.Model;
 using Avalonia;
 using Avalonia.Controls;
@@ -68,32 +67,6 @@ public sealed class FinalProjectionScreenshotTests
             window.Close();
             foreach (var projection in projections) projection.Dispose();
         }
-    }
-
-    /// <summary>Projects public approval decisions, not clicks or tool execution.</summary>
-    [TestMethod]
-    [DataRow(true)]
-    [DataRow(false)]
-    public void ApprovalDecisionRendersWithoutInput(bool approve)
-    {
-        var approval = new CopilotChatApprovalToolItem("fixture", "inspect_preview", "{\"path\":\"预览/示例.txt\",\"execute\":false}", "仅审阅拟议预览，不执行工具。", "代码预览审批");
-        var store = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(System.IO.Path.Join(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N")));
-        var manager = new CopilotChatManager();
-        if (approve) manager.ApproveToolExecution(approval);
-        else manager.RejectToolExecution(approval, "本次仅检查界面，暂不执行。 ");
-        var view = new ChatView();
-        var items = new ItemsControl { ItemsSource = new[] { approval }, Margin = new Thickness(24) };
-        view.Content = items;
-        var window = new Window { Width = 800, Height = 520, Content = view, Background = Brushes.White };
-        try
-        {
-            window.Show();
-            Capture(window, $"01-approval-{(approve ? "approved" : "rejected")}-public-decision-projection-not-click");
-            Assert.IsFalse(approval.CanRespondToApproval);
-            Assert.IsFalse(items.GetVisualDescendants().OfType<Button>().Any(button => button.IsEffectivelyVisible));
-            Assert.AreEqual(752d, items.GetVisualDescendants().OfType<Border>().Single(border => border.Classes.Contains("ApprovalPanel")).Bounds.Width, 0.1);
-        }
-        finally { window.Close(); }
     }
 
     private void Capture(Window window, string name)

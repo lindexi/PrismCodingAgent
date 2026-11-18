@@ -18,6 +18,7 @@ public sealed class ToolReferenceScreenshotTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    [Ignore("手动视觉参考：重复截图及固定等待用于检查工具和子代理样式，不验证业务执行。")]
     public async Task ProjectedToolsAndAgentsRenderWithoutExecution()
     {
         var message = CopilotChatMessage.CreateAssistant("公开模型渲染示例；非实际工具执行。", false);

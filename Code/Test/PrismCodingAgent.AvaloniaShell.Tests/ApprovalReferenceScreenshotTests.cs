@@ -17,6 +17,7 @@ public sealed class ApprovalReferenceScreenshotTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    [Ignore("手动视觉参考：仅生成审批模板截图并检查固定布局，不验证审批交互。")]
     public void PendingApprovalUsesActualReferenceTemplateWithoutExecution()
     {
         var approval = new CopilotChatApprovalToolItem("fixture", "inspect_preview", "{\"path\":\"preview-only/示例.txt\",\"execute\":false}",

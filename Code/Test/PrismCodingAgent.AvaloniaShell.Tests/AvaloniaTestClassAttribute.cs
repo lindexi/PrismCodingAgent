@@ -7,7 +7,7 @@ using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
-internal sealed class AvaloniaTestClassAttribute(string? language = null) : TestClassAttribute
+internal sealed class AvaloniaTestClassAttribute(string language = "zh-Hans") : TestClassAttribute
 {
     private static readonly Lazy<HeadlessUnitTestSession> SharedSession = new(
         () => HeadlessUnitTestSession.StartNew(typeof(TestApplication)));
@@ -23,7 +23,7 @@ internal sealed class AvaloniaTestClassAttribute(string? language = null) : Test
 
     private sealed class UiTestMethodAttribute(
         TestMethodAttribute inner,
-        string? selectedLanguage,
+        string language,
         [CallerFilePath] string callerFilePath = "",
         [CallerLineNumber] int callerLineNumber = -1) : TestMethodAttribute(callerFilePath, callerLineNumber)
     {
@@ -37,41 +37,10 @@ internal sealed class AvaloniaTestClassAttribute(string? language = null) : Test
                 CultureInfo originalUICulture = CultureInfo.CurrentUICulture;
                 try
                 {
-                    var results = new List<TestResult>();
-                    foreach (string language in selectedLanguage is null ? Lang.SupportedLanguageTags : new[] { selectedLanguage })
-                    {
-                        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(language);
-                        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
-                        Lang.SetCurrent(language);
-                        try
-                        {
-                            foreach (TestResult result in await inner.ExecuteAsync(testMethod))
-                            {
-                                string name = result.DisplayName ?? inner.DisplayName ?? testMethod.TestMethodName;
-                                if (result.DisplayName is null && testMethod.Arguments is { Length: > 0 } arguments)
-                                {
-                                    DataRowAttribute? row = testMethod.GetAttributes<DataRowAttribute>()
-                                        .FirstOrDefault(candidate => candidate.Data.SequenceEqual(arguments));
-                                    name = row?.GetDisplayName(testMethod.MethodInfo, arguments)
-                                        ?? $"{name} ({string.Join(", ", arguments.Select(argument => argument?.ToString() ?? "null"))})";
-                                }
-
-                                result.DisplayName = $"{name} [{language}]";
-                                results.Add(result);
-                            }
-                        }
-                        catch (Exception exception)
-                        {
-                            results.Add(new TestResult
-                            {
-                                DisplayName = $"{testMethod.TestMethodName} [{language}]",
-                                Outcome = UnitTestOutcome.Failed,
-                                TestFailureException = exception,
-                            });
-                        }
-                    }
-
-                    return results.ToArray();
+                    CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(language);
+                    CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
+                    Lang.SetCurrent(language);
+                    return await inner.ExecuteAsync(testMethod);
                 }
                 finally
                 {

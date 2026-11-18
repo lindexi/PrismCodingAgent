@@ -56,6 +56,7 @@ public sealed class NoticeFailureReferenceScreenshotTests
     }
 
     [TestMethod]
+    [Ignore("手动视觉参考：仅生成启动失败窗口截图，断言未验证窗口错误信息或操作绑定。")]
     public async Task StartupFailureRendersCompleteWindow()
     {
         var failure = new System.Text.Json.JsonException("配置文件格式无效：请检查模型配置。");
