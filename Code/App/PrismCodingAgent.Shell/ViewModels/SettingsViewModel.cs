@@ -60,6 +60,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     private bool _isNetworkProxyEnabled;
     private string? _networkProxyAddress;
     private bool _bypassProxyOnLocal = true;
+    private bool _isAutomaticSessionTitleEnabled = true;
     private bool _isCopilotInstructionsEnabled;
     private string? _copilotInstructionsPath;
     private string? _statusMessage;
@@ -216,6 +217,12 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
         }
     }
 
+    public bool IsAutomaticSessionTitleEnabled
+    {
+        get => _isAutomaticSessionTitleEnabled;
+        set => SetField(ref _isAutomaticSessionTitleEnabled, value);
+    }
+
     public bool IsCopilotInstructionsEnabled
     {
         get => _isCopilotInstructionsEnabled;
@@ -289,6 +296,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
         IsNetworkProxyEnabled = snapshot.ShellSettings.IsNetworkProxyEnabled;
         NetworkProxyAddress = snapshot.ShellSettings.NetworkProxyAddress;
         BypassProxyOnLocal = snapshot.ShellSettings.BypassProxyOnLocal;
+        IsAutomaticSessionTitleEnabled = snapshot.ShellSettings.IsAutomaticSessionTitleEnabled;
         IsCopilotInstructionsEnabled = snapshot.ShellSettings.IsCopilotInstructionsEnabled;
         CopilotInstructionsPath = snapshot.ShellSettings.CopilotInstructionsPath;
 
@@ -406,6 +414,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
                 IsNetworkProxyEnabled = IsNetworkProxyEnabled,
                 NetworkProxyAddress = networkProxyAddress,
                 BypassProxyOnLocal = BypassProxyOnLocal,
+                IsAutomaticSessionTitleEnabled = IsAutomaticSessionTitleEnabled,
                 IsCopilotInstructionsEnabled = IsCopilotInstructionsEnabled,
                 CopilotInstructionsPath = string.IsNullOrWhiteSpace(CopilotInstructionsPath)
                     ? null

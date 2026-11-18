@@ -101,7 +101,10 @@ internal static class CodingWorkTaskRuntimeFactory
             chatRunner,
             workspaceController,
             codingAgent
-        );
+        )
+        {
+            IsAutomaticSessionTitleEnabled = shellSettings.IsAutomaticSessionTitleEnabled,
+        };
 
         return new CodingWorkTaskRuntime
         {

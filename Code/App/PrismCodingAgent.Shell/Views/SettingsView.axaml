@@ -313,6 +313,18 @@
                 </Border>
 
                 <Border Classes="SettingsCard" Padding="24">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                        <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Classes="SettingsSectionTitle"
+                                   Text="{Binding AutomaticSessionTitleText, Source={x:Static localizations:Lang.Current}}" />
+                        <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                      AutomationProperties.Name="{Binding AutomaticSessionTitleText, Source={x:Static localizations:Lang.Current}}"
+                                      IsChecked="{Binding IsAutomaticSessionTitleEnabled, Mode=TwoWay}"
+                                      OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
+                                      OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}" />
+                    </Grid>
+                </Border>
+
+                <Border Classes="SettingsCard" Padding="24">
                     <StackPanel Spacing="20">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
                             <Border Classes="SectionIcon">

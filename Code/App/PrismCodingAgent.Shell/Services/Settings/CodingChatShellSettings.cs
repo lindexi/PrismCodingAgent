@@ -24,6 +24,8 @@ internal sealed record CodingChatShellSettings
 
     public bool BypassProxyOnLocal { get; init; } = true;
 
+    public bool IsAutomaticSessionTitleEnabled { get; init; } = true;
+
     public bool IsCopilotInstructionsEnabled { get; init; }
 
     public string? CopilotInstructionsPath { get; init; }

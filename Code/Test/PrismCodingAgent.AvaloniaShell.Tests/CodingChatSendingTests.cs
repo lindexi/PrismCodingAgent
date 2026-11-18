@@ -95,6 +95,24 @@ public sealed class CodingChatSendingTests
         }
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task SendMessageAsyncShouldOnlySaveTheConversationWhenAutomaticTitleIsDisabled()
+    {
+        var manager = CreateManager();
+        var store = new TestSessionStore();
+        var runner = new TestCodingChatRunner(manager);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+        application.IsAutomaticSessionTitleEnabled = false;
+
+        Task sending = application.SendMessageAsync("First task");
+        await runner.Started.Task;
+        runner.Complete("Done");
+        await sending;
+
+        Assert.AreEqual(1, store.SaveCount);
+    }
+
     [TestMethod(DisplayName = "发送应使用启动时已提交的工作路径")]
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldUseCommittedWorkspacePath()

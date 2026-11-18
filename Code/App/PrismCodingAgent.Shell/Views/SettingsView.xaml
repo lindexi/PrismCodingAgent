@@ -426,6 +426,19 @@
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource SettingsCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition /><ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" FontSize="15" FontWeight="SemiBold"
+                                   Margin="0,0,14,0" Text="{Binding AutomaticSessionTitleText, Source={x:Static l:Lang.Current}}" />
+                        <CheckBox Grid.Column="1" Style="{StaticResource SettingsSwitch}"
+                                  AutomationProperties.Name="{Binding AutomaticSessionTitleText, Source={x:Static l:Lang.Current}}"
+                                  IsChecked="{Binding IsAutomaticSessionTitleEnabled, Mode=TwoWay}"
+                                  Content="{Binding NetworkProxyEnabledText, Source={x:Static l:Lang.Current}}" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource SettingsCard}">
                     <StackPanel>
                         <Grid Margin="0,0,0,20">
                             <Grid.ColumnDefinitions>

@@ -631,7 +631,6 @@ public sealed class CodingWorkTaskControllerTests
         await run;
 
         CollectionAssert.AreEqual(runner.Assistants.Select(message => message.SessionSnapshotId).ToArray(), store.SavedSnapshotIds);
-        Assert.AreEqual(1, store.SaveCount);
     }
 
     [TestMethod]

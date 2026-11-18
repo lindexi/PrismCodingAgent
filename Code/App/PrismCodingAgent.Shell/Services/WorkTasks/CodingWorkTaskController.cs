@@ -93,6 +93,8 @@ internal sealed class CodingWorkTaskController
 
     internal ICodingChatRunner CodingRunner => _chatRunner;
 
+    internal bool IsAutomaticSessionTitleEnabled { get; set; } = true;
+
     public event EventHandler? StateChanged;
 
     public ObservableCollection<CopilotChatSessionSummary> Sessions { get; } = [];
@@ -451,7 +453,10 @@ internal sealed class CodingWorkTaskController
             UpdateOperationState(default);
         }
 
-        _ = TryGenerateSessionTitleAsync(session);
+        if (IsAutomaticSessionTitleEnabled)
+        {
+            _ = TryGenerateSessionTitleAsync(session);
+        }
     }
 
     private async Task TryGenerateSessionTitleAsync(CopilotChatSession session)
