@@ -95,14 +95,15 @@ internal static class CodingWorkTaskRuntimeFactory
             chatManager,
             mainThreadDispatcher
         );
-        var chatRunner = new CodingAgentChatRunner(chatManager, codingAgent);
+        var chatRunner = new CodingAgentChatRunner(chatManager, codingAgent, processLogger);
         var controller = new CodingWorkTaskController
         (
             chatManager,
             sessionStore,
             chatRunner,
             workspaceController,
-            codingAgent
+            codingAgent,
+            processLogger: processLogger
         );
 
         return new CodingWorkTaskRuntime

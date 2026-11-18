@@ -18,8 +18,15 @@ public partial class MainWindow : Window
     private readonly ChatAutoScrollState _autoScrollState = new();
     private ChatViewModel? _scrollChat;
 
-    public MainWindow()
+    private readonly ISessionCopilotChatLogger? _processLogger;
+
+    public MainWindow() : this(null)
     {
+    }
+
+    internal MainWindow(ISessionCopilotChatLogger? processLogger)
+    {
+        _processLogger = processLogger;
         InitializeComponent();
         Closing += OnClosing;
     }
@@ -176,7 +183,7 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             // Event boundary: preserve the window so failed cleanup can be retried.
-            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[MainWindow][Shutdown]", "应用退出清理失败。", exception);
+            await _processLogger.TryLogDiagnosticAsync("[MainWindow][Shutdown]", "应用退出清理失败。", exception);
             ExitError.Visibility = Visibility.Visible;
         }
         finally

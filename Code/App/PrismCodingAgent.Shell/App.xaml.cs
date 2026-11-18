@@ -42,7 +42,7 @@ public partial class App : Application
             paths = CodingChatStartupOptions.FromArguments(arguments).Paths;
             var logger = InitializeLogging(paths);
             var model = await ShellStartup.InitializeAsync(paths, new WpfMainThreadDispatcher(), logger, ProcessLogger);
-            var window = new MainWindow { DataContext = model };
+            var window = new MainWindow(ProcessLogger) { DataContext = model };
             window.Show();
             return window;
         }

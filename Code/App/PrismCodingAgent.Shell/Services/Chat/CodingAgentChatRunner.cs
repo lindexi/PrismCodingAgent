@@ -13,16 +13,19 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
 {
     private readonly CopilotChatManager _chatManager;
     private readonly CodingAgent _codingAgent;
+    private readonly ISessionCopilotChatLogger? _processLogger;
     private ICodingAgentRunResult? _activeRun;
 
     internal CopilotChatMessage? FailedAssistantMessage { get; private set; }
 
-    public CodingAgentChatRunner(CopilotChatManager chatManager, CodingAgent codingAgent)
+    public CodingAgentChatRunner(CopilotChatManager chatManager, CodingAgent codingAgent,
+        ISessionCopilotChatLogger? processLogger = null)
     {
         ArgumentNullException.ThrowIfNull(chatManager);
         ArgumentNullException.ThrowIfNull(codingAgent);
         _chatManager = chatManager;
         _codingAgent = codingAgent;
+        _processLogger = processLogger;
     }
 
     public async Task<ICodingAgentRunResult> RunAsync
@@ -142,7 +145,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
                 }
                 catch (Exception logException) when (FailedAssistantMessage is not null)
                 {
-                    await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[CodingAgentChatRunner]",
+                    await _processLogger.TryLogDiagnosticAsync("[CodingAgentChatRunner]",
                         $"记录助手消息失败。SessionId={sessionId}", logException).ConfigureAwait(false);
                 }
             }

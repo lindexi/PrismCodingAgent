@@ -14,8 +14,15 @@ public partial class MainWindow : Window
     private bool _shutdownRequested;
     private IInputElement? _previousFocus;
 
-    public MainWindow()
+    private readonly ISessionCopilotChatLogger? _processLogger;
+
+    public MainWindow() : this(null)
     {
+    }
+
+    internal MainWindow(ISessionCopilotChatLogger? processLogger)
+    {
+        _processLogger = processLogger;
         InitializeComponent();
         Closing += OnClosing;
         AddHandler(KeyDownEvent, OnExitKeyDown, RoutingStrategies.Tunnel);
@@ -77,7 +84,7 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             // Event boundary: keep the window alive and report cleanup failures.
-            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[MainWindow][Shutdown]", "应用退出清理失败。", exception);
+            await _processLogger.TryLogDiagnosticAsync("[MainWindow][Shutdown]", "应用退出清理失败。", exception);
             ExitError.IsVisible = true;
         }
         finally

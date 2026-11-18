@@ -56,6 +56,7 @@ internal sealed class CodingWorkTaskController
     private readonly CodingWorkspaceController _workspaceController;
     private readonly CodingAgent _codingAgent;
     private readonly TimeProvider _timeProvider;
+    private readonly ISessionCopilotChatLogger? _processLogger;
     private Guid? _workTaskId;
     private string? _workTaskName;
     private CancellationTokenSource? _activeOperationCancellationTokenSource;
@@ -74,7 +75,8 @@ internal sealed class CodingWorkTaskController
         ICodingChatRunner chatRunner,
         CodingWorkspaceController workspaceController,
         CodingAgent codingAgent,
-        TimeProvider? timeProvider = null
+        TimeProvider? timeProvider = null,
+        ISessionCopilotChatLogger? processLogger = null
     )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
@@ -88,6 +90,7 @@ internal sealed class CodingWorkTaskController
         _workspaceController = workspaceController;
         _codingAgent = codingAgent;
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _processLogger = processLogger;
         AddOrUpdateSummary(_chatManager.SelectedSession, insertAtTop: true);
     }
 
@@ -788,7 +791,7 @@ internal sealed class CodingWorkTaskController
         catch (Exception logException)
         {
             operationException.Data["DiagnosticLogException"] = logException;
-            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[CodingWorkTaskController][LogOperationFailure]",
+            await _processLogger.TryLogDiagnosticAsync("[CodingWorkTaskController][LogOperationFailure]",
                 $"记录会话诊断失败。SessionId={session.SessionId} Category={category}", logException);
         }
     }

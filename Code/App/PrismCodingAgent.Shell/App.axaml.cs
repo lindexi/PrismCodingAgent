@@ -34,7 +34,7 @@ public partial class App : Application
             paths = CodingChatStartupOptions.FromArguments(desktop.Args).Paths;
             var logger = InitializeLogging(paths);
             MainViewModel model = await ShellStartup.InitializeAsync(paths, new AvaloniaMainThreadDispatcher(), logger, ProcessLogger);
-            var window = new MainWindow { DataContext = model };
+            var window = new MainWindow(ProcessLogger) { DataContext = model };
             desktop.MainWindow = window;
             window.Show();
         }
