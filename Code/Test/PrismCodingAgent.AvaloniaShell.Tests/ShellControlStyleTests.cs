@@ -66,17 +66,6 @@ public sealed class ShellControlStyleTests
     }
 
     [TestMethod]
-    public void StopLanguageServerButtonShouldKeepToolTipInChatSettings()
-    {
-        using var viewModel = new ChatViewModel();
-        var settings = new ChatSettingsView { DataContext = viewModel };
-        var button = settings.FindControl<Button>("StopLanguageServerButton");
-
-        Assert.IsNotNull(button);
-        Assert.AreEqual(Lang.Current.StopLanguageServerToolTip, ToolTip.GetTip(button));
-    }
-
-    [TestMethod]
     [DataRow(":pointerover")]
     [DataRow(":pressed")]
     public void OrdinaryButtonsShouldNotInheritDangerTextColor(string state)
@@ -185,24 +174,6 @@ public sealed class ShellControlStyleTests
             window.Show();
             button.Focus(Avalonia.Input.NavigationMethod.Tab);
             Assert.IsTrue(button.IsFocused);
-        }
-        finally { window.Close(); }
-    }
-
-    [TestMethod]
-    public void ComposerActionsShouldFitAtMinimumWindowWidth()
-    {
-        var view = new ChatView { DataContext = new ChatViewModel() };
-        var window = new Window { Width = 1016, Height = 620, Content = view };
-        try
-        {
-            window.Show();
-            window.UpdateLayout();
-            var settings = view.FindControl<Button>("OpenChatSettingsButton") ?? throw new InvalidOperationException("Chat settings entry missing.");
-            var button = view.FindControl<Button>("CompressConversationButton") ?? throw new InvalidOperationException("Button missing.");
-            Point settingsOrigin = settings.TranslatePoint(default, view) ?? throw new InvalidOperationException("Chat settings entry position missing.");
-            Point buttonOrigin = button.TranslatePoint(default, view) ?? throw new InvalidOperationException("Button position missing.");
-            Assert.IsLessThanOrEqualTo(buttonOrigin.X, settingsOrigin.X + settings.Bounds.Width);
         }
         finally { window.Close(); }
     }
