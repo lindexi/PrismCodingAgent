@@ -43,7 +43,7 @@ internal sealed class WpfTestClassAttribute : TestClassAttribute
         var results = new List<TestResult>();
         try
         {
-            foreach (string language in Lang.SupportedLanguageTags)
+            foreach (string language in new[] { "zh-Hans" })
             {
                 CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(language);
                 CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);

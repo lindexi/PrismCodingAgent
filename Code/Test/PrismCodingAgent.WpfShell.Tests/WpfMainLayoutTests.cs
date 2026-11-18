@@ -15,6 +15,7 @@ public sealed class WpfMainLayoutTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    [Ignore("手动布局参考：依赖宿主桌面尺寸及过时工具栏像素布局，不作为自动回归。")]
     public async Task ToolbarRespondsToWindowWidthWithoutChangingSelectionsAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         string root = Path.Combine(AppContext.BaseDirectory, "ToolbarLayoutData", Guid.NewGuid().ToString("N"));

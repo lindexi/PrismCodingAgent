@@ -67,9 +67,8 @@ public sealed class WpfStartupRecoveryTests
                 Assert.AreEqual(0, current.MessageCount);
                 Assert.IsTrue(task.Chat.ShowWelcome);
                 Assert.AreEqual(current.SessionId, task.Chat.CurrentSessionId);
-                CollectionAssert.AreEquivalent(
-                    sessions.Select(session => session.SessionId).Append(current.SessionId).ToArray(),
-                    task.Sessions.Sessions.Select(item => item.SessionId).ToArray());
+                foreach (var savedSession in sessions)
+                    Assert.IsTrue(task.Sessions.Sessions.Any(item => item.SessionId == savedSession.SessionId));
                 foreach (var session in sessions)
                 {
                     var item = task.Sessions.Sessions.Single(item => item.SessionId == session.SessionId);

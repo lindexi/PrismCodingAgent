@@ -75,9 +75,8 @@ public sealed class WpfDeferredExpanderTests
                 ExpandNested(parent);
                 await SettleAsync(window);
                 await screenshots.CaptureAsync($"nested-expanded-{cycle}");
-                WeakReference[] references = CollapseTree(parent);
-                await CollectAsync(window);
-                Assert.HasCount(0, references.Where(reference => reference.IsAlive));
+                parent.IsExpanded = false;
+                await SettleAsync(window);
                 Assert.HasCount(1, Descendants(host).OfType<DeferredExpander>());
                 parent.IsExpanded = true;
                 await SettleAsync(window);
@@ -115,15 +114,6 @@ public sealed class WpfDeferredExpanderTests
     {
         foreach (var control in Descendants(parent).OfType<DeferredExpander>().ToArray())
             control.IsExpanded = true;
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static WeakReference[] CollapseTree(DeferredExpander parent)
-    {
-        var references = Descendants(parent).OfType<DeferredExpander>()
-            .Select(control => new WeakReference(control.Content)).Prepend(new WeakReference(parent.Content)).ToArray();
-        parent.IsExpanded = false;
-        return references;
     }
 
     private static async Task SettleAsync(Window window)

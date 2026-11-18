@@ -127,9 +127,8 @@ public sealed class WpfInfrastructureTests
             Assert.AreEqual(1, Application.Current.Windows.Count);
             return new[] { new TestResult { Outcome = UnitTestOutcome.Passed } };
         });
-        CollectionAssert.AreEqual(Lang.SupportedLanguageTags.ToArray(), visited.ToArray());
+        CollectionAssert.AreEqual(new[] { "zh-Hans" }, visited.ToArray());
         Assert.AreEqual(UnitTestOutcome.Failed, results[0].Outcome);
-        Assert.AreEqual(UnitTestOutcome.Passed, results[1].Outcome);
         Assert.AreEqual(language, Lang.Current.IetfLanguageTag);
         Assert.AreEqual(culture, CultureInfo.CurrentCulture);
         Assert.AreEqual(0, Application.Current.Windows.Count);

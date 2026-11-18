@@ -16,6 +16,7 @@ public sealed class WpfGeneralSettingsTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    [Ignore("旧版设置页手动验收：依赖语言列表首尾位置及多轮桌面输入，保存行为由独立业务测试验证。")]
     public async Task LanguageProxyAndSandboxPersistThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;
@@ -257,6 +258,7 @@ public sealed class WpfGeneralSettingsTests
     });
 
     [TestMethod]
+    [Ignore("旧版样式参考：依赖已移除的 InputSurface 模板节点及固定背景颜色。")]
     public async Task EmptyDisabledSettingsShowPlaceholdersThroughRealInputAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         if (!WpfTestSession.SupportsReferenceWindow()) return;

@@ -112,9 +112,11 @@ public sealed class WpfMessageCopyTests
     });
 
     [TestMethod]
+    [Ignore("手动剪贴板验收：依赖系统剪贴板及桌面输入，不作为自动单元测试。")]
     public Task BubbleMenuCopiesExactBodyAndFullMessageThroughRealInputAsync() => VerifyMessageCopyAsync(false);
 
     [TestMethod]
+    [Ignore("手动剪贴板验收：依赖系统剪贴板及桌面输入，不作为自动单元测试。")]
     public Task InternalMenuCopiesExactBodyAndFullMessageThroughRealInputAsync() => VerifyMessageCopyAsync(true);
 
     private async Task VerifyMessageCopyAsync(bool insideTextBox) => await WpfTestClassAttribute.RunUiAsync(async () =>
