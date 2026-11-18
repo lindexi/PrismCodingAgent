@@ -39,7 +39,8 @@ public class SessionTitleGenerator
 
         try
         {
-            string? title = await GenerateTitlePreviewAsync(session, systemPrompt, cancellationToken).ConfigureAwait(false);
+            // 标题变更会通知绑定到会话的界面，沿用调用方的上下文。
+            string? title = await GenerateTitlePreviewAsync(session, systemPrompt, cancellationToken);
             if (!string.IsNullOrWhiteSpace(title))
             {
                 session.SetTitle(title, TitleSource.Generated);

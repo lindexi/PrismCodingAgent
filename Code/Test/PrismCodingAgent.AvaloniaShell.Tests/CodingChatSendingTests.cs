@@ -1,6 +1,7 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
@@ -40,6 +41,58 @@ public sealed class CodingChatSendingTests
         Assert.IsFalse((useResponses ? codingRunner : responsesRunner).Started.Task.IsCompleted);
         expected.Complete("done");
         await sending;
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task SendMessageAsyncShouldAllowAnotherSendWhileTitleIsGenerating()
+    {
+        const string title = "Generated title";
+        var requested = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new TaskCompletionSource<ChatResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var savedTitle = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var manager = CreateManager();
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
+            [new FakeLanguageModel(new FakeChatClient
+            {
+                OnGetResponseAsync = (_, _, _) =>
+                {
+                    requested.TrySetResult();
+                    return response.Task;
+                }
+            })]));
+        var store = new TestSessionStore
+        {
+            OnSaved = session =>
+            {
+                if (session.Title == title) savedTitle.TrySetResult();
+            }
+        };
+        var runner = new TestCodingChatRunner(manager);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
+
+        try
+        {
+            Task sending = application.SendMessageAsync("First task");
+            await runner.Started.Task;
+            runner.Complete("Done");
+            await sending;
+            await requested.Task;
+
+            Task next = application.SendMessageAsync("Follow-up");
+            await runner.SecondRunStarted.Task;
+            runner.Complete("Done");
+            await next;
+
+            response.SetResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,
+                [new FunctionCallContent("title", SessionTitleGenerator.TitleSubmissionToolName,
+                    new Dictionary<string, object?> { ["title"] = title })])));
+            await savedTitle.Task;
+        }
+        finally
+        {
+            response.TrySetCanceled();
+        }
     }
 
     [TestMethod(DisplayName = "发送应使用启动时已提交的工作路径")]
@@ -639,6 +692,7 @@ public sealed class CodingChatSendingTests
         public Exception? SaveException { get; init; }
 
         public bool BlockSave { get; init; }
+        public Action<CopilotChatSession>? OnSaved { get; init; }
 
         public TaskCompletionSource SaveStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -676,6 +730,7 @@ public sealed class CodingChatSendingTests
 
             SaveCount++;
             SavedSession = session;
+            OnSaved?.Invoke(session);
         }
 
         public void ReleaseSave() => _continueSave.TrySetResult();

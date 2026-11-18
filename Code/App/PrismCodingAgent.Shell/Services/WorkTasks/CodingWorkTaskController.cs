@@ -427,6 +427,7 @@ internal sealed class CodingWorkTaskController
             throw new InvalidOperationException("当前任务已有活动操作。");
         }
 
+        CopilotChatSession session = _chatManager.SelectedSession;
         using CancellationTokenSource operationCancellationTokenSource =
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _activeOperationCancellationTokenSource = operationCancellationTokenSource;
@@ -448,6 +449,33 @@ internal sealed class CodingWorkTaskController
                 _activeOperationCancellationTokenSource = null;
             }
             UpdateOperationState(default);
+        }
+
+        _ = TryGenerateSessionTitleAsync(session);
+    }
+
+    private async Task TryGenerateSessionTitleAsync(CopilotChatSession session)
+    {
+        try
+        {
+            // 让发送先返回，标题模型的同步初始化也不占用发送收尾。
+            await Task.Yield();
+            await _chatManager.GenerateSessionTitleAsync(session);
+            if (_deletedSessionIds.Contains(session.SessionId))
+            {
+                return;
+            }
+
+            if (!IsRunActive || !ReferenceEquals(session, _chatManager.SelectedSession))
+            {
+                await SaveSessionAsync(session);
+            }
+            AddOrUpdateSummary(session, insertAtTop: false);
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Trace.TraceError(
+                "[CodingWorkTaskController][GenerateSessionTitle] SessionId={0} Exception={1}", session.SessionId, exception);
         }
     }
 
