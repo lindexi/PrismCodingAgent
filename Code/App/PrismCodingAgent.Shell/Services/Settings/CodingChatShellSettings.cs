@@ -2,9 +2,11 @@ using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.CodingShell.Services.Settings;
 
-internal sealed record CodingChatShellSettings
+/// <summary>Shell 的全局设置。</summary>
+public sealed record CodingChatShellSettings
 {
-    public CpaQuotaConfiguration[] CpaQuotaServices { get; init; } = [];
+    [System.Text.Json.Serialization.JsonInclude]
+    internal CpaQuotaConfiguration[] CpaQuotaServices { get; init; } = [];
 
     public string LanguageTag { get; init; } = GetDefaultLanguageTag();
 
@@ -24,7 +26,7 @@ internal sealed record CodingChatShellSettings
 
     public bool BypassProxyOnLocal { get; init; } = true;
 
-    public bool IsAutomaticSessionTitleEnabled { get; init; } = true;
+    public bool IsAutomaticSessionTitleEnabled { get; set; } = true;
 
     public bool IsCopilotInstructionsEnabled { get; init; }
 

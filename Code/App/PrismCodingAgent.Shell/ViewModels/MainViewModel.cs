@@ -783,8 +783,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             string? selectedModelDisplayName = task.Chat.SelectedModel?.DisplayName;
             if (task.Runtime is { } runtime)
             {
-                runtime.Controller.IsAutomaticSessionTitleEnabled = e.Settings.ShellSettings.IsAutomaticSessionTitleEnabled;
-                runtime.SettingsService.ApplyDeepSeekConfiguration(modelConfiguration, e.Settings.ShellSettings);
+                runtime.SettingsService.ApplyShellSettings(modelConfiguration, e.Settings.ShellSettings);
                 runtime.EndpointManager.WebProxy = CodingWorkTaskRuntimeFactory
                     .CreateWebProxy(e.Settings.ShellSettings);
                 runtime.ApplyModelConfiguration(modelConfiguration);

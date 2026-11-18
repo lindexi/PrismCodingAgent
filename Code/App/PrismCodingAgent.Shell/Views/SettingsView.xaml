@@ -434,7 +434,7 @@
                                    Margin="0,0,14,0" Text="{Binding AutomaticSessionTitleText, Source={x:Static l:Lang.Current}}" />
                         <CheckBox Grid.Column="1" Style="{StaticResource SettingsSwitch}"
                                   AutomationProperties.Name="{Binding AutomaticSessionTitleText, Source={x:Static l:Lang.Current}}"
-                                  IsChecked="{Binding IsAutomaticSessionTitleEnabled, Mode=TwoWay}"
+                                  IsChecked="{Binding ShellSettings.IsAutomaticSessionTitleEnabled, Mode=TwoWay}"
                                   Content="{Binding NetworkProxyEnabledText, Source={x:Static l:Lang.Current}}" />
                     </Grid>
                 </Border>

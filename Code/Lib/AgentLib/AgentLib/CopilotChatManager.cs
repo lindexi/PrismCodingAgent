@@ -31,7 +31,6 @@ public class CopilotChatManager : NotifyBase
     private CopilotChatSession _selectedSession = null!;
     private CancellationTokenSource? _currentChatCancellationTokenSource;
     private readonly CopilotToolManager _toolManager;
-    private readonly SessionTitleGenerator _titleGenerator;
     private readonly IMainThreadDispatcher? _mainThreadDispatcher;
 
     private readonly FileCopilotChatSessionStore _sessionStore;
@@ -54,7 +53,6 @@ public class CopilotChatManager : NotifyBase
         _sessionStore = sessionStore;
         ChatLogger = chatLogger;
         _toolManager = new CopilotToolManager(this.AgentApiEndpointManager);
-        _titleGenerator = new SessionTitleGenerator(AgentApiEndpointManager);
         CreateNewSession();
     }
 
@@ -679,7 +677,8 @@ public class CopilotChatManager : NotifyBase
     public Task GenerateSessionTitleAsync
         (CopilotChatSession? session = null, string? systemPrompt = null, CancellationToken cancellationToken = default)
     {
-        return _titleGenerator.GenerateTitleAsync(session ?? SelectedSession, systemPrompt, cancellationToken);
+        return new SessionTitleGenerator(AgentApiEndpointManager)
+            .GenerateTitleAsync(session ?? SelectedSession, systemPrompt, cancellationToken);
     }
 
     /// <summary>

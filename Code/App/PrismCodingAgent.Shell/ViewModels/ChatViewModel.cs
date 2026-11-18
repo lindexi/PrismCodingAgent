@@ -765,6 +765,12 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                 await _workTaskController
                     .SendMessageAsync(contents, RunOptions, runner: runner)
                     .ConfigureAwait(true);
+
+                if (!isInterruption && session is not null
+                    && _runtime?.SettingsService.AppliedShellSettings.IsAutomaticSessionTitleEnabled == true)
+                {
+                    _ = _workTaskController.TryGenerateSessionTitleAsync(session);
+                }
             }
 
             _runStatusText = isInterruption && IsRunning

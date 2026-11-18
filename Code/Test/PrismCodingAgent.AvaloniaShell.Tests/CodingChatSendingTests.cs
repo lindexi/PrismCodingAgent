@@ -1,13 +1,17 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
-using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
+using AgentLib.Core.AgentApiManagers.Contexts;
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
+using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Services.Chat;
 using PrismCodingAgent.CodingShell.Services.Sessions;
 using PrismCodingAgent.CodingShell.Services.Workspace;
+using PrismCodingAgent.CodingShell.Services.WorkTasks;
+using PrismCodingAgent.CodingShell.ViewModels;
 using CodingChatApplicationTestFactory = global::PrismCodingAgent.AvaloniaShell.Tests.CodingWorkTaskControllerTestFactory;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
@@ -44,73 +48,78 @@ public sealed class CodingChatSendingTests
     }
 
     [TestMethod]
-    [Timeout(5000)]
-    public async Task SendMessageAsyncShouldAllowAnotherSendWhileTitleIsGenerating()
+    [Timeout(10000)]
+    public async Task SendCommandShouldAllowAnotherSendWhileTitleIsGenerating()
     {
-        const string title = "Generated title";
-        var requested = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var response = new TaskCompletionSource<ChatResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var savedTitle = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var manager = CreateManager();
-        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
-            [new FakeLanguageModel(new FakeChatClient
-            {
-                OnGetResponseAsync = (_, _, _) =>
-                {
-                    requested.TrySetResult();
-                    return response.Task;
-                }
-            })]));
-        var store = new TestSessionStore
+        var paths = CodingChatRoomPaths.Create(CreateTestDirectory());
+        await using var runtime = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, new ImmediateMainThreadDispatcher());
+        using var client = new PendingTitleChatClient();
+        runtime.EndpointManager.RegisterLanguageModelProvider(client);
+        runtime.EndpointManager.PrimaryModel = client;
+        using var chat = new ChatViewModel(runtime)
         {
-            OnSaved = session =>
+            IsResponsesApiEnabled = false,
+            RunOptions = { EnableAutomaticCompression = false },
+            InputText = "First task",
+        };
+        var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        runtime.Controller.Sessions.CollectionChanged += (_, _) =>
+        {
+            if (runtime.Controller.Sessions.Any(session => session.Title == PendingTitleChatClient.Title))
             {
-                if (session.Title == title) savedTitle.TrySetResult();
+                saved.TrySetResult();
             }
         };
-        var runner = new TestCodingChatRunner(manager);
-        var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
 
         try
         {
-            Task sending = application.SendMessageAsync("First task");
-            await runner.Started.Task;
-            runner.Complete("Done");
-            await sending;
-            await requested.Task;
+            var send = (SimpleAsyncCommand)chat.SendCommand;
+            await send.ExecuteAsync();
+            await client.Requested.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-            Task next = application.SendMessageAsync("Follow-up");
-            await runner.SecondRunStarted.Task;
-            runner.Complete("Done");
-            await next;
+            chat.InputText = "Follow-up";
+            await send.ExecuteAsync();
 
-            response.SetResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,
-                [new FunctionCallContent("title", SessionTitleGenerator.TitleSubmissionToolName,
-                    new Dictionary<string, object?> { ["title"] = title })])));
-            await savedTitle.Task;
+            Assert.AreEqual(2, client.ChatRequests);
         }
         finally
         {
-            response.TrySetCanceled();
+            client.CompleteTitle();
         }
+        await saved.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
-    [TestMethod]
-    [Timeout(5000)]
-    public async Task SendMessageAsyncShouldOnlySaveTheConversationWhenAutomaticTitleIsDisabled()
+    private sealed class PendingTitleChatClient : IChatClient, ILanguageModel, ILanguageModelProvider
     {
-        var manager = CreateManager();
-        var store = new TestSessionStore();
-        var runner = new TestCodingChatRunner(manager);
-        var application = CodingChatApplicationTestFactory.CreateApplication(manager, store, runner);
-        application.IsAutomaticSessionTitleEnabled = false;
+        public const string Title = "Generated title";
+        public ModelDefinition ModelDefinition { get; } = new() { ModelId = "Fake", ModelName = "Fake" };
+        public IReadOnlyList<ILanguageModel> GetSupportedModels() => [this];
+        public Task<IChatClient> GetChatClientAsync() => Task.FromResult<IChatClient>(this);
+        public TaskCompletionSource Requested { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<ChatResponse> _response = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int ChatRequests { get; private set; }
 
-        Task sending = application.SendMessageAsync("First task");
-        await runner.Started.Task;
-        runner.Complete("Done");
-        await sending;
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            Requested.TrySetResult();
+            return _response.Task;
+        }
 
-        Assert.AreEqual(1, store.SaveCount);
+        public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,
+            ChatOptions? options = null, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            ChatRequests++;
+            await Task.Yield();
+            yield return new ChatResponseUpdate(ChatRole.Assistant, "Done");
+        }
+
+        public void CompleteTitle() => _response.TrySetResult(new ChatResponse(new ChatMessage(ChatRole.Assistant,
+            [new FunctionCallContent("title", SessionTitleGenerator.TitleSubmissionToolName,
+                new Dictionary<string, object?> { ["title"] = Title })])));
+
+        public object? GetService(Type serviceType, object? serviceKey = null) => null;
+        public void Dispose() { }
     }
 
     [TestMethod(DisplayName = "发送应使用启动时已提交的工作路径")]
@@ -710,7 +719,6 @@ public sealed class CodingChatSendingTests
         public Exception? SaveException { get; init; }
 
         public bool BlockSave { get; init; }
-        public Action<CopilotChatSession>? OnSaved { get; init; }
 
         public TaskCompletionSource SaveStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -748,7 +756,6 @@ public sealed class CodingChatSendingTests
 
             SaveCount++;
             SavedSession = session;
-            OnSaved?.Invoke(session);
         }
 
         public void ReleaseSave() => _continueSave.TrySetResult();

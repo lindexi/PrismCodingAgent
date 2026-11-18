@@ -60,7 +60,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     private bool _isNetworkProxyEnabled;
     private string? _networkProxyAddress;
     private bool _bypassProxyOnLocal = true;
-    private bool _isAutomaticSessionTitleEnabled = true;
+    private CodingChatShellSettings _shellSettings = new();
     private bool _isCopilotInstructionsEnabled;
     private string? _copilotInstructionsPath;
     private string? _statusMessage;
@@ -217,10 +217,11 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
         }
     }
 
-    public bool IsAutomaticSessionTitleEnabled
+    /// <summary>设置页正在编辑的 Shell 设置。</summary>
+    public CodingChatShellSettings ShellSettings
     {
-        get => _isAutomaticSessionTitleEnabled;
-        set => SetField(ref _isAutomaticSessionTitleEnabled, value);
+        get => _shellSettings;
+        private set => SetField(ref _shellSettings, value);
     }
 
     public bool IsCopilotInstructionsEnabled
@@ -296,7 +297,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
         IsNetworkProxyEnabled = snapshot.ShellSettings.IsNetworkProxyEnabled;
         NetworkProxyAddress = snapshot.ShellSettings.NetworkProxyAddress;
         BypassProxyOnLocal = snapshot.ShellSettings.BypassProxyOnLocal;
-        IsAutomaticSessionTitleEnabled = snapshot.ShellSettings.IsAutomaticSessionTitleEnabled;
+        ShellSettings = snapshot.ShellSettings;
         IsCopilotInstructionsEnabled = snapshot.ShellSettings.IsCopilotInstructionsEnabled;
         CopilotInstructionsPath = snapshot.ShellSettings.CopilotInstructionsPath;
 
@@ -403,7 +404,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
                 ModelsByPurpose = CreatePurposeMapping(),
                 OpenAIConfigurationList = configurations,
             };
-            var shellSettings = new CodingChatShellSettings
+            var shellSettings = ShellSettings with
             {
                 CpaQuotaServices = Quotas.ToConfiguration(),
                 DeepSeekApiKey = DeepSeekApiKeyResolver.Resolve(DeepSeekApiKey, modelConfiguration),
@@ -414,7 +415,6 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
                 IsNetworkProxyEnabled = IsNetworkProxyEnabled,
                 NetworkProxyAddress = networkProxyAddress,
                 BypassProxyOnLocal = BypassProxyOnLocal,
-                IsAutomaticSessionTitleEnabled = IsAutomaticSessionTitleEnabled,
                 IsCopilotInstructionsEnabled = IsCopilotInstructionsEnabled,
                 CopilotInstructionsPath = string.IsNullOrWhiteSpace(CopilotInstructionsPath)
                     ? null

@@ -93,8 +93,6 @@ internal sealed class CodingWorkTaskController
 
     internal ICodingChatRunner CodingRunner => _chatRunner;
 
-    internal bool IsAutomaticSessionTitleEnabled { get; set; } = true;
-
     public event EventHandler? StateChanged;
 
     public ObservableCollection<CopilotChatSessionSummary> Sessions { get; } = [];
@@ -429,7 +427,6 @@ internal sealed class CodingWorkTaskController
             throw new InvalidOperationException("当前任务已有活动操作。");
         }
 
-        CopilotChatSession session = _chatManager.SelectedSession;
         using CancellationTokenSource operationCancellationTokenSource =
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _activeOperationCancellationTokenSource = operationCancellationTokenSource;
@@ -452,14 +449,9 @@ internal sealed class CodingWorkTaskController
             }
             UpdateOperationState(default);
         }
-
-        if (IsAutomaticSessionTitleEnabled)
-        {
-            _ = TryGenerateSessionTitleAsync(session);
-        }
     }
 
-    private async Task TryGenerateSessionTitleAsync(CopilotChatSession session)
+    internal async Task TryGenerateSessionTitleAsync(CopilotChatSession session)
     {
         try
         {

@@ -69,7 +69,7 @@ internal static class CodingWorkTaskRuntimeFactory
             shellSettings.WindowsSandboxToolPath,
             shellSettings.WindowsSandboxServerAddress
         );
-        settingsService.ApplyDeepSeekConfiguration(configuration, shellSettings);
+        settingsService.ApplyShellSettings(configuration, shellSettings);
         endpointManager.WebProxy = CreateWebProxy(shellSettings);
         var additionalToolSources = new List<ICodingWorkspaceToolSource>
         {
@@ -101,10 +101,7 @@ internal static class CodingWorkTaskRuntimeFactory
             chatRunner,
             workspaceController,
             codingAgent
-        )
-        {
-            IsAutomaticSessionTitleEnabled = shellSettings.IsAutomaticSessionTitleEnabled,
-        };
+        );
 
         return new CodingWorkTaskRuntime
         {

@@ -316,9 +316,9 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
                         <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Classes="SettingsSectionTitle"
                                    Text="{Binding AutomaticSessionTitleText, Source={x:Static localizations:Lang.Current}}" />
-                        <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                        <ToggleSwitch x:Name="AutomaticSessionTitleToggle" Grid.Column="1" VerticalAlignment="Center"
                                       AutomationProperties.Name="{Binding AutomaticSessionTitleText, Source={x:Static localizations:Lang.Current}}"
-                                      IsChecked="{Binding IsAutomaticSessionTitleEnabled, Mode=TwoWay}"
+                                      IsChecked="{Binding ShellSettings.IsAutomaticSessionTitleEnabled, Mode=TwoWay}"
                                       OnContent="{Binding NetworkProxyEnabledText, Source={x:Static localizations:Lang.Current}}"
                                       OffContent="{Binding NetworkProxyDisabledText, Source={x:Static localizations:Lang.Current}}" />
                     </Grid>

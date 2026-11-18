@@ -22,6 +22,8 @@ internal sealed class CodingChatSettingsService
     private readonly WindowsSandboxToolSource _windowsSandboxToolSource;
     private readonly DeepSeekWebToolSource? _deepSeekWebToolSource;
 
+    internal CodingChatShellSettings AppliedShellSettings { get; private set; } = new();
+
     public CodingChatSettingsService
     (
         CodingChatRoomPaths paths,
@@ -86,7 +88,7 @@ internal sealed class CodingChatSettingsService
             cancellationToken
         ).ConfigureAwait(false);
 
-        ApplyDeepSeekConfiguration(modelConfiguration, shellSettings);
+        ApplyShellSettings(modelConfiguration, shellSettings);
         _windowsSandboxToolSource.UpdateConfiguration
         (
             shellSettings.IsWindowsSandboxEnabled,
@@ -95,12 +97,13 @@ internal sealed class CodingChatSettingsService
         );
     }
 
-    internal void ApplyDeepSeekConfiguration(
+    internal void ApplyShellSettings(
         AgentApiManagerConfiguration modelConfiguration,
         CodingChatShellSettings shellSettings)
     {
         _deepSeekWebToolSource?.UpdateConfiguration(
             DeepSeekApiKeyResolver.Resolve(shellSettings.DeepSeekApiKey, modelConfiguration));
+        AppliedShellSettings = shellSettings;
     }
 
     internal async Task<CodingChatShellSettings> LoadInitialShellSettingsAsync(CancellationToken cancellationToken = default)
