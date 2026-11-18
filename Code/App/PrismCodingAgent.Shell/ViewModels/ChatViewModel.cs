@@ -573,12 +573,12 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException)
         {
             string message = Lang.Current.WorkspaceCancelled;
-            Trace.TraceInformation(message);
+            await (session?.Logger).TryLogDiagnosticAsync("[ChatViewModel][ChangeWorkspace]", message);
             await AddSystemMessageAsync(session, message).ConfigureAwait(true);
         }
         catch (Exception exception)
         {
-            Trace.TraceError($"工作路径切换失败：{exception}");
+            await (session?.Logger).TryLogDiagnosticAsync("[ChatViewModel][ChangeWorkspace]", "工作路径切换失败。", exception);
             await AddSystemMessageAsync
                 (session, Localizations.Lang.Format(Lang.Current.WorkspaceFailed, exception.Message)).ConfigureAwait
                 (true);
@@ -930,7 +930,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         () => _chatManager is not null && _subscribedSession is not null && _workTaskController is not null,
         exceptionHandler: exception =>
         {
-            Trace.TraceError($"[ChatViewModel][GenerateSessionTitle] {exception}");
+            _ = (_subscribedSession?.Logger).TryLogDiagnosticAsync("[ChatViewModel][GenerateSessionTitle]", "生成会话标题失败。", exception);
             _runStatusText = Localizations.Lang.Format(Lang.Current.TitleGenerationFailed, exception.Message);
             OnPropertyChanged(nameof(StatusText));
         }
@@ -1098,15 +1098,15 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
             }
             catch (Exception exception)
             {
-                Trace.TraceError("[ChatViewModel][CreateSessionFromSnapshot] SessionId={0} SnapshotId={1} Exception={2}",
-                    sourceSession.SessionId, item.Message.SessionSnapshotId, exception);
+                await sourceSession.Logger.TryLogDiagnosticAsync("[ChatViewModel][CreateSessionFromSnapshot]",
+                    $"从快照创建会话失败。SnapshotId={item.Message.SessionSnapshotId}", exception);
                 try
                 {
                     await AddSystemMessageAsync(sourceSession, Lang.Current.HistoryOperationFailed, CopilotChatNoticeLevel.Error);
                 }
                 catch (Exception noticeException)
                 {
-                    Trace.TraceError("[ChatViewModel][CreateSessionFromSnapshotNotice] Exception={0}", noticeException);
+                    await sourceSession.Logger.TryLogDiagnosticAsync("[ChatViewModel][CreateSessionFromSnapshotNotice]", "添加会话通知失败。", noticeException);
                     _runStatusText = Lang.Current.HistoryOperationFailed;
                     OnPropertyChanged(nameof(StatusText));
                 }

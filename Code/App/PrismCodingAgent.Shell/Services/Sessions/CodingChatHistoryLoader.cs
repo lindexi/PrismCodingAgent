@@ -31,7 +31,7 @@ internal sealed class CodingChatHistoryLoader
         }
         catch (Exception exception)
         {
-            Trace.TraceError($"CodingChatRoom 历史会话加载失败：{exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[CodingChatHistoryLoader]", "历史会话加载失败。", exception).ConfigureAwait(false);
         }
     }
 }

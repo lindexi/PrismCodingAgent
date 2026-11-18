@@ -569,7 +569,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
 
     private void HandleCommandException(Exception exception)
     {
-        System.Diagnostics.Trace.TraceError($"设置操作失败：{exception}");
+        _ = ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SettingsViewModel]", "设置操作失败。", exception);
         SetStatus(Localizations.Lang.Format(Lang.Current.SettingsOperationFailed, exception.Message), isError: true);
     }
 

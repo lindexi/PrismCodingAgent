@@ -142,7 +142,8 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
                 }
                 catch (Exception logException) when (FailedAssistantMessage is not null)
                 {
-                    System.Diagnostics.Trace.TraceError($"{logException}");
+                    await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[CodingAgentChatRunner]",
+                        $"记录助手消息失败。SessionId={sessionId}", logException).ConfigureAwait(false);
                 }
             }
         }

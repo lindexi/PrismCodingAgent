@@ -310,8 +310,7 @@ internal sealed class CodingWorkTaskController
         }
         catch (Exception exception)
         {
-            System.Diagnostics.Trace.TraceError("[CodingWorkTaskController][SaveAndUnloadSession] SessionId={0} Exception={1}",
-                session.SessionId, exception);
+            await session.Logger.TryLogDiagnosticAsync("[CodingWorkTaskController][SaveAndUnloadSession]", "保存会话失败。", exception);
             await TryAddSessionOperationNoticeAsync();
             return;
         }
@@ -331,7 +330,7 @@ internal sealed class CodingWorkTaskController
         }
         catch (Exception exception)
         {
-            System.Diagnostics.Trace.TraceError("[CodingWorkTaskController][SessionOperationNotice] Exception={0}", exception);
+            await _chatManager.SelectedSession.Logger.TryLogDiagnosticAsync("[CodingWorkTaskController][SessionOperationNotice]", "添加会话通知失败。", exception);
         }
     }
 
@@ -471,8 +470,7 @@ internal sealed class CodingWorkTaskController
         }
         catch (Exception exception)
         {
-            System.Diagnostics.Trace.TraceError(
-                "[CodingWorkTaskController][GenerateSessionTitle] SessionId={0} Exception={1}", session.SessionId, exception);
+            await session.Logger.TryLogDiagnosticAsync("[CodingWorkTaskController][GenerateSessionTitle]", "生成会话标题失败。", exception);
         }
     }
 
@@ -602,7 +600,7 @@ internal sealed class CodingWorkTaskController
             catch (Exception saveException) when (runException is not null)
             {
                 runException.Data["SessionSaveException"] = saveException;
-                System.Diagnostics.Trace.TraceError($"{saveException}");
+                await session.Logger.TryLogDiagnosticAsync("[CodingWorkTaskController][SaveSession]", "保存会话失败。", saveException);
             }
 
         }
@@ -775,7 +773,7 @@ internal sealed class CodingWorkTaskController
             catch (Exception saveException) when (operationException is not null)
             {
                 operationException.Data["SessionSaveException"] = saveException;
-                System.Diagnostics.Trace.TraceError($"{saveException}");
+                await session.Logger.TryLogDiagnosticAsync("[CodingWorkTaskController][SaveSession]", "保存会话失败。", saveException);
             }
         }
     }
@@ -790,7 +788,8 @@ internal sealed class CodingWorkTaskController
         catch (Exception logException)
         {
             operationException.Data["DiagnosticLogException"] = logException;
-            System.Diagnostics.Trace.TraceError($"{logException}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[CodingWorkTaskController][LogOperationFailure]",
+                $"记录会话诊断失败。SessionId={session.SessionId} Category={category}", logException);
         }
     }
 

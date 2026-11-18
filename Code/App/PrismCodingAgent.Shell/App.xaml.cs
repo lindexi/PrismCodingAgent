@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using AgentLib.Logging;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -40,7 +40,8 @@ public partial class App : Application
         try
         {
             paths = CodingChatStartupOptions.FromArguments(arguments).Paths;
-            var model = await ShellStartup.InitializeAsync(paths, new WpfMainThreadDispatcher());
+            var logger = InitializeLogging(paths);
+            var model = await ShellStartup.InitializeAsync(paths, new WpfMainThreadDispatcher(), logger, ProcessLogger);
             var window = new MainWindow { DataContext = model };
             window.Show();
             return window;
@@ -48,7 +49,9 @@ public partial class App : Application
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                               or InvalidOperationException or ArgumentException or JsonException)
         {
-            Trace.TraceError($"CodingChatRoom initialization failed: {exception}");
+            paths ??= CodingChatRoomPaths.CreateForCurrentUser();
+            if (ProcessLogger is null) InitializeLogging(paths);
+            await ProcessLogger.TryLogDiagnosticAsync("[App][Startup]", $"Main ProcessId={Environment.ProcessId}；应用初始化失败。", exception);
             var window = new StartupFailureWindow
             {
                 DataContext = new StartupFailureViewModel(

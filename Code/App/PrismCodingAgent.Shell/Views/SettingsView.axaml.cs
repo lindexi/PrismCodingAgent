@@ -117,7 +117,7 @@ public partial class SettingsView : UserControl
         }
         catch (Exception exception)
         {
-            Trace.TraceError($"安装或更新语言服务器失败：{exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SettingsView][InstallLanguageServer]", "安装或更新语言服务器失败。", exception);
         }
     }
 
@@ -136,7 +136,7 @@ public partial class SettingsView : UserControl
         }
         catch (Exception exception)
         {
-            Trace.TraceError($"复制语言服务器安装命令失败：{exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SettingsView][CopyInstallCommand]", "复制语言服务器安装命令失败。", exception);
         }
     }
 }

@@ -231,7 +231,8 @@ internal sealed class ResponsesCodingAgentRunner
             && exception.StackTrace.Contains("InternalItemContentOutputText.DeserializeInternalItemContentOutputText", StringComparison.Ordinal))
         {
             CancellationToken.ThrowIfCancellationRequested();
-            System.Diagnostics.Trace.TraceWarning($"Responses 已知终态解析异常，按完成处理；终态用量可能缺失。{exception}");
+            await AgentLib.Logging.DiagnosticLoggingExtensions.TryLogDiagnosticAsync(MessageContext.Logger,
+                "[ResponsesCodingAgentRunner]", "终态解析异常，按完成处理；终态用量可能缺失。", exception).ConfigureAwait(false);
             response = new ResponseResult { Id = startedResponse?.Id, Status = ResponseStatus.Completed };
             foreach (ResponseItem item in receivedItems.Values)
             {

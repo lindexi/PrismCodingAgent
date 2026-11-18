@@ -205,6 +205,26 @@ public sealed class WpfStartupTests
     });
 
     [TestMethod]
+    public async Task MalformedConfigurationIsWrittenToTheProcessLog() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    {
+        string root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        await File.WriteAllTextAsync(Path.Combine(root, "AgentConfiguration.json"), "{");
+        Window window = await ((App)Application.Current).OpenAsync(["--data-directory", root]);
+        try
+        {
+            string logFile = Directory.EnumerateFiles(Path.Combine(root, "Logs"), "*.log", SearchOption.AllDirectories).Single();
+            string log = await File.ReadAllTextAsync(logFile);
+
+            StringAssert.Contains(log, $"Main ProcessId={Environment.ProcessId}；应用初始化失败。");
+        }
+        finally
+        {
+            window.Close();
+        }
+    });
+
+    [TestMethod]
     public async Task MalformedConfigurationShowsRealFailureWindow() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         string root = Path.Combine(AppContext.BaseDirectory, "StartupData", Guid.NewGuid().ToString("N"));

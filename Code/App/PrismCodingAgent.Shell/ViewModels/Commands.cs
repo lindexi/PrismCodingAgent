@@ -86,7 +86,7 @@ public sealed class SimpleAsyncCommand : ICommand
     private readonly Func<Task> _execute;
     private readonly Func<bool>? _canExecute;
     private readonly bool _allowConcurrentExecutions;
-    private readonly Action<Exception> _exceptionHandler;
+    private readonly Action<Exception>? _exceptionHandler;
     private bool _isExecuting;
 
     /// <summary>
@@ -104,7 +104,7 @@ public sealed class SimpleAsyncCommand : ICommand
         _execute = execute;
         _canExecute = canExecute;
         _allowConcurrentExecutions = allowConcurrentExecutions;
-        _exceptionHandler = exceptionHandler ?? TraceUnhandledException;
+        _exceptionHandler = exceptionHandler;
     }
 
     /// <inheritdoc />
@@ -132,7 +132,7 @@ public sealed class SimpleAsyncCommand : ICommand
         }
         catch (Exception exception)
         {
-            ReportException(exception);
+            await AsyncCommandErrors.ReportAsync(_exceptionHandler, exception);
         }
         finally
         {
@@ -146,21 +146,6 @@ public sealed class SimpleAsyncCommand : ICommand
     /// </summary>
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-    private void ReportException(Exception exception)
-    {
-        try
-        {
-            _exceptionHandler(exception);
-        }
-        catch (Exception handlerException)
-        {
-            Trace.TraceError($"异步命令错误处理失败：{handlerException}");
-            TraceUnhandledException(exception);
-        }
-    }
-
-    private static void TraceUnhandledException(Exception exception)
-        => Trace.TraceError($"异步命令执行失败：{exception}");
 }
 
 /// <summary>
@@ -170,7 +155,7 @@ public sealed class SimpleAsyncCommand<T> : ICommand
 {
     private readonly Func<T?, Task> _execute;
     private readonly Func<T?, bool>? _canExecute;
-    private readonly Action<Exception> _exceptionHandler;
+    private readonly Action<Exception>? _exceptionHandler;
     private bool _isExecuting;
 
     /// <summary>
@@ -186,7 +171,7 @@ public sealed class SimpleAsyncCommand<T> : ICommand
         ArgumentNullException.ThrowIfNull(execute);
         _execute = execute;
         _canExecute = canExecute;
-        _exceptionHandler = exceptionHandler ?? TraceUnhandledException;
+        _exceptionHandler = exceptionHandler;
     }
 
     /// <inheritdoc />
@@ -214,7 +199,7 @@ public sealed class SimpleAsyncCommand<T> : ICommand
         }
         catch (Exception exception)
         {
-            ReportException(exception);
+            await AsyncCommandErrors.ReportAsync(_exceptionHandler, exception);
         }
         finally
         {
@@ -228,19 +213,26 @@ public sealed class SimpleAsyncCommand<T> : ICommand
     /// </summary>
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-    private void ReportException(Exception exception)
-    {
-        try
-        {
-            _exceptionHandler(exception);
-        }
-        catch (Exception handlerException)
-        {
-            Trace.TraceError($"异步命令错误处理失败：{handlerException}");
-            TraceUnhandledException(exception);
-        }
-    }
+}
 
-    private static void TraceUnhandledException(Exception exception)
-        => Trace.TraceError($"异步命令执行失败：{exception}");
+internal static class AsyncCommandErrors
+{
+    internal static async Task ReportAsync(Action<Exception>? handler, Exception exception)
+    {
+        var logger = (DesktopApplication.Current as App)?.ProcessLogger;
+        if (handler is not null)
+        {
+            try
+            {
+                handler(exception);
+                return;
+            }
+            catch (Exception handlerException)
+            {
+                await logger.TryLogDiagnosticAsync("[AsyncCommand]", "异步命令错误处理失败。", handlerException);
+            }
+        }
+
+        await logger.TryLogDiagnosticAsync("[AsyncCommand]", "异步命令执行失败。", exception);
+    }
 }

@@ -18,10 +18,13 @@ internal sealed class AbilityDirectoryReader
     private const int MaximumXmlBytes = 64 * 1024;
     private readonly DirectoryInfo _root;
 
-    public AbilityDirectoryReader(DirectoryInfo root)
+    private readonly ISessionCopilotChatLogger? _logger;
+
+    public AbilityDirectoryReader(DirectoryInfo root, ISessionCopilotChatLogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(root);
         _root = root;
+        _logger = logger;
     }
 
     public async Task<AbilityCollection> ReadAsync(CancellationToken cancellationToken = default)
@@ -48,7 +51,7 @@ internal sealed class AbilityDirectoryReader
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or XmlException
                                                   or InvalidDataException or CultureNotFoundException)
             {
-                Trace.TraceError($"能力目录无效：{directory.FullName}。{exception.Message}");
+                await _logger.TryLogDiagnosticAsync("[AbilityDirectoryReader]", $"能力目录无效。DirectoryPath={directory.FullName}", exception).ConfigureAwait(false);
             }
         }
 
@@ -59,7 +62,7 @@ internal sealed class AbilityDirectoryReader
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (string duplicateId in duplicateIds)
         {
-            Trace.TraceError($"能力 ID 冲突，相关能力均已忽略：{duplicateId}");
+            await _logger.TryLogDiagnosticAsync("[AbilityDirectoryReader]", $"能力 ID 冲突，相关能力均已忽略。AbilityId={duplicateId}").ConfigureAwait(false);
         }
 
         AbilityDefinition? compression = candidates.SingleOrDefault

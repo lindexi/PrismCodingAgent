@@ -891,7 +891,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
 
     private void ReportError(string message, Exception exception)
     {
-        Trace.TraceError(exception.ToString());
+        _ = ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[MainViewModel]", message, exception);
         ErrorMessage = message;
     }
 

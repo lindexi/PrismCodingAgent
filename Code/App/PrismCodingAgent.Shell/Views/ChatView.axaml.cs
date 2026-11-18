@@ -109,7 +109,7 @@ public partial class ChatView : UserControl
             }
             catch (Exception exception)
             {
-                Trace.TraceError($"复制消息内容失败：{exception}");
+                await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[ChatView][CopyContent]", "复制消息内容失败。", exception);
             }
         }
     }
@@ -124,12 +124,12 @@ public partial class ChatView : UserControl
             }
             catch (Exception exception)
             {
-                Trace.TraceError($"复制完整消息失败：{exception}");
+                await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[ChatView][CopyFullMessage]", "复制完整消息失败。", exception);
             }
         }
     }
 
-    private void ImageButton_OnClick(object? sender, RoutedEventArgs e)
+    private async void ImageButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button { CommandParameter: CopilotChatImageItem imageItem })
         {
@@ -145,7 +145,7 @@ public partial class ChatView : UserControl
                                           or InvalidOperationException
                                           or System.ComponentModel.Win32Exception)
         {
-            Trace.TraceError($"无法使用系统图片查看器打开聊天图片：{exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[ChatView][OpenImage]", "无法使用系统图片查看器打开聊天图片。", exception);
         }
     }
 
@@ -188,7 +188,7 @@ public partial class ChatView : UserControl
         }
         catch (Exception exception)
         {
-            Trace.TraceError($"打开图片选择器失败：{exception}");
+            await (session?.Logger).TryLogDiagnosticAsync("[ChatView][OpenImagePicker]", "打开图片选择器失败。", exception);
             await viewModel.AddSystemNoticeAsync(session, Localizations.Lang.Format(Lang.Current.ImagePickerFailed, exception.Message));
             return;
         }
@@ -256,7 +256,7 @@ public partial class ChatView : UserControl
             }
             catch (Exception exception)
             {
-                Trace.TraceError($"粘贴剪贴板内容失败：{exception}");
+                await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[ChatView][Paste]", "粘贴剪贴板内容失败。", exception);
             }
 
             return;

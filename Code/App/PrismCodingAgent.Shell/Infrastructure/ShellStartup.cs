@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AgentLib;
+using AgentLib.Logging;
 using AgentLib.Coding.Sandboxes;
 using PrismCodingAgent.CodingShell.Abilities;
 using PrismCodingAgent.CodingShell.Localizations;
@@ -13,7 +14,8 @@ namespace PrismCodingAgent.CodingShell.Infrastructure;
 
 internal static class ShellStartup
 {
-    internal static async Task<MainViewModel> InitializeAsync(CodingChatRoomPaths paths, IMainThreadDispatcher dispatcher)
+    internal static async Task<MainViewModel> InitializeAsync(CodingChatRoomPaths paths, IMainThreadDispatcher dispatcher,
+        FileCopilotChatLogger? fileLogger = null, ISessionCopilotChatLogger? processLogger = null)
     {
         var runtimes = new List<CodingWorkTaskRuntime>();
         var tasks = new List<WorkTaskItemViewModel>();
@@ -21,12 +23,14 @@ internal static class ShellStartup
         try
         {
             paths.EnsureDirectories();
+            fileLogger ??= new FileCopilotChatLogger(paths.LogDirectory);
+            await processLogger.TryLogDiagnosticAsync("[App][Startup]", $"Main ProcessId={Environment.ProcessId}");
             var windowsSandboxToolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
             var languageSettingsService = new Services.Settings.CodingChatSettingsService(paths, windowsSandboxToolSource);
             var shellSettings = await languageSettingsService.LoadInitialShellSettingsAsync().ConfigureAwait(true);
             Lang.SetCurrent(ShellLanguage.Normalize(shellSettings.LanguageTag));
             await DefaultAbilityInstaller.InstallOnceAsync(paths.AbilitiesDirectory).ConfigureAwait(true);
-            var abilityCatalog = new AbilityCatalog(paths.AbilitiesDirectory);
+            var abilityCatalog = new AbilityCatalog(paths.AbilitiesDirectory, processLogger);
             await abilityCatalog.RefreshAsync().ConfigureAwait(true);
             var workTaskStore = new WorkTaskStore(paths);
             IReadOnlyList<WorkTaskRecord> records = await workTaskStore.LoadAsync().ConfigureAwait(true);
@@ -36,7 +40,7 @@ internal static class ShellStartup
             if (activeRecords.Length == 0)
             {
                 CodingWorkTaskRuntime runtime = await CodingWorkTaskRuntimeFactory
-                    .InitializeAsync(paths, dispatcher, windowsSandboxToolSource).ConfigureAwait(true);
+                    .InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger).ConfigureAwait(true);
                 runtimes.Add(runtime);
                 tasks.Add(MainViewModel.CreateRuntimeTask(runtime,
                     new WorkTaskRecord(Guid.NewGuid(), $"{Lang.Current.WorkTaskText} 1", null,
@@ -47,7 +51,7 @@ internal static class ShellStartup
                 foreach (WorkTaskRecord record in activeRecords)
                 {
                     CodingWorkTaskRuntime runtime = await CodingWorkTaskRuntimeFactory
-                        .InitializeAsync(paths, dispatcher, windowsSandboxToolSource).ConfigureAwait(true);
+                        .InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger).ConfigureAwait(true);
                     runtimes.Add(runtime);
                     WorkTaskItemViewModel task = MainViewModel.CreateRuntimeTask(runtime, record, abilityCatalog);
                     tasks.Add(task);
@@ -56,7 +60,7 @@ internal static class ShellStartup
             }
 
             mainViewModel = MainViewModel.Create(tasks, archivedRecords, runtimes[0].SettingsService, workTaskStore,
-                () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, windowsSandboxToolSource),
+                () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger),
                 abilityCatalog, FormatWorkTaskRecoveryMessage(workTaskStore.LastRecoveryInfo));
             if (activeRecords.Length == 0)
             {

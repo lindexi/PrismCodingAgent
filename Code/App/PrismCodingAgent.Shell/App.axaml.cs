@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using AgentLib.Logging;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -21,16 +21,19 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            _ = InitializeMainWindowAsync(desktop, CodingChatStartupOptions.FromArguments(desktop.Args).Paths);
+            _ = InitializeMainWindowAsync(desktop);
         }
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static async Task InitializeMainWindowAsync(IClassicDesktopStyleApplicationLifetime desktop, CodingChatRoomPaths paths)
+    private async Task InitializeMainWindowAsync(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        CodingChatRoomPaths paths = CodingChatRoomPaths.CreateForCurrentUser();
         try
         {
-            MainViewModel model = await ShellStartup.InitializeAsync(paths, new AvaloniaMainThreadDispatcher());
+            paths = CodingChatStartupOptions.FromArguments(desktop.Args).Paths;
+            var logger = InitializeLogging(paths);
+            MainViewModel model = await ShellStartup.InitializeAsync(paths, new AvaloniaMainThreadDispatcher(), logger, ProcessLogger);
             var window = new MainWindow { DataContext = model };
             desktop.MainWindow = window;
             window.Show();
@@ -38,7 +41,8 @@ public partial class App : Application
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                               or InvalidOperationException or ArgumentException or JsonException)
         {
-            Trace.TraceError($"CodingChatRoom 应用初始化失败：{exception}");
+            if (ProcessLogger is null) InitializeLogging(paths);
+            await ProcessLogger.TryLogDiagnosticAsync("[App][Startup]", $"Main ProcessId={Environment.ProcessId}；应用初始化失败。", exception);
             var window = new StartupFailureWindow
             {
                 DataContext = new StartupFailureViewModel(paths.ConfigurationFile.FullName, exception,

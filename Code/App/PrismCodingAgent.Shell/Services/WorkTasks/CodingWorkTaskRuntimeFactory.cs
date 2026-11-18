@@ -28,7 +28,9 @@ internal static class CodingWorkTaskRuntimeFactory
         CodingChatRoomPaths paths,
         IMainThreadDispatcher mainThreadDispatcher,
         WindowsSandboxToolSource? windowsSandboxToolSource = null,
-        DeepSeekWebToolSource? deepSeekWebToolSource = null
+        DeepSeekWebToolSource? deepSeekWebToolSource = null,
+        FileCopilotChatLogger? fileLogger = null,
+        ISessionCopilotChatLogger? processLogger = null
     )
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -44,8 +46,8 @@ internal static class CodingWorkTaskRuntimeFactory
         endpointManager.LoadConfiguration(configuration);
         ILanguageModel? primaryModel = endpointManager.GetSupportedModels().Count > 0 ? endpointManager.PrimaryModel : null;
 
-        var chatLogger = new FileCopilotChatLogger(paths.LogDirectory);
-        var fileStore = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(paths.SessionDirectory.FullName, paths.LogDirectory);
+        var chatLogger = fileLogger ?? new FileCopilotChatLogger(paths.LogDirectory);
+        var fileStore = new AgentLib.Logging.Sessions.FileCopilotChatSessionStore(paths.SessionDirectory.FullName, paths.LogDirectory, processLogger);
         var chatManager = new CopilotChatManager(chatLogger, fileStore)
         {
             AgentApiEndpointManager = endpointManager,

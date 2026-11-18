@@ -112,14 +112,9 @@ public partial class SettingsView : UserControl
             LanguageServerStatus.Text = process.ExitCode == 0
                 ? Lang.Current.LanguageServerInstallSucceeded : Lang.Current.LanguageServerInstallFailed;
         }
-        catch (Win32Exception exception)
+        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
         {
-            Trace.TraceError($"{Lang.Current.LanguageServerInstallFailed}: {exception}");
-            LanguageServerStatus.Text = Lang.Current.LanguageServerInstallFailed;
-        }
-        catch (InvalidOperationException exception)
-        {
-            Trace.TraceError($"{Lang.Current.LanguageServerInstallFailed}: {exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SettingsView][InstallLanguageServer]", Lang.Current.LanguageServerInstallFailed, exception);
             LanguageServerStatus.Text = Lang.Current.LanguageServerInstallFailed;
         }
         finally
@@ -128,7 +123,7 @@ public partial class SettingsView : UserControl
         }
     }
 
-    private void OnCopyLanguageServerInstallCommandClick(object sender, RoutedEventArgs e)
+    private async void OnCopyLanguageServerInstallCommandClick(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -137,7 +132,7 @@ public partial class SettingsView : UserControl
         }
         catch (ExternalException exception)
         {
-            Trace.TraceError($"{Lang.Current.LanguageServerCopyFailed}: {exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SettingsView][CopyInstallCommand]", Lang.Current.LanguageServerCopyFailed, exception);
             LanguageServerStatus.Text = Lang.Current.LanguageServerCopyFailed;
         }
     }

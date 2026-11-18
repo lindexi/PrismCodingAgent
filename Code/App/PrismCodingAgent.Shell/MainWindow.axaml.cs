@@ -77,7 +77,7 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             // Event boundary: keep the window alive and report cleanup failures.
-            Trace.TraceError($"Application shutdown cleanup failed: {exception}");
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[MainWindow][Shutdown]", "应用退出清理失败。", exception);
             ExitError.IsVisible = true;
         }
         finally

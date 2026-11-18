@@ -29,16 +29,20 @@ public sealed class FileCopilotChatSessionStore
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _sessionDirectory;
     private readonly string? _logDirectory;
+    private readonly ISessionCopilotChatLogger? _diagnosticLogger;
 
     /// <summary>
     /// 使用显式会话目录和可选日志目录创建文件会话存储。
     /// </summary>
     /// <param name="sessionDirectory">会话历史目录。</param>
     /// <param name="logDirectory">对应日志根目录；删除会话时用于清理关联日志。</param>
-    public FileCopilotChatSessionStore(string sessionDirectory, string? logDirectory = null)
+    /// <param name="diagnosticLogger">用于记录无法读取的会话文件。</param>
+    public FileCopilotChatSessionStore(string sessionDirectory, string? logDirectory = null,
+        ISessionCopilotChatLogger? diagnosticLogger = null)
     {
         ArgumentHelper.ThrowIfNullOrWhiteSpace(sessionDirectory);
         _sessionDirectory = Path.GetFullPath(sessionDirectory);
+        _diagnosticLogger = diagnosticLogger;
         _logDirectory = string.IsNullOrWhiteSpace(logDirectory) ? null : Path.GetFullPath(logDirectory);
     }
 
@@ -147,8 +151,8 @@ public sealed class FileCopilotChatSessionStore
                                                   or FormatException or FileNotFoundException
                                                   or DirectoryNotFoundException)
             {
-                System.Diagnostics.Trace.TraceWarning
-                    ("[FileCopilotChatSessionStore][EnumerateSessions] FilePath={0} Exception={1}", file, exception);
+                await _diagnosticLogger.TryLogDiagnosticAsync("[FileCopilotChatSessionStore][EnumerateSessions]",
+                    $"跳过无法读取的会话。FilePath={file}", exception).ConfigureAwait(false);
                 continue;
             }
 

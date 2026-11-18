@@ -14,10 +14,13 @@ internal sealed class AbilityCatalog
     private readonly AbilityDirectoryReader _reader;
     private Task? _activeRefresh;
 
-    public AbilityCatalog(DirectoryInfo directory)
+    private readonly ISessionCopilotChatLogger? _logger;
+
+    public AbilityCatalog(DirectoryInfo directory, ISessionCopilotChatLogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(directory);
-        _reader = new AbilityDirectoryReader(directory);
+        _logger = logger;
+        _reader = new AbilityDirectoryReader(directory, logger);
     }
 
     public event EventHandler? Changed;
@@ -44,7 +47,7 @@ internal sealed class AbilityCatalog
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            Trace.TraceError($"刷新能力目录失败：{exception}");
+            await _logger.TryLogDiagnosticAsync("[AbilityCatalog][Refresh]", "刷新能力目录失败。", exception).ConfigureAwait(false);
         }
     }
 }

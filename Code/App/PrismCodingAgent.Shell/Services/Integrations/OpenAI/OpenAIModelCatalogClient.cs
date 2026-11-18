@@ -45,15 +45,15 @@ internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
         }
         catch (ClientResultException exception)
         {
-            return Failure(Lang.Current.CatalogResponseError, exception);
+            return await FailureAsync(Lang.Current.CatalogResponseError, exception).ConfigureAwait(false);
         }
         catch (JsonException exception)
         {
-            return Failure(Lang.Current.CatalogJsonInvalid, exception);
+            return await FailureAsync(Lang.Current.CatalogJsonInvalid, exception).ConfigureAwait(false);
         }
         catch (HttpRequestException exception)
         {
-            return Failure(Lang.Current.CatalogConnectionFailed, exception);
+            return await FailureAsync(Lang.Current.CatalogConnectionFailed, exception).ConfigureAwait(false);
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -61,11 +61,11 @@ internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
         }
         catch (IOException exception)
         {
-            return Failure(Lang.Current.CatalogReadFailed, exception);
+            return await FailureAsync(Lang.Current.CatalogReadFailed, exception).ConfigureAwait(false);
         }
         catch (InvalidOperationException exception)
         {
-            return Failure(Lang.Current.CatalogProtocolInvalid, exception);
+            return await FailureAsync(Lang.Current.CatalogProtocolInvalid, exception).ConfigureAwait(false);
         }
 
         var modelIds = new List<string>(result.Value.Count);
@@ -89,9 +89,9 @@ internal sealed class OpenAIModelCatalogClient : IOpenAIModelCatalogClient
         return OpenAIModelCatalogResult.Success(modelIds);
     }
 
-    private static OpenAIModelCatalogResult Failure(string message, Exception exception)
+    private static async Task<OpenAIModelCatalogResult> FailureAsync(string message, Exception exception)
     {
-        Trace.TraceError($"获取 OpenAI 模型列表失败：{exception}");
+        await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[OpenAIModelCatalogClient]", "获取 OpenAI 模型列表失败。", exception).ConfigureAwait(false);
         return OpenAIModelCatalogResult.Failure(message);
     }
 }

@@ -204,7 +204,7 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
                                               or InvalidOperationException or ArgumentException
                                               or System.Text.Json.JsonException or System.Xml.XmlException)
         {
-            Trace.TraceError("[SessionListViewModel][Load] Exception={0}", exception);
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SessionListViewModel][Load]", "加载历史会话失败。", exception);
             ErrorMessage = Lang.Current.HistoryLoadFailed;
         }
         finally
@@ -227,7 +227,7 @@ public sealed class SessionListViewModel : ViewModelBase, IDisposable
                                               or InvalidOperationException or ArgumentException
                                               or System.Text.Json.JsonException or System.Xml.XmlException)
         {
-            Trace.TraceError("[SessionListViewModel][Operation] Exception={0}", exception);
+            await ((DesktopApplication.Current as App)?.ProcessLogger).TryLogDiagnosticAsync("[SessionListViewModel][Operation]", "历史会话操作失败。", exception);
             ErrorMessage = Lang.Current.HistoryOperationFailed;
         }
         finally
