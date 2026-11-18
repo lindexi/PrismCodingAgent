@@ -1,6 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
-             xmlns:arc="using:TKCode.Arc"
              xmlns:views="using:PrismCodingAgent.CodingShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
              x:Class="PrismCodingAgent.CodingShell.Views.ModelSettingsView" x:DataType="vm:SettingsViewModel">
@@ -52,15 +51,11 @@
                                                         <TextBox Text="{Binding ModelName}"
                                                                  Classes="Rounded SettingsInput" />
                                                     </StackPanel>
-                                                    <Button Grid.Column="2" Classes="IconDanger"
+                                                    <Button Grid.Column="2" Content="×" Classes="IconDanger"
                                                             VerticalAlignment="Bottom"
                                                             ToolTip.Tip="{Binding SetupRemoveModel, Source={x:Static localizations:Lang.Current}}"
-                                                            AutomationProperties.Name="{Binding SetupRemoveModel, Source={x:Static localizations:Lang.Current}}"
                                                             Command="{Binding $parent[ItemsControl].((vm:ProviderSettingsViewModel)DataContext).RemoveModelCommand}"
-                                                            CommandParameter="{Binding}">
-                                                        <arc:ArcGlyph Size="15" Data="{x:Static arc:ArcIcons.Trash2}"
-                                                                      Foreground="{Binding $parent[Button].Foreground}" />
-                                                    </Button>
+                                                            CommandParameter="{Binding}" />
                                                 </Grid>
                                                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
                                                     <StackPanel Spacing="6">

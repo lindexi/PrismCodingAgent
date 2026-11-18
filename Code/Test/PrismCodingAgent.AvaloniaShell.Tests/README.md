@@ -4,7 +4,7 @@
 
 运行本项目中名称包含 `ScreenshotTests` 的测试即可执行当前截图测试集，例如使用 `dotnet test --filter FullyQualifiedName~ScreenshotTests`，目标选择本目录的 csproj。
 
-测试沿用 `AvaloniaTestClassAttribute` 的共享无头会话：`UseSkia()` 和 `UseHeadlessDrawing = false` 均已启用。使用项目现有 Avalonia.Headless 12.1.4，不改变生产启动入口。
+测试沿用 `AvaloniaTestClassAttribute` 的共享无头会话：`UseSkia()` 和 `UseHeadlessDrawing = false` 均已启用。使用项目现有 Avalonia.Headless 12.1.0，不改变生产启动入口。
 
 每次运行的图片与独立应用数据保存于测试程序集输出目录：
 

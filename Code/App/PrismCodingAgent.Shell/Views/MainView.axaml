@@ -1,6 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
-             xmlns:arc="using:TKCode.Arc"
              xmlns:views="using:PrismCodingAgent.CodingShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
              x:Class="PrismCodingAgent.CodingShell.Views.MainView" x:DataType="vm:MainViewModel">
@@ -60,9 +59,9 @@
                                                             Classes.Working="{Binding IsWorking}"
                                                             ToolTip.Tip="{Binding StatusText}">
                                                         <Grid>
-                                                            <arc:ArcGlyph Size="14" Foreground="#64748B"
-                                                                          IsVisible="{Binding !IsWorking}"
-                                                                          Data="{x:Static arc:ArcIcons.Clock3}" />
+                                                            <PathIcon Width="14" Height="14" Foreground="#64748B"
+                                                                      IsVisible="{Binding !IsWorking}"
+                                                                      Data="M12,3 A9,9 0 1 0 12,21 A9,9 0 1 0 12,3 M11,7 L13,7 L13,12 L16.5,14 L15.5,15.7 L11,13 Z" />
                                                             <PathIcon Width="14" Height="14" Foreground="#FFFFFF"
                                                                       IsVisible="{Binding IsWorking}"
                                                                       Data="M13,2 L5,13 L11,13 L10,22 L19,10 L13,10 Z" />
@@ -97,8 +96,8 @@
                                                                   Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).RenameWorkTaskCommand}"
                                                                   CommandParameter="{Binding}">
                                                             <MenuItem.Icon>
-                                                                <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.Pencil}"
-                                                                              Foreground="{Binding $parent[MenuItem].Foreground}" />
+                                                                <PathIcon Width="16" Height="16"
+                                                                          Data="M3,17.25 L3,21 L6.75,21 L17.81,9.94 L14.06,6.19 Z M20.71,7.04 C21.1,6.65 21.1,6.02 20.71,5.63 L18.37,3.29 C17.98,2.9 17.35,2.9 16.96,3.29 L15.13,5.12 L18.88,8.87 Z" />
                                                             </MenuItem.Icon>
                                                         </MenuItem>
                                                         <MenuItem Classes="TaskMenuItem"
@@ -116,8 +115,8 @@
                                                                   Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).DeleteWorkTaskCommand}"
                                                                   CommandParameter="{Binding}">
                                                             <MenuItem.Icon>
-                                                                <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.Trash2}"
-                                                                              Foreground="{Binding $parent[MenuItem].Foreground}" />
+                                                                <PathIcon Width="16" Height="16"
+                                                                          Data="M8,3 L16,3 L17,5 L21,5 L21,7 L19,7 L18,21 L6,21 L5,7 L3,7 L3,5 L7,5 Z M8,7 L9,19 L15,19 L16,7 Z M10,9 L12,9 L12,17 L10,17 Z M14,9 L16,9 L16,17 L14,17 Z" />
                                                             </MenuItem.Icon>
                                                         </MenuItem>
                                                     </MenuFlyout>
@@ -192,8 +191,8 @@
                                                                       Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).DeleteArchivedWorkTaskCommand}"
                                                                       CommandParameter="{Binding}">
                                                                 <MenuItem.Icon>
-                                                                    <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.Trash2}"
-                                                                                  Foreground="{Binding $parent[MenuItem].Foreground}" />
+                                                                    <PathIcon Width="16" Height="16"
+                                                                              Data="M8,3 L16,3 L17,5 L21,5 L21,7 L19,7 L18,21 L6,21 L5,7 L3,7 L3,5 L7,5 Z M8,7 L9,19 L15,19 L16,7 Z M10,9 L12,9 L12,17 L10,17 Z M14,9 L16,9 L16,17 L14,17 Z" />
                                                                 </MenuItem.Icon>
                                                             </MenuItem>
                                                         </MenuFlyout>
@@ -221,8 +220,8 @@
                     <Button Name="HistoryButton" Classes="Navigation" Classes.Active="{Binding IsHistoryOpen}"
                             Command="{Binding OpenHistoryCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.Clock3}"
-                                          Foreground="{Binding $parent[Button].Foreground}" />
+                            <PathIcon Width="16" Height="16"
+                                      Data="M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 M12,4 A8,8 0 1 1 12,20 A8,8 0 1 1 12,4 M11,6 L13,6 L13,12 L17,14 L16,16 L11,13 Z" />
                             <TextBlock Text="{Binding AllSessionsText, Source={x:Static localizations:Lang.Current}}" />
                         </StackPanel>
                     </Button>
@@ -230,8 +229,8 @@
                         <Button Name="SettingsButton" Classes="Navigation" Classes.Active="{Binding IsSettingsOpen}"
                                 Command="{Binding OpenSettingsCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <arc:ArcGlyph Size="16" Data="{x:Static arc:ArcIcons.Settings}"
-                                              Foreground="{Binding $parent[Button].Foreground}" />
+                                <PathIcon Width="16" Height="16"
+                                          Data="M4,3 L6,3 L6,8 L9,8 L9,10 L6,10 L6,21 L4,21 L4,10 L1,10 L1,8 L4,8 Z M11,3 L13,3 L13,14 L16,14 L16,16 L13,16 L13,21 L11,21 L11,16 L8,16 L8,14 L11,14 Z M18,3 L20,3 L20,6 L23,6 L23,8 L20,8 L20,21 L18,21 L18,8 L15,8 L15,6 L18,6 Z" />
                                 <TextBlock
                                     Text="{Binding SettingsNavigationText, Source={x:Static localizations:Lang.Current}}" />
                             </StackPanel>
