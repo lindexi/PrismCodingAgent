@@ -16,8 +16,9 @@ public sealed partial class SettingsViewModel
     private static readonly string[] BuiltInPurposes =
     [
         ModelPurposes.DocumentGeneration, ModelPurposes.ImageAnalysis, ModelPurposes.UserCommunication,
-        ModelPurposes.Reasoning, CodingModelPurposes.CodeDesign, CodingModelPurposes.CodeReview,
-        CodingModelPurposes.CodeExploration, ModelPurposes.SessionTitle, ModelPurposes.HistoryCompression,
+        ModelPurposes.Reasoning, CodingModelPurposes.CodeDesign, CodingModelPurposes.CodeWriting,
+        CodingModelPurposes.CodeReview, CodingModelPurposes.CodeExploration, ModelPurposes.SessionTitle,
+        ModelPurposes.HistoryCompression,
     ];
     private readonly HashSet<ModelSettingsViewModel> _purposeModelSubscriptions = [];
     private readonly HashSet<PurposeModelSettingsViewModel> _purposeRowSubscriptions = [];

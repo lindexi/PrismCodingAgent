@@ -51,11 +51,14 @@ internal sealed class CodingSubAgentTools
         CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
             submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
 
+        IChatClient childClient = parentContext.SubAgentModel is { } model
+            ? await model.GetChatClientAsync().ConfigureAwait(false)
+            : parentContext.ChatClient;
+        cancellationToken.ThrowIfCancellationRequested();
         var subSession = await CodingSubAgentSessions.GetOrCreateSessionAsync(
-            parentContext.Session, parentContext.ChatClient, name, cancellationToken).ConfigureAwait(false);
+            parentContext.Session, childClient, name, cancellationToken).ConfigureAwait(false);
 
-        var context = new CodingRunContext(parentContext.ChatClient,
-            childMessage, subSession)
+        var context = new CodingRunContext(childClient, childMessage, subSession)
         {
             HistoryCompressionModel = parentContext.HistoryCompressionModel,
         };

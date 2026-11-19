@@ -9,6 +9,9 @@ public static class CodingModelPurposes
     /// <summary>代码设计。</summary>
     public const string CodeDesign = "CodeDesign";
 
+    /// <summary>编写代码。</summary>
+    public const string CodeWriting = "CodeWriting";
+
     /// <summary>代码审查。</summary>
     public const string CodeReview = "CodeReview";
 

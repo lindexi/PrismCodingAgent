@@ -45,6 +45,7 @@ public sealed class PurposeModelSettingsViewModel : ViewModelBase
         ModelPurposes.UserCommunication when IsBuiltIn => Lang.Current.PurposeUserCommunication,
         ModelPurposes.Reasoning when IsBuiltIn => Lang.Current.PurposeReasoning,
         CodingModelPurposes.CodeDesign when IsBuiltIn => Lang.Current.PurposeCodeDesign,
+        CodingModelPurposes.CodeWriting when IsBuiltIn => Lang.Current.PurposeCodeWriting,
         CodingModelPurposes.CodeReview when IsBuiltIn => Lang.Current.PurposeCodeReview,
         CodingModelPurposes.CodeExploration when IsBuiltIn => Lang.Current.PurposeCodeExploration,
         ModelPurposes.SessionTitle when IsBuiltIn => Lang.Current.PurposeSessionTitle,

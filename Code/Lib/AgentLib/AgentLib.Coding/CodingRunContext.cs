@@ -28,6 +28,9 @@ public sealed class CodingRunContext
     /// <summary>历史压缩专用模型；未指定时使用本次执行的聊天客户端。</summary>
     public ILanguageModel? HistoryCompressionModel { get; init; }
 
+    /// <summary>编程子智能体默认模型；未指定时沿用父智能体的聊天客户端。</summary>
+    public ILanguageModel? SubAgentModel { get; init; }
+
     internal Task<IChatClient> GetHistoryCompressionClientAsync() =>
         HistoryCompressionModel?.GetChatClientAsync() ?? Task.FromResult(ChatClient);
 

@@ -19,6 +19,21 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    [DataRow(true, 2)]
+    [DataRow(false, 0)]
+    public async Task DelegationShouldUseConfiguredModelOnlyForChildRequests(bool configureChildModel, int expectedChildCalls)
+    {
+        var scenario = new Scenario();
+        await using var agent = new CodingAgent();
+
+        var run = await scenario.StartAsync(agent, configureChildModel: configureChildModel);
+        string? result = await run.CompletionTask;
+
+        Assert.AreEqual(("parent done", "submitted", expectedChildCalls),
+            (result, scenario.ParentResult, scenario.DedicatedModelCalls));
+    }
+
+    [TestMethod]
     [Timeout(15000)]
     public async Task WhenChildIsStreamingThenParentTreeContainsTextBeforeCompletion()
     {
@@ -397,6 +412,7 @@ public sealed class CodingSubAgentOutputTests
         public TaskCompletionSource StreamPaused { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int ChildRounds { get; private set; }
+        public int DedicatedModelCalls { get; private set; }
         public bool RetryContainsFirstRound { get; private set; }
         public string? ParentResult { get; private set; }
         public ChatMessage? FirstChildUserMessage { get; private set; }
@@ -407,13 +423,26 @@ public sealed class CodingSubAgentOutputTests
 
         public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default,
             CopilotChatSession? session = null, string? childName = "worker", string? workspacePath = null,
-            string[]? imageFilePaths = null)
+            string[]? imageFilePaths = null, bool configureChildModel = false)
         {
             _childName = childName;
             _imageFilePaths = imageFilePaths;
             var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
-            return agent.RunAsync(new CodingRunContext(client, Message, session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher }),
-                [new TextContent("parent task")], workspacePath, new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
+            var childClient = new FakeChatClient
+            {
+                OnGetStreamingResponseAsync = (messages, _, ct) =>
+                {
+                    DedicatedModelCalls++;
+                    return RespondAsync(messages.ToArray(), ct);
+                },
+            };
+            var context = new CodingRunContext(client, Message,
+                session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher })
+            {
+                SubAgentModel = configureChildModel ? new FakeLanguageModel(childClient) : null,
+            };
+            return agent.RunAsync(context, [new TextContent("parent task")], workspacePath,
+                new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
         }
 
         private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages,

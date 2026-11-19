@@ -104,6 +104,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         CopilotChatSession session) => new(client, assistantMessage, session)
         {
             HistoryCompressionModel = _chatManager.AgentApiEndpointManager.ResolveModel(ModelPurposes.HistoryCompression),
+            SubAgentModel = _chatManager.AgentApiEndpointManager.ResolveModel(CodingModelPurposes.CodeWriting),
         };
 
     public async Task<bool> TryCompactConversationAsync(AgentLib.Model.CopilotChatSession session,

@@ -14,7 +14,7 @@ public sealed class PurposeModelSettingsTests
     public void BuiltInPurposesShouldUseStableKeys()
     {
         using var vm = new SettingsViewModel();
-        CollectionAssert.AreEqual(new[] { "DocumentGeneration", "ImageAnalysis", "UserCommunication", "Reasoning", "CodeDesign", "CodeReview", "CodeExploration", "SessionTitle", "HistoryCompression" }, vm.PurposeModels.Select(row => row.PurposeKey).ToArray());
+        CollectionAssert.AreEqual(new[] { "DocumentGeneration", "ImageAnalysis", "UserCommunication", "Reasoning", "CodeDesign", "CodeWriting", "CodeReview", "CodeExploration", "SessionTitle", "HistoryCompression" }, vm.PurposeModels.Select(row => row.PurposeKey).ToArray());
     }
 
     [TestMethod]
@@ -59,8 +59,11 @@ public sealed class PurposeModelSettingsTests
     {
         using var vm = new SettingsViewModel();
         vm.AddPurposeModelCommand.Execute(null);
-        vm.RemovePurposeModelCommand.Execute(vm.PurposeModels.Last());
-        Assert.HasCount(9, vm.PurposeModels);
+        var customPurpose = vm.PurposeModels.Last();
+
+        vm.RemovePurposeModelCommand.Execute(customPurpose);
+
+        Assert.DoesNotContain(customPurpose, vm.PurposeModels);
     }
 
     [DataTestMethod]
