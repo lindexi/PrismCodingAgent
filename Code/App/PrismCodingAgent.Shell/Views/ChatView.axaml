@@ -29,6 +29,8 @@
                     <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static localizations:Lang.Current}}"
                               IsVisible="{Binding IsAssistantMessage}"
                               Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
+                    <MenuItem Header="{Binding SpeakPlainly, Source={x:Static localizations:Lang.Current}}"
+                              IsVisible="{Binding IsAssistantMessage}" Command="{Binding SpeakPlainlyCommand}" />
                 </ContextMenu>
             </Setter>
         </Style>
@@ -354,6 +356,8 @@
                                                     CommandParameter="{Binding}" />
                                                 <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static localizations:Lang.Current}}"
                                                           Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
+                                                <MenuItem Header="{Binding SpeakPlainly, Source={x:Static localizations:Lang.Current}}"
+                                                          Command="{Binding SpeakPlainlyCommand}" />
                                             </ContextMenu>
                                         </Border.ContextMenu>
                                         <ItemsControl ItemsSource="{Binding MessageItems}" />

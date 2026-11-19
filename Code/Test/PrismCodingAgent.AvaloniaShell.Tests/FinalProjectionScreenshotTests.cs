@@ -56,6 +56,7 @@ public sealed class FinalProjectionScreenshotTests
                 {
                     var createSession = actions.Single(action => Equals(action.Header, Lang.Current.CreateSessionFromHere));
                     Assert.AreSame(projections[index].CreateSessionFromSnapshotCommand, createSession.Command);
+                    Assert.AreEqual(Lang.Current.SpeakPlainly, actions[Array.IndexOf(actions, createSession) + 1].Header);
                 }
                 var root = menu;
                 CaptureControl(root, $"0{index + 2}-production-{(index == 0 ? "user" : "assistant")}-complete-copy-menu-rendering-not-click");

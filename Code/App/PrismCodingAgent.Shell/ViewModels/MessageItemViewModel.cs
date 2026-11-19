@@ -26,6 +26,9 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
         CreateSessionFromSnapshotCommand = new SimpleCommand(
             () => CreateSessionFromSnapshotRequested?.Invoke(this, EventArgs.Empty),
             () => !_isDisposed && IsAssistantMessage);
+        SpeakPlainlyCommand = new SimpleCommand(
+            () => SpeakPlainlyRequested?.Invoke(this, EventArgs.Empty),
+            () => !_isDisposed && IsAssistantMessage);
         _message.PropertyChanged += OnMessagePropertyChanged;
         Lang.Current.PropertyChanged += OnLanguageChanged;
     }
@@ -37,6 +40,12 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
 
     /// <summary>获取从此消息快照新建会话的命令。</summary>
     public System.Windows.Input.ICommand CreateSessionFromSnapshotCommand { get; }
+
+    /// <summary>获取基于当前会话发起“说人话”的命令。</summary>
+    public System.Windows.Input.ICommand SpeakPlainlyCommand { get; }
+
+    /// <summary>请求基于当前会话发起“说人话”。</summary>
+    public event EventHandler? SpeakPlainlyRequested;
 
     /// <summary>请求从此消息快照新建会话。</summary>
     public event EventHandler? CreateSessionFromSnapshotRequested;
@@ -124,8 +133,10 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
         _message.PropertyChanged -= OnMessagePropertyChanged;
         Lang.Current.PropertyChanged -= OnLanguageChanged;
         CreateSessionFromSnapshotRequested = null;
+        SpeakPlainlyRequested = null;
         _isDisposed = true;
         ((SimpleCommand)CreateSessionFromSnapshotCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)SpeakPlainlyCommand).RaiseCanExecuteChanged();
     }
 
     private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(nameof(UsageSummaryText));

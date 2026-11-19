@@ -48,6 +48,9 @@
             <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static l:Lang.Current}}"
                       Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
                       Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
+            <MenuItem Header="{Binding SpeakPlainly, Source={x:Static l:Lang.Current}}"
+                      Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
+                      Command="{Binding SpeakPlainlyCommand}" />
         </ContextMenu>
         <DataTemplate x:Key="MessageText">
             <views:MessageTextBox FontFamily="Microsoft YaHei UI" FontSize="13"
@@ -73,6 +76,9 @@
                         <MenuItem Header="{Binding CreateSessionFromHere, Source={x:Static l:Lang.Current}}"
                                   Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
                                   Command="{Binding CreateSessionFromSnapshotCommand}" CommandParameter="{Binding}" />
+                        <MenuItem Header="{Binding SpeakPlainly, Source={x:Static l:Lang.Current}}"
+                                  Visibility="{Binding IsAssistantMessage, Converter={StaticResource BooleanVisibility}}"
+                                  Command="{Binding SpeakPlainlyCommand}" />
                     </ContextMenu>
                 </TextBox.ContextMenu>
             </views:MessageTextBox>

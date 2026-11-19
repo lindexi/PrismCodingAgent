@@ -1,6 +1,7 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
@@ -8,6 +9,7 @@ using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using OpenAI.Responses;
 using PrismCodingAgent.CodingShell.Services.Chat;
 using PrismCodingAgent.CodingShell.Services.Sessions;
 using PrismCodingAgent.CodingShell.Services.Workspace;
@@ -15,6 +17,8 @@ using PrismCodingAgent.CodingShell.Services.WorkTasks;
 using PrismCodingAgent.CodingShell.ViewModels;
 using CodingChatApplicationTestFactory = global::PrismCodingAgent.AvaloniaShell.Tests.CodingWorkTaskControllerTestFactory;
 using Lang = PrismCodingAgent.CodingShell.Localizations.Lang;
+
+#pragma warning disable OPENAI001
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
 
@@ -25,6 +29,147 @@ public sealed class ChatViewModelTests
     {
         var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         return new CopilotChatManager();
+    }
+
+    [TestMethod]
+    [DataRow("communication", "communication")]
+    [DataRow("missing", "primary")]
+    public async Task SpeakPlainlyShouldUseSavedContextWithoutAddingHistoryAsync(string mapping, string expectedModel)
+    {
+        var manager = CreateManager();
+        var source = manager.SelectedSession;
+        source.Entries.Clear();
+        await source.AddMessageAsync(CopilotChatMessage.CreateAssistant("clicked message", isPresetInfo: false));
+        var restored = new CopilotChatSession(source.AdditionalInfo.Storage, source.SessionId, source.StartedTime, manager.ChatLogger);
+        var requests = new List<(string Model, string[] Messages)>();
+        FakeLanguageModel primary = CreateModel("primary");
+        FakeLanguageModel communication = CreateModel("communication");
+        var resolver = manager.AgentApiEndpointManager;
+        resolver.RegisterLanguageModelProvider(new FakeLanguageModelProvider([primary, communication]));
+        resolver.SetModelForPurpose(ModelPurposes.UserCommunication, mapping);
+
+        resolver.PrimaryModel = primary;
+        var seed = await manager.CreateManualSendMessageContextAsync();
+        var agent = await seed.GetChatClientAgentAsync();
+        var agentSession = await agent.CreateSessionAsync();
+        restored.SetAgentSession(agentSession);
+        ChatMessage[] savedInput = [new(ChatRole.User, "saved history")];
+        await foreach (var _ in agent.RunStreamingAsync(savedInput, agentSession)) { }
+        requests.Clear();
+
+        var store = new EmptySessionStore { LoadedSession = restored };
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, store);
+        using var view = new ChatViewModel(manager, controller, "ready");
+        resolver.PrimaryModel = primary;
+        var item = view.Messages.OfType<MessageItemViewModel>().Single();
+        item.SpeakPlainlyCommand.Execute(null);
+        await WaitUntilAsync(() => view.Messages.Last().Content == "plain answer");
+
+        var request = requests.Single();
+        Assert.AreEqual(expectedModel, request.Model);
+        CollectionAssert.AreEqual(new[] { "saved history", Lang.Current.SpeakPlainlyPrompt }, request.Messages);
+        Assert.AreEqual(source.SessionId, store.LoadedSessionId);
+        Assert.AreSame(source, manager.SelectedSession);
+        Assert.AreSame(primary, resolver.PrimaryModel);
+        Assert.IsNull(source.AgentSession);
+        Assert.HasCount(1, source.Entries);
+        Assert.IsEmpty(restored.Entries);
+        CollectionAssert.AreEqual(new[] { "clicked message", Lang.Current.SpeakPlainlyPrompt, "plain answer" },
+            view.Messages.Select(message => message.Content).ToArray());
+        await source.AddMessageAsync(CopilotChatMessage.CreateUser("next real turn"));
+        Assert.AreEqual("next real turn", view.Messages.Last().Content);
+
+        FakeLanguageModel CreateModel(string name) => new(new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (messages, _, _) =>
+            {
+                requests.Add((name, messages.Where(message => message.Role == ChatRole.User)
+                    .Select(message => message.Text).ToArray()));
+                return RespondAsync();
+            },
+        }) { ModelDefinition = new ModelDefinition { Provider = "fake", ModelId = name, ModelName = name } };
+
+        static async IAsyncEnumerable<ChatResponseUpdate> RespondAsync()
+        {
+            await Task.Yield();
+            yield return new ChatResponseUpdate(ChatRole.Assistant, "plain answer");
+        }
+    }
+
+    [TestMethod]
+    public async Task SpeakPlainlyShouldSendSavedResponsesHistoryAsync()
+    {
+        using var handler = new SpeakPlainlyResponsesHandler();
+        using var http = new HttpClient(handler);
+        var manager = CreateManager();
+        manager.AgentApiEndpointManager.HttpClient?.Dispose();
+        manager.AgentApiEndpointManager.HttpClient = http;
+        manager.AgentApiEndpointManager.LoadConfiguration(AgentApiManagerConfiguration.FromJsonString("""
+            {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
+            "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
+            """));
+        var source = manager.SelectedSession;
+        source.Entries.Clear();
+        await source.AddMessageAsync(CopilotChatMessage.CreateAssistant("clicked message", isPresetInfo: false));
+        var restored = new CopilotChatSession(source.AdditionalInfo.Storage, source.SessionId, source.StartedTime, manager.ChatLogger);
+        restored.ResponsesSession.AppendItem(ResponseItem.CreateUserMessageItem("saved native history"));
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore { LoadedSession = restored });
+        using var view = new ChatViewModel(manager, controller, "ready");
+        var item = view.Messages.OfType<MessageItemViewModel>().Single();
+
+        item.SpeakPlainlyCommand.Execute(null);
+        await WaitUntilAsync(() => view.Messages.Last().Content == "plain answer");
+
+        Assert.AreEqual("plain answer", view.Messages.Last().Content);
+        Assert.AreEqual("/v1/responses", handler.RequestPath);
+        using var request = System.Text.Json.JsonDocument.Parse(handler.RequestBody);
+        var input = request.RootElement.GetProperty("input");
+        Assert.AreEqual(2, input.GetArrayLength());
+        Assert.AreEqual("saved native history", input[0].GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.AreEqual(Lang.Current.SpeakPlainlyPrompt, input[1].GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.HasCount(1, restored.ResponsesSession.Items);
+        Assert.HasCount(1, source.Entries);
+        Assert.IsEmpty(source.ResponsesSession.Items);
+    }
+
+    private sealed class SpeakPlainlyResponsesHandler : HttpMessageHandler
+    {
+        public string RequestBody { get; private set; } = string.Empty;
+        public string? RequestPath { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestPath = request.RequestUri?.AbsolutePath;
+            RequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    data: {"type":"response.completed","sequence_number":0,"response":{"id":"resp_1","status":"completed","output":[{"type":"message","id":"msg_1","role":"assistant","status":"completed","content":[{"type":"output_text","text":"plain answer","annotations":[]}]}]}}
+
+
+                    """, System.Text.Encoding.UTF8, "text/event-stream"),
+            };
+        }
+    }
+
+    [TestMethod]
+    public async Task SpeakPlainlyShouldShowAnErrorNoticeWhenSessionCannotBeLoadedAsync()
+    {
+        var manager = CreateManager();
+        var source = manager.SelectedSession;
+        source.Entries.Clear();
+        await source.AddMessageAsync(CopilotChatMessage.CreateAssistant("clicked message", isPresetInfo: false));
+        var controller = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        using var view = new ChatViewModel(manager, controller, "ready");
+        var item = view.Messages.OfType<MessageItemViewModel>().Single();
+
+        item.SpeakPlainlyCommand.Execute(null);
+        await WaitUntilAsync(() => view.Messages.Last() is NoticeItemViewModel);
+
+        var notice = view.Messages.OfType<NoticeItemViewModel>().Single();
+        Assert.IsTrue(notice.IsError);
+        Assert.HasCount(1, source.Entries);
+        Assert.HasCount(2, view.Messages);
     }
 
     [TestMethod]
@@ -1201,13 +1346,18 @@ public sealed class ChatViewModelTests
     {
         public int SnapshotRequestCount { get; private set; }
         public CopilotChatSession? SnapshotSession { get; init; }
+        public CopilotChatSession? LoadedSession { get; init; }
+        public Guid? LoadedSessionId { get; private set; }
         public IOException? SaveFailure { get; init; }
         public (CopilotChatSession, SessionSnapshotId)? SnapshotRequest { get; private set; }
         public Task<IReadOnlyList<CopilotChatSessionSummary>> ListSessionsAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<CopilotChatSessionSummary>>([]);
 
         public Task<CopilotChatSession> LoadSessionAsync(Guid sessionId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
+        {
+            LoadedSessionId = sessionId;
+            return LoadedSession is { } session ? Task.FromResult(session) : throw new FileNotFoundException();
+        }
 
         public Task<CopilotChatSession> CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message, CancellationToken cancellationToken = default)
         {

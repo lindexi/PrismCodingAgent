@@ -5,10 +5,12 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Core;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Abilities;
@@ -1028,10 +1030,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     {
         if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems is not null)
         {
-            int insertionIndex = e.NewStartingIndex >= 0 ? e.NewStartingIndex : Messages.Count;
             foreach (CopilotChatEntry entry in e.NewItems)
             {
-                Messages.Insert(insertionIndex++, CreateEntryViewModel(entry));
+                Messages.Add(CreateEntryViewModel(entry));
             }
 
             OnPropertyChanged(nameof(ShowWelcome));
@@ -1081,6 +1082,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     {
         var item = new MessageItemViewModel(message);
         item.CreateSessionFromSnapshotRequested += OnCreateSessionFromSnapshotRequested;
+        item.SpeakPlainlyRequested += OnSpeakPlainlyRequested;
         return item;
 
         void OnCreateSessionFromSnapshotRequested(object? sender, EventArgs e)
@@ -1110,6 +1112,50 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                     _runStatusText = Lang.Current.HistoryOperationFailed;
                     OnPropertyChanged(nameof(StatusText));
                 }
+            }
+        }
+
+        void OnSpeakPlainlyRequested(object? sender, EventArgs e)
+        {
+            _ = SpeakPlainlyAsync();
+        }
+
+        async Task SpeakPlainlyAsync()
+        {
+            CopilotChatSession? sourceSession = _subscribedSession;
+            CopilotChatMessage? assistant = null;
+            try
+            {
+                if (sourceSession is null || sourceSession.SessionId == Guid.Empty ||
+                    _workTaskController is null || _chatManager is null)
+                {
+                    throw new InvalidOperationException(Lang.Current.SpeakPlainlyNoSession);
+                }
+
+                var session = await _workTaskController.LoadDetachedSessionAsync(sourceSession.SessionId, CancellationToken.None);
+                if (!ReferenceEquals(sourceSession, _subscribedSession)) return;
+                var resolver = _chatManager.AgentApiEndpointManager;
+                var model = resolver.ResolveModel(ModelPurposes.UserCommunication) ?? resolver.PrimaryModel;
+                var user = CopilotChatMessage.CreateUser(Lang.Current.SpeakPlainlyPrompt);
+                assistant = CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
+                Messages.Add(CreateMessageViewModel(user));
+                Messages.Add(CreateMessageViewModel(assistant));
+                OnPropertyChanged(nameof(ShowWelcome));
+                await SpeakPlainlyChat.RunAsync(model, session, user, assistant, IsResponsesApiEnabled, CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                if (ReferenceEquals(sourceSession, _subscribedSession))
+                {
+                    var notice = new CopilotChatNotice(Lang.Format(Lang.Current.SpeakPlainlyFailed, exception.Message),
+                        CopilotChatNoticeLevel.Error);
+                    Messages.Add(new NoticeItemViewModel(notice));
+                    OnPropertyChanged(nameof(ShowWelcome));
+                }
+            }
+            finally
+            {
+                assistant?.ClearPlaceholder();
             }
         }
     }
