@@ -1,5 +1,6 @@
 using AgentLib.ChatRoom.Model;
 using AgentLib.Coding;
+using AgentLib.Core;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
@@ -41,7 +42,10 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
         var userMessage = new CopilotChatMessage(ChatRole.User, runContents);
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var runContext = new CodingRunContext(client, assistantMessage, session);
+        var runContext = new CodingRunContext(client, assistantMessage, session)
+        {
+            HistoryCompressionModel = chatManager.AgentApiEndpointManager.ResolveModel(ModelPurposes.HistoryCompression),
+        };
 
         await _lifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try

@@ -1,3 +1,4 @@
+using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
 using AgentLib.Tests.Fakes;
@@ -50,6 +51,39 @@ public class CopilotChatManagerChatReducerTests
         Assert.IsNotNull(capturedMessages, "Reducer 应该收到消息");
         Assert.IsGreaterThanOrEqualTo(2, capturedMessages.Count, "消息数量应至少包含历史对话");
         Assert.IsTrue(capturedMessages.Any(m => m.Role == ChatRole.System), "应包含系统 prompt");
+    }
+
+    [TestMethod]
+    [DataRow(null)]
+    [DataRow("Keep the project name")]
+    public async Task ReduceSessionAsync_UsesHistoryCompressionPurposeWithoutChangingChatModel(string? additionalPrompt)
+    {
+        var calls = new List<string>();
+        var primary = new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (_, _, cancellationToken) =>
+            {
+                calls.Add("chat");
+                return CreateStreamingUpdatesAsync(cancellationToken,
+                    CopilotChatManagerTestContext.AssistantText("reply"));
+            },
+        };
+        var compression = new FakeChatClient
+        {
+            OnGetResponseAsync = (_, _, _) =>
+            {
+                calls.Add("compression");
+                return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "summary")));
+            },
+        };
+        var manager = CopilotChatManagerTestContext.Create(primary, compression).ChatManager;
+        manager.AgentApiEndpointManager.SetModelForPurpose(ModelPurposes.HistoryCompression, "flash-model");
+        await manager.SendMessageAsync(contents: [new TextContent("first turn")], withHistory: true);
+
+        await manager.ReduceSessionAsync(chatReducer: null, requestText: null, additionalPrompt: additionalPrompt);
+        await manager.SendMessageAsync(contents: [new TextContent("next turn")], withHistory: true);
+
+        CollectionAssert.AreEqual(new[] { "chat", "compression", "chat" }, calls);
     }
 
     [TestMethod]

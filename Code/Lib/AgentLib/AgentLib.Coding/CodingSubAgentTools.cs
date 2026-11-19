@@ -55,7 +55,10 @@ internal sealed class CodingSubAgentTools
             parentContext.Session, parentContext.ChatClient, name, cancellationToken).ConfigureAwait(false);
 
         var context = new CodingRunContext(parentContext.ChatClient,
-            childMessage, subSession);
+            childMessage, subSession)
+        {
+            HistoryCompressionModel = parentContext.HistoryCompressionModel,
+        };
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
         ICodingAgentRunResult run = await agent.RunAsync(context, contents, childTools,
             childPrompts, options, cancellationToken).ConfigureAwait(false);

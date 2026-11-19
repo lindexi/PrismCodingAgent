@@ -112,6 +112,44 @@ public sealed class CodingRunEntryTests
     }
 
     [TestMethod]
+    public async Task RunAsyncShouldUseDedicatedModelForAutomaticCompression()
+    {
+        var calls = new List<string>();
+        var client = new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (_, _, cancellationToken) =>
+            {
+                calls.Add("chat");
+                return RespondAsync(cancellationToken);
+            },
+        };
+        var compression = new FakeChatClient
+        {
+            OnGetResponseAsync = (_, _, _) =>
+            {
+                calls.Add("compression");
+                return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "summary")));
+            },
+        };
+        await using var agent = new CodingAgent();
+        var session = new CopilotChatSession(CreateStorage());
+        var context = new CodingRunContext(client,
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), session)
+        {
+            HistoryCompressionModel = new FakeLanguageModel(compression),
+        };
+        var firstRun = await agent.RunAsync(context, [new TextContent(new string('A', 300_000))], null,
+            new CodingChatRunOptions { EnableAutomaticCompression = false });
+        await firstRun.CompletionTask;
+        calls.Clear();
+
+        var run = await agent.RunAsync(context, [new TextContent("follow-up")], null);
+        await run.CompletionTask;
+
+        CollectionAssert.AreEqual(new[] { "compression", "chat" }, calls);
+    }
+
+    [TestMethod]
     public async Task RunAsyncWithEmptyContentsAfterFailureShouldAppendToOriginalAssistantUsingExistingHistory()
     {
         var requests = new List<ChatMessage[]>();

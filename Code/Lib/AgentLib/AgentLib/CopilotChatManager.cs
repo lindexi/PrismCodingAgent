@@ -521,8 +521,7 @@ public class CopilotChatManager : NotifyBase
             else
             {
                 // 当未指定 ChatReducer 时，自动启用内置的 ToolCall 压缩器。
-                // 压缩器与聊天逻辑无关，始终使用 AgentApiEndpointManager.PrimaryModel 获取 IChatClient。
-                IChatClient reducerChatClient = await AgentApiEndpointManager.PrimaryModel.GetChatClientAsync();
+                IChatClient reducerChatClient = await GetHistoryCompressionChatClientAsync();
                 chatClientAgentOptions.ChatHistoryProvider = new InMemoryChatHistoryProvider
                 (
                     new InMemoryChatHistoryProviderOptions()
@@ -696,7 +695,7 @@ public class CopilotChatManager : NotifyBase
         CopilotChatSession currentSession = SelectedSession;
         if (chatReducer is null && !string.IsNullOrWhiteSpace(additionalPrompt))
         {
-            IChatClient chatClient = await AgentApiEndpointManager.PrimaryModel.GetChatClientAsync();
+            IChatClient chatClient = await GetHistoryCompressionChatClientAsync();
             chatReducer = new CopilotChatManagerChatReducer(chatClient, additionalPrompt);
         }
 
@@ -759,11 +758,7 @@ public class CopilotChatManager : NotifyBase
 
         if (chatReducer is null)
         {
-            IChatClient chatClient = await AgentApiEndpointManager.PrimaryModel.GetChatClientAsync();
-
-            //#pragma warning disable MEAI001
-            //            chatReducer = new SummarizingChatReducer(chatClient,2, 3);
-            //#pragma warning restore MEAI001
+            IChatClient chatClient = await GetHistoryCompressionChatClientAsync();
             chatReducer = new CopilotChatManagerChatReducer(chatClient);
         }
 
@@ -771,6 +766,13 @@ public class CopilotChatManager : NotifyBase
         var resultList = result.ToList();
         agentSession.SetInMemoryChatHistory(resultList);
         return resultList;
+    }
+
+    internal Task<IChatClient> GetHistoryCompressionChatClientAsync()
+    {
+        ILanguageModel model = AgentApiEndpointManager.ResolveModel(ModelPurposes.HistoryCompression)
+            ?? AgentApiEndpointManager.PrimaryModel;
+        return model.GetChatClientAsync();
     }
 
     private List<AITool> ResolveTools

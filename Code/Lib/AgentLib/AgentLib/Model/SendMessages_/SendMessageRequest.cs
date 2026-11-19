@@ -1,4 +1,4 @@
-﻿using AgentLib.Core;
+using AgentLib.Core;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System;
@@ -71,7 +71,7 @@ public readonly record struct SendMessageRequest
     public CancellationToken CancellationToken { get; init; } = default;
 
     /// <summary>
-    /// 可选的对话历史压缩器。为 <see langword="null"/> 时不启用压缩。
+    /// 可选的对话历史压缩器。为 <see langword="null"/> 时使用内置压缩器。
     /// </summary>
     public IChatReducer? ChatReducer { get; init; } = null;
 
@@ -91,8 +91,8 @@ public readonly record struct SendMessageRequest
     /// 传入自定义客户端可实现按任务选择不同模型。
     /// </summary>
     /// <remarks>
-    /// 内置的 <see cref="CopilotChatManagerChatReducer"/> 压缩器始终使用 <see cref="AgentApiEndpointManager.PrimaryModel"/>，
-    /// 不受此属性影响，因为压缩逻辑与聊天无关。
+    /// 内置的历史压缩器优先使用 <see cref="ModelPurposes.HistoryCompression"/> 用途模型，
+    /// 无法解析时使用 <see cref="AgentApiEndpointManager.PrimaryModel"/>，不受此属性影响。
     /// </remarks>
     public IChatClient? ChatClient { get; init; } = null;
 

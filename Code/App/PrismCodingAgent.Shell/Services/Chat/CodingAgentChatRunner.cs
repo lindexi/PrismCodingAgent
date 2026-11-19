@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Core;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
@@ -45,7 +46,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         var userMessage = new CopilotChatMessage(ChatRole.User, runContents);
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var context = new CodingRunContext(client, assistantMessage, session);
+        var context = CreateRunContext(client, assistantMessage, session);
         IDisposable chatting = _chatManager.StartChatting();
         try
         {
@@ -82,7 +83,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         FailedAssistantMessage = null;
         var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
             .ConfigureAwait(false);
-        var context = new CodingRunContext(client, assistantMessage, session);
+        var context = CreateRunContext(client, assistantMessage, session);
         IDisposable chatting = _chatManager.StartChatting();
         try
         {
@@ -98,6 +99,12 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
             throw;
         }
     }
+
+    private CodingRunContext CreateRunContext(IChatClient client, CopilotChatMessage assistantMessage,
+        CopilotChatSession session) => new(client, assistantMessage, session)
+        {
+            HistoryCompressionModel = _chatManager.AgentApiEndpointManager.ResolveModel(ModelPurposes.HistoryCompression),
+        };
 
     public async Task<bool> TryCompactConversationAsync(AgentLib.Model.CopilotChatSession session,
         string? instructions, CancellationToken cancellationToken)

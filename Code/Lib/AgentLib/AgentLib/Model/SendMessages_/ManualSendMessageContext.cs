@@ -73,8 +73,7 @@ internal sealed class ManualSendMessageContext : IManualSendMessageContext
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        // 压缩器始终使用 PrimaryModel 获取 IChatClient，与聊天逻辑无关
-        IChatClient reducerChatClient = await ChatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync();
+        IChatClient reducerChatClient = await ChatManager.GetHistoryCompressionChatClientAsync();
 
         var chatClientAgentOptions = new ChatClientAgentOptions()
         {

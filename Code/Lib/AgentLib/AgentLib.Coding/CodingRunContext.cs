@@ -1,3 +1,4 @@
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
@@ -23,6 +24,12 @@ public sealed class CodingRunContext
 
     /// <summary>本次执行使用的模型客户端。</summary>
     public IChatClient ChatClient { get; }
+
+    /// <summary>历史压缩专用模型；未指定时使用本次执行的聊天客户端。</summary>
+    public ILanguageModel? HistoryCompressionModel { get; init; }
+
+    internal Task<IChatClient> GetHistoryCompressionClientAsync() =>
+        HistoryCompressionModel?.GetChatClientAsync() ?? Task.FromResult(ChatClient);
 
     /// <summary>本次执行所属的会话及其模型历史。</summary>
     public CopilotChatSession Session { get; }
