@@ -5,12 +5,10 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using AgentLib;
 using AgentLib.Coding;
-using AgentLib.Core;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Abilities;
@@ -1123,7 +1121,6 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         async Task SpeakPlainlyAsync()
         {
             CopilotChatSession? sourceSession = _subscribedSession;
-            CopilotChatMessage? assistant = null;
             try
             {
                 if (sourceSession is null || sourceSession.SessionId == Guid.Empty ||
@@ -1132,16 +1129,11 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                     throw new InvalidOperationException(Lang.Current.SpeakPlainlyNoSession);
                 }
 
-                var session = await _workTaskController.LoadDetachedSessionAsync(sourceSession.SessionId, CancellationToken.None);
-                if (!ReferenceEquals(sourceSession, _subscribedSession)) return;
+                var session = await _workTaskController.LoadSessionAsync(sourceSession.SessionId);
                 var resolver = _chatManager.AgentApiEndpointManager;
-                var model = resolver.ResolveModel(ModelPurposes.UserCommunication) ?? resolver.PrimaryModel;
-                var user = CopilotChatMessage.CreateUser(Lang.Current.SpeakPlainlyPrompt);
-                assistant = CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-                Messages.Add(CreateMessageViewModel(user));
-                Messages.Add(CreateMessageViewModel(assistant));
-                OnPropertyChanged(nameof(ShowWelcome));
-                await SpeakPlainlyChat.RunAsync(model, session, user, assistant, IsResponsesApiEnabled, CancellationToken.None);
+                var messageContext = await _chatManager.CreateManualSendMessageContextAsync();
+                if (!ReferenceEquals(sourceSession, _subscribedSession)) return;
+                await SpeakPlainlyChat.RunAsync(messageContext, session, resolver);
             }
             catch (Exception exception)
             {
@@ -1149,13 +1141,9 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
                 {
                     var notice = new CopilotChatNotice(Lang.Format(Lang.Current.SpeakPlainlyFailed, exception.Message),
                         CopilotChatNoticeLevel.Error);
-                    Messages.Add(new NoticeItemViewModel(notice));
+                    Messages.Add(CreateEntryViewModel(notice));
                     OnPropertyChanged(nameof(ShowWelcome));
                 }
-            }
-            finally
-            {
-                assistant?.ClearPlaceholder();
             }
         }
     }

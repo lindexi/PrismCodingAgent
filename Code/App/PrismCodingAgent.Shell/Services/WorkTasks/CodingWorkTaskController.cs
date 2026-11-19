@@ -286,11 +286,8 @@ internal sealed class CodingWorkTaskController
         await SaveAndUnloadSessionAsync(previousSession);
     }
 
-    internal Task<CopilotChatSession> LoadDetachedSessionAsync(Guid sessionId, CancellationToken cancellationToken)
-    {
-        EnsureCanChangeSession();
-        return _sessionStore.LoadSessionAsync(sessionId, cancellationToken);
-    }
+    internal Task<CopilotChatSession> LoadSessionAsync(Guid sessionId)
+        => _sessionStore.LoadSessionAsync(sessionId);
 
     /// <summary>从指定源会话快照创建、保存并选中新会话。</summary>
     public async Task CreateSessionFromSnapshotAsync(CopilotChatSession sourceSession, CopilotChatMessage message,
