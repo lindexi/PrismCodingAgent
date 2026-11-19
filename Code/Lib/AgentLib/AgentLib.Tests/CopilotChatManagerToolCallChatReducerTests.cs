@@ -1,3 +1,4 @@
+using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
 using AgentLib.Tests.Fakes;
@@ -46,6 +47,46 @@ public class CopilotChatManagerToolCallChatReducerTests
         var resultList = result.ToList();
         Assert.IsLessThan(messages.Count, resultList.Count, "压缩后消息数量应减少");
         Assert.IsTrue(resultList.Any(m => m.Text?.Contains(summaryText) == true), "应包含摘要内容");
+    }
+
+    [TestMethod]
+    public async Task ReduceAsync_UsesCurrentPurposeMappingForEachSummary()
+    {
+        static FakeChatClient CreateClient(string summary) => new()
+        {
+            OnGetResponseAsync = (_, _, _) => Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, summary))),
+        };
+
+        var manager = CopilotChatManagerTestContext.Create(
+            CreateClient("primary summary"), CreateClient("dedicated summary")).ChatManager.AgentApiEndpointManager;
+        var reducer = new CopilotChatManagerToolCallChatReducer(manager)
+        {
+            ForcedCompressionTokenCountThreshold = 1,
+        };
+        ChatMessage[] messages = [new(ChatRole.Assistant, "history")];
+
+        var before = await reducer.ReduceAsync(messages, CancellationToken.None);
+        manager.SetModelForPurpose(ModelPurposes.HistoryCompression, "flash-model");
+        var after = await reducer.ReduceAsync(messages, CancellationToken.None);
+
+        Assert.AreEqual(("primary summary", "dedicated summary"), (before.Single().Text, after.Single().Text));
+    }
+
+    [TestMethod]
+    public async Task ReduceAsync_UsesExplicitChatClientForSummary()
+    {
+        var client = new FakeChatClient
+        {
+            OnGetResponseAsync = (_, _, _) => Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "explicit summary"))),
+        };
+        var reducer = new CopilotChatManagerToolCallChatReducer(client)
+        {
+            ForcedCompressionTokenCountThreshold = 1,
+        };
+
+        var result = await reducer.ReduceAsync([new(ChatRole.Assistant, "history")], CancellationToken.None);
+
+        Assert.AreEqual("explicit summary", result.Single().Text);
     }
 
     [TestMethod]

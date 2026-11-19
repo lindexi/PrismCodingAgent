@@ -1,3 +1,4 @@
+using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
@@ -427,7 +428,18 @@ public sealed class CodingSubAgentOutputTests
         {
             _childName = childName;
             _imageFilePaths = imageFilePaths;
-            var client = new FakeChatClient { OnGetStreamingResponseAsync = (messages, _, ct) => RespondAsync(messages.ToArray(), ct) };
+            var endpointManager = new AgentApiEndpointManager();
+            var client = new FakeChatClient
+            {
+                OnGetStreamingResponseAsync = (messages, _, ct) =>
+                {
+                    if (configureChildModel && _parentCalls == 0)
+                    {
+                        endpointManager.SetModelForPurpose(CodingModelPurposes.CodeWriting, "Fake");
+                    }
+                    return RespondAsync(messages.ToArray(), ct);
+                },
+            };
             var childClient = new FakeChatClient
             {
                 OnGetStreamingResponseAsync = (messages, _, ct) =>
@@ -436,10 +448,11 @@ public sealed class CodingSubAgentOutputTests
                     return RespondAsync(messages.ToArray(), ct);
                 },
             };
+            endpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(childClient));
             var context = new CodingRunContext(client, Message,
                 session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher })
             {
-                SubAgentModel = configureChildModel ? new FakeLanguageModel(childClient) : null,
+                ModelResolver = endpointManager,
             };
             return agent.RunAsync(context, [new TextContent("parent task")], workspacePath,
                 new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);

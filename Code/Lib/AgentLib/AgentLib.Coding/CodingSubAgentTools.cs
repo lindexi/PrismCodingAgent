@@ -51,7 +51,8 @@ internal sealed class CodingSubAgentTools
         CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
             submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
 
-        IChatClient childClient = parentContext.SubAgentModel is { } model
+        var model = parentContext.ModelResolver?.ResolveModel(CodingModelPurposes.CodeWriting);
+        IChatClient childClient = model is not null
             ? await model.GetChatClientAsync().ConfigureAwait(false)
             : parentContext.ChatClient;
         cancellationToken.ThrowIfCancellationRequested();
@@ -60,7 +61,7 @@ internal sealed class CodingSubAgentTools
 
         var context = new CodingRunContext(childClient, childMessage, subSession)
         {
-            HistoryCompressionModel = parentContext.HistoryCompressionModel,
+            ModelResolver = parentContext.ModelResolver,
         };
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
         ICodingAgentRunResult run = await agent.RunAsync(context, contents, childTools,

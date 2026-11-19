@@ -1,3 +1,5 @@
+using AgentLib.Core;
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using Microsoft.Extensions.AI;
 
 namespace AgentLib.Reducers;
@@ -18,6 +20,14 @@ public class CopilotChatManagerToolCallChatReducer : IChatReducer
         _chatClient = chatClient;
     }
 
+    /// <summary>创建压缩器，在生成摘要时解析历史压缩模型。</summary>
+    /// <param name="modelResolver">用于解析历史压缩模型的解析器。</param>
+    public CopilotChatManagerToolCallChatReducer(ILanguageModelResolver modelResolver)
+    {
+        ArgumentNullException.ThrowIfNull(modelResolver);
+        _modelResolver = modelResolver;
+    }
+
     /// <summary>
     /// 默认的条件压缩 token 数阈值。
     /// </summary>
@@ -30,7 +40,8 @@ public class CopilotChatManagerToolCallChatReducer : IChatReducer
 
     private const int MinimumLastAssistantMessageTokenCount = 10_000;
 
-    private readonly IChatClient _chatClient;
+    private readonly IChatClient? _chatClient;
+    private readonly ILanguageModelResolver? _modelResolver;
 
     /// <summary>
     /// 在开始压缩对话时发生。
@@ -101,7 +112,9 @@ public class CopilotChatManagerToolCallChatReducer : IChatReducer
         try
         {
             // 调用 LLM 生成摘要
-            var chatResponse = await _chatClient
+            IChatClient chatClient = _chatClient ?? await _modelResolver!
+                .GetChatClientAsync(ModelPurposes.HistoryCompression).ConfigureAwait(false);
+            var chatResponse = await chatClient
                 .GetResponseAsync(messagesToSummarize, cancellationToken: cancellationToken).ConfigureAwait(false);
             CompressionCompleted?.Invoke(this, (IReadOnlyList<ChatMessage>)chatResponse.Messages);
 

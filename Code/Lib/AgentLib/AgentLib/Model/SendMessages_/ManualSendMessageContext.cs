@@ -64,16 +64,14 @@ internal sealed class ManualSendMessageContext : IManualSendMessageContext
     public ISessionCopilotChatLogger Logger => Session.Logger;
 
     /// <inheritdoc />
-    public async Task<ChatClientAgent> GetChatClientAgentAsync(Action<ChatClientAgentOptions>? configure = null, CancellationToken cancellationToken = default)
+    public Task<ChatClientAgent> GetChatClientAgentAsync(Action<ChatClientAgentOptions>? configure = null, CancellationToken cancellationToken = default)
     {
         if (configure is null && _chatClientAgent is not null)
         {
-            return _chatClientAgent;
+            return Task.FromResult(_chatClientAgent);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-
-        IChatClient reducerChatClient = await ChatManager.GetHistoryCompressionChatClientAsync();
 
         var chatClientAgentOptions = new ChatClientAgentOptions()
         {
@@ -83,7 +81,8 @@ internal sealed class ManualSendMessageContext : IManualSendMessageContext
             },
             ChatHistoryProvider = new InMemoryChatHistoryProvider(new InMemoryChatHistoryProviderOptions()
             {
-                ChatReducer = new ToolCallAwareChatReducer(new CopilotChatManagerToolCallChatReducer(reducerChatClient))
+                ChatReducer = new ToolCallAwareChatReducer(new CopilotChatManagerToolCallChatReducer(
+                    ChatManager.AgentApiEndpointManager))
             }),
             RequirePerServiceCallChatHistoryPersistence = true,
         };
@@ -98,7 +97,7 @@ internal sealed class ManualSendMessageContext : IManualSendMessageContext
 
         ChatClientAgent chatClientAgent = ChatClient.AsAIAgent(chatClientAgentOptions);
         _chatClientAgent ??= chatClientAgent;
-        return chatClientAgent;
+        return Task.FromResult(chatClientAgent);
     }
 
     /// <inheritdoc />

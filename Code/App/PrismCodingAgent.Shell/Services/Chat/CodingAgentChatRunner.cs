@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding;
-using AgentLib.Core;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
@@ -103,8 +102,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
     private CodingRunContext CreateRunContext(IChatClient client, CopilotChatMessage assistantMessage,
         CopilotChatSession session) => new(client, assistantMessage, session)
         {
-            HistoryCompressionModel = _chatManager.AgentApiEndpointManager.ResolveModel(ModelPurposes.HistoryCompression),
-            SubAgentModel = _chatManager.AgentApiEndpointManager.ResolveModel(CodingModelPurposes.CodeWriting),
+            ModelResolver = _chatManager.AgentApiEndpointManager,
         };
 
     public async Task<bool> TryCompactConversationAsync(AgentLib.Model.CopilotChatSession session,

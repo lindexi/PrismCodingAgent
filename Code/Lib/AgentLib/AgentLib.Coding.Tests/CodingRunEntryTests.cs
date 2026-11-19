@@ -1,3 +1,4 @@
+using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
@@ -133,10 +134,13 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var session = new CopilotChatSession(CreateStorage());
+        var endpointManager = new AgentApiEndpointManager();
+        endpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(compression));
+        endpointManager.SetModelForPurpose(ModelPurposes.HistoryCompression, "Fake");
         var context = new CodingRunContext(client,
             CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), session)
         {
-            HistoryCompressionModel = new FakeLanguageModel(compression),
+            ModelResolver = endpointManager,
         };
         var firstRun = await agent.RunAsync(context, [new TextContent(new string('A', 300_000))], null,
             new CodingChatRunOptions { EnableAutomaticCompression = false });

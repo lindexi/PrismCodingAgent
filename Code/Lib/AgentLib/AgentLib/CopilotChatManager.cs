@@ -521,13 +521,12 @@ public class CopilotChatManager : NotifyBase
             else
             {
                 // 当未指定 ChatReducer 时，自动启用内置的 ToolCall 压缩器。
-                IChatClient reducerChatClient = await GetHistoryCompressionChatClientAsync();
                 chatClientAgentOptions.ChatHistoryProvider = new InMemoryChatHistoryProvider
                 (
                     new InMemoryChatHistoryProviderOptions()
                     {
                         ChatReducer = new ToolCallAwareChatReducer
-                            (new CopilotChatManagerToolCallChatReducer(reducerChatClient))
+                            (new CopilotChatManagerToolCallChatReducer(AgentApiEndpointManager))
                     }
                 );
                 chatClientAgentOptions.RequirePerServiceCallChatHistoryPersistence = true;
@@ -695,7 +694,8 @@ public class CopilotChatManager : NotifyBase
         CopilotChatSession currentSession = SelectedSession;
         if (chatReducer is null && !string.IsNullOrWhiteSpace(additionalPrompt))
         {
-            IChatClient chatClient = await GetHistoryCompressionChatClientAsync();
+            ILanguageModelResolver resolver = AgentApiEndpointManager;
+            IChatClient chatClient = await resolver.GetChatClientAsync(ModelPurposes.HistoryCompression);
             chatReducer = new CopilotChatManagerChatReducer(chatClient, additionalPrompt);
         }
 
@@ -758,7 +758,8 @@ public class CopilotChatManager : NotifyBase
 
         if (chatReducer is null)
         {
-            IChatClient chatClient = await GetHistoryCompressionChatClientAsync();
+            ILanguageModelResolver resolver = AgentApiEndpointManager;
+            IChatClient chatClient = await resolver.GetChatClientAsync(ModelPurposes.HistoryCompression);
             chatReducer = new CopilotChatManagerChatReducer(chatClient);
         }
 
@@ -766,13 +767,6 @@ public class CopilotChatManager : NotifyBase
         var resultList = result.ToList();
         agentSession.SetInMemoryChatHistory(resultList);
         return resultList;
-    }
-
-    internal Task<IChatClient> GetHistoryCompressionChatClientAsync()
-    {
-        ILanguageModel model = AgentApiEndpointManager.ResolveModel(ModelPurposes.HistoryCompression)
-            ?? AgentApiEndpointManager.PrimaryModel;
-        return model.GetChatClientAsync();
     }
 
     private List<AITool> ResolveTools

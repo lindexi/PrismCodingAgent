@@ -8,7 +8,7 @@ namespace AgentLib.Core;
 /// <summary>
 /// 管理 API 终结点和语言模型提供商的注册、查询与选择。
 /// </summary>
-public class AgentApiEndpointManager : IHttpClientProvider
+public class AgentApiEndpointManager : IHttpClientProvider, ILanguageModelResolver
 {
     private readonly DynamicWebProxy _dynamicWebProxy = new();
     private Dictionary<string, string> _modelsByPurpose = new(StringComparer.Ordinal);

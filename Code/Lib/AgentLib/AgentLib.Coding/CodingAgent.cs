@@ -1,3 +1,4 @@
+using AgentLib.Core;
 using AgentLib.Model;
 using AgentLib.Reducers;
 using AgentLib.Tools;
@@ -129,7 +130,9 @@ public sealed class CodingAgent : IAsyncDisposable
 
                 if (runOptions.EnableAutomaticCompression)
                 {
-                    IChatClient compressionClient = await context.GetHistoryCompressionClientAsync().ConfigureAwait(false);
+                    var compressionClient = context.ModelResolver is { } modelResolver
+                        ? await modelResolver.GetChatClientAsync(ModelPurposes.HistoryCompression).ConfigureAwait(false)
+                        : context.ChatClient;
                     var reducer = new CopilotChatManagerToolCallChatReducer(compressionClient)
                     {
                         ConditionalCompressionTokenCountThreshold = CodingCompressionThresholds.Conditional,
