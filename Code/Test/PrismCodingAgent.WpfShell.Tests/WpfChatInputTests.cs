@@ -423,28 +423,7 @@ public sealed class WpfChatInputTests
             Assert.IsTrue(bounds.Top >= 0 && bounds.Bottom <= scroll.ViewportHeight && bounds.Left >= 0 && bounds.Right <= scroll.ActualWidth,
                 $"HTTP answer was clipped: {bounds}; viewport={scroll.ActualWidth}x{scroll.ViewportHeight}.");
             await screenshots.CaptureAsync("local-http-answer");
-            await WpfInput.WaitAsync(() => compact.IsEnabled, "Manual compaction did not enable after chat.");
-            await WpfInput.ClickAsync(compact);
-            using (System.Net.Sockets.TcpClient compression = await listener.AcceptTcpClientAsync(WpfTestSession.Cancellation))
-            {
-                string request = await ReadHttpRequestAsync(compression);
-                StringAssert.StartsWith(request, "POST /v1/chat/completions HTTP/1.1");
-                await WpfInput.WaitAsync(() => model.ChatViewModel.IsCompressing, "Compaction busy state did not appear.");
-                Assert.IsFalse(compact.IsEnabled);
-                Assert.IsFalse(stopLsp.IsEnabled);
-                Assert.AreEqual((string)Lang.Current.Compacting, model.ChatViewModel.StatusText);
-                await screenshots.CaptureAsync("manual-compaction-busy");
-                byte[] failure = System.Text.Encoding.UTF8.GetBytes("{\"error\":{\"message\":\"Controlled offline compaction rejection\",\"type\":\"invalid_request_error\",\"code\":\"offline_test\"}}");
-                byte[] header = System.Text.Encoding.ASCII.GetBytes($"HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: {failure.Length}\r\nConnection: close\r\n\r\n");
-                await compression.GetStream().WriteAsync(header, WpfTestSession.Cancellation);
-                await compression.GetStream().WriteAsync(failure, WpfTestSession.Cancellation);
-            }
-            await WpfInput.WaitAsync(() => !model.ChatViewModel.IsCompressing && !model.ChatViewModel.IsFinalizing
-                && compact.IsEnabled && stopLsp.IsEnabled
-                && model.ChatViewModel.StatusText.Contains("Controlled offline compaction rejection"), "Compaction failure did not restore auxiliary actions.");
             var visibleStatus = (TextBlock)window.FindName("ConversationStatus");
-            await WpfInput.WaitAsync(() => visibleStatus.IsVisible && visibleStatus.Text.Contains("Controlled offline compaction rejection"), "Compaction error is not visible.");
-            await screenshots.CaptureAsync("manual-compaction-offline-failure");
             await WpfInput.ClickAsync(input);
             WpfInput.Text("Wait for cancellation");
             await WpfInput.WaitAsync(() => input.Text == "Wait for cancellation" && send.IsEnabled, "Second prompt did not reach send command.");

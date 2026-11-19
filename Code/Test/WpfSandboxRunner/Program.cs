@@ -75,7 +75,9 @@ internal static class Program
             var list = (ItemsControl)view.FindName("PurposeModelsList");
             var rows = Descendants(list).OfType<Border>().Where(row => row.Name == "PurposeRow").ToArray();
             var selectors = Descendants(list).OfType<ComboBox>().ToArray();
-            Check(rows.Length == 9 && selectors.Length == 9, "NineBuiltInPurposes", result);
+            var originalRows = model.PurposeModels.ToArray();
+            Check(rows.Select(row => row.DataContext).SequenceEqual(originalRows)
+                && selectors.Select(selector => selector.DataContext).SequenceEqual(originalRows), "PurposeRowsAndSelectorsMatchModel", result);
             result.ListWidth = list.ActualWidth;
             result.Columns = rows.Count(row => Math.Abs(row.TranslatePoint(default, list).Y - rows[0].TranslatePoint(default, list).Y) < 1);
             Check(result.Columns == (result.Width == 1120 ? 2 : 1), "ExpectedColumns", result);
@@ -83,7 +85,7 @@ internal static class Program
             Capture(expander, $"{result.Language}-{result.Width}-expanded.png", output, result);
             add.Command.Execute(null);
             Pump(window);
-            var draft = model.PurposeModels.Last();
+            var draft = model.PurposeModels.Except(originalRows).Single();
             var name = Descendants(list).OfType<TextBox>().Single(input => ReferenceEquals(input.DataContext, draft) && !string.IsNullOrEmpty(PrismCodingAgent.CodingShell.Infrastructure.TextBoxPlaceholder.GetText(input)));
             Check(name.Text == string.Empty && draft.PurposeError is not null, "EmptyPurposeError", result);
             name.Text = model.PurposeModels[0].PurposeKey;
@@ -101,7 +103,7 @@ internal static class Program
             result.ModelError = draft.ModelError;
             Capture(expander, $"{result.Language}-{result.Width}-error.png", output, result);
             model.RemovePurposeModelCommand.Execute(draft);
-            Check(model.PurposeModels.Count == 9, "RemoveCustomPurpose", result);
+            Check(model.PurposeModels.SequenceEqual(originalRows), "RemoveCustomPurpose", result);
         }
         finally
         {

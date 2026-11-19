@@ -802,6 +802,54 @@ public sealed class ChatViewModelTests
         Assert.IsInstanceOfType<NoticeItemViewModel>(viewModel.Messages[^1]);
     }
 
+    [TestMethod]
+    public async Task FailedCompressionShouldRestoreCommandsAndShowErrorAsync()
+    {
+        const string error = "Controlled compaction failure.";
+        var compressionStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCompression = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var chatClient = new FakeChatClient
+        {
+            OnGetResponseAsync = async (_, _, cancellationToken) =>
+            {
+                compressionStarted.TrySetResult();
+                await releaseCompression.Task.WaitAsync(cancellationToken);
+                throw new InvalidOperationException(error);
+            },
+        };
+        CopilotChatManager manager = CreateChatManager(chatClient);
+        IManualSendMessageContext context = await manager.CreateManualSendMessageContextAsync();
+        AgentSession agentSession = await context.GetAgentSessionAsync();
+        agentSession.SetInMemoryChatHistory(
+        [
+            new ChatMessage(ChatRole.User, "Question"),
+            new ChatMessage(ChatRole.Assistant, "Answer"),
+        ]);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore());
+        await application.InitializeAsync();
+        using var viewModel = new ChatViewModel(manager, application, "Test model");
+        var compress = (SimpleAsyncCommand)viewModel.CompressConversationCommand;
+        var stopLsp = viewModel.StopLanguageServerCommand;
+
+        Assert.IsTrue(compress.CanExecute(null));
+        Task compression = compress.ExecuteAsync();
+        try
+        {
+            await compressionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsTrue(viewModel.IsCompressing);
+            Assert.AreEqual((false, false), (compress.CanExecute(null), stopLsp.CanExecute(null)));
+            Assert.AreEqual((string)Lang.Current.Compacting, viewModel.StatusText);
+        }
+        finally
+        {
+            releaseCompression.TrySetResult();
+            await compression.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        Assert.AreEqual((true, true), (compress.CanExecute(null), stopLsp.CanExecute(null)));
+        Assert.AreEqual(Lang.Format(Lang.Current.CompactFailed, error), viewModel.StatusText);
+    }
+
     [TestMethod(DisplayName = "应用工作路径命令应提交输入并刷新状态")]
     [Timeout(5000)]
     public async Task ApplyWorkspaceCommandShouldCommitInputAndRefreshStatus()

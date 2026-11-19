@@ -40,10 +40,11 @@ public sealed class WpfPurposeLayoutTests
         await WpfInput.WaitAsync(() => !expander.IsExpanded, "Space should collapse purposes.");
         WpfInput.Key(0x20);
         await WpfInput.WaitAsync(() => expander.IsExpanded, "Space should expand purposes.");
+        var originalRows = model.PurposeModels.ToArray();
         add.Command.Execute(null);
         window.UpdateLayout();
         var list = (ItemsControl)view.FindName("PurposeModelsList");
-        var row = model.PurposeModels.Last();
+        var row = model.PurposeModels.Except(originalRows).Single();
         var name = Descendants(list).OfType<TextBox>().Single(input => ReferenceEquals(input.DataContext, row) && !string.IsNullOrEmpty(PrismCodingAgent.CodingShell.Infrastructure.TextBoxPlaceholder.GetText(input)));
         Assert.AreEqual(string.Empty, name.Text);
         Assert.IsFalse(string.IsNullOrWhiteSpace(PrismCodingAgent.CodingShell.Infrastructure.TextBoxPlaceholder.GetText(name)));
@@ -64,7 +65,7 @@ public sealed class WpfPurposeLayoutTests
         await screenshots.CaptureAsync($"purpose-{width}-error");
         await screenshots.CaptureSurfaceAsync(expander, $"purpose-{width}-section");
         model.RemovePurposeModelCommand.Execute(row);
-        Assert.HasCount(9, model.PurposeModels);
+        CollectionAssert.AreEqual(originalRows, model.PurposeModels.ToArray());
     });
 
     [TestMethod]
@@ -87,9 +88,10 @@ public sealed class WpfPurposeLayoutTests
             window.UpdateLayout();
             var list = (ItemsControl)view.FindName("PurposeModelsList");
             var selectors = Descendants(list).OfType<ComboBox>().ToArray();
-            Assert.HasCount(9, selectors);
             var rows = Descendants(list).OfType<Border>().Where(border => border.Name == "PurposeRow").ToArray();
-            Assert.HasCount(9, rows);
+            var expectedRows = model.PurposeModels.ToArray();
+            CollectionAssert.AreEquivalent(expectedRows, rows.Select(row => row.DataContext).ToArray());
+            CollectionAssert.AreEquivalent(expectedRows, selectors.Select(selector => selector.DataContext).ToArray());
             var positions = rows.Select(row => row.TranslatePoint(default, list)).ToArray();
             Assert.AreEqual(columns, positions.Count(position => Math.Abs(position.Y - positions[0].Y) < 1));
             Assert.IsTrue(selectors.All(selector => selector.TranslatePoint(default, list).X + selector.ActualWidth <= list.ActualWidth + 1));
