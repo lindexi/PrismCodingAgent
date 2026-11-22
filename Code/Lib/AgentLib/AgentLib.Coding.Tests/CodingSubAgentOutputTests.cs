@@ -341,6 +341,29 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    [DataRow("worker", true)]
+    [DataRow("broken", false)]
+    public async Task WhenStoredIndexContainsAnObjectThenNamedChildCanRun(string childName, bool retainsHistory)
+    {
+        var original = new CopilotChatSession(CreateStorage());
+        await using var agent = new CodingAgent();
+        await (await new Scenario().StartAsync(agent, session: original)).CompletionTask;
+        var attachment = original.AdditionalInfo.Single();
+        var index = await attachment.Value.SerializeAsync(original.AdditionalInfo.Storage);
+        var loaded = new CopilotChatSession(original.AdditionalInfo.Storage);
+        loaded.AdditionalInfo.Set(attachment.Key, new JsonSessionAdditionalInfo(System.Text.Json.JsonSerializer.SerializeToElement(new
+        {
+            broken = new { geometry = new { conversationId = "_agent_local_chat_history" } },
+            worker = index.GetProperty("worker"),
+        })));
+        var nextTurn = new Scenario();
+
+        await (await nextTurn.StartAsync(agent, session: loaded, childName: childName)).CompletionTask;
+
+        Assert.AreEqual(("submitted", retainsHistory), (nextTurn.ParentResult, nextTurn.RetryContainsFirstRound));
+    }
+
+    [TestMethod]
     public async Task WhenRestoredChildIsSerializedAgainThenHistoryIsRetained()
     {
         var original = new CopilotChatSession(CreateStorage());

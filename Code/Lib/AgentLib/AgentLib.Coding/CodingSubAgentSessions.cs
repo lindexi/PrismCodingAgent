@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AgentLib.Logging;
 using AgentLib.Model;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -22,6 +23,7 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
     {
         if (string.IsNullOrWhiteSpace(name)) return parent.CreateSubSession();
 
+        List<(string Name, JsonValueKind Kind)>? invalidEntries = null;
         parent.AdditionalInfo.TryGetValue(SessionsKey, out ISessionAdditionalInfo? value);
         if (value is not CodingSubAgentSessions)
         {
@@ -29,7 +31,12 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
             if (value is JsonSessionAdditionalInfo json)
             {
                 foreach (JsonProperty item in json.Value.EnumerateObject())
-                    restored._paths.Add(item.Name, item.Value.GetString()!);
+                {
+                    if (item.Value.ValueKind == JsonValueKind.String && item.Value.GetString() is { } pathValue)
+                        restored._paths.Add(item.Name, pathValue);
+                    else
+                        (invalidEntries ??= []).Add((item.Name, item.Value.ValueKind));
+                }
             }
             parent.AdditionalInfo.Set(SessionsKey, restored);
             value = restored;
@@ -51,6 +58,16 @@ internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
             sessions._paths.Add(name, $"SubAgentSessions/{session.SessionId:N}.json");
         }
         sessions._sessions.Add(name, session);
+
+        if (invalidEntries is not null)
+        {
+            foreach (var (entryName, kind) in invalidEntries)
+            {
+                await parent.Logger.TryLogDiagnosticAsync("[CodingSubAgentSessions][Restore]",
+                    $"忽略非字符串的子代理会话路径。SessionId={parent.SessionId:N}, IndexKey={SessionsKey}, EntryName={entryName}, JsonValueKind={kind}")
+                    .ConfigureAwait(false);
+            }
+        }
         return session;
     }
 
