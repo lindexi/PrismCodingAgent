@@ -35,6 +35,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private LanguageModelOptionViewModel? _selectedModel;
     private AbilityOptionViewModel? _selectedAbility;
     private string _inputText = string.Empty;
+    private bool _isAppendPending;
     private string _editedSessionTitle = string.Empty;
     private string? _runStatusText;
     private bool _isResponsesApiEnabled;
@@ -247,6 +248,22 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     /// 获取发送按钮文本。
     /// </summary>
     public string SendButtonText => IsRunning ? Lang.Current.InterruptText : Lang.Current.SendText;
+
+    /// <summary>获取或设置是否在当前运行成功后发送草稿。</summary>
+    public bool IsAppendPending
+    {
+        get => _isAppendPending;
+        set
+        {
+            if (SetField(ref _isAppendPending, value && IsRunning))
+            {
+                OnPropertyChanged(nameof(AppendButtonText));
+            }
+        }
+    }
+
+    /// <summary>获取追加按钮文本。</summary>
+    public string AppendButtonText => IsAppendPending ? Lang.Current.AppendPendingText : Lang.Current.AppendText;
 
     /// <summary>获取可选择的发送前能力。</summary>
     public ObservableCollection<AbilityOptionViewModel> AvailableAbilities { get; } = [];
@@ -781,16 +798,37 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         }
         catch (OperationCanceledException)
         {
+            if (!isInterruption) IsAppendPending = false;
             _runStatusText = Lang.Current.RunStopped;
+            return;
         }
         catch (Exception exception)
         {
+            if (!isInterruption) IsAppendPending = false;
             _runStatusText = Localizations.Lang.Format(Lang.Current.RunFailed, exception.Message);
+            return;
         }
         finally
         {
             OnPropertyChanged(nameof(StatusText));
         }
+
+        if (!isInterruption)
+        {
+            await SendPendingAppendAsync().ConfigureAwait(true);
+        }
+    }
+
+    private Task SendPendingAppendAsync()
+    {
+        if (!IsAppendPending) return Task.CompletedTask;
+        IsAppendPending = false;
+        if (_isDisposed || string.IsNullOrWhiteSpace(InputText))
+        {
+            return Task.CompletedTask;
+        }
+
+        return SendAsync();
     }
 
     /// <summary>在能力菜单打开时异步刷新目录，不阻塞菜单展示。</summary>
@@ -805,6 +843,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
     {
         OnPropertyChanged(nameof(SendButtonText));
+        OnPropertyChanged(nameof(AppendButtonText));
         OnPropertyChanged(nameof(CurrentSessionTitle));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(WorkspaceStatusText));

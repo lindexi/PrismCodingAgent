@@ -519,6 +519,36 @@ public sealed class ChatViewModelTests
         Assert.AreEqual(0, notifications);
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    [DataRow(true, "latest draft", 2)]
+    [DataRow(true, "", 1)]
+    [DataRow(false, "latest draft", 1)]
+    public async Task AppendShouldSendOnlyTheLatestNonEmptyDraftWhenStillSelected(bool keepPending, string draft, int expectedRuns)
+    {
+        var manager = CreateManager();
+        var runner = new CompletingRunner(manager);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new EmptySessionStore(), runner);
+        await application.InitializeAsync();
+        using var viewModel = new ChatViewModel(manager, application, "test") { InputText = "first" };
+        Task sending = ((SimpleAsyncCommand)viewModel.SendCommand).ExecuteAsync();
+        await runner.Started.Task;
+        viewModel.InputText = "initial draft";
+
+        viewModel.IsAppendPending = true;
+        Assert.AreEqual("等待追加中", viewModel.AppendButtonText);
+        Assert.AreEqual("initial draft", viewModel.InputText);
+        viewModel.InputText = draft;
+        viewModel.IsAppendPending = keepPending;
+        runner.Complete();
+        await sending;
+
+        Assert.AreEqual(expectedRuns, runner.RunCount);
+        Assert.AreEqual(expectedRuns == 2 ? draft : "first", runner.ObservedContents!.OfType<TextContent>().Single().Text);
+        Assert.AreEqual(expectedRuns == 2 ? string.Empty : draft, viewModel.InputText);
+        Assert.AreEqual("追加", viewModel.AppendButtonText);
+    }
+
     [TestMethod(DisplayName = "运行期间插话应显示提交反馈并保持发送入口可用")]
     [Timeout(5000)]
     public async Task InterruptionShouldShowSubmissionFeedbackAndKeepSendAvailable()
@@ -531,9 +561,10 @@ public sealed class ChatViewModelTests
         {
             InputText = "开始长任务",
         };
-        viewModel.SendCommand.Execute(null);
+        Task sending = ((SimpleAsyncCommand)viewModel.SendCommand).ExecuteAsync();
         await runner.Started.Task;
         viewModel.InputText = "改为优先修复测试";
+        viewModel.IsAppendPending = true;
 
         Assert.AreEqual("插话", viewModel.SendButtonText);
         Assert.IsFalse(viewModel.StopLanguageServerCommand.CanExecute(null));
@@ -544,9 +575,14 @@ public sealed class ChatViewModelTests
 
         Assert.AreEqual(string.Empty, viewModel.InputText);
         Assert.AreEqual("改为优先修复测试", runner.InjectedText);
+        Assert.IsTrue(viewModel.IsAppendPending);
+        viewModel.InputText = "keep this draft";
         viewModel.StopCommand.Execute(null);
         await runner.Canceled.Task;
-        await application.StopAndWaitAsync();
+        await sending;
+
+        Assert.IsFalse(viewModel.IsAppendPending);
+        Assert.AreEqual("keep this draft", viewModel.InputText);
     }
 
     [TestMethod(DisplayName = "循环迭代运行期间插话不应启动独立循环")]

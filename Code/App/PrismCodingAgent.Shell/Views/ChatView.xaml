@@ -98,6 +98,10 @@
                                 Content="{Binding StopText, Source={x:Static l:Lang.Current}}"
                                 Command="{Binding StopCommand}"
                                 Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}" />
+                        <ToggleButton Margin="8,0,0,0" Content="{Binding AppendButtonText}"
+                                      ToolTip="{Binding AppendHint, Source={x:Static l:Lang.Current}}"
+                                      IsChecked="{Binding IsAppendPending, Mode=TwoWay}"
+                                      Visibility="{Binding IsRunning, Converter={StaticResource BooleanVisibility}}" />
                         <Button x:Name="SendButton" Margin="8,0,0,0" MinWidth="88"
                                 Style="{StaticResource ComposerSendButton}" Content="{Binding SendButtonText}"
                                 Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}"

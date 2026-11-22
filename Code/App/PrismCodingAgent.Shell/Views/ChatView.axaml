@@ -537,6 +537,10 @@
                         <Button HorizontalAlignment="Right" Classes="Danger"
                                 Content="{Binding StopText, Source={x:Static localizations:Lang.Current}}"
                                 Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
+                        <ToggleButton Content="{Binding AppendButtonText}"
+                                      ToolTip.Tip="{Binding AppendHint, Source={x:Static localizations:Lang.Current}}"
+                                      IsChecked="{Binding IsAppendPending, Mode=TwoWay}"
+                                      IsVisible="{Binding IsRunning}" />
                         <Button x:Name="SendButton" Classes="Primary accent" MinWidth="88"
                                 Command="{Binding SendCommand}" IsEnabled="{Binding CanSend}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
