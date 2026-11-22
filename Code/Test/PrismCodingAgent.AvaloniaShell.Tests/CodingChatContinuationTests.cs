@@ -24,6 +24,60 @@ public sealed class CodingChatContinuationTests
 
     [TestMethod]
     [Timeout(10000)]
+    public async Task InterruptionShouldReachChatAsOneUserMessageAndRoundTripAsACard()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = new List<ChatMessage[]>();
+        var client = new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (messages, _, cancellationToken) =>
+            {
+                requests.Add(messages.ToArray());
+                return RespondToInterruptionAsync(cancellationToken);
+            },
+        };
+        var manager = CreateManager();
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(
+            [new FakeLanguageModel(client) { ModelDefinition = new ModelDefinition { Provider = "fake", ModelId = "fake", ModelName = "Fake" } }]));
+        await using var agent = new CodingAgent();
+        var runner = new CodingAgentChatRunner(manager, agent);
+        var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
+        var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var session = manager.SelectedSession;
+        var run = await runner.RunAsync([new TextContent("start")], null, options, CancellationToken.None);
+        byte[] image = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aU5sAAAAASUVORK5CYII=");
+
+        try
+        {
+            await runner.InjectMessageAsync([new TextContent("follow-up"), new DataContent(image, "image/png")], CancellationToken.None);
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+        await run.CompletionTask;
+        await store.SaveSessionAsync(session, null);
+        var loaded = await store.LoadSessionAsync(session.SessionId);
+
+        var assistant = loaded.Entries.OfType<CopilotChatMessage>()
+            .Single(message => message.SessionSnapshotId == run.AssistantChatMessage.SessionSnapshotId);
+        var card = assistant.MessageItems.OfType<CopilotChatToolItem>().Single();
+        Assert.AreEqual("follow-up", card.Details?.Content);
+        var attachment = card.Details!.MessageItems.OfType<CopilotChatImageItem>().Single();
+        CollectionAssert.AreEqual(image, attachment.Data.ToArray());
+        CollectionAssert.AreEqual(new[] { "start", "follow-up" }, requests.Last()
+            .Where(message => message.Role == ChatRole.User).Select(message => message.Text).ToArray());
+        Assert.IsFalse(requests.SelectMany(request => request).SelectMany(message => message.Contents).OfType<FunctionCallContent>().Any());
+
+        async IAsyncEnumerable<ChatResponseUpdate> RespondToInterruptionAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            await release.Task.WaitAsync(token);
+            yield return new ChatResponseUpdate(ChatRole.Assistant, [new TextContent("done")]);
+        }
+    }
+
+    [TestMethod]
+    [Timeout(10000)]
     public async Task ContinueAsyncAfterFailedRunShouldReuseSessionAndAssistantWithoutAddingEntries()
     {
         var requests = new List<ChatMessage[]>();

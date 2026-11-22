@@ -123,7 +123,8 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         ArgumentNullException.ThrowIfNull(contents);
         ICodingAgentRunResult activeRun = _activeRun
                                          ?? throw new InvalidOperationException("当前没有正在运行的编程代理。");
-        return activeRun.InjectMessageAsync(contents, cancellationToken);
+        return CodingChatInterruption.InjectAndDisplayAsync(activeRun, contents,
+            _chatManager.MainThreadDispatcher, cancellationToken);
     }
 
     private async Task<string?> CompleteAndClearActiveRunAsync(ICodingAgentRunResult run, Guid sessionId,

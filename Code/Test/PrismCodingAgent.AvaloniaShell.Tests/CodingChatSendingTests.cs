@@ -353,21 +353,68 @@ public sealed class CodingChatSendingTests
             $"Running={application.IsRunActive}, chatting={manager.IsChatting}, messages={manager.SelectedSession.ChatMessages.Count}");
     }
 
-    private sealed class InterruptedResponseHandler(bool receivePartialResponse) : HttpMessageHandler
+    [TestMethod]
+    [Timeout(10000)]
+    public async Task ResponsesInterruptionShouldAppearOnlyAsACardAndSendOneUserItem()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var handler = new InterruptedResponseHandler(receivePartialResponse: false, release.Task);
+        using var http = new HttpClient(handler);
+        var manager = CreateManager();
+        manager.AgentApiEndpointManager.HttpClient?.Dispose();
+        manager.AgentApiEndpointManager.HttpClient = http;
+        manager.AgentApiEndpointManager.LoadConfiguration(
+            AgentLib.Core.AgentApiManagers.LanguageModelProviders.AgentApiManagerConfiguration.FromJsonString("""
+                {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
+                "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
+                """));
+        await using var agent = new CodingAgent();
+        var runner = new ResponsesCodingChatRunner(manager, new ResponsesCodingAgent(agent));
+        var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
+        var run = await runner.RunAsync([new TextContent("start")], null, options, CancellationToken.None);
+        await handler.WaitingForCancellation.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            await runner.InjectMessageAsync([new TextContent("follow-up")], CancellationToken.None);
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+        await run.CompletionTask;
+
+        Assert.AreEqual("follow-up", run.AssistantChatMessage.MessageItems.OfType<CopilotChatToolItem>().Single().Details?.Content);
+        CollectionAssert.AreEqual(new[] { "start" }, manager.SelectedSession.ChatMessages
+            .Where(message => message.Role == ChatRole.User).Select(message => message.Content).ToArray());
+        using var request = System.Text.Json.JsonDocument.Parse(handler.SecondRequestBody!);
+        var input = request.RootElement.GetProperty("input").EnumerateArray().ToArray();
+        Assert.HasCount(1, input.Where(item => item.GetRawText().Contains("follow-up", StringComparison.Ordinal)));
+        Assert.AreEqual("user", input.Single(item => item.GetRawText().Contains("follow-up", StringComparison.Ordinal))
+            .GetProperty("role").GetString());
+        Assert.IsFalse(input.Any(item => item.GetProperty("type").GetString() == "function_call"));
+    }
+
+    private sealed class InterruptedResponseHandler(bool receivePartialResponse, Task? finishFirstRequest = null) : HttpMessageHandler
     {
         private int _requestCount;
+        public string? SecondRequestBody { get; private set; }
         public TaskCompletionSource WaitingForCancellation { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             int number = Interlocked.Increment(ref _requestCount);
+            if (number == 2 && finishFirstRequest is not null)
+            {
+                SecondRequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            }
             if (number == 1 && !receivePartialResponse)
             {
                 WaitingForCancellation.TrySetResult();
-                await Task.Delay(Timeout.Infinite, cancellationToken);
+                await (finishFirstRequest ?? Task.Delay(Timeout.Infinite, cancellationToken)).WaitAsync(cancellationToken);
             }
             HttpContent content;
-            if (number == 1)
+            if (number == 1 && receivePartialResponse)
             {
                 content = new StreamContent(new InterruptedResponseStream(WaitingForCancellation));
                 content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/event-stream");

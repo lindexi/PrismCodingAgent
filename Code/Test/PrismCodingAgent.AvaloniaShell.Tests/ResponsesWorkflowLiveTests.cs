@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -150,8 +151,11 @@ public sealed class ResponsesWorkflowLiveTests
         await ((SimpleAsyncCommand)scenario.Chat.SendCommand).ExecuteAsync();
         await sending.WaitAsync(TimeSpan.FromMinutes(3));
         StringAssert.Contains(scenario.LastAnswer, "INTERRUPT-731");
-        Assert.IsTrue(scenario.Runtime.ChatManager.SelectedSession.ChatMessages.Any(message =>
-            message.Role == ChatRole.User && message.Content.Contains("INTERRUPT-731", StringComparison.Ordinal)));
+        Assert.IsTrue(scenario.Runtime.ChatManager.SelectedSession.ChatMessages
+            .Where(message => message.Role == ChatRole.Assistant)
+            .SelectMany(message => message.MessageItems.OfType<CopilotChatToolItem>())
+            .Any(card => card.Details is { Role: var role } details && role == ChatRole.User
+                && details.Content.Contains("INTERRUPT-731", StringComparison.Ordinal)));
     }
 
     [TestMethod]
