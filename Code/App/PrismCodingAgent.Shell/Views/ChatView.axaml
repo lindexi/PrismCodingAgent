@@ -1,11 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
+             xmlns:converters="using:PrismCodingAgent.CodingShell.Converters"
+             xmlns:avaloniaConverters="using:Avalonia.Data.Converters"
              xmlns:model="using:AgentLib.Model"
              xmlns:views="using:PrismCodingAgent.CodingShell.Views"
              xmlns:vm="clr-namespace:PrismCodingAgent.CodingShell.ViewModels"
              x:Class="PrismCodingAgent.CodingShell.Views.ChatView"
              x:DataType="vm:ChatViewModel">
+    <UserControl.Resources>
+        <converters:TotalUsageSummaryConverter x:Key="TotalUsageSummary" />
+    </UserControl.Resources>
     <UserControl.Styles>
         <Style Selector="TextBox.ChatOutput" x:CompileBindings="False">
             <Setter Property="Tag" Value="{Binding $parent[ItemsControl].DataContext}" />
@@ -174,6 +179,17 @@
                                             <TextBox Classes="ChatOutput" Text="{Binding InputText}" />
                                         </StackPanel>
                                         <ItemsControl ItemsSource="{Binding Details.MessageItems}" />
+                                        <Border Classes="UsageSummaryBorder" HorizontalAlignment="Right"
+                                                IsVisible="{Binding #ToolUsageSummary.Text, Converter={x:Static avaloniaConverters:StringConverters.IsNotNullOrEmpty}}">
+                                            <TextBlock x:Name="ToolUsageSummary" Classes="UsageSummaryText" TextWrapping="Wrap">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource TotalUsageSummary}">
+                                                        <Binding Path="Details.TotalUsageDetails" />
+                                                        <Binding Path="IetfLanguageTag" Source="{x:Static localizations:Lang.Current}" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </Border>
                                         <StackPanel IsVisible="{Binding HasOutputText}">
                                             <TextBlock Classes="SecondaryLabel"
                                                        Text="{Binding ToolOutputText, Source={x:Static localizations:Lang.Current}}" />

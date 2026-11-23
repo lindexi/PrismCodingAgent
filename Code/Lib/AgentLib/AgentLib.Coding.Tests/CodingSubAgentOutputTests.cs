@@ -35,6 +35,21 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    [DataRow(true, "parent-model", "Fake")]
+    [DataRow(false, "parent-model", "parent-model")]
+    [DataRow(false, null, "")]
+    public async Task DelegationShouldDisplayTheModelUsedByTheChild(bool configureChildModel, string? parentModelId,
+        string expectedModel)
+    {
+        var scenario = new Scenario();
+        await using var agent = new CodingAgent();
+        var run = await scenario.StartAsync(agent, configureChildModel: configureChildModel, parentModelId: parentModelId);
+        await run.CompletionTask;
+
+        Assert.AreEqual(expectedModel, scenario.Message.MessageItems.OfType<CopilotChatToolItem>().Single().SecondaryText);
+    }
+
+    [TestMethod]
     [Timeout(15000)]
     public async Task WhenChildIsStreamingThenParentTreeContainsTextBeforeCompletion()
     {
@@ -257,6 +272,18 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
+    public async Task WhenChildRetriesThenCumulativeUsageStaysOnTheChild()
+    {
+        var scenario = new Scenario(retry: true);
+        await using var agent = new CodingAgent();
+        await (await scenario.StartAsync(agent)).CompletionTask;
+
+        var child = scenario.Message.MessageItems.OfType<CopilotChatToolItem>().Single().Details;
+        Assert.AreEqual((14L, 6L, (long?)null), (child?.TotalUsageDetails?.InputTokenCount,
+            child?.TotalUsageDetails?.OutputTokenCount, scenario.Message.TotalUsageDetails?.InputTokenCount));
+    }
+
+    [TestMethod]
     public async Task WhenResponseIsEmptyThenPlaceholderCleanupUsesDispatcher()
     {
         var dispatcher = new RecordingDispatcher();
@@ -447,13 +474,16 @@ public sealed class CodingSubAgentOutputTests
 
         public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default,
             CopilotChatSession? session = null, string? childName = "worker", string? workspacePath = null,
-            string[]? imageFilePaths = null, bool configureChildModel = false)
+            string[]? imageFilePaths = null, bool configureChildModel = false, string? parentModelId = null)
         {
             _childName = childName;
             _imageFilePaths = imageFilePaths;
             var endpointManager = new AgentApiEndpointManager();
             var client = new FakeChatClient
             {
+                OnGetService = (type, _) => type == typeof(ChatClientMetadata) && parentModelId is not null
+                    ? new ChatClientMetadata(defaultModelId: parentModelId)
+                    : null,
                 OnGetStreamingResponseAsync = (messages, _, ct) =>
                 {
                     if (configureChildModel && _parentCalls == 0)

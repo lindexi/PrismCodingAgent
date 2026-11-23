@@ -20,6 +20,7 @@
     </Window.CommandBindings>
     <Window.Resources>
         <converters:WindowWidthVisibilityConverter x:Key="WindowWidthVisibility" />
+        <converters:TotalUsageSummaryConverter x:Key="TotalUsageSummary" />
         <Style x:Key="TopModelSettings" TargetType="Grid">
             <Setter Property="Visibility"
                     Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource WindowWidthVisibility}, ConverterParameter=1200}" />
@@ -178,6 +179,24 @@
                         </StackPanel>
                         <ItemsControl ItemsSource="{Binding Details.MessageItems}"
                                       ItemTemplateSelector="{Binding ItemTemplateSelector, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}" />
+                        <TextBlock x:Name="ToolUsageSummary" HorizontalAlignment="Right" Margin="0,4" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextSecondaryBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                            <TextBlock.Text>
+                                <MultiBinding Converter="{StaticResource TotalUsageSummary}">
+                                    <Binding Path="Details.TotalUsageDetails" />
+                                    <Binding Path="IetfLanguageTag" Source="{x:Static l:Lang.Current}" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
                         <StackPanel Visibility="{Binding HasOutputText, Converter={StaticResource BooleanVisibility}}">
                             <TextBlock Text="{Binding ToolOutputText, Source={x:Static l:Lang.Current}}"
                                        Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" />

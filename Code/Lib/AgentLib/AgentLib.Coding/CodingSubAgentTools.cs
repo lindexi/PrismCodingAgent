@@ -41,21 +41,28 @@ internal sealed class CodingSubAgentTools
                 filePath, workspaceContext.WorkspacePath, cancellationToken).ConfigureAwait(false));
         }
 
-        var childMessage = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
-        await parentContext.InvokeOutputAsync(() =>
-        {
-            parentContext.Output.ClearPlaceholder();
-            parentContext.Output.CreateToolItem(callContent, new ToolCallPresentation(name, null)).Details = childMessage;
-        }).ConfigureAwait(false);
-        var submission = new GeneratedTextSubmissionTool();
-        CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
-            submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
-
         var model = parentContext.ModelResolver?.ResolveModel(CodingModelPurposes.CodeWriting);
         IChatClient childClient = model is not null
             ? await model.GetChatClientAsync().ConfigureAwait(false)
             : parentContext.ChatClient;
         cancellationToken.ThrowIfCancellationRequested();
+        string? modelName = model?.ModelDefinition.ModelName;
+        if (string.IsNullOrWhiteSpace(modelName))
+        {
+            modelName = childClient.GetService<ChatClientMetadata>()?.DefaultModelId ?? model?.ModelDefinition.ModelId;
+        }
+
+        var childMessage = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
+        await parentContext.InvokeOutputAsync(() =>
+        {
+            parentContext.Output.ClearPlaceholder();
+            parentContext.Output.CreateToolItem(callContent,
+                new ToolCallPresentation(name, string.IsNullOrWhiteSpace(modelName) ? null : modelName)).Details = childMessage;
+        }).ConfigureAwait(false);
+        var submission = new GeneratedTextSubmissionTool();
+        CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
+            submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
+
         var subSession = await CodingSubAgentSessions.GetOrCreateSessionAsync(
             parentContext.Session, childClient, name, cancellationToken).ConfigureAwait(false);
 

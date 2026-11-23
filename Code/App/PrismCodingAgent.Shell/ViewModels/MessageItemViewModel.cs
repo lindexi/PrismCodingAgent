@@ -102,14 +102,7 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
     {
         get
         {
-            var parts = new System.Collections.Generic.List<string>();
-            var usage = _message.TotalUsageDetails;
-            if (usage?.TotalTokenCount is { } total) parts.Add(Localizations.Lang.Format(Lang.Current.UsageTotal, total));
-            if (usage?.InputTokenCount is { } input) parts.Add(Localizations.Lang.Format(Lang.Current.UsageInput, input));
-            if (usage?.OutputTokenCount is { } output) parts.Add(Localizations.Lang.Format(Lang.Current.UsageOutput, output));
-            if (usage?.ReasoningTokenCount is { } reasoning) parts.Add(Localizations.Lang.Format(Lang.Current.UsageReasoning, reasoning));
-            if (usage?.CachedInputTokenCount is { } cached) parts.Add(Localizations.Lang.Format(Lang.Current.UsageCached, cached));
-            string totalUsageSummaryText = string.Join(" | ", parts);
+            string totalUsageSummaryText = FormatTotalUsage(_message.TotalUsageDetails);
             if (_message.CurrentUsageDetails?.TotalTokenCount is not { } currentTotalTokenCount)
             {
                 return totalUsageSummaryText;
@@ -120,6 +113,22 @@ public sealed class MessageItemViewModel : ChatEntryViewModel
                 ? currentUsageSummaryText
                 : $"{currentUsageSummaryText} {totalUsageSummaryText}";
         }
+    }
+
+    internal static string FormatTotalUsage(UsageDetails? usage)
+    {
+        if (usage is null)
+        {
+            return string.Empty;
+        }
+
+        var parts = new System.Collections.Generic.List<string>();
+        if (usage.TotalTokenCount is { } total) parts.Add(Lang.Format(Lang.Current.UsageTotal, total));
+        if (usage.InputTokenCount is { } input) parts.Add(Lang.Format(Lang.Current.UsageInput, input));
+        if (usage.OutputTokenCount is { } output) parts.Add(Lang.Format(Lang.Current.UsageOutput, output));
+        if (usage.ReasoningTokenCount is { } reasoning) parts.Add(Lang.Format(Lang.Current.UsageReasoning, reasoning));
+        if (usage.CachedInputTokenCount is { } cached) parts.Add(Lang.Format(Lang.Current.UsageCached, cached));
+        return string.Join(" | ", parts);
     }
 
     /// <inheritdoc />

@@ -55,6 +55,41 @@ public sealed class WpfMessageUsageTests
         }
     });
 
+    [TestMethod]
+    public async Task ToolCardShowsChildModelAndUpdatesCumulativeUsageAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    {
+        var resources = new MainWindow();
+        resources.Show();
+        resources.Close();
+        await WpfInput.ClickAsync((Button)resources.FindName("ConfirmExitButton"));
+        await WpfInput.WaitAsync(() => !resources.IsVisible, "Resource window did not close.");
+        var child = CopilotChatMessage.CreateAssistant(string.Empty, false);
+        var tool = new CopilotChatToolItem("call", "InvokeCodingSubAgent", "task",
+            presentation: new ToolCallPresentation("worker", "child-model")) { Details = child };
+        var content = new ContentControl { Content = tool, ContentTemplate = (DataTemplate)resources.Resources["MessageTool"] };
+        var window = new Window { Width = 800, Height = 360, Content = content };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            var expander = Descendants(content).OfType<Expander>().Single();
+            Assert.IsTrue(Descendants(expander).OfType<TextBlock>().Any(text => text.IsVisible && text.Text == "child-model"));
+            expander.IsExpanded = true;
+            window.UpdateLayout();
+            var summary = Descendants(expander).OfType<TextBlock>().Single(text => text.Name == "ToolUsageSummary");
+            Assert.IsFalse(summary.IsVisible);
+
+            child.AppendUsageDetails(new UsageDetails { InputTokenCount = 7, OutputTokenCount = 3 });
+            child.AppendUsageDetails(new UsageDetails { InputTokenCount = 5, OutputTokenCount = 2 });
+            string expected = $"{Lang.Current.UsageInput.ToString(12)} | {Lang.Current.UsageOutput.ToString(5)}";
+            await WpfInput.WaitAsync(() => summary.IsVisible && summary.Text == expected, "Child usage did not update.");
+        }
+        finally
+        {
+            window.Close();
+        }
+    });
+
     private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
