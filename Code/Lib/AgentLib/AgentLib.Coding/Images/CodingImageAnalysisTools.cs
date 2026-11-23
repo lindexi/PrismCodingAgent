@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using AgentLib.Core;
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Agents.AI;
@@ -80,28 +82,23 @@ internal sealed class CodingImageAnalysisTools
                 userContents.Add(image);
             }
 
-            IManualSendMessageContext context = await _chatManager
-                .CreateManualSendMessageContextAsync(cancellationToken)
-                .ConfigureAwait(false);
+            ILanguageModelResolver resolver = _chatManager.AgentApiEndpointManager;
+            IChatClient client = await resolver.GetChatClientAsync(ModelPurposes.ImageAnalysis).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             var submission = new GeneratedTextSubmissionTool();
             AIFunction submissionTool = submission.CreateTool
             (
                 SubmitImageAnalysisResultToolName,
                 "提交根据分析要求和全部图片得到的最终完整结论。必须调用此工具返回结果。仅提交最终结论，不要附加工具调用说明。"
             );
-            ChatClientAgent agent = await context.GetChatClientAgentAsync
-            (
-                options =>
-                {
-                    options.ChatOptions ??= new ChatOptions();
-                    options.ChatOptions.Tools = [submissionTool];
-                    options.AIContextProviders = [];
-                    options.EnableMessageInjection = false;
-                    options.ChatHistoryProvider = null;
-                    options.RequirePerServiceCallChatHistoryPersistence = false;
-                },
-                cancellationToken
-            ).ConfigureAwait(false);
+            ChatClientAgent agent = client.AsAIAgent(new ChatClientAgentOptions
+            {
+                ChatOptions = new ChatOptions { Tools = [submissionTool] },
+                AIContextProviders = [],
+                EnableMessageInjection = false,
+                ChatHistoryProvider = null,
+                RequirePerServiceCallChatHistoryPersistence = false,
+            });
 
             List<ChatMessage> messages =
             [

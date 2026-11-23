@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 
+using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Coding.Images;
@@ -42,6 +43,28 @@ public sealed class CodingImageAnalysisToolsTests
         Assert.AreEqual(ChatRole.User, capturedMessages[1].Role);
         Assert.IsInstanceOfType<TextContent>(capturedMessages[1].Contents[0]);
         Assert.IsInstanceOfType<DataContent>(capturedMessages[1].Contents[1]);
+    }
+
+    [TestMethod]
+    public async Task AnalyzeImageAsyncWhenPurposeModelIsConfiguredShouldUseItInsteadOfPrimaryModel()
+    {
+        string imagePath = await CreateImageFileAsync();
+        var invocation = 0;
+        var imageClient = new FakeChatClient
+        {
+            OnGetStreamingResponseAsync = (messages, options, cancellationToken) => RespondAsync(
+                ++invocation, messages, options, _ => { }, _ => { }, cancellationToken),
+        };
+        var manager = CreateChatManager(imageClient);
+        var primaryModel = new FakeLanguageModel(new FakeChatClient());
+        manager.AgentApiEndpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([primaryModel]));
+        manager.AgentApiEndpointManager.PrimaryModel = primaryModel;
+        manager.AgentApiEndpointManager.SetModelForPurpose(ModelPurposes.ImageAnalysis, "image-model");
+        var tools = new CodingImageAnalysisTools(manager);
+
+        string result = await tools.AnalyzeImageAsync([imagePath], "Describe the image");
+
+        Assert.AreEqual("分析完成", result);
     }
 
     [TestMethod]
