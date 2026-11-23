@@ -7,6 +7,7 @@ using AgentLib;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell;
+using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.WpfShell.Tests;
@@ -54,11 +55,20 @@ public sealed class WpfFinalProjectionTests
                 menu.IsOpen = true;
                 CommandManager.InvalidateRequerySuggested();
                 await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-                Assert.IsTrue(((MenuItem)menu.Items[0]).IsEnabled);
                 await screenshots.CaptureSurfaceAsync(menu, $"production-{(index == 0 ? "user" : "assistant")}-complete-copy-menu-rendering-not-click");
-                Assert.AreEqual(3, menu.Items.Count);
-                Assert.AreEqual(index == 1 ? Visibility.Visible : Visibility.Collapsed, ((MenuItem)menu.Items[2]).Visibility);
-                Assert.AreEqual(projections[index].FullContent, ((MenuItem)menu.Items[1]).CommandParameter);
+                var projection = projections[index];
+                var items = menu.Items.OfType<MenuItem>().ToArray();
+                var copyBody = items.Single(item => Equals(item.Header, Lang.Current.CopyBody));
+                var copyMessage = items.Single(item => Equals(item.Header, Lang.Current.CopyMessage));
+                Assert.IsTrue(copyBody.IsEnabled);
+                Assert.AreEqual(projection.Content, copyBody.CommandParameter);
+                Assert.AreEqual(projection.FullContent, copyMessage.CommandParameter);
+
+                var expectedVisibility = index == 1 ? Visibility.Visible : Visibility.Collapsed;
+                var createSession = items.Single(item => item.Command == projection.CreateSessionFromSnapshotCommand);
+                var speakPlainly = items.Single(item => item.Command == projection.SpeakPlainlyCommand);
+                Assert.AreEqual(expectedVisibility, createSession.Visibility);
+                Assert.AreEqual(expectedVisibility, speakPlainly.Visibility);
                 menu.IsOpen = false;
             }
         }
