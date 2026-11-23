@@ -1,4 +1,4 @@
-name: Build
+﻿name: Build
 
 on:
   push:
@@ -54,13 +54,5 @@ jobs:
         timeout-minutes: 10
         run: dotnet test -c Release --no-build Code/Test/PrismCodingAgent.WpfShell.Tests/PrismCodingAgent.WpfShell.Tests.csproj --blame-hang --blame-hang-timeout 2m --logger trx --results-directory TestResults/Wpf
 
-      # Temporary diagnostics for the test-session timeout; remove after investigation.
-      - name: Upload test timeout diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-diagnostics-${{ matrix.os }}
-          path: TestResults/
-          if-no-files-found: warn
-          retention-days: 3
+
 
