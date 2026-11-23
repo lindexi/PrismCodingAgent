@@ -52,7 +52,7 @@ public sealed class WpfQuotaTests
             File.Copy(await screenshots.CaptureAsync("quota-settings"), Path.Combine(directory, "settings.png"), true);
             settings.SaveCommand.Execute(null);
             await WpfInput.WaitAsync(() => !settings.IsBusy, "Settings save did not complete.");
-            Assert.IsTrue((await File.ReadAllTextAsync(Path.Combine(root, "ShellSettings.json"))).Contains("example"));
+            Assert.Contains("example", await File.ReadAllTextAsync(Path.Combine(root, "ShellSettings.json")), StringComparison.Ordinal);
             settings.Quotas.RemoveServiceCommand.Execute(service);
             Assert.IsEmpty(settings.Quotas.Services);
         }

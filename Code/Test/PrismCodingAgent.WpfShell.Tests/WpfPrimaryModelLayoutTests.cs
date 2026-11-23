@@ -52,7 +52,11 @@ public sealed class WpfPrimaryModelLayoutTests
             var adjacent = (Border)view.FindName("CpaQuotaSettings");
             Assert.AreSame(outer.Style, adjacent.Style);
             Assert.AreSame(outer.Parent, adjacent.Parent);
-            var cards = Descendants(editor).OfType<Border>().Where(b => b.CornerRadius == new CornerRadius(12) && model.Providers.Contains(b.DataContext as ProviderSettingsViewModel)).ToArray();
+            var cards = Descendants(editor).OfType<Border>()
+                .Where(b => b.CornerRadius == new CornerRadius(12)
+                    && b.DataContext is ProviderSettingsViewModel provider
+                    && model.Providers.Contains(provider))
+                .ToArray();
             Assert.HasCount(3, cards);
             var scroll = Descendants(view).OfType<ScrollViewer>().First();
             for (int index = 0; index < cards.Length; index++)
@@ -66,7 +70,11 @@ public sealed class WpfPrimaryModelLayoutTests
                 var endpoint = Descendants(card).OfType<TextBox>().Single(b => b.Name == "EndpointInput");
                 Assert.AreEqual(provider.EndPoint, endpoint.Text);
                 if (index > 0)
-                    Assert.IsTrue(card.TranslatePoint(default, editor).Y - cards[index - 1].TranslatePoint(new Point(0, cards[index - 1].ActualHeight), editor).Y >= 16);
+                {
+                    var previousCard = cards[index - 1];
+                    var gap = card.TranslatePoint(default, editor).Y - previousCard.TranslatePoint(new Point(0, previousCard.ActualHeight), editor).Y;
+                    Assert.IsGreaterThanOrEqualTo(16, gap);
+                }
                 scroll.ScrollToVerticalOffset(scroll.VerticalOffset + card.TranslatePoint(default, scroll).Y - 8);
                 await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ApplicationIdle);
                 await screenshots.CaptureAsync($"{language}-{width}-service-{index + 1}");

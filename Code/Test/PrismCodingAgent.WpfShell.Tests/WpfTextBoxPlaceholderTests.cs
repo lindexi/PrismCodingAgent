@@ -10,7 +10,7 @@ public sealed class WpfTextBoxPlaceholderTests
 {
     public TestContext TestContext { get; set; } = null!;
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(null, "Hint", true)]
     [DataRow("", "Hint", true)]
     [DataRow("value", "Hint", false)]

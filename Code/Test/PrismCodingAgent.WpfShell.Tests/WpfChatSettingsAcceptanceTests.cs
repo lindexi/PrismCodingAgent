@@ -69,7 +69,7 @@ public sealed class WpfChatSettingsAcceptanceTests
             await window.Dispatcher.InvokeAsync(window.UpdateLayout, DispatcherPriority.ApplicationIdle);
             var archive = (TextBox)settings.FindName("SessionsDirectoryInput");
             Assert.IsTrue(archive.IsReadOnly);
-            Assert.IsTrue(archive.Text.StartsWith(Path.Combine(root, "Sessions") + Path.DirectorySeparatorChar));
+            Assert.StartsWith(Path.Combine(root, "Sessions") + Path.DirectorySeparatorChar, archive.Text, StringComparison.CurrentCulture);
             Assert.AreNotEqual(Path.Combine(root, "Sessions"), archive.Text);
             var log = (TextBox)settings.FindName("LogFileInput");
             Assert.IsTrue(log.IsReadOnly);

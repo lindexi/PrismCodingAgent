@@ -11,7 +11,7 @@ public sealed class WpfPurposeLayoutTests
 {
     public TestContext TestContext { get; set; } = null!;
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(480)]
     [DataRow(720)]
     [DataRow(1120)]

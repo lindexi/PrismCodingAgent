@@ -76,10 +76,10 @@ public sealed class WpfProxyTextLayoutTests
         using var screenshots = new WpfScreenshotSession(window, TestContext);
         await screenshots.CaptureAsync("multiline-and-masked");
         var host = (ScrollViewer)multiline.Template.FindName("PART_ContentHost", multiline);
-        Assert.IsTrue(host.ViewportHeight >= host.ExtentHeight, "All three text lines must fit without vertical clipping.");
+        Assert.IsGreaterThanOrEqualTo(host.ExtentHeight, host.ViewportHeight, "All three text lines must fit without vertical clipping.");
         var masked = (PasswordBox)secret.FindName("MaskedInput");
         var maskedHost = (FrameworkElement)masked.Template.FindName("PART_ContentHost", masked);
-        Assert.IsTrue(maskedHost.ActualHeight >= masked.FontFamily.LineSpacing * masked.FontSize);
+        Assert.IsGreaterThanOrEqualTo(masked.FontFamily.LineSpacing * masked.FontSize, maskedHost.ActualHeight);
         ((System.Windows.Controls.Primitives.ToggleButton)secret.FindName("RevealButton")).IsChecked = true;
         await screenshots.CaptureAsync("multiline-and-revealed");
         var revealed = (TextBox)secret.FindName("RevealedInput");
