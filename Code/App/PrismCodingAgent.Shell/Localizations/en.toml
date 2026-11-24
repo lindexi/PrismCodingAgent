@@ -382,6 +382,7 @@ CatalogDuplicateId = "The model list contains a duplicate model ID: {0}"
 SandboxConnecting = "Connecting to sandbox…"
 SettingsSaved = "Settings saved. Language, models, proxy and sandbox changes are active; system prompts apply on next startup."
 
+PromptsEntryText = "Prompts"
 FavoritePromptsTitle = "Favorite prompts"
 FavoritePromptsSearch = "Search prompts"
 FavoritePromptsClose = "Close"

@@ -382,6 +382,7 @@ CatalogDuplicateId = "L'elenco dei modelli contiene un ID modello duplicato: {0}
 SandboxConnecting = "Tentativo di connessione alla sandbox…"
 SettingsSaved = "Impostazioni salvate. Lingua, elenco dei modelli, proxy di rete e configurazione della sandbox sono già attivi; il prompt di sistema avrà effetto al prossimo avvio."
 
+PromptsEntryText = "Prompt"
 FavoritePromptsTitle = "Prompt preferiti"
 FavoritePromptsSearch = "Cerca prompt"
 FavoritePromptsClose = "Chiudi"

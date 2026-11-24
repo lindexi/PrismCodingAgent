@@ -55,6 +55,7 @@
         <Grid Grid.Row="2" MaxWidth="920">
             <ListBox x:Name="PromptList" Background="Transparent" Padding="0" BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel"
                      PreviewMouseLeftButtonDown="OnRowPressed">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
@@ -63,15 +64,13 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="RowSurface" Background="Transparent" CornerRadius="4">
+                                    <Border x:Name="RowSurface" Background="Transparent" BorderBrush="Transparent"
+                                            BorderThickness="1" CornerRadius="4">
                                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
                                     </Border>
                                     <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="RowSurface" Property="Background" Value="{StaticResource SurfaceVariantBrush}" />
-                                        </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="RowSurface" Property="Background" Value="{StaticResource PrimaryLightBrush}" />
+                                            <Setter TargetName="RowSurface" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>

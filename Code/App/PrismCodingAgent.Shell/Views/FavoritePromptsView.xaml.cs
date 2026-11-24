@@ -91,7 +91,7 @@ public partial class FavoritePromptsView : UserControl
 
         for (DependencyObject? element = source; element is not null && element != item; element = GetParent(element))
         {
-            if (element is Button or TextBox) return;
+            if (element is Button) return;
         }
 
         Apply();

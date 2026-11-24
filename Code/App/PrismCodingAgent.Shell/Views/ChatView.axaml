@@ -666,7 +666,7 @@
             </Border>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                 <Button x:Name="OpenFavoritePromptsButton" Classes="Secondary" HorizontalAlignment="Left"
-                        Content="{Binding FavoritePromptsTitle, Source={x:Static localizations:Lang.Current}}"
+                        Content="{Binding PromptsEntryText, Source={x:Static localizations:Lang.Current}}"
                         IsEnabled="{Binding !!$parent[views:ChatView].PromptsFile}" Click="OnOpenFavoritePrompts" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                     <Button x:Name="CompressConversationButton" Classes="Secondary"

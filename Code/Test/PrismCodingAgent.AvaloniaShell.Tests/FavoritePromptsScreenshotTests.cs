@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -40,10 +41,17 @@ public sealed class FavoritePromptsScreenshotTests
         session.Click(chat.FindControl<Button>("OpenFavoritePromptsButton")!);
         await WaitUntilAsync(() => list.ItemCount == prompts.Length);
         Assert.IsFalse(apply.IsEnabled);
+        string unselectedPath = session.Capture("favorite-prompts-unselected");
         list.SelectedIndex = 0;
-        session.Capture("favorite-prompts-selected");
+        string selectedPath = session.Capture("favorite-prompts-selected");
         Assert.IsTrue(apply.IsEnabled);
         var row = list.ContainerFromIndex(0)!;
+        var sample = row.TranslatePoint(new Avalonia.Point(row.Bounds.Width / 2, row.Bounds.Height / 2), session.Window)!.Value;
+        var edge = row.TranslatePoint(new Avalonia.Point(0, row.Bounds.Height / 2), session.Window)!.Value;
+        using var unselected = SkiaSharp.SKBitmap.Decode(unselectedPath);
+        using var selected = SkiaSharp.SKBitmap.Decode(selectedPath);
+        Assert.AreEqual(unselected.GetPixel((int)sample.X, (int)sample.Y), selected.GetPixel((int)sample.X, (int)sample.Y), "Selection must not recolor the row background.");
+        Assert.AreNotEqual(unselected.GetPixel((int)edge.X, (int)edge.Y), selected.GetPixel((int)edge.X, (int)edge.Y), "Selection must highlight the row outline.");
         var editor = row.GetVisualDescendants().OfType<TextBox>().Single();
         Assert.IsTrue(editor.IsReadOnly);
         Assert.IsFalse(editor.Text!.Contains("先给出审查结论", StringComparison.Ordinal));
@@ -57,7 +65,9 @@ public sealed class FavoritePromptsScreenshotTests
         var cancel = list.ContainerFromIndex(0)!.GetVisualDescendants().OfType<Button>()
             .Single(button => ToolTip.GetTip(button)?.ToString() == "取消");
         session.Click(cancel);
-        session.Click(apply);
+        editor = list.ContainerFromIndex(0)!.GetVisualDescendants().OfType<TextBox>().Single();
+        session.Click(editor);
+        session.Click(editor);
         Assert.AreEqual(draft + prompts[0], session.Model.ChatViewModel.InputText);
         Assert.IsFalse(panel.IsVisible);
 

@@ -382,6 +382,7 @@ CatalogDuplicateId = "モデル一覧に重複するモデル ID が含まれて
 SandboxConnecting = "サンドボックスへの接続を試みています…"
 SettingsSaved = "設定を保存しました。言語、モデル一覧、ネットワークプロキシ、サンドボックスの設定はすぐに適用されました。システムプロンプトは次回起動時に適用されます。"
 
+PromptsEntryText = "プロンプト"
 FavoritePromptsTitle = "お気に入りのプロンプト"
 FavoritePromptsSearch = "プロンプトを検索"
 FavoritePromptsClose = "閉じる"

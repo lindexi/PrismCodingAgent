@@ -3,10 +3,37 @@
              xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
              xmlns:vm="using:PrismCodingAgent.CodingShell.ViewModels"
              x:Class="PrismCodingAgent.CodingShell.Views.FavoritePromptsView">
-    <UserControl.Styles>
-        <Style Selector="ListBoxItem">
+    <UserControl.Resources>
+        <ControlTheme x:Key="PromptListItemTheme" TargetType="ListBoxItem">
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter x:Name="PART_ContentPresenter" CornerRadius="4"
+                                      Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"
+                                      HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:selected">
+                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="TextBox.PromptEditor.editing">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="MinHeight" Value="56" />
+            <Setter Property="MaxHeight" Value="280" />
+        </Style>
+        <Style Selector="TextBox.PromptEditor.editing:focus-within /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
         </Style>
         <Style Selector="StackPanel.PromptActions">
             <Setter Property="IsVisible" Value="False" />
@@ -36,20 +63,24 @@
                 <PathIcon Data="M4,5 L5,4 L12,11 L19,4 L20,5 L13,12 L20,19 L19,20 L12,13 L5,20 L4,19 L11,12 Z" />
             </Button>
         </Grid>
-        <TextBox Grid.Row="1" x:Name="PromptSearch" Watermark="{Binding FavoritePromptsSearch, Source={x:Static localizations:Lang.Current}}"
+        <TextBox Grid.Row="1" x:Name="PromptSearch" PlaceholderText="{Binding FavoritePromptsSearch, Source={x:Static localizations:Lang.Current}}"
                  AutomationProperties.Name="{Binding FavoritePromptsSearch, Source={x:Static localizations:Lang.Current}}"
                  HorizontalAlignment="Stretch" MaxWidth="400" TextChanged="OnSearchChanged" />
         <Grid Grid.Row="2" MaxWidth="920">
-            <ListBox x:Name="PromptList" Background="Transparent" Padding="0" BorderThickness="0"
-                     SelectionChanged="OnSelectionChanged" DoubleTapped="OnPromptDoubleTapped"
+            <ListBox x:Name="PromptList" ItemContainerTheme="{StaticResource PromptListItemTheme}"
+                     Background="Transparent" Padding="0" BorderThickness="0"
+                     SelectionChanged="OnSelectionChanged"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:FavoritePromptRow">
                         <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource DividerBrush}" Padding="12,10">
                             <Grid ColumnDefinitions="*,28" ColumnSpacing="10">
                                 <StackPanel Spacing="3">
-                                    <TextBox Classes="ChatOutput" Text="{Binding DisplayText, Mode=TwoWay}"
-                                             Watermark="{Binding FavoritePromptsPlaceholder, Source={x:Static localizations:Lang.Current}}"
+                                    <TextBox Classes="PromptEditor" Classes.ChatOutput="{Binding !IsEditing}"
+                                             Classes.editing="{Binding IsEditing}" AcceptsReturn="True" TextWrapping="Wrap"
+                                             VerticalContentAlignment="Top" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             Text="{Binding DisplayText, Mode=TwoWay}"
+                                             PlaceholderText="{Binding FavoritePromptsPlaceholder, Source={x:Static localizations:Lang.Current}}"
                                              IsReadOnly="{Binding !IsEditing}" />
                                     <Button Classes="Flat" MinHeight="24" Padding="2,0" IsVisible="{Binding CanToggle}"
                                             HorizontalAlignment="Left" Click="OnToggle">

@@ -382,6 +382,7 @@ CatalogDuplicateId = "Список моделей содержит повтор�
 SandboxConnecting = "Подключение к песочнице…"
 SettingsSaved = "Настройки сохранены. Язык, список моделей, сетевой прокси и конфигурация песочницы применены немедленно; системный промпт вступит в силу при следующем запуске."
 
+PromptsEntryText = "Промпты"
 FavoritePromptsTitle = "Избранные промпты"
 FavoritePromptsSearch = "Поиск промптов"
 FavoritePromptsClose = "Закрыть"

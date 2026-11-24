@@ -382,6 +382,7 @@ CatalogDuplicateId = "De modellenlijst bevat een dubbel model-ID: {0}"
 SandboxConnecting = "Verbinding maken met de sandbox…"
 SettingsSaved = "De instellingen zijn opgeslagen. De taal, modellenlijst, netwerkproxy en sandboxconfiguratie zijn direct toegepast; de systeemprompt wordt bij de volgende start toegepast."
 
+PromptsEntryText = "Prompts"
 FavoritePromptsTitle = "Favoriete prompts"
 FavoritePromptsSearch = "Prompts zoeken"
 FavoritePromptsClose = "Sluiten"

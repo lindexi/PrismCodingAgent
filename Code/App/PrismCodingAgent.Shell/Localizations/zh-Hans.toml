@@ -382,6 +382,7 @@ CatalogDuplicateId = "模型列表包含重复的模型 ID：{0}"
 SandboxConnecting = "尝试连接沙箱中…"
 SettingsSaved = "设置已保存。语言、模型列表、网络代理和沙箱配置已立即生效；系统提示词将在下次启动时生效。"
 
+PromptsEntryText = "提示词"
 FavoritePromptsTitle = "收藏提示词"
 FavoritePromptsSearch = "搜索提示词"
 FavoritePromptsClose = "关闭"

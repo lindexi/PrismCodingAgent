@@ -127,7 +127,7 @@
                 <ColumnDefinition /><ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Button x:Name="OpenFavoritePromptsButton" HorizontalAlignment="Left" VerticalAlignment="Center"
-                    Margin="0,0,0,4" Content="{Binding FavoritePromptsTitle, Source={x:Static l:Lang.Current}}"
+                    Margin="0,0,0,4" Content="{Binding PromptsEntryText, Source={x:Static l:Lang.Current}}"
                     Click="OnOpenFavoritePromptsClick">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

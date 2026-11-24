@@ -97,17 +97,11 @@ public partial class FavoritePromptsView : UserControl
             visual.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext is FavoritePromptRow row)
         {
             PromptList.SelectedItem = row;
-        }
-    }
+            if (e.ClickCount != 2 || !ApplyPromptButton.IsEnabled ||
+                visual.FindAncestorOfType<Button>(includeSelf: true) is not null) return;
 
-    private void OnPromptDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        if (e.Source is Visual visual && visual.FindAncestorOfType<Button>(includeSelf: true) is null &&
-            visual.FindAncestorOfType<TextBox>(includeSelf: true) is null &&
-            visual.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext is FavoritePromptRow row)
-        {
-            PromptList.SelectedItem = row;
             Apply();
+            e.Handled = true;
         }
     }
 

@@ -382,6 +382,7 @@ CatalogDuplicateId = "Die Modellliste enthält eine doppelte Modell-ID: {0}"
 SandboxConnecting = "Verbindung zur Sandbox wird hergestellt…"
 SettingsSaved = "Einstellungen gespeichert. Sprache, Modellliste, Netzwerkproxy und Sandbox-Konfiguration sind sofort wirksam; der Systemprompt wird beim nächsten Start wirksam."
 
+PromptsEntryText = "Prompts"
 FavoritePromptsTitle = "Favorisierte Prompts"
 FavoritePromptsSearch = "Prompts suchen"
 FavoritePromptsClose = "Schließen"

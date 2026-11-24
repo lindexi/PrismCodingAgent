@@ -382,6 +382,7 @@ CatalogDuplicateId = "La liste des modèles contient un identifiant de modèle e
 SandboxConnecting = "Tentative de connexion au bac à sable…"
 SettingsSaved = "Paramètres enregistrés. La langue, la liste des modèles, le proxy réseau et la configuration du bac à sable sont immédiatement appliqués ; le prompt système prendra effet au prochain démarrage."
 
+PromptsEntryText = "Prompts"
 FavoritePromptsTitle = "Prompts favoris"
 FavoritePromptsSearch = "Rechercher des prompts"
 FavoritePromptsClose = "Fermer"

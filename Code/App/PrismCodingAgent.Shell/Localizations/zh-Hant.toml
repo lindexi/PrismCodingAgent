@@ -382,6 +382,7 @@ CatalogDuplicateId = "模型清單包含重複的模型 ID：{0}"
 SandboxConnecting = "正在嘗試連線至沙箱…"
 SettingsSaved = "設定已儲存。語言、模型清單、網路 Proxy 和沙箱設定已立即生效；系統提示詞將在下次啟動時生效。"
 
+PromptsEntryText = "提示詞"
 FavoritePromptsTitle = "收藏提示詞"
 FavoritePromptsSearch = "搜尋提示詞"
 FavoritePromptsClose = "關閉"

@@ -382,6 +382,7 @@ CatalogDuplicateId = "La lista de modelos contiene un ID de modelo duplicado: {0
 SandboxConnecting = "Intentando conectar con el entorno aislado…"
 SettingsSaved = "Configuración guardada. El idioma, la lista de modelos, el proxy de red y la configuración del entorno aislado se han aplicado de inmediato; el mensaje de sistema se aplicará en el próximo inicio."
 
+PromptsEntryText = "Mensajes"
 FavoritePromptsTitle = "Mensajes favoritos"
 FavoritePromptsSearch = "Buscar mensajes"
 FavoritePromptsClose = "Cerrar"

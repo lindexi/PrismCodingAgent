@@ -14,6 +14,47 @@ public sealed class WpfFavoritePromptsTests
     public TestContext TestContext { get; set; } = null!;
 
     [TestMethod]
+    public async Task WheelScrollsWithinAnExpandedPromptAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
+    {
+        string root = Directory.CreateTempSubdirectory().FullName;
+        TestContext.WriteLine($"Test data: {root}");
+        string prompt = string.Join("\r\n", Enumerable.Range(1, 200).Select(line => $"Prompt line {line}"));
+        await File.WriteAllTextAsync(Path.Combine(root, "Prompts.json"), JsonSerializer.Serialize(new[] { prompt }), WpfTestSession.Cancellation);
+        var window = (MainWindow)await ((App)Application.Current).OpenAsync(["--data-directory", root]);
+        var composer = (ChatView)window.FindName("ChatComposer");
+        var open = (Button)composer.FindName("OpenFavoritePromptsButton");
+        var panel = (FavoritePromptsView)window.FindName("FavoritePromptsPanel");
+        var list = (ListBox)panel.FindName("PromptList");
+        open.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, open));
+        await WpfInput.WaitAsync(() => panel.IsVisible && list.Items.Count == 1, "Favorite prompt did not load.");
+        window.UpdateLayout();
+        var row = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
+        var expand = FindVisualChild<Button>(row) ?? throw new InvalidOperationException("Missing expand button.");
+        expand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, expand));
+        window.UpdateLayout();
+        var scroll = FindVisualChild<ScrollViewer>(list) ?? throw new InvalidOperationException("Missing list scroll viewer.");
+        scroll.RaiseEvent(new System.Windows.Input.MouseWheelEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, -120)
+        {
+            RoutedEvent = System.Windows.Input.Mouse.MouseWheelEvent,
+        });
+        window.UpdateLayout();
+
+        Assert.IsTrue(scroll.VerticalOffset > 0 && scroll.VerticalOffset < scroll.ScrollableHeight,
+            $"One wheel tick should stop inside the prompt. Offset: {scroll.VerticalOffset}, maximum: {scroll.ScrollableHeight}.");
+    });
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, index);
+            if ((child as T ?? FindVisualChild<T>(child)) is { } result) return result;
+        }
+
+        return null;
+    }
+
+    [TestMethod]
     public async Task ApplyingSelectedFavoriteAppendsFullPromptAndClosesPanelAsync() => await WpfTestClassAttribute.RunUiAsync(async () =>
     {
         string root = Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "FavoritePromptsData", Guid.NewGuid().ToString("N"))).FullName;

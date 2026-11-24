@@ -382,6 +382,7 @@ CatalogDuplicateId = "모델 목록에 중복된 모델 ID가 포함되어 있�
 SandboxConnecting = "샌드박스에 연결하는 중…"
 SettingsSaved = "설정이 저장되었습니다. 언어, 모델 목록, 네트워크 프록시 및 샌드박스 구성이 즉시 적용되었습니다. 시스템 프롬프트는 다음 시작 시 적용됩니다."
 
+PromptsEntryText = "프롬프트"
 FavoritePromptsTitle = "즐겨찾기 프롬프트"
 FavoritePromptsSearch = "프롬프트 검색"
 FavoritePromptsClose = "닫기"
