@@ -49,8 +49,22 @@ public sealed class FileCopilotChatLogger : ICopilotChatLogger
         return new SessionLogger(this, logName);
     }
 
-    private sealed class SessionLogger(FileCopilotChatLogger logger, string logName) : ISessionCopilotChatLogger
+    private sealed class SessionLogger(FileCopilotChatLogger logger, string logName)
+        : ISessionCopilotChatLogger, ILogFilePathProvider
     {
+        public async Task<string?> GetLogFilePathAsync(CancellationToken cancellationToken = default)
+        {
+            await logger._writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return logger._logFilePaths.TryGetValue(logName, out string? path) ? path : null;
+            }
+            finally
+            {
+                logger._writeLock.Release();
+            }
+        }
+
         public Task LogMessageAsync(CopilotChatMessage chatMessage) => logger.WriteMessageAsync(logName, chatMessage);
 
         public Task LogDiagnosticAsync(string category, string message, Exception? exception = null) =>

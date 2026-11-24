@@ -279,6 +279,17 @@
                                 Content="{Binding ChatOpenFolder, Source={x:Static localizations:Lang.Current}}"
                                 Click="OpenLogFolderClicked" />
                     </Grid>
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8" Margin="0,8">
+                        <TextBlock Classes="OptionTitle"
+                                   Text="{Binding ChatProcessLogLabel, Source={x:Static localizations:Lang.Current}}" />
+                        <TextBox x:Name="ProcessLogFileInput" Grid.Column="1" MinWidth="0" IsReadOnly="True" />
+                        <Button x:Name="OpenProcessLogFileButton" Grid.Column="2" Classes="Secondary" IsEnabled="False"
+                                Content="{Binding ChatOpenFile, Source={x:Static localizations:Lang.Current}}"
+                                Click="OpenProcessLogClicked" />
+                        <Button x:Name="OpenProcessLogFolderButton" Grid.Column="3" Classes="Secondary" IsEnabled="False"
+                                Content="{Binding ChatOpenFolder, Source={x:Static localizations:Lang.Current}}"
+                                Click="OpenProcessLogFolderClicked" />
+                    </Grid>
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,8">
                         <TextBlock Classes="OptionTitle"
                                    Text="{Binding ChatArchiveLabel, Source={x:Static localizations:Lang.Current}}" />

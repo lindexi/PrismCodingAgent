@@ -74,6 +74,11 @@ public sealed class WpfChatSettingsAcceptanceTests
             var log = (TextBox)settings.FindName("LogFileInput");
             Assert.IsTrue(log.IsReadOnly);
             Assert.AreEqual(expectedLog, log.Text);
+            string processLog = Directory.GetFiles(Path.Combine(root, "Logs"),
+                $"*_Main_{Environment.ProcessId}.log", SearchOption.AllDirectories).Single();
+            Assert.AreEqual(processLog, ((TextBox)settings.FindName("ProcessLogFileInput")).Text);
+            Assert.IsTrue(((Button)settings.FindName("OpenProcessLogFileButton")).IsEnabled);
+            Assert.IsTrue(((Button)settings.FindName("OpenProcessLogFolderButton")).IsEnabled);
             Assert.AreEqual(Environment.ProcessId.ToString(), ((TextBlock)settings.FindName("ProcessIdText")).Text);
             Assert.IsTrue(((Button)settings.FindName("LaunchDebuggerButton")).IsEnabled);
             string artifactDirectory = Path.Combine(AppContext.BaseDirectory, "ShellScreenshots", "SingleColumnAcceptance", language);

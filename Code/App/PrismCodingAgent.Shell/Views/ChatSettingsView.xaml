@@ -314,6 +314,20 @@
                     <Grid Margin="0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" /><ColumnDefinition /><ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding ChatProcessLogLabel, Source={x:Static l:Lang.Current}}" Margin="0,0,8,0" />
+                        <TextBox x:Name="ProcessLogFileInput" Grid.Column="1" IsReadOnly="True" />
+                        <Button x:Name="OpenProcessLogFileButton" Grid.Column="2" Margin="8,0,0,0" IsEnabled="False"
+                                Content="{Binding ChatOpenFile, Source={x:Static l:Lang.Current}}"
+                                Click="OpenProcessLogClicked" />
+                        <Button x:Name="OpenProcessLogFolderButton" Grid.Column="3" Margin="8,0,0,0" IsEnabled="False"
+                                Content="{Binding ChatOpenFolder, Source={x:Static l:Lang.Current}}"
+                                Click="OpenProcessLogFolderClicked" />
+                    </Grid>
+                    <Grid Margin="0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" /><ColumnDefinition /><ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding ChatArchiveLabel, Source={x:Static l:Lang.Current}}" Margin="0,0,8,0" />
                         <TextBox x:Name="SessionsDirectoryInput" Grid.Column="1" IsReadOnly="True" />

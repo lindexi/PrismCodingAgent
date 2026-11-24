@@ -39,6 +39,27 @@ public sealed class SessionCopilotChatLoggerTests
     }
 
     [TestMethod]
+    public async Task NamedLogger_WhenNoPathHasBeenSelected_ReturnsNullAsync()
+    {
+        var logger = new FileCopilotChatLogger(CreateLogPath()).CreateSessionLogger("Main_12345");
+
+        Assert.IsNull(await ((ILogFilePathProvider)logger).GetLogFilePathAsync());
+    }
+
+    [TestMethod]
+    public async Task NamedLogger_WhenAnotherLoggerWithSameNameWrites_ExposesTheSameFileAsync()
+    {
+        string path = CreateLogPath();
+        var logger = new FileCopilotChatLogger(path);
+        var reader = (ILogFilePathProvider)logger.CreateSessionLogger("Main_12345");
+
+        await logger.CreateSessionLogger("main_12345").LogDiagnosticAsync("Startup", "Application starting");
+
+        Assert.AreEqual(Directory.EnumerateFiles(path, "*.log", SearchOption.AllDirectories).Single(),
+            await reader.GetLogFilePathAsync());
+    }
+
+    [TestMethod]
     public async Task LogDiagnosticAsync_WhenCalled_PreservesOriginalException()
     {
         string path = CreateLogPath();

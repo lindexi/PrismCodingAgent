@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using PrismCodingAgent.CodingShell.Localizations;
@@ -56,6 +57,31 @@ public partial class ChatSettingsView : UserControl
         SessionsDirectoryInput.Text = _sessionsDirectory ?? string.Empty;
         SessionsDirectoryInput.ToolTip = _sessionsDirectory;
         OpenSessionsButton.IsEnabled = _sessionsDirectory is not null;
+
+        ProcessLogFileInput.Text = string.Empty;
+        ProcessLogFileInput.ToolTip = null;
+        OpenProcessLogFileButton.IsEnabled = OpenProcessLogFolderButton.IsEnabled = false;
+        _ = RefreshDiagnosticsAsync();
+
+        async Task RefreshDiagnosticsAsync()
+        {
+            var processLogger = (Application.Current as App)?.ProcessLogger;
+            try
+            {
+                if (processLogger is ILogFilePathProvider provider)
+                {
+                    string? processLogPath = await provider.GetLogFilePathAsync();
+                    ProcessLogFileInput.Text = processLogPath ?? string.Empty;
+                    ProcessLogFileInput.ToolTip = processLogPath;
+                    OpenProcessLogFileButton.IsEnabled = OpenProcessLogFolderButton.IsEnabled = !string.IsNullOrWhiteSpace(processLogPath);
+                }
+            }
+            catch (Exception exception)
+            {
+                ShowFeedback(Lang.Current.ChatPathOpenFailed);
+                _ = processLogger.TryLogDiagnosticAsync("[ChatSettingsView][RefreshDiagnostics]", "读取进程日志路径失败。", exception);
+            }
+        }
     }
 
     private void CopyPidClicked(object sender, RoutedEventArgs e)
@@ -85,6 +111,8 @@ public partial class ChatSettingsView : UserControl
 
     private void OpenLogClicked(object sender, RoutedEventArgs e) => OpenPath(_logFile);
     private void OpenLogFolderClicked(object sender, RoutedEventArgs e) => OpenPath(Path.GetDirectoryName(_logFile));
+    private void OpenProcessLogClicked(object sender, RoutedEventArgs e) => OpenPath(ProcessLogFileInput.Text);
+    private void OpenProcessLogFolderClicked(object sender, RoutedEventArgs e) => OpenPath(Path.GetDirectoryName(ProcessLogFileInput.Text));
     private void OpenSessionsClicked(object sender, RoutedEventArgs e) => OpenPath(_sessionsDirectory);
 
     private void OpenPath(string? path)
