@@ -546,7 +546,7 @@ internal sealed class CodingWorkTaskController
         (
             session.SessionId,
             "运行",
-            $"运行开始。工作任务={session.WorkTaskName ?? "未设置"}；工作任务Id={session.WorkTaskId?.ToString() ?? "未设置"}；工作路径={session.WorkspacePath ?? "未设置"}；自动压缩={options.EnableAutomaticCompression}；dotnet run={options.EnableDotNetRun}；思考强度={options.ReasoningEffort?.ToString() ?? "默认"}；调用方取消={cancellationToken.IsCancellationRequested}。"
+            $"运行开始。工作任务={session.WorkTaskName ?? "未设置"}；工作任务Id={session.WorkTaskId?.ToString() ?? "未设置"}；工作路径={session.WorkspacePath ?? "未设置"}；自动压缩={options.EnableAutomaticCompression}；dotnet run={options.EnableDotNetRun}；思考强度={options.ReasoningEffort?.ToString() ?? "默认"}；调用方取消={cancellationToken.IsCancellationRequested}；ProcessId={Environment.ProcessId}。"
         );
         Exception? runException = null;
         CopilotChatMessage? assistantMessage = continuation?.Assistant;
