@@ -665,6 +665,9 @@
                 </Grid>
             </Border>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Button x:Name="OpenFavoritePromptsButton" Classes="Secondary" HorizontalAlignment="Left"
+                        Content="{Binding FavoritePromptsTitle, Source={x:Static localizations:Lang.Current}}"
+                        IsEnabled="{Binding !!$parent[views:ChatView].PromptsFile}" Click="OnOpenFavoritePrompts" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                     <Button x:Name="CompressConversationButton" Classes="Secondary"
                             Content="{Binding CompressConversationText, Source={x:Static localizations:Lang.Current}}"
@@ -677,6 +680,8 @@
             </Grid>
         </Grid>
         <Grid x:Name="ChatOverlayLayer" Grid.Row="0" Grid.RowSpan="3" ClipToBounds="True">
+            <views:FavoritePromptsView x:Name="FavoritePromptsPanel" IsVisible="False"
+                                       Background="{StaticResource BackgroundBrush}" />
             <views:ChatSettingsView x:Name="ChatSettingsPanel"
                                     IsVisible="{Binding IsChatSettingsOpen}"
                                     Background="{StaticResource BackgroundBrush}" />

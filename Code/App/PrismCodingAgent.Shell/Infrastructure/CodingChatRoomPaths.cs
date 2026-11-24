@@ -25,6 +25,7 @@ public sealed class CodingChatRoomPaths
         ConfigurationFile = new FileInfo(Path.Join(RootDirectory, ConfigurationFileName));
         ShellSettingsFile = new FileInfo(Path.Join(RootDirectory, ShellSettingsFileName));
         WorkTasksFile = new FileInfo(Path.Join(RootDirectory, WorkTasksFileName));
+        PromptsFile = new FileInfo(Path.Join(RootDirectory, "Prompts.json"));
         LogDirectory = Path.Join(RootDirectory, "Logs");
         SessionDirectory = new DirectoryInfo(Path.Join(RootDirectory, "Sessions"));
         AbilitiesDirectory = new DirectoryInfo(Path.Join(RootDirectory, "Abilities"));
@@ -34,6 +35,8 @@ public sealed class CodingChatRoomPaths
     /// 获取应用本地数据根目录。
     /// </summary>
     public string RootDirectory { get; }
+
+    internal FileInfo PromptsFile { get; }
 
     /// <summary>
     /// 获取固定模型配置文件。

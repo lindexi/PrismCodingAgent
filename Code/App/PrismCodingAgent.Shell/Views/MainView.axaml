@@ -260,7 +260,7 @@
             <Grid>
                 <Panel IsVisible="{Binding IsChatOpen}">
                     <Panel IsEnabled="{Binding !!ChatViewModel.AvailableModels.Count}">
-                        <views:ChatView DataContext="{Binding ChatViewModel}" />
+                        <views:ChatView DataContext="{Binding ChatViewModel}" PromptsFile="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).PromptsFile}" />
                     </Panel>
                     <Border IsVisible="{Binding !ChatViewModel.AvailableModels.Count}" Background="#38000000"
                             Padding="24,32">

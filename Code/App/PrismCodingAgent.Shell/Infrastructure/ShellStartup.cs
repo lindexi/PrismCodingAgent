@@ -61,7 +61,7 @@ internal static class ShellStartup
 
             mainViewModel = MainViewModel.Create(tasks, archivedRecords, runtimes[0].SettingsService, workTaskStore,
                 () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger),
-                abilityCatalog, FormatWorkTaskRecoveryMessage(workTaskStore.LastRecoveryInfo));
+                abilityCatalog, paths, FormatWorkTaskRecoveryMessage(workTaskStore.LastRecoveryInfo));
             if (activeRecords.Length == 0)
             {
                 WorkTaskItemViewModel task = tasks[0];

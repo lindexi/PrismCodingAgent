@@ -1,0 +1,208 @@
+<UserControl x:Class="PrismCodingAgent.CodingShell.Views.FavoritePromptsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
+             xmlns:input="clr-namespace:PrismCodingAgent.CodingShell.Infrastructure"
+             PreviewKeyDown="OnPanelKeyDown">
+    <UserControl.Resources>
+        <Style x:Key="PromptAction" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <Path Width="14" Height="14" Stretch="Uniform" Data="{Binding}"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SurfaceVariantBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Geometry x:Key="PromptCloseIcon">M4,5 L5,4 L12,11 L19,4 L20,5 L13,12 L20,19 L19,20 L12,13 L5,20 L4,19 L11,12 Z</Geometry>
+        <Geometry x:Key="PromptEditIcon">F0 M3,16 L15,4 L20,9 L8,21 L3,21 Z M5,17 L5,19 L7,19 L17,9 L15,7 Z M17,2 L22,7 L21,8 L16,3 Z</Geometry>
+        <Geometry x:Key="PromptDeleteIcon">M9,3 L15,3 L15,5 L21,5 L21,7 L3,7 L3,5 L9,5 Z M5,9 L7,9 L8,20 L16,20 L17,9 L19,9 L18,22 L6,22 Z M10,10 L11,10 L11,18 L10,18 Z M13,10 L14,10 L14,18 L13,18 Z</Geometry>
+        <Geometry x:Key="PromptDoneIcon">M3,12 L5,10 L10,15 L19,6 L21,8 L10,19 Z</Geometry>
+        <Style x:Key="PromptInput" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="32,24" KeyboardNavigation.TabNavigation="Cycle">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition /><RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition /><ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding FavoritePromptsTitle, Source={x:Static l:Lang.Current}}" FontSize="22"
+                       FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Style="{StaticResource PromptAction}" Content="{StaticResource PromptCloseIcon}"
+                    ToolTip="{Binding FavoritePromptsClose, Source={x:Static l:Lang.Current}}" Click="OnClose" />
+        </Grid>
+        <TextBox x:Name="PromptSearch" Grid.Row="1" MaxWidth="400" Margin="0,16" Style="{StaticResource PromptInput}"
+                 input:TextBoxPlaceholder.Text="{Binding FavoritePromptsSearch, Source={x:Static l:Lang.Current}}"
+                 AutomationProperties.Name="{Binding FavoritePromptsSearch, Source={x:Static l:Lang.Current}}" />
+        <Grid Grid.Row="2" MaxWidth="920">
+            <ListBox x:Name="PromptList" Background="Transparent" Padding="0" BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     PreviewMouseLeftButtonDown="OnRowPressed">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="RowSurface" Background="Transparent" CornerRadius="4">
+                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="RowSurface" Property="Background" Value="{StaticResource SurfaceVariantBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="RowSurface" Property="Background" Value="{StaticResource PrimaryLightBrush}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderBrush}" Padding="12,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition /><ColumnDefinition Width="28" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBox x:Name="PromptEditor" Text="{Binding DisplayText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                             VerticalContentAlignment="Top"
+                                             input:TextBoxPlaceholder.Text="{Binding FavoritePromptsPlaceholder, Source={x:Static l:Lang.Current}}"
+                                             AutomationProperties.Name="{Binding FavoritePromptsPlaceholder, Source={x:Static l:Lang.Current}}">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox" BasedOn="{StaticResource PromptInput}">
+                                                <Setter Property="IsReadOnly" Value="True" />
+                                                <Setter Property="IsTabStop" Value="False" />
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Setter Property="MinHeight" Value="0" />
+                                                <Setter Property="Padding" Value="0" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                        <Setter Property="IsReadOnly" Value="False" />
+                                                        <Setter Property="IsTabStop" Value="True" />
+                                                        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+                                                        <Setter Property="BorderThickness" Value="1" />
+                                                        <Setter Property="Padding" Value="8,5" />
+                                                        <Setter Property="MinHeight" Value="56" />
+                                                        <Setter Property="MaxHeight" Value="280" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+                                    <Button HorizontalAlignment="Left" Margin="0,3,0,0" MinHeight="24" Padding="2,0"
+                                            Visibility="{Binding CanToggle, Converter={StaticResource BooleanVisibility}}" Click="OnToggle">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Content" Value="{Binding FavoritePromptsExpand, Source={x:Static l:Lang.Current}}" />
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Margin="0,0,5,0">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Text" Value="⌄" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding DataContext.IsExpanded, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                                                    <Setter Property="Text" Value="⌃" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBlock Text="{Binding}" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                        <Setter Property="Content" Value="{Binding FavoritePromptsCollapse, Source={x:Static l:Lang.Current}}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                                <StackPanel x:Name="PromptActions" Grid.Column="1" Visibility="Hidden" Orientation="Vertical">
+                                    <Button x:Name="EditPrompt" Style="{StaticResource PromptAction}" Content="{StaticResource PromptEditIcon}"
+                                            ToolTip="{Binding FavoritePromptsEdit, Source={x:Static l:Lang.Current}}" Click="OnEditAsync" />
+                                    <Button x:Name="DeletePrompt" Style="{StaticResource PromptAction}" Content="{StaticResource PromptDeleteIcon}"
+                                            ToolTip="{Binding FavoritePromptsDelete, Source={x:Static l:Lang.Current}}" Click="OnRequestDelete" />
+                                    <Button x:Name="DoneEditing" Style="{StaticResource PromptAction}" Content="{StaticResource PromptDoneIcon}"
+                                            ToolTip="{Binding FavoritePromptsDone, Source={x:Static l:Lang.Current}}" Click="OnDoneAsync" Visibility="Collapsed" />
+                                    <Button x:Name="CancelEditing" Style="{StaticResource PromptAction}" Content="{StaticResource PromptCloseIcon}"
+                                            ToolTip="{Binding FavoritePromptsCancel, Source={x:Static l:Lang.Current}}" Click="OnCancel" Visibility="Collapsed" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter TargetName="PromptActions" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter TargetName="PromptActions" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter TargetName="PromptActions" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                <Setter TargetName="PromptActions" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="EditPrompt" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="DeletePrompt" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="DoneEditing" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="CancelEditing" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock x:Name="EmptyNotice" Visibility="Collapsed" TextWrapping="Wrap" IsHitTestVisible="False"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" />
+        </Grid>
+        <Grid Grid.Row="3" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition /><ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                <TextBlock x:Name="PromptNotice" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                <StackPanel x:Name="DeleteConfirmation" Margin="0,6,0,0" Orientation="Horizontal" Visibility="Collapsed">
+                    <Button Style="{StaticResource ShellSecondaryButton}" Foreground="{StaticResource ErrorBrush}"
+                            Content="{Binding FavoritePromptsDelete, Source={x:Static l:Lang.Current}}" Click="OnConfirmDeleteAsync" />
+                    <Button Margin="8,0,0,0" Content="{Binding FavoritePromptsCancel, Source={x:Static l:Lang.Current}}" Click="OnCancelDelete" />
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="NewPromptButton" MinWidth="80" IsEnabled="False" Style="{StaticResource ShellSecondaryButton}"
+                        Content="{Binding FavoritePromptsNew, Source={x:Static l:Lang.Current}}" Click="OnNewAsync" />
+                <Button x:Name="ApplyPromptButton" Margin="8,0,0,0" MinWidth="80" IsEnabled="False" Style="{StaticResource ChatPrimaryButton}"
+                        Content="{Binding FavoritePromptsApply, Source={x:Static l:Lang.Current}}" Click="OnApply" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

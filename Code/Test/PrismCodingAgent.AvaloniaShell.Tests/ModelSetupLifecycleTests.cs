@@ -18,7 +18,7 @@ public sealed class ModelSetupLifecycleTests
         var abilities = new AbilityCatalog(paths.AbilitiesDirectory);
         var task = MainViewModel.CreateRuntimeTask(runtime, new WorkTaskRecord(Guid.NewGuid(), "Task 1", null, null, null), abilities);
         var main = MainViewModel.Create([task], [], runtime.SettingsService, new WorkTaskStore(paths),
-            () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, new Dispatcher()), abilities);
+            () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, new Dispatcher()), abilities, paths);
         await main.InitializeSettingsAsync();
         var settings = main.SettingsViewModel ?? throw new InvalidOperationException();
         var provider = settings.Providers.Single();

@@ -126,6 +126,19 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition /><ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+            <Button x:Name="OpenFavoritePromptsButton" HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Margin="0,0,0,4" Content="{Binding FavoritePromptsTitle, Source={x:Static l:Lang.Current}}"
+                    Click="OnOpenFavoritePromptsClick">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding DataContext.PromptsFile, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}">
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button x:Name="CompressConversationButton" Margin="0,0,8,4"
                         Content="{Binding CompressConversationText, Source={x:Static l:Lang.Current}}"

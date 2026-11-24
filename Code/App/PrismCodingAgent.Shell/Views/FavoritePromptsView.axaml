@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:localizations="clr-namespace:PrismCodingAgent.CodingShell.Localizations"
+             xmlns:vm="using:PrismCodingAgent.CodingShell.ViewModels"
+             x:Class="PrismCodingAgent.CodingShell.Views.FavoritePromptsView">
+    <UserControl.Styles>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="StackPanel.PromptActions">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover StackPanel.PromptActions, ListBoxItem:selected StackPanel.PromptActions, StackPanel.PromptActions.editing">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="Button.PromptAction">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+        <Style Selector="Button.PromptAction PathIcon">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="14" />
+        </Style>
+    </UserControl.Styles>
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="32,24" RowSpacing="16"
+          KeyboardNavigation.TabNavigation="Cycle">
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding FavoritePromptsTitle, Source={x:Static localizations:Lang.Current}}" FontSize="22"
+                       FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="Flat PromptAction" Click="OnClose"
+                    ToolTip.Tip="{Binding FavoritePromptsClose, Source={x:Static localizations:Lang.Current}}"
+                    AutomationProperties.Name="{Binding FavoritePromptsClose, Source={x:Static localizations:Lang.Current}}">
+                <PathIcon Data="M4,5 L5,4 L12,11 L19,4 L20,5 L13,12 L20,19 L19,20 L12,13 L5,20 L4,19 L11,12 Z" />
+            </Button>
+        </Grid>
+        <TextBox Grid.Row="1" x:Name="PromptSearch" Watermark="{Binding FavoritePromptsSearch, Source={x:Static localizations:Lang.Current}}"
+                 AutomationProperties.Name="{Binding FavoritePromptsSearch, Source={x:Static localizations:Lang.Current}}"
+                 HorizontalAlignment="Stretch" MaxWidth="400" TextChanged="OnSearchChanged" />
+        <Grid Grid.Row="2" MaxWidth="920">
+            <ListBox x:Name="PromptList" Background="Transparent" Padding="0" BorderThickness="0"
+                     SelectionChanged="OnSelectionChanged" DoubleTapped="OnPromptDoubleTapped"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FavoritePromptRow">
+                        <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource DividerBrush}" Padding="12,10">
+                            <Grid ColumnDefinitions="*,28" ColumnSpacing="10">
+                                <StackPanel Spacing="3">
+                                    <TextBox Classes="ChatOutput" Text="{Binding DisplayText, Mode=TwoWay}"
+                                             Watermark="{Binding FavoritePromptsPlaceholder, Source={x:Static localizations:Lang.Current}}"
+                                             IsReadOnly="{Binding !IsEditing}" />
+                                    <Button Classes="Flat" MinHeight="24" Padding="2,0" IsVisible="{Binding CanToggle}"
+                                            HorizontalAlignment="Left" Click="OnToggle">
+                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                            <TextBlock Text="˅" IsVisible="{Binding !IsExpanded}" />
+                                            <TextBlock Text="˄" IsVisible="{Binding IsExpanded}" />
+                                            <TextBlock Text="{Binding FavoritePromptsExpand, Source={x:Static localizations:Lang.Current}}" IsVisible="{Binding !IsExpanded}" />
+                                            <TextBlock Text="{Binding FavoritePromptsCollapse, Source={x:Static localizations:Lang.Current}}" IsVisible="{Binding IsExpanded}" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Classes="PromptActions" Classes.editing="{Binding IsEditing}">
+                                    <Button Classes="Flat PromptAction" IsVisible="{Binding !IsEditing}" Click="OnEdit"
+                                            ToolTip.Tip="{Binding FavoritePromptsEdit, Source={x:Static localizations:Lang.Current}}"
+                                            AutomationProperties.Name="{Binding FavoritePromptsEdit, Source={x:Static localizations:Lang.Current}}">
+                                        <PathIcon Data="M3,16 L15,4 L20,9 L8,21 L3,21 Z M5,17 L5,19 L7,19 L17,9 L15,7 Z M17,2 L22,7 L21,8 L16,3 Z" />
+                                    </Button>
+                                    <Button Classes="Flat PromptAction" IsVisible="{Binding !IsEditing}" Click="OnRequestDelete"
+                                            ToolTip.Tip="{Binding FavoritePromptsDelete, Source={x:Static localizations:Lang.Current}}"
+                                            AutomationProperties.Name="{Binding FavoritePromptsDelete, Source={x:Static localizations:Lang.Current}}">
+                                        <PathIcon Data="M9,3 L15,3 L15,5 L21,5 L21,7 L3,7 L3,5 L9,5 Z M5,9 L7,9 L8,20 L16,20 L17,9 L19,9 L18,22 L6,22 Z M10,10 L11,10 L11,18 L10,18 Z M13,10 L14,10 L14,18 L13,18 Z" />
+                                    </Button>
+                                    <Button Classes="Flat PromptAction" IsVisible="{Binding IsEditing}" Click="OnDone"
+                                            ToolTip.Tip="{Binding FavoritePromptsDone, Source={x:Static localizations:Lang.Current}}"
+                                            AutomationProperties.Name="{Binding FavoritePromptsDone, Source={x:Static localizations:Lang.Current}}">
+                                        <PathIcon Data="M3,12 L5,10 L10,15 L19,6 L21,8 L10,19 Z" />
+                                    </Button>
+                                    <Button Classes="Flat PromptAction" IsVisible="{Binding IsEditing}" Click="OnCancel"
+                                            ToolTip.Tip="{Binding FavoritePromptsCancel, Source={x:Static localizations:Lang.Current}}"
+                                            AutomationProperties.Name="{Binding FavoritePromptsCancel, Source={x:Static localizations:Lang.Current}}">
+                                        <PathIcon Data="M4,5 L5,4 L12,11 L19,4 L20,5 L13,12 L20,19 L19,20 L12,13 L5,20 L4,19 L11,12 Z" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock x:Name="EmptyNotice" Classes="SecondaryLabel" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Grid>
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <StackPanel VerticalAlignment="Center" Spacing="6">
+                <TextBlock x:Name="PromptNotice" TextWrapping="Wrap" />
+                <StackPanel x:Name="DeleteConfirmation" Orientation="Horizontal" Spacing="8" IsVisible="False">
+                    <Button Classes="Danger" Content="{Binding FavoritePromptsDelete, Source={x:Static localizations:Lang.Current}}" Click="OnConfirmDelete" />
+                    <Button Classes="Flat" Content="{Binding FavoritePromptsCancel, Source={x:Static localizations:Lang.Current}}" Click="OnCancelDelete" />
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="NewPromptButton" Classes="Secondary" MinWidth="80"
+                        Content="{Binding FavoritePromptsNew, Source={x:Static localizations:Lang.Current}}" Click="OnNew" />
+                <Button x:Name="ApplyPromptButton" Classes="Primary accent" MinWidth="80" IsEnabled="False"
+                        Content="{Binding FavoritePromptsApply, Source={x:Static localizations:Lang.Current}}" Click="OnApply" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

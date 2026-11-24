@@ -62,7 +62,7 @@ internal sealed class ShellScreenshotSession : IAsyncDisposable
         var task = MainViewModel.CreateRuntimeTask(runtime,
             new WorkTaskRecord(Guid.NewGuid(), Lang.Current.IetfLanguageTag == "en" ? "Task 1" : "工作任务 1", null, null, null), abilities);
         var model = MainViewModel.Create([task], [], runtime.SettingsService, new WorkTaskStore(paths),
-            () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities);
+            () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities, paths);
         await model.InitializeSettingsAsync();
         var window = new CodingShell.MainWindow { DataContext = model };
         window.Show();

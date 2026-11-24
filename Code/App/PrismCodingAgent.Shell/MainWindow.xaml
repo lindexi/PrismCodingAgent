@@ -804,6 +804,15 @@
                 <Grid>
                     <Grid x:Name="HistoryConversation" Margin="24,24,24,16"
                           Visibility="{Binding IsChatOpen, Converter={StaticResource BooleanVisibility}}">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsVisible, ElementName=FavoritePromptsPanel}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
                         <Grid.Resources>
                             <Style TargetType="ComboBox" BasedOn="{StaticResource ChatComboBox}" />
                         </Grid.Resources>
@@ -986,9 +995,36 @@
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="ChatOverlayLayer" Panel.ZIndex="1" Background="{StaticResource BackgroundBrush}"
-                          Visibility="{Binding ChatViewModel.IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}"
-                          KeyboardNavigation.TabNavigation="Cycle">
-                        <views:ChatSettingsView x:Name="ChatSettingsPanel" DataContext="{Binding ChatViewModel}" />
+                          ClipToBounds="True" KeyboardNavigation.TabNavigation="Cycle">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ChatViewModel.IsChatSettingsOpen}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Visibility, ElementName=FavoritePromptsPanel}" Value="Visible">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsChatOpen}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <views:ChatSettingsView x:Name="ChatSettingsPanel" DataContext="{Binding ChatViewModel}">
+                            <views:ChatSettingsView.Style>
+                                <Style TargetType="views:ChatSettingsView">
+                                    <Setter Property="Visibility" Value="{Binding IsChatSettingsOpen, Converter={StaticResource BooleanVisibility}}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Visibility, ElementName=FavoritePromptsPanel}" Value="Visible">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </views:ChatSettingsView.Style>
+                        </views:ChatSettingsView>
+                        <views:FavoritePromptsView x:Name="FavoritePromptsPanel" Visibility="Collapsed" />
                     </Grid>
                     <views:ModelSetupView x:Name="ModelGuide" DataContext="{Binding SettingsViewModel}">
                         <views:ModelSetupView.Style>

@@ -32,7 +32,7 @@ public sealed class DeepSeekRuntimeUpdateTests
         var firstTask = MainViewModel.CreateRuntimeTask(first, new WorkTaskRecord(Guid.NewGuid(), "First", null, null, null), abilities);
         var secondTask = MainViewModel.CreateRuntimeTask(second, new WorkTaskRecord(Guid.NewGuid(), "Second", null, null, null), abilities);
         await using var main = MainViewModel.Create([firstTask, secondTask], [], first.SettingsService,
-            new WorkTaskStore(paths), () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities);
+            new WorkTaskStore(paths), () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities, paths);
         await main.InitializeSettingsAsync();
         var settings = main.SettingsViewModel ?? throw new InvalidOperationException();
         var functions = new[] { Search(firstSource), Search(secondSource) };

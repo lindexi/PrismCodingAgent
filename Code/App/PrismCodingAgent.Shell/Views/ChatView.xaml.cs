@@ -12,13 +12,26 @@ namespace PrismCodingAgent.CodingShell.Views;
 
 public partial class ChatView : UserControl
 {
+    internal event EventHandler? FavoritePromptsRequested;
+
     /// <summary>创建绑定共享聊天运行时的WPF输入视图。</summary>
     public ChatView()
     {
         InitializeComponent();
         MessageInputTextBox.PreviewKeyDown += MessageInputTextBox_OnKeyDown;
-
     }
+
+    private void OnOpenFavoritePromptsClick(object sender, RoutedEventArgs e)
+        => FavoritePromptsRequested?.Invoke(this, EventArgs.Empty);
+
+    internal void AppendFavoritePrompt(string prompt)
+    {
+        if (DataContext is not ChatViewModel chat) return;
+        chat.InputText += prompt;
+        MessageInputTextBox.Select(chat.InputText.Length, 0);
+    }
+
+    internal void FocusInput() => MessageInputTextBox.Focus();
 
     private void AbilitySelector_OnDropDownOpened(object sender, EventArgs e)
     {

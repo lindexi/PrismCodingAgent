@@ -183,7 +183,7 @@ public sealed class WorkTaskPinningTests
         var abilities = new AbilityCatalog(paths.AbilitiesDirectory);
         var task = MainViewModel.CreateRuntimeTask(runtime, new WorkTaskRecord(Guid.NewGuid(), "First", null, null, null), abilities);
         return MainViewModel.Create([task], [], runtime.SettingsService, new WorkTaskStore(paths),
-            () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, new Dispatcher()), abilities);
+            () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, new Dispatcher()), abilities, paths);
     }
 
     private sealed class Dispatcher : IMainThreadDispatcher

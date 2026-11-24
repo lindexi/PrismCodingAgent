@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.ViewModels;
 using PrismCodingAgent.CodingShell.Views;
@@ -17,7 +18,6 @@ public partial class MainWindow : Window
     private IInputElement? _previousFocus;
     private readonly ChatAutoScrollState _autoScrollState = new();
     private ChatViewModel? _scrollChat;
-
     private readonly ISessionCopilotChatLogger? _processLogger;
 
     public MainWindow() : this(null)
@@ -28,7 +28,29 @@ public partial class MainWindow : Window
     {
         _processLogger = processLogger;
         InitializeComponent();
+        ChatComposer.FavoritePromptsRequested += OnFavoritePromptsRequestedAsync;
+        FavoritePromptsPanel.CloseRequested += (_, _) => CloseFavoritePrompts();
+        FavoritePromptsPanel.PromptApplied += OnFavoritePromptApplied;
         Closing += OnClosing;
+    }
+
+    private async void OnFavoritePromptsRequestedAsync(object? sender, EventArgs e)
+    {
+        if (DataContext is not MainViewModel { IsChatOpen: true, PromptsFile: { } file } model) return;
+        model.ChatViewModel.IsChatSettingsOpen = false;
+        await FavoritePromptsPanel.OpenAsync(file.FullName);
+    }
+
+    private void OnFavoritePromptApplied(object? sender, FavoritePromptAppliedEventArgs e)
+    {
+        ChatComposer.AppendFavoritePrompt(e.Prompt);
+        CloseFavoritePrompts();
+    }
+
+    private void CloseFavoritePrompts()
+    {
+        FavoritePromptsPanel.Visibility = Visibility.Collapsed;
+        ChatComposer.FocusInput();
     }
 
     private void OnChatDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

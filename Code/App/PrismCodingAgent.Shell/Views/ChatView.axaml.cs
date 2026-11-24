@@ -5,12 +5,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using AgentLib.Model;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Services.Shell;
 using PrismCodingAgent.CodingShell.ViewModels;
 using PrismCodingAgent.CodingShell.Localizations;
@@ -30,6 +32,16 @@ public partial class ChatView : UserControl
 
     private readonly ChatAutoScrollState _autoScrollState = new();
     private ChatViewModel? _subscribedViewModel;
+    /// <summary>收藏提示词文件的绑定属性。</summary>
+    public static readonly StyledProperty<FileInfo?> PromptsFileProperty =
+        AvaloniaProperty.Register<ChatView, FileInfo?>(nameof(PromptsFile));
+
+    /// <summary>获取或设置应用级的收藏提示词文件。</summary>
+    public FileInfo? PromptsFile
+    {
+        get => GetValue(PromptsFileProperty);
+        set => SetValue(PromptsFileProperty, value);
+    }
 
     /// <summary>
     /// 初始化聊天视图。
@@ -40,6 +52,34 @@ public partial class ChatView : UserControl
         MessageInputTextBox.AddHandler(KeyDownEvent, MessageInputTextBox_OnKeyDown, RoutingStrategies.Tunnel);
         MessagesScrollViewer.ScrollChanged += OnMessagesScrollChanged;
         DataContextChanged += OnDataContextChanged;
+        FavoritePromptsPanel.CloseRequested += (_, _) => CloseFavoritePrompts();
+        FavoritePromptsPanel.PromptApplied += OnFavoritePromptApplied;
+    }
+
+    private async void OnOpenFavoritePrompts(object? sender, RoutedEventArgs e)
+    {
+        if (PromptsFile is not { } file || DataContext is not ChatViewModel chat) return;
+        chat.IsChatSettingsOpen = false;
+        await FavoritePromptsPanel.OpenAsync(file.FullName);
+    }
+
+    private void OnFavoritePromptApplied(object? sender, FavoritePromptAppliedEventArgs e)
+    {
+        if (DataContext is ChatViewModel chat)
+        {
+            chat.InputText += e.Prompt;
+            int caret = chat.InputText.Length;
+            MessageInputTextBox.SelectionStart = caret;
+            MessageInputTextBox.SelectionEnd = caret;
+            MessageInputTextBox.CaretIndex = caret;
+        }
+        CloseFavoritePrompts();
+    }
+
+    private void CloseFavoritePrompts()
+    {
+        FavoritePromptsPanel.IsVisible = false;
+        MessageInputTextBox.Focus();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)

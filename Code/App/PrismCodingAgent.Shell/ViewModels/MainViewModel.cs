@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using PrismCodingAgent.CodingShell.Abilities;
+using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.Services.WorkTasks;
@@ -24,6 +25,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
     private readonly WorkTaskStore? _workTaskStore;
     private readonly Func<Task<CodingWorkTaskRuntime>>? _createRuntimeAsync;
     private readonly AbilityCatalog? _abilityCatalog;
+    private readonly CodingChatRoomPaths? _paths;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
     private WorkTaskItemViewModel _activeWorkTask;
     private string? _errorMessage;
@@ -51,7 +53,8 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         WorkTaskStore? workTaskStore,
         Func<Task<CodingWorkTaskRuntime>>? createRuntimeAsync,
         AbilityCatalog? abilityCatalog,
-        string? initialMessage = null
+        string? initialMessage = null,
+        CodingChatRoomPaths? paths = null
     )
     {
         ArgumentNullException.ThrowIfNull(tasks);
@@ -72,6 +75,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         _workTaskStore = workTaskStore;
         _createRuntimeAsync = createRuntimeAsync;
         _abilityCatalog = abilityCatalog;
+        _paths = paths;
         _errorMessage = initialMessage;
         _activeWorkTask = tasks[0];
         _activeWorkTask.IsActive = true;
@@ -172,6 +176,7 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         WorkTaskStore workTaskStore,
         Func<Task<CodingWorkTaskRuntime>> createRuntimeAsync,
         AbilityCatalog abilityCatalog,
+        CodingChatRoomPaths paths,
         string? initialMessage = null
     )
     {
@@ -179,9 +184,10 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
         ArgumentNullException.ThrowIfNull(workTaskStore);
         ArgumentNullException.ThrowIfNull(createRuntimeAsync);
         ArgumentNullException.ThrowIfNull(abilityCatalog);
+        ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(archivedTasks);
         return new MainViewModel
-            (tasks, archivedTasks, settingsService, workTaskStore, createRuntimeAsync, abilityCatalog, initialMessage);
+            (tasks, archivedTasks, settingsService, workTaskStore, createRuntimeAsync, abilityCatalog, initialMessage, paths);
     }
 
     internal static MainViewModel CreateForTests
@@ -203,6 +209,9 @@ public sealed class MainViewModel : ViewModelBase, IAsyncDisposable
             null
         );
     }
+
+    /// <summary>获取应用级的收藏提示词文件。</summary>
+    public FileInfo? PromptsFile => _paths?.PromptsFile;
 
     /// <summary>获取工作任务列表。</summary>
     public ObservableCollection<WorkTaskItemViewModel> WorkTasks { get; } = [];
