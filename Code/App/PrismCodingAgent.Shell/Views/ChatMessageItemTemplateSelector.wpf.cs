@@ -17,6 +17,12 @@ public sealed class ChatMessageItemTemplateSelector : DataTemplateSelector
     public DataTemplate? ApprovalToolItemTemplate { get; set; }
     /// <summary>工具模板。</summary>
     public DataTemplate? ToolItemTemplate { get; set; }
+
+    /// <summary>
+    /// 普通工具的专用模板。按工具名精确匹配，未注册时使用 <see cref="ToolItemTemplate"/>。
+    /// 在消息渲染前配置；模板接收原始工具片段作为数据上下文。
+    /// </summary>
+    public Dictionary<string, DataTemplate> ToolItemTemplates { get; } = new(StringComparer.Ordinal);
     /// <summary>子代理模板。</summary>
     public DataTemplate? SubAgentItemTemplate { get; set; }
 
@@ -27,7 +33,7 @@ public sealed class ChatMessageItemTemplateSelector : DataTemplateSelector
         CopilotChatReasoningItem => ReasoningItemTemplate,
         CopilotChatImageItem => ImageItemTemplate,
         CopilotChatApprovalToolItem => ApprovalToolItemTemplate,
-        CopilotChatToolItem => ToolItemTemplate,
+        CopilotChatToolItem tool => ToolItemTemplates.GetValueOrDefault(tool.ToolName) ?? ToolItemTemplate,
         CopilotChatSubAgentItem => SubAgentItemTemplate,
         _ => null,
     };

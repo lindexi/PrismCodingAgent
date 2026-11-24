@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using AgentLib.Model;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
@@ -35,6 +37,12 @@ public sealed class ChatMessageItemTemplateSelector : IDataTemplate
     public IDataTemplate? ToolItemTemplate { get; set; }
 
     /// <summary>
+    /// 普通工具的专用模板。按工具名精确匹配，未注册时使用 <see cref="ToolItemTemplate"/>。
+    /// 在消息渲染前配置；模板接收原始工具片段作为数据上下文。
+    /// </summary>
+    public Dictionary<string, IDataTemplate> ToolItemTemplates { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// 获取或设置子代理片段模板。
     /// </summary>
     public IDataTemplate? SubAgentItemTemplate { get; set; }
@@ -52,7 +60,7 @@ public sealed class ChatMessageItemTemplateSelector : IDataTemplate
             CopilotChatReasoningItem => ReasoningItemTemplate,
             CopilotChatImageItem => ImageItemTemplate,
             CopilotChatApprovalToolItem => ApprovalToolItemTemplate,
-            CopilotChatToolItem => ToolItemTemplate,
+            CopilotChatToolItem tool => ToolItemTemplates.GetValueOrDefault(tool.ToolName) ?? ToolItemTemplate,
             CopilotChatSubAgentItem => SubAgentItemTemplate,
             _ => null,
         };

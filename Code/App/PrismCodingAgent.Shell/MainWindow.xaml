@@ -283,12 +283,122 @@
                 </StackPanel>
             </Border>
         </DataTemplate>
+        <converters:WriteFileContentConverter x:Key="WriteFilePreview" />
+        <converters:ReplaceStringInFileConverter x:Key="ReplaceFilePreview" />
+        <converters:MultiReplaceStringInFileConverter x:Key="BatchReplaceFilePreview" />
+        <DataTemplate x:Key="ReplacementDiff" DataType="{x:Type converters:ReplacementDiff}">
+            <StackPanel>
+                <TextBlock Text="{Binding FilePath}" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" />
+                <TextBlock Text="{Binding Explanation}" TextWrapping="Wrap" />
+                <Border Background="#FFEBE9" Padding="8,3">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RemovedText}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <DockPanel TextElement.Foreground="#82071E">
+                        <TextBlock Text="−" Width="24" />
+                        <TextBlock Text="{Binding RemovedText}" FontFamily="Consolas" TextWrapping="Wrap" />
+                    </DockPanel>
+                </Border>
+                <Border Background="#DAFBE1" Padding="8,3">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding AddedText}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <DockPanel TextElement.Foreground="#116329">
+                        <TextBlock Text="+" Width="24" />
+                        <TextBlock Text="{Binding AddedText}" FontFamily="Consolas" TextWrapping="Wrap" />
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
         <views:ChatMessageItemTemplateSelector x:Key="MessageParts" ImageItemTemplate="{StaticResource MessageImage}"
                                                ApprovalToolItemTemplate="{StaticResource MessageApproval}"
                                                TextItemTemplate="{StaticResource MessageText}"
                                                ReasoningItemTemplate="{StaticResource MessageReasoning}"
                                                ToolItemTemplate="{StaticResource MessageTool}"
-                                               SubAgentItemTemplate="{StaticResource MessageSubAgent}" />
+                                               SubAgentItemTemplate="{StaticResource MessageSubAgent}">
+            <views:ChatMessageItemTemplateSelector.ToolItemTemplates>
+                <DataTemplate x:Key="WriteFileContent">
+                    <views:DeferredExpander Details="{Binding}" Header="{Binding DisplayName}" ToolTip="{Binding ToolTipText}"
+                                            Margin="0,0,0,8" HorizontalContentAlignment="Stretch" Template="{StaticResource ToolAgentExpanderTemplate}">
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="8,6">
+                                    <StackPanel DataContext="{Binding InputText, Converter={StaticResource WriteFilePreview}}">
+                                        <TextBlock Text="{Binding FilePath}" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,6,0,0" Visibility="{Binding HasOutputText, Converter={StaticResource BooleanVisibility}}">
+                                        <TextBlock Text="{Binding ToolOutputText, Source={x:Static l:Lang.Current}}" Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
+                </DataTemplate>
+                <DataTemplate x:Key="ReplaceStringInFile">
+                    <views:DeferredExpander Details="{Binding}" Header="{Binding DisplayName}" ToolTip="{Binding ToolTipText}"
+                                            Margin="0,0,0,8" HorizontalContentAlignment="Stretch" Template="{StaticResource ToolAgentExpanderTemplate}">
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="8,6">
+                                    <StackPanel DataContext="{Binding InputText, Converter={StaticResource ReplaceFilePreview}}">
+                                        <TextBlock Text="{Binding RawText}" TextWrapping="Wrap" />
+                                        <ContentControl Content="{Binding Diff}" ContentTemplate="{StaticResource ReplacementDiff}">
+                                            <ContentControl.Style>
+                                                <Style TargetType="ContentControl">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Diff}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ContentControl.Style>
+                                        </ContentControl>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,6,0,0" Visibility="{Binding HasOutputText, Converter={StaticResource BooleanVisibility}}">
+                                        <TextBlock Text="{Binding ToolOutputText, Source={x:Static l:Lang.Current}}" Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
+                </DataTemplate>
+                <DataTemplate x:Key="MultiReplaceStringInFile">
+                    <views:DeferredExpander Details="{Binding}" Header="{Binding DisplayName}" ToolTip="{Binding ToolTipText}"
+                                            Margin="0,0,0,8" HorizontalContentAlignment="Stretch" Template="{StaticResource ToolAgentExpanderTemplate}">
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="8,6">
+                                    <StackPanel DataContext="{Binding InputText, Converter={StaticResource BatchReplaceFilePreview}}">
+                                        <TextBlock Text="{Binding RawText}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Explanation}" TextWrapping="Wrap" />
+                                        <ItemsControl ItemsSource="{Binding Diffs}" ItemTemplate="{StaticResource ReplacementDiff}">
+                                            <ItemsControl.ItemContainerStyle>
+                                                <Style TargetType="ContentPresenter"><Setter Property="Margin" Value="0,0,0,6" /></Style>
+                                            </ItemsControl.ItemContainerStyle>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,6,0,0" Visibility="{Binding HasOutputText, Converter={StaticResource BooleanVisibility}}">
+                                        <TextBlock Text="{Binding ToolOutputText, Source={x:Static l:Lang.Current}}" Foreground="{StaticResource TextSecondaryBrush}" />
+                                        <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
+                </DataTemplate>
+            </views:ChatMessageItemTemplateSelector.ToolItemTemplates>
+        </views:ChatMessageItemTemplateSelector>
         <DataTemplate x:Key="AssistantMessage">
             <StackPanel Margin="0,0,0,24">
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">

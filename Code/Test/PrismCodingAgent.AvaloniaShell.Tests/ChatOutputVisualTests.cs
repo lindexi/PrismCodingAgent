@@ -1,4 +1,7 @@
+using AgentLib.Model;
 using Avalonia;
+using Avalonia.Markup.Xaml.Templates;
+using PrismCodingAgent.CodingShell.Views;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Layout;
@@ -22,8 +25,110 @@ public sealed class ChatOutputVisualTests
     {
         var view = new ChatView();
 
-        Assert.IsInstanceOfType<global::PrismCodingAgent.CodingShell.Views.ChatMessageItemTemplateSelector>(
-            view.DataTemplates.Single());
+        Assert.IsInstanceOfType<ChatMessageItemTemplateSelector>(view.DataTemplates.Single());
+    }
+
+    [TestMethod]
+    [DataRow("ReadFile", true)]
+    [DataRow("readfile", false)]
+    [DataRow("OtherTool", false)]
+    public void ToolTemplateShouldRequireAnExactToolName(string toolName, bool useCustomTemplate)
+    {
+        var fallback = new DataTemplate();
+        var custom = new DataTemplate();
+        var selector = new ChatMessageItemTemplateSelector { ToolItemTemplate = fallback };
+        selector.ToolItemTemplates.Add("ReadFile", custom);
+
+        var selected = selector.SelectTemplate(new CopilotChatToolItem("call", toolName, null));
+
+        Assert.AreSame(useCustomTemplate ? custom : fallback, selected);
+    }
+
+    [TestMethod]
+    public void ToolTemplateShouldNotReplaceApprovalTemplate()
+    {
+        var approval = new DataTemplate();
+        var selector = new ChatMessageItemTemplateSelector { ApprovalToolItemTemplate = approval };
+        selector.ToolItemTemplates.Add("ReadFile", new DataTemplate());
+
+        var selected = selector.SelectTemplate(new CopilotChatApprovalToolItem("call", "ReadFile", null));
+
+        Assert.AreSame(approval, selected);
+    }
+
+    [TestMethod]
+    [DataRow("WriteFileContent")]
+    [DataRow("ReplaceStringInFile")]
+    [DataRow("MultiReplaceStringInFile")]
+    public void FileToolTemplateIsRegisteredByName(string toolName)
+    {
+        var selector = (ChatMessageItemTemplateSelector)new ChatView().DataTemplates.Single();
+
+        var selected = selector.SelectTemplate(new CopilotChatToolItem("call", toolName, null));
+
+        Assert.AreSame(selector.ToolItemTemplates[toolName], selected);
+    }
+
+    [TestMethod]
+    [DataRow("WriteFileContent", "{\"filePath\":\"a.cs\",\"content\":\"first line\\n\\n  second line\"}", 0, "a.cs|first line\n\n  second line")]
+    [DataRow("ReplaceStringInFile", "{\"filePath\":\"a.cs\",\"oldString\":\"context\\nold\",\"newString\":\"context\\nnew\"}", 0, "a.cs|−|old|+|new")]
+    [DataRow("MultiReplaceStringInFile", "{\"explanation\":\"Batch note\",\"replacements\":[{\"FilePath\":\"a.cs\",\"OldString\":\"old\",\"NewString\":\"new\",\"Explanation\":\"Edit note\"},{\"FilePath\":\"b.cs\",\"OldString\":\"before\",\"NewString\":\"\"}]}", 1, "Batch note|a.cs|Edit note|−|old|+|new|b.cs|−|before")]
+    public void ExpandedFileToolRendersDedicatedLayout(string toolName, string input, int listCount, string expected)
+    {
+        InspectFileTool(toolName, input, (window, expander) =>
+        {
+            var controls = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(expander).ToArray();
+            var text = controls.OfType<TextBlock>().Where(block => block.IsEffectivelyVisible).Select(block => block.Text)
+                .Where(value => !string.IsNullOrEmpty(value)).ToArray();
+            var expectedParts = expected.Split('|');
+            var previewParts = expectedParts.Concat(["−", "+", "context"]).ToHashSet();
+            CollectionAssert.AreEqual(expectedParts, text.Where(value => value is not null && previewParts.Contains(value)).ToArray());
+            Assert.AreEqual(listCount, controls.OfType<ItemsControl>().Count());
+
+            using var bitmap = window.CaptureRenderedFrame()
+                ?? throw new InvalidOperationException("无法捕获文件工具预览截图。");
+            string path = GetScreenshotPath($"{toolName}-{Guid.NewGuid():N}.png");
+            bitmap.Save(path, PngBitmapEncoderOptions.Default);
+            Console.WriteLine(path);
+        });
+    }
+
+    [TestMethod]
+    [DataRow("WriteFileContent")]
+    [DataRow("ReplaceStringInFile")]
+    [DataRow("MultiReplaceStringInFile")]
+    public void ExpandedFileToolKeepsUnstructuredInput(string toolName)
+    {
+        const string input = "filePath: a.cs\nnot structured";
+        InspectFileTool(toolName, input, (_, expander) =>
+        {
+            var text = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(expander).OfType<TextBlock>()
+                .Where(block => block.IsEffectivelyVisible).Select(block => block.Text);
+            CollectionAssert.Contains(text.ToArray(), input);
+        });
+    }
+
+    private static void InspectFileTool(string toolName, string input, Action<Window, DeferredExpander> inspect)
+    {
+        using var model = new ChatViewModel();
+        var chat = new CopilotChatMessage(Microsoft.Extensions.AI.ChatRole.Assistant, "Editing files.");
+        chat.MessageItems.Add(new CopilotChatToolItem("call", toolName, input, "OK"));
+        using var message = new MessageItemViewModel(chat);
+        model.Messages.Add(message);
+        var view = new ChatView { DataContext = model };
+        var window = new Window { Width = 1150, Height = 700, Content = view };
+        window.Show();
+        try
+        {
+            var expander = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<DeferredExpander>().Single();
+            expander.IsExpanded = true;
+            window.UpdateLayout();
+            inspect(window, expander);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [TestMethod]
@@ -144,12 +249,12 @@ public sealed class ChatOutputVisualTests
         return blue >= 180 && blue > green + 20 && green > red + 20;
     }
 
-    private static string GetScreenshotPath()
+    private static string GetScreenshotPath(string fileName = "ChatOutputFocused.png")
     {
         string directory = Path.Combine(AppContext.BaseDirectory, "Screenshots",
             Lang.Current.IetfLanguageTag);
         Directory.CreateDirectory(directory);
-        return Path.Combine(directory, "ChatOutputFocused.png");
+        return Path.Combine(directory, fileName);
     }
 
     [TestMethod]

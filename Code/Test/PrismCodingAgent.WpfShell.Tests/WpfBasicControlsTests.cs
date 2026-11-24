@@ -143,6 +143,58 @@ public sealed class WpfBasicControlsTests
         return Task.CompletedTask;
     });
 
+    [TestMethod]
+    [DataRow("ReadFile", true)]
+    [DataRow("readfile", false)]
+    [DataRow("OtherTool", false)]
+    public async Task ToolTemplateShouldRequireAnExactToolNameAsync(string toolName, bool useCustomTemplate) => await WpfTestClassAttribute.RunUiAsync(() =>
+    {
+        var fallback = new DataTemplate();
+        var custom = new DataTemplate();
+        var selector = new ChatMessageItemTemplateSelector { ToolItemTemplate = fallback };
+        selector.ToolItemTemplates.Add("ReadFile", custom);
+
+        var selected = selector.SelectTemplate(new CopilotChatToolItem("call", toolName, null), new ContentControl());
+
+        Assert.AreSame(useCustomTemplate ? custom : fallback, selected);
+        return Task.CompletedTask;
+    });
+
+    [TestMethod]
+    public async Task ToolTemplateShouldNotReplaceApprovalTemplateAsync() => await WpfTestClassAttribute.RunUiAsync(() =>
+    {
+        var approval = new DataTemplate();
+        var selector = new ChatMessageItemTemplateSelector { ApprovalToolItemTemplate = approval };
+        selector.ToolItemTemplates.Add("ReadFile", new DataTemplate());
+
+        var selected = selector.SelectTemplate(new CopilotChatApprovalToolItem("call", "ReadFile", null), new ContentControl());
+
+        Assert.AreSame(approval, selected);
+        return Task.CompletedTask;
+    });
+
+    [TestMethod]
+    public async Task XamlRegistersToolTemplateAsync() => await WpfTestClassAttribute.RunUiAsync(() =>
+    {
+        var selector = (ChatMessageItemTemplateSelector)System.Windows.Markup.XamlReader.Parse("""
+            <views:ChatMessageItemTemplateSelector
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:views="clr-namespace:PrismCodingAgent.CodingShell.Views;assembly=PrismCodingAgent.WpfShell">
+                <views:ChatMessageItemTemplateSelector.ToolItemTemplates>
+                    <DataTemplate x:Key="ReadFile">
+                        <TextBlock Text="{Binding InputText}" />
+                    </DataTemplate>
+                </views:ChatMessageItemTemplateSelector.ToolItemTemplates>
+            </views:ChatMessageItemTemplateSelector>
+            """);
+
+        var selected = selector.SelectTemplate(new CopilotChatToolItem("call", "ReadFile", null), new ContentControl());
+
+        Assert.IsNotNull(selected);
+        return Task.CompletedTask;
+    });
+
     private static BinaryData CreateImageData()
     {
         var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Bgra32, null,

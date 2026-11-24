@@ -10,6 +10,29 @@
              x:DataType="vm:ChatViewModel">
     <UserControl.Resources>
         <converters:TotalUsageSummaryConverter x:Key="TotalUsageSummary" />
+        <converters:WriteFileContentConverter x:Key="WriteFilePreview" />
+        <converters:ReplaceStringInFileConverter x:Key="ReplaceFilePreview" />
+        <converters:MultiReplaceStringInFileConverter x:Key="BatchReplaceFilePreview" />
+        <DataTemplate x:Key="ReplacementDiff" x:DataType="converters:ReplacementDiff">
+            <StackPanel>
+                <TextBlock Classes="SecondaryLabel" Text="{Binding FilePath}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Explanation}" TextWrapping="Wrap" />
+                <Border Background="#FFEBE9" Padding="8,3"
+                        IsVisible="{Binding RemovedText, Converter={x:Static avaloniaConverters:StringConverters.IsNotNullOrEmpty}}">
+                    <Grid ColumnDefinitions="24,*">
+                        <TextBlock Text="−" Foreground="#82071E" />
+                        <TextBlock Grid.Column="1" Text="{Binding RemovedText}" Foreground="#82071E" FontFamily="Consolas, monospace" TextWrapping="Wrap" />
+                    </Grid>
+                </Border>
+                <Border Background="#DAFBE1" Padding="8,3"
+                        IsVisible="{Binding AddedText, Converter={x:Static avaloniaConverters:StringConverters.IsNotNullOrEmpty}}">
+                    <Grid ColumnDefinitions="24,*">
+                        <TextBlock Text="+" Foreground="#116329" />
+                        <TextBlock Grid.Column="1" Text="{Binding AddedText}" Foreground="#116329" FontFamily="Consolas, monospace" TextWrapping="Wrap" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
     </UserControl.Resources>
     <UserControl.Styles>
         <Style Selector="TextBox.ChatOutput" x:CompileBindings="False">
@@ -51,6 +74,80 @@
     </UserControl.Styles>
     <UserControl.DataTemplates>
         <views:ChatMessageItemTemplateSelector>
+            <views:ChatMessageItemTemplateSelector.ToolItemTemplates>
+                <DataTemplate x:Key="WriteFileContent" x:DataType="model:CopilotChatToolItem">
+                    <views:DeferredExpander Margin="0,0,0,8" Details="{Binding}" Header="{Binding DisplayName}" ToolTip.Tip="{Binding ToolTipText}">
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate x:DataType="model:CopilotChatToolItem">
+                                <Border Classes="ToolPanel">
+                                    <StackPanel Spacing="6">
+                                        <Border DataContext="{Binding InputText, Converter={StaticResource WriteFilePreview}}">
+                                            <StackPanel x:DataType="converters:WriteFileContentPreview">
+                                                <TextBlock Classes="SecondaryLabel" Text="{Binding FilePath}" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                        <StackPanel IsVisible="{Binding HasOutputText}">
+                                            <TextBlock Classes="SecondaryLabel" Text="{Binding ToolOutputText, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
+                </DataTemplate>
+                <DataTemplate x:Key="ReplaceStringInFile" x:DataType="model:CopilotChatToolItem">
+                    <views:DeferredExpander Margin="0,0,0,8" Details="{Binding}" Header="{Binding DisplayName}" ToolTip.Tip="{Binding ToolTipText}">
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate x:DataType="model:CopilotChatToolItem">
+                                <Border Classes="ToolPanel">
+                                    <StackPanel Spacing="6">
+                                        <Border DataContext="{Binding InputText, Converter={StaticResource ReplaceFilePreview}}">
+                                            <StackPanel x:DataType="converters:ReplaceStringInFilePreview">
+                                                <TextBlock Text="{Binding RawText}" TextWrapping="Wrap" />
+                                                <ContentControl Content="{Binding Diff}" ContentTemplate="{StaticResource ReplacementDiff}"
+                                                                IsVisible="{Binding Diff, Converter={x:Static avaloniaConverters:ObjectConverters.IsNotNull}}" />
+                                            </StackPanel>
+                                        </Border>
+                                        <StackPanel IsVisible="{Binding HasOutputText}">
+                                            <TextBlock Classes="SecondaryLabel" Text="{Binding ToolOutputText, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
+                </DataTemplate>
+                <DataTemplate x:Key="MultiReplaceStringInFile" x:DataType="model:CopilotChatToolItem">
+                    <views:DeferredExpander Margin="0,0,0,8" Details="{Binding}" Header="{Binding DisplayName}" ToolTip.Tip="{Binding ToolTipText}">
+                        <views:DeferredExpander.DetailsTemplate>
+                            <DataTemplate x:DataType="model:CopilotChatToolItem">
+                                <Border Classes="ToolPanel">
+                                    <StackPanel Spacing="6">
+                                        <Border DataContext="{Binding InputText, Converter={StaticResource BatchReplaceFilePreview}}">
+                                            <StackPanel x:DataType="converters:MultiReplaceStringInFilePreview">
+                                                <TextBlock Text="{Binding RawText}" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding Explanation}" TextWrapping="Wrap" />
+                                                <ItemsControl ItemsSource="{Binding Diffs}" ItemTemplate="{StaticResource ReplacementDiff}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                        <StackPanel IsVisible="{Binding HasOutputText}">
+                                            <TextBlock Classes="SecondaryLabel" Text="{Binding ToolOutputText, Source={x:Static localizations:Lang.Current}}" />
+                                            <TextBlock Text="{Binding OutputText}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </views:DeferredExpander.DetailsTemplate>
+                    </views:DeferredExpander>
+                </DataTemplate>
+            </views:ChatMessageItemTemplateSelector.ToolItemTemplates>
             <views:ChatMessageItemTemplateSelector.TextItemTemplate>
                 <DataTemplate DataType="model:CopilotChatTextItem" x:DataType="model:CopilotChatTextItem">
                     <TextBox Classes="ChatOutput"
