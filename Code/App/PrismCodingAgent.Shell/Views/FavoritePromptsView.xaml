@@ -81,7 +81,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderBrush}" Padding="12,10">
-                            <Grid>
+                            <Grid MinHeight="56">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition /><ColumnDefinition Width="28" />
                                 </Grid.ColumnDefinitions>

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using PrismCodingAgent.CodingShell.Localizations;
@@ -52,6 +53,19 @@ public sealed class FavoritePromptsScreenshotTests
         using var selected = SkiaSharp.SKBitmap.Decode(selectedPath);
         Assert.AreEqual(unselected.GetPixel((int)sample.X, (int)sample.Y), selected.GetPixel((int)sample.X, (int)sample.Y), "Selection must not recolor the row background.");
         Assert.AreNotEqual(unselected.GetPixel((int)edge.X, (int)edge.Y), selected.GetPixel((int)edge.X, (int)edge.Y), "Selection must highlight the row outline.");
+        var shortRow = list.ContainerFromIndex(1)!;
+        var nextRow = list.ContainerFromIndex(2)!;
+        var shortRowBeforeHover = shortRow.Bounds;
+        var nextRowBeforeHover = nextRow.Bounds;
+        var shortRowEdit = shortRow.GetVisualDescendants().OfType<Button>()
+            .Single(button => ToolTip.GetTip(button)?.ToString() == "编辑");
+        Assert.IsFalse(shortRowEdit.IsEffectivelyVisible);
+        session.Window.MouseMove(shortRow.TranslatePoint(new Point(shortRow.Bounds.Width / 2, shortRow.Bounds.Height / 2), session.Window)!.Value);
+        session.Capture("favorite-prompts-short-row-hover");
+        Assert.IsTrue(shortRowEdit.IsEffectivelyVisible);
+        Assert.AreEqual(shortRowBeforeHover, shortRow.Bounds);
+        Assert.AreEqual(nextRowBeforeHover, nextRow.Bounds);
+
         var editor = row.GetVisualDescendants().OfType<TextBox>().Single();
         Assert.IsTrue(editor.IsReadOnly);
         Assert.IsFalse(editor.Text!.Contains("先给出审查结论", StringComparison.Ordinal));

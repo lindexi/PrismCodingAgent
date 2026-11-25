@@ -74,7 +74,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:FavoritePromptRow">
                         <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource DividerBrush}" Padding="12,10">
-                            <Grid ColumnDefinitions="*,28" ColumnSpacing="10">
+                            <Grid ColumnDefinitions="*,28" ColumnSpacing="10" MinHeight="56">
                                 <StackPanel Spacing="3">
                                     <TextBox Classes="PromptEditor" Classes.ChatOutput="{Binding !IsEditing}"
                                              Classes.editing="{Binding IsEditing}" AcceptsReturn="True" TextWrapping="Wrap"
