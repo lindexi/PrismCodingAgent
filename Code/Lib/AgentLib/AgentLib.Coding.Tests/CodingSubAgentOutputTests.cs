@@ -262,7 +262,8 @@ public sealed class CodingSubAgentOutputTests
         var message = CopilotChatMessage.CreateAssistant(string.Empty, false);
         CopilotChatSubAgentItem child = message.CreateSubAgentItem("child", "task");
         var compatibilityMessage = CopilotChatMessage.CreateAssistant(string.Empty, false);
-        var context = new CodingRunContext(new FakeChatClient(), compatibilityMessage, new CopilotChatSession(CreateStorage()), output: child);
+        var context = new CodingRunContext(new CodingToolContext { Session = new CopilotChatSession(CreateStorage()) },
+            new FakeChatClient(), compatibilityMessage, output: child);
         context.Output.AppendText("stream");
         Assert.AreEqual(string.Empty, context.AssistantChatMessage.Content);
     }
@@ -308,7 +309,7 @@ public sealed class CodingSubAgentOutputTests
         var client = new FakeChatClient { OnGetStreamingResponseAsync = (_, _, _) => EmptyAsync() };
         await using var agent = new CodingAgent();
         var session = new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher };
-        var context = new CodingRunContext(client, message, session);
+        var context = new CodingRunContext(new CodingToolContext { Session = session }, client, message);
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")]);
         await run.CompletionTask;
         Assert.IsFalse(outsideDispatcher);

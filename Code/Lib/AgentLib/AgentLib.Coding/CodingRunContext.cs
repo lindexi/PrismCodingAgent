@@ -10,14 +10,6 @@ namespace AgentLib.Coding;
 /// </summary>
 public sealed class CodingRunContext
 {
-    /// <summary>创建编程执行上下文。</summary>
-    public CodingRunContext(IChatClient chatClient, CopilotChatMessage assistantChatMessage,
-        CopilotChatSession session, ICopilotChatOutput? output = null)
-        : this(new CodingToolContext { Session = session ?? throw new ArgumentNullException(nameof(session)) },
-            chatClient, assistantChatMessage, output)
-    {
-    }
-
     /// <summary>使用本轮工具设置快照创建编程执行上下文。</summary>
     public CodingRunContext(CodingToolContext toolContext, IChatClient chatClient,
         CopilotChatMessage assistantChatMessage, ICopilotChatOutput? output = null)

@@ -306,8 +306,8 @@ public sealed class CodingAgentTests
             OnGetStreamingResponseAsync = (_, _, _) => throw expectedException,
         };
         await using var agent = new CodingAgent();
-        var context = new CodingRunContext(client, CopilotChatMessage.CreateAssistant(
-            CopilotChatMessage.PlaceholderContent, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
+        var context = new CodingRunContext(new CodingToolContext { Session = new CopilotChatSession(CreateStorage()) },
+            client, CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false));
 
         ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("任务")]);
         InvalidOperationException exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
@@ -548,7 +548,9 @@ public sealed class CodingAgentTests
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent,
             isPresetInfo: false);
-        var observer = new CompressionToolCallObserver(new CodingRunContext(client, assistantMessage, new CopilotChatSession(CreateStorage())), reducer);
+        var context = new CodingRunContext(new CodingToolContext { Session = new CopilotChatSession(CreateStorage()) },
+            client, assistantMessage);
+        var observer = new CompressionToolCallObserver(context, reducer);
 
         await observer.ReduceAsync(
             [new ChatMessage(ChatRole.Assistant, "需要压缩")],
@@ -574,7 +576,9 @@ public sealed class CodingAgentTests
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent,
             isPresetInfo: false);
-        var observer = new CompressionToolCallObserver(new CodingRunContext(client, assistantMessage, new CopilotChatSession(CreateStorage())), reducer);
+        var context = new CodingRunContext(new CodingToolContext { Session = new CopilotChatSession(CreateStorage()) },
+            client, assistantMessage);
+        var observer = new CompressionToolCallObserver(context, reducer);
 
         await observer.ReduceAsync(
             [new ChatMessage(ChatRole.Assistant, "需要压缩")],
@@ -602,7 +606,8 @@ public sealed class CodingAgentTests
     }
 
     private static CodingRunContext CreateContext(FakeChatClient client, CopilotChatSession session) =>
-        new(client, CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false), session);
+        new(new CodingToolContext { Session = session }, client,
+            CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false));
 
     private static async IAsyncEnumerable<ChatResponseUpdate> InterleavedStreamAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
