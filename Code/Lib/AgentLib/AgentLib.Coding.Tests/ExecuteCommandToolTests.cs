@@ -135,6 +135,54 @@ public sealed class ExecuteCommandToolTests
         StringAssert.Contains(Assert.IsInstanceOfType<string>(result), "winremoteshell ps [--details] [--json]");
     }
 
+    [TestMethod]
+    public async Task DotNetTopicAppearsInHelpIndex()
+    {
+        var result = await InvokeAsync(CreateTool(), "help");
+
+        CollectionAssert.Contains(Assert.IsInstanceOfType<string>(result).Split(Environment.NewLine), "dotnet");
+    }
+
+    [TestMethod]
+    [DataRow("dotnet package search <查询词> [--take <正整数>] [--prerelease]")]
+    [DataRow("package versions <包 ID>")]
+    [DataRow("dotnet sdk list：列出已安装的 .NET SDK，无需工作区。")]
+    public async Task DotNetHelpDescribesEachCommand(string usage)
+    {
+        var result = await InvokeAsync(CreateTool(), "help", "dotnet");
+
+        StringAssert.Contains(Assert.IsInstanceOfType<string>(result), usage);
+    }
+
+    [TestMethod]
+    [DataRow(new[] { "dotnet", "package", "search", "Example" }, "请先选择工作区")]
+    [DataRow(new[] { "package", "versions", "Example" }, "请先选择工作区")]
+    [DataRow(new[] { "dotnet", "package", "search" }, "请提供一个有效查询词")]
+    [DataRow(new[] { "package", "versions" }, "只接受一个有效的包 ID")]
+    [DataRow(new[] { "dotnet", "sdk", "list", "--help" }, "不接受额外参数")]
+    public async Task DotNetCommandRoutesToItsValidator(string[] argv, string expected)
+    {
+        var result = await InvokeAsync(CreateTool(), argv);
+
+        StringAssert.Contains(Assert.IsInstanceOfType<string>(result), expected);
+    }
+
+    [TestMethod]
+    [DataRow(new[] { "dotnet package search", "Example" })]
+    [DataRow(new[] { "dotnet", "package search", "Example" })]
+    [DataRow(new[] { "dotnet", "package", "searching", "Example" })]
+    [DataRow(new[] { "dotnet", "package", "versions", "Example" })]
+    [DataRow(new[] { "package", "versions-more", "Example" })]
+    [DataRow(new[] { "dotnet", "sdk", "listing" })]
+    [DataRow(new[] { "DOTNET", "sdk", "list" })]
+    [DataRow(new[] { "dotnet", "build" })]
+    public async Task DotNetCommandDoesNotMatchPartialOrUnlistedTokens(string[] argv)
+    {
+        var result = await InvokeAsync(CreateTool(), argv);
+
+        StringAssert.Contains(Assert.IsInstanceOfType<string>(result), "未找到匹配的内建命令");
+    }
+
     private static ValueTask<object?> InvokeAsync(AIFunction tool, params string[] argv) =>
         tool.InvokeAsync(new AIFunctionArguments { ["argv"] = argv });
 

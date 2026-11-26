@@ -10,7 +10,12 @@ internal sealed class ExecuteCommandTool
 
     private ExecuteCommandTool(CodingRunContext context)
     {
-        _handlers = [new GitDiffCommand(context.WorkspacePath, context.Session.Logger), new WinRemoteShellCommand(context)];
+        _handlers =
+        [
+            new GitDiffCommand(context.WorkspacePath, context.Session.Logger),
+            new WinRemoteShellCommand(context),
+            new DotNetCommand(context.WorkspacePath, context.Session.Logger),
+        ];
     }
 
     internal static ToolRegistration CreateRegistration(CodingRunContext context)

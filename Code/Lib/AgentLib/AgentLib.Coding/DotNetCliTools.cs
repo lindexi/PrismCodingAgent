@@ -202,7 +202,7 @@ public sealed class DotNetCliTools
         string arguments = commandLine["dotnet ".Length..];
         return RunProcessCommandAsync
         (
-            "dotnet",
+            DotNetCliProcess.FileName,
             commandLine,
             targetPath: null,
             cancellationToken,
@@ -248,7 +248,7 @@ public sealed class DotNetCliTools
             string arguments = commandLine["dotnet ".Length..];
             return await RunProcessCommandAsync
                 (
-                    "dotnet",
+                    DotNetCliProcess.FileName,
                     commandLine,
                     targetPath: null,
                     timeoutCancellationTokenSource.Token,
@@ -435,7 +435,7 @@ public sealed class DotNetCliTools
     )
     {
         return await RunProcessCommandAsync
-            ("dotnet", $"dotnet {command}", targetPath, cancellationToken, arguments, [command]).ConfigureAwait(false);
+            (DotNetCliProcess.FileName, $"dotnet {command}", targetPath, cancellationToken, arguments, [command]).ConfigureAwait(false);
     }
 
     private async Task<string> RunProcessCommandAsync
@@ -494,8 +494,7 @@ public sealed class DotNetCliTools
             }
         }
 
-        startInfo.Environment["DOTNET_NOLOGO"] = "1";
-        startInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
+        DotNetCliProcess.ConfigureEnvironment(startInfo);
 
         using var process = new Process { StartInfo = startInfo };
         try
