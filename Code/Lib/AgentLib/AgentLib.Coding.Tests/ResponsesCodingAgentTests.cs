@@ -127,6 +127,8 @@ public sealed class ResponsesCodingAgentTests
         using var request = JsonDocument.Parse(handler.Requests[1]);
         Assert.AreEqual(3, request.RootElement.GetProperty("input").GetArrayLength());
         using var firstRequest = JsonDocument.Parse(handler.Requests[0]);
+        var tools = firstRequest.RootElement.GetProperty("tools").EnumerateArray();
+        Assert.IsTrue(tools.Any(tool => tool.GetProperty("name").GetString() == "ExecuteCommand"));
         Assert.AreEqual("high", firstRequest.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
     }
 

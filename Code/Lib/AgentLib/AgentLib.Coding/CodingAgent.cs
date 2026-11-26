@@ -1,3 +1,4 @@
+using AgentLib.Coding.Commands;
 using AgentLib.Core;
 using AgentLib.Model;
 using AgentLib.Reducers;
@@ -116,10 +117,12 @@ public sealed class CodingAgent : IAsyncDisposable
             );
             CancellationToken runCancellationToken = runCancellationTokenSource.Token;
             runCancellationToken.ThrowIfCancellationRequested();
+            CodingRunWorkspaceContext runTools = workspaceContext.WithTool(
+                ExecuteCommandTool.CreateRegistration(workspaceContext.WorkspacePath, context.Session.Logger));
             var options = new ChatClientAgentOptions();
             {
                 options.ChatOptions ??= new ChatOptions();
-                options.ChatOptions.Tools = [.. workspaceContext.Tools];
+                options.ChatOptions.Tools = [.. runTools.Tools];
                 options.AIContextProviders = [];
                 options.EnableMessageInjection = true;
                 options.RequirePerServiceCallChatHistoryPersistence = true;
@@ -165,7 +168,7 @@ public sealed class CodingAgent : IAsyncDisposable
                 runContents,
                 chatClientAgent,
                 agentSession,
-                workspaceContext.ToolRegistrationRegistry,
+                runTools.ToolRegistrationRegistry,
                 systemPrompts,
                 runCancellationTokenSource
             );

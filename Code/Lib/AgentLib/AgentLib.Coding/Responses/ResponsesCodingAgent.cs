@@ -1,4 +1,5 @@
 using System.ClientModel.Primitives;
+using AgentLib.Coding.Commands;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Model;
 
@@ -58,7 +59,8 @@ public sealed class ResponsesCodingAgent
             Input = input,
             Instructions = string.Join(Environment.NewLine + Environment.NewLine, prompts),
             ClientContext = clientContext,
-            Workspace = workspaceContext,
+            Workspace = workspaceContext.WithTool(
+                ExecuteCommandTool.CreateRegistration(workspaceContext.WorkspacePath, context.Logger)),
             CancellationToken = cancellationToken,
             ReasoningEffort = runOptions.ReasoningEffort,
             EnableAutomaticCompression = runOptions.EnableAutomaticCompression,

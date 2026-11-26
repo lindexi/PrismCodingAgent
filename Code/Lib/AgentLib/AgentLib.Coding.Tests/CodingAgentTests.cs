@@ -58,6 +58,7 @@ public sealed class CodingAgentTests
         Assert.IsFalse(result.CompletionTask.IsCompleted);
         string[] toolNames = capturedOptions!.Tools!.Select(tool => tool.Name).ToArray();
         CollectionAssert.Contains(toolNames, "coding_only");
+        CollectionAssert.Contains(toolNames, "ExecuteCommand");
         IReadOnlyList<ChatMessage> runMessages = capturedMessages!;
         Assert.HasCount(4, runMessages);
         Assert.AreEqual(ChatRole.System, runMessages[0].Role);
