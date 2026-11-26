@@ -1,4 +1,5 @@
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using AgentLib.Coding.Settings;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
@@ -12,14 +13,57 @@ public sealed class CodingRunContext
     /// <summary>创建编程执行上下文。</summary>
     public CodingRunContext(IChatClient chatClient, CopilotChatMessage assistantChatMessage,
         CopilotChatSession session, ICopilotChatOutput? output = null)
+        : this(new CodingToolContext { Session = session ?? throw new ArgumentNullException(nameof(session)) },
+            chatClient, assistantChatMessage, output)
     {
+    }
+
+    /// <summary>使用本轮工具设置快照创建编程执行上下文。</summary>
+    public CodingRunContext(CodingToolContext toolContext, IChatClient chatClient,
+        CopilotChatMessage assistantChatMessage, ICopilotChatOutput? output = null)
+    {
+        ArgumentNullException.ThrowIfNull(toolContext);
+        ArgumentNullException.ThrowIfNull(toolContext.Session);
         ArgumentNullException.ThrowIfNull(chatClient);
         ArgumentNullException.ThrowIfNull(assistantChatMessage);
-        ArgumentNullException.ThrowIfNull(session);
+        ToolContext = toolContext;
         ChatClient = chatClient;
         AssistantChatMessage = assistantChatMessage;
-        Session = session;
         Output = output ?? assistantChatMessage;
+    }
+
+    /// <summary>本次执行使用的工具设置快照。</summary>
+    public CodingToolContext ToolContext { get; }
+
+    /// <summary>本次执行使用的工作区。</summary>
+    public string? WorkspacePath => ToolContext.WorkspacePath;
+
+    /// <summary>本次执行使用的运行选项。</summary>
+    public CodingChatRunOptions Options => ToolContext.Options;
+
+    /// <summary>本次执行使用的全局设置。</summary>
+    public CodingChatShellSettings? Settings => ToolContext.Settings;
+
+    internal CodingRunContext WithToolContext(CodingToolContext toolContext)
+    {
+        ArgumentNullException.ThrowIfNull(toolContext);
+        if (!ReferenceEquals(Session, toolContext.Session))
+        {
+            throw new ArgumentException("编程运行与工具上下文必须使用同一会话。", nameof(toolContext));
+        }
+
+        return new CodingRunContext(toolContext, ChatClient, AssistantChatMessage, Output)
+        {
+            ModelResolver = ModelResolver,
+        };
+    }
+
+    internal CodingRunContext NormalizeWorkspacePath()
+    {
+        string? path = string.IsNullOrWhiteSpace(WorkspacePath) ? null : Path.GetFullPath(WorkspacePath);
+        return string.Equals(path, WorkspacePath, StringComparison.Ordinal)
+            ? this
+            : WithToolContext(ToolContext with { WorkspacePath = path });
     }
 
     /// <summary>本次执行使用的模型客户端。</summary>
@@ -29,7 +73,7 @@ public sealed class CodingRunContext
     public ILanguageModelResolver? ModelResolver { get; init; }
 
     /// <summary>本次执行所属的会话及其模型历史。</summary>
-    public CopilotChatSession Session { get; }
+    public CopilotChatSession Session => ToolContext.Session;
 
     /// <summary>供宿主读取和保存的助手消息。</summary>
     public CopilotChatMessage AssistantChatMessage { get; }

@@ -45,12 +45,12 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         var userMessage = new CopilotChatMessage(ChatRole.User, runContents);
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var context = CreateRunContext(client, assistantMessage, session);
+        var context = CreateRunContext(client, assistantMessage, toolContext);
         IDisposable chatting = _chatManager.StartChatting();
         try
         {
             ICodingAgentRunResult run = await _codingAgent.RunAsync(
-                context, toolContext, runContents, cancellationToken).ConfigureAwait(false);
+                context, runContents, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             await session.AddMessageAsync(userMessage).ConfigureAwait(false);
             await _chatManager.ChatLogger.LogMessageAsync(session.SessionId, userMessage).ConfigureAwait(false);
@@ -81,12 +81,12 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         FailedAssistantMessage = null;
         var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
             .ConfigureAwait(false);
-        var context = CreateRunContext(client, assistantMessage, session);
+        var context = CreateRunContext(client, assistantMessage, toolContext);
         IDisposable chatting = _chatManager.StartChatting();
         try
         {
             ICodingAgentRunResult run = await _codingAgent.RunAsync(
-                context, toolContext, [], cancellationToken).ConfigureAwait(false);
+                context, [], cancellationToken).ConfigureAwait(false);
             _activeRun = run;
             return new CompletedCodingAgentRunResult(run.AssistantChatMessage,
                 CompleteAndClearActiveRunAsync(run, session.SessionId, chatting));
@@ -99,7 +99,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
     }
 
     private CodingRunContext CreateRunContext(IChatClient client, CopilotChatMessage assistantMessage,
-        CopilotChatSession session) => new(client, assistantMessage, session)
+        CodingToolContext toolContext) => new(toolContext, client, assistantMessage)
         {
             ModelResolver = _chatManager.AgentApiEndpointManager,
         };

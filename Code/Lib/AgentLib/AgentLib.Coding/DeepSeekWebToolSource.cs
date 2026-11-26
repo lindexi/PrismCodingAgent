@@ -35,8 +35,8 @@ public sealed class DeepSeekWebToolSource : ICodingWorkspaceToolSource
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
-        new WebToolFunctions(source: this, enableSearch: runOptions.EnableWebSearch, enableFetch: runOptions.EnableWebFetch)
+    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
+        new WebToolFunctions(source: this, enableSearch: context.Options.EnableWebSearch, enableFetch: context.Options.EnableWebFetch)
             .CreateToolRegistrations();
 
     private sealed class WebToolFunctions(DeepSeekWebToolSource source, bool enableSearch, bool enableFetch)

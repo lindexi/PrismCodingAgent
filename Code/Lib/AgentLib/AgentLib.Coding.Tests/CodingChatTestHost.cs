@@ -8,7 +8,7 @@ internal static class CodingChatTestHost
         CodingRunContext context, string prompt, string? workspacePath,
         bool enableAutomaticCompression = true, bool enableDotNetRun = false,
         CancellationToken cancellationToken = default) =>
-        agent.RunAsync(context, new CodingToolContext
+        agent.RunAsync(context.WithToolContext(new CodingToolContext
         {
             Session = context.Session,
             WorkspacePath = workspacePath,
@@ -18,5 +18,5 @@ internal static class CodingChatTestHost
                 EnableDotNetRun = enableDotNetRun,
                 LanguageTag = "en",
             },
-        }, [new TextContent(prompt)], cancellationToken);
+        }), [new TextContent(prompt)], cancellationToken);
 }

@@ -20,6 +20,6 @@ public sealed class CodingImageAnalysisToolSource : ICodingWorkspaceToolSource
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
         new CodingImageAnalysisTools(_chatManager).AsToolRegistrations();
 }

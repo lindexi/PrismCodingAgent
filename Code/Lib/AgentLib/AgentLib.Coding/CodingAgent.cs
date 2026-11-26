@@ -47,35 +47,29 @@ public sealed class CodingAgent : IAsyncDisposable
         _copilotInstructionsPath = options.CopilotInstructionsPath;
     }
 
-    /// <summary>使用本轮工具上下文运行编程对话。</summary>
-    public async Task<ICodingAgentRunResult> RunAsync(CodingRunContext context, CodingToolContext toolContext,
+    /// <summary>使用本轮运行上下文运行编程对话。</summary>
+    public async Task<ICodingAgentRunResult> RunAsync(CodingRunContext context,
         IReadOnlyList<AIContent> contents, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(toolContext);
         ArgumentNullException.ThrowIfNull(contents);
-        if (!ReferenceEquals(context.Session, toolContext.Session))
-        {
-            throw new ArgumentException("编程运行与工具上下文必须使用同一会话。", nameof(toolContext));
-        }
 
         AIContent[] runContents = [.. contents];
         ThrowIfDisposed();
-        CodingChatRunOptions runOptions = toolContext.Options;
-        CodingRunWorkspaceContext workspaceContext = await GetRunWorkspaceContextAsync
-        (
-            toolContext.WorkspacePath, runOptions, cancellationToken
-        ).ConfigureAwait(false);
-        toolContext = toolContext with { WorkspacePath = workspaceContext.WorkspacePath };
+        context = context.NormalizeWorkspacePath();
+        CodingChatRunOptions runOptions = context.Options;
+        CodingWorkspaceCache? workspaceCache = await GetWorkspaceCacheAsync(context, cancellationToken)
+            .ConfigureAwait(false);
+        CodingRunWorkspaceContext workspaceContext = CreateRunWorkspaceContext(workspaceCache, context);
         IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync
         (
             _copilotInstructionsPath, runOptions, cancellationToken
         ).ConfigureAwait(false);
-        var delegation = new CodingSubAgentTools(this, context, workspaceContext, prompts, toolContext);
+        var delegation = new CodingSubAgentTools(this, context, workspaceCache, prompts);
         return await RunAsync
         (
             context, runContents, workspaceContext.WithTool(delegation.CreateRegistration()),
-            prompts, toolContext, cancellationToken
+            prompts, cancellationToken
         ).ConfigureAwait(false);
     }
 
@@ -85,13 +79,12 @@ public sealed class CodingAgent : IAsyncDisposable
         IReadOnlyList<AIContent> contents,
         CodingRunWorkspaceContext workspaceContext,
         IReadOnlyList<string> systemPrompts,
-        CodingToolContext toolContext,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(contents);
-        CodingChatRunOptions runOptions = toolContext.Options;
+        CodingChatRunOptions runOptions = context.Options;
         AIContent[] runContents = [.. contents];
 
         CancellationTokenSource? runCancellationTokenSource = null;
@@ -107,7 +100,7 @@ public sealed class CodingAgent : IAsyncDisposable
             CancellationToken runCancellationToken = runCancellationTokenSource.Token;
             runCancellationToken.ThrowIfCancellationRequested();
             CodingRunWorkspaceContext runTools = workspaceContext.WithTool(
-                ExecuteCommandTool.CreateRegistration(toolContext));
+                ExecuteCommandTool.CreateRegistration(context));
             var options = new ChatClientAgentOptions();
             {
                 options.ChatOptions ??= new ChatOptions();
@@ -186,23 +179,20 @@ public sealed class CodingAgent : IAsyncDisposable
     public Task<bool> StopLanguageServerAsync() =>
         _workspaceCache?.StopLanguageServerAsync() ?? Task.FromResult(false);
 
-    internal async Task<CodingRunWorkspaceContext> GetRunWorkspaceContextAsync
+    internal async Task<CodingWorkspaceCache?> GetWorkspaceCacheAsync
     (
-        string? workspacePath,
-        CodingChatRunOptions runOptions,
+        CodingRunContext context,
         CancellationToken cancellationToken
     )
     {
-        string? normalizedPath = string.IsNullOrWhiteSpace(workspacePath)
-            ? null
-            : Path.GetFullPath(workspacePath);
+        string? normalizedPath = context.WorkspacePath;
         await _workspaceCacheGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ThrowIfDisposed();
             if (AreSameWorkspace(_workspaceCache?.WorkspacePath, normalizedPath))
             {
-                return CreateRunWorkspaceContext(_workspaceCache, runOptions);
+                return _workspaceCache;
             }
 
             CodingWorkspaceCache? replacement = normalizedPath is null
@@ -219,7 +209,7 @@ public sealed class CodingAgent : IAsyncDisposable
                 await previous.DisposeAsync().ConfigureAwait(false);
             }
 
-            return CreateRunWorkspaceContext(replacement, runOptions);
+            return replacement;
         }
         finally
         {
@@ -227,10 +217,10 @@ public sealed class CodingAgent : IAsyncDisposable
         }
     }
 
-    private CodingRunWorkspaceContext CreateRunWorkspaceContext
+    internal CodingRunWorkspaceContext CreateRunWorkspaceContext
     (
         CodingWorkspaceCache? workspaceCache,
-        CodingChatRunOptions runOptions
+        CodingRunContext context
     )
     {
         if (workspaceCache is null)
@@ -239,9 +229,9 @@ public sealed class CodingAgent : IAsyncDisposable
         }
 
         IReadOnlyList<ToolRegistration> additionalToolRegistrations = _additionalToolSources
-            .SelectMany(source => source.CreateToolRegistrations(workspaceCache.WorkspacePath, runOptions))
+            .SelectMany(source => source.CreateToolRegistrations(context))
             .ToArray();
-        return workspaceCache.CreateRunContext(additionalToolRegistrations, runOptions.EnableDotNetRun);
+        return workspaceCache.CreateRunContext(additionalToolRegistrations, context.Options.EnableDotNetRun);
     }
 
     /// <summary>

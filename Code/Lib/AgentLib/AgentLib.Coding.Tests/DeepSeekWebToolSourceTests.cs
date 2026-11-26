@@ -14,7 +14,7 @@ public sealed class DeepSeekWebToolSourceTests
         var method = typeof(ICodingWorkspaceToolSource).GetMethods().Single();
 
         Assert.AreEqual("CreateToolRegistrations", method.Name);
-        CollectionAssert.AreEqual(new[] { typeof(string), typeof(CodingChatRunOptions) },
+        CollectionAssert.AreEqual(new[] { typeof(CodingRunContext) },
             method.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
         Assert.IsTrue(method.IsAbstract);
     }
@@ -183,7 +183,7 @@ public sealed class DeepSeekWebToolSourceTests
         var handler = new RecordingHandler(response);
         using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(17) };
         var source = new DeepSeekWebToolSource(httpClient, null);
-        var function = source.CreateToolRegistrations(Environment.CurrentDirectory, new CodingChatRunOptions())
+        var function = source.CreateToolRegistrations(ToolRegistrationTestContext.Create())
             .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == name);
         var arguments = new AIFunctionArguments { [parameter] = "https://example.invalid/" };
         object? missing = await function.InvokeAsync(arguments);
@@ -207,7 +207,7 @@ public sealed class DeepSeekWebToolSourceTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var httpClient = new HttpClient(new BlockingHandler(started, release));
         var source = new DeepSeekWebToolSource(httpClient, "old-test-key");
-        var function = source.CreateToolRegistrations(Environment.CurrentDirectory, new CodingChatRunOptions())
+        var function = source.CreateToolRegistrations(ToolRegistrationTestContext.Create())
             .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == "Search");
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
         var pending = function.InvokeAsync(arguments).AsTask();
@@ -458,8 +458,9 @@ public sealed class DeepSeekWebToolSourceTests
         using var handler = new RecordingHandler("{}");
         using var http = new HttpClient(handler);
         ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, key);
-        var tools = source.CreateToolRegistrations(Environment.CurrentDirectory,
+        var context = ToolRegistrationTestContext.Create(options:
             new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false });
+        var tools = source.CreateToolRegistrations(context);
 
         CollectionAssert.AreEquivalent(new[] { "Search", "Fetch" },
             tools.Select(tool => ((AIFunction)tool.Tool).Name).ToArray());
@@ -479,11 +480,11 @@ public sealed class DeepSeekWebToolSourceTests
         using var http = new HttpClient(handler);
         ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, null);
         var options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch };
-        var first = source.CreateToolRegistrations(Environment.CurrentDirectory, options)
+        var first = source.CreateToolRegistrations(ToolRegistrationTestContext.Create(options: options))
             .Select(tool => (AIFunction)tool.Tool).ToArray();
         options.EnableWebSearch = !search;
         options.EnableWebFetch = !fetch;
-        var second = source.CreateToolRegistrations(Environment.CurrentDirectory, options)
+        var second = source.CreateToolRegistrations(ToolRegistrationTestContext.Create(options: options))
             .Select(tool => (AIFunction)tool.Tool).ToArray();
         var arguments = new AIFunctionArguments { [parameter] = "https://example.com/" };
 
@@ -504,8 +505,9 @@ public sealed class DeepSeekWebToolSourceTests
     {
         using var http = new HttpClient();
         ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, null);
-        var function = source.CreateToolRegistrations(Environment.CurrentDirectory,
-                new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false })
+        var context = ToolRegistrationTestContext.Create(options:
+            new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false });
+        var function = source.CreateToolRegistrations(context)
             .Select(tool => (AIFunction)tool.Tool).Single(tool => tool.Name == name);
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -556,10 +558,10 @@ public sealed class DeepSeekWebToolSourceTests
     private static IReadOnlyList<AIFunction> CreateFunctions(HttpClient httpClient, string? apiKey, bool useInterface)
     {
         var source = new DeepSeekWebToolSource(httpClient, apiKey);
-        var runOptions = new CodingChatRunOptions();
+        var context = ToolRegistrationTestContext.Create();
         var registrations = useInterface
-            ? ((ICodingWorkspaceToolSource)source).CreateToolRegistrations(Environment.CurrentDirectory, runOptions)
-            : source.CreateToolRegistrations(Environment.CurrentDirectory, runOptions);
+            ? ((ICodingWorkspaceToolSource)source).CreateToolRegistrations(context)
+            : source.CreateToolRegistrations(context);
         return registrations.Select(registration => (AIFunction)registration.Tool).ToArray();
     }
 

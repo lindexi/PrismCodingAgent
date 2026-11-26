@@ -63,7 +63,7 @@ public sealed class WindowsSandboxToolSource : ICodingWorkspaceToolSource
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions)
+    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context)
     {
         WindowsSandboxConfiguration configuration = Volatile.Read(ref _configuration);
         if (!configuration.IsEnabled)
@@ -71,6 +71,8 @@ public sealed class WindowsSandboxToolSource : ICodingWorkspaceToolSource
             return [];
         }
 
+        string workspacePath = context.WorkspacePath
+            ?? throw new ArgumentException("启用 Windows 沙盒工具时必须提供工作区路径。", nameof(context));
         IWinRemoteShellRunner runner = _fixedRunner
             ?? new WinRemoteShellProcessRunner(configuration.ToolPath, configuration.ServerAddress);
         return new WindowsSandboxTools(workspacePath, runner).AsToolRegistrations();

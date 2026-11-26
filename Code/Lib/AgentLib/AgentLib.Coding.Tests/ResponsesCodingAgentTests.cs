@@ -406,7 +406,7 @@ public sealed class ResponsesCodingAgentTests
     {
         public int Executions { get; private set; }
 
-        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
             [new(AIFunctionFactory.Create(Add, "add"))];
 
         private int Add(int left, int right, CancellationToken cancellationToken)
@@ -423,13 +423,13 @@ public sealed class ResponsesCodingAgentTests
 
     private sealed class TestToolSource : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
             [new(AIFunctionFactory.Create((int left, int right) => left + right, "add"))];
     }
 
     private sealed class ThrowingToolSource : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
             [new(AIFunctionFactory.Create(Throw, "add"))];
 
         private static int Throw(int left, int right) => throw new IOException("test tool failure");

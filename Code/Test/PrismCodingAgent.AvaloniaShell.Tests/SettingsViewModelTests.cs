@@ -112,7 +112,7 @@ public sealed class SettingsViewModelTests
 
         await settingsService.SaveAsync(modelConfiguration, shellSettings);
 
-        Assert.IsEmpty(sandboxToolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions()));
+        Assert.IsEmpty(sandboxToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(workspacePath)));
     }
 
     [TestMethod(DisplayName = "任一工作任务保存设置后所有任务应使用最新沙箱配置")]
@@ -137,7 +137,7 @@ public sealed class SettingsViewModelTests
 
         await firstTaskSettingsService.SaveAsync(new AgentApiManagerConfiguration(), shellSettings);
 
-        Assert.IsEmpty(sandboxToolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions()));
+        Assert.IsEmpty(sandboxToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(workspacePath)));
     }
 
     [TestMethod(DisplayName = "模型配置损坏时应清空上次加载的模型并显示错误")]

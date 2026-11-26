@@ -37,7 +37,13 @@ public sealed class CodingAgentTests
                 value => capturedOptions = value,
                 cancellationToken),
         };
-        CodingRunContext context = CreateContext(client, new CopilotChatSession(CreateStorage()) { WorkspacePath = defaultWorkspace });
+        var toolContext = new CodingToolContext
+        {
+            Session = new CopilotChatSession(CreateStorage()) { WorkspacePath = defaultWorkspace },
+            WorkspacePath = "coding-workspace",
+        };
+        var context = new CodingRunContext(toolContext, client,
+            CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false));
         AITool codingTool = AIFunctionFactory.Create(() => "coding", "coding_only");
         await using var agent = CreateAgent(CreateProvider("coding-workspace", [codingTool]));
         IReadOnlyList<AIContent> contents =
@@ -49,7 +55,6 @@ public sealed class CodingAgentTests
 
         ICodingAgentRunResult result = await agent.RunAsync(
             context,
-            new CodingToolContext { Session = context.Session, WorkspacePath = "coding-workspace" },
             contents,
             CancellationToken.None);
         await streamStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -278,11 +283,11 @@ public sealed class CodingAgentTests
         var session = new CopilotChatSession(CreateStorage());
         await using var agent = CreateAgent(CreateProvider("workspace", []));
 
-        CodingRunContext failingContext = CreateContext(client, session);
+        var toolContext = new CodingToolContext { Session = session, WorkspacePath = "workspace" };
+        var failingContext = new CodingRunContext(toolContext, client,
+            CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false));
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => agent.RunAsync(
-            failingContext,
-            new CodingToolContext { Session = session, WorkspacePath = "workspace" },
-            new ThrowingReadOnlyList()));
+            failingContext, new ThrowingReadOnlyList()));
 
         ICodingAgentRunResult nextRun = await agent.RunAsync(
             CreateContext(client, session),
@@ -304,8 +309,7 @@ public sealed class CodingAgentTests
         var context = new CodingRunContext(client, CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
-        ICodingAgentRunResult run = await agent.RunAsync(context,
-            new CodingToolContext { Session = context.Session }, [new TextContent("任务")]);
+        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("任务")]);
         InvalidOperationException exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await run.CompletionTask);
 
@@ -621,21 +625,23 @@ public sealed class CodingAgentTests
 
     private sealed class FixedToolSource(IReadOnlyList<AITool> tools) : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions)
-        {
-            _ = workspacePath;
-            return tools.Select(tool => new ToolRegistration(tool)).ToArray();
-        }
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
+            tools.Select(tool => new ToolRegistration(tool)).ToArray();
     }
 
     private sealed class WorkspaceNamedToolSource : ICodingWorkspaceToolSource
     {
-        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(string workspacePath, CodingChatRunOptions runOptions) =>
-        [
-            new(AIFunctionFactory.Create(
-                () => workspacePath,
-                $"tool_{Path.GetFileName(workspacePath)}")),
-        ];
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context)
+        {
+            string workspacePath = context.WorkspacePath
+                ?? throw new ArgumentException("A workspace path is required to name the test tool.", nameof(context));
+            return
+            [
+                new(AIFunctionFactory.Create(
+                    () => workspacePath,
+                    $"tool_{Path.GetFileName(workspacePath)}")),
+            ];
+        }
     }
 
     private static TaskCompletionSource CompletedTaskSource()

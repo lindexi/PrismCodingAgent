@@ -41,10 +41,6 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
         var userMessage = new CopilotChatMessage(ChatRole.User, runContents);
         var assistantMessage = CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
-        var runContext = new CodingRunContext(client, assistantMessage, session)
-        {
-            ModelResolver = chatManager.AgentApiEndpointManager,
-        };
 
         await _lifecycleLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -54,7 +50,11 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
             try
             {
                 var toolContext = new CodingToolContext { Session = session, WorkspacePath = _workspacePath };
-                ICodingAgentRunResult runResult = await _codingAgent.RunAsync(runContext, toolContext, runContents,
+                var runContext = new CodingRunContext(toolContext, client, assistantMessage)
+                {
+                    ModelResolver = chatManager.AgentApiEndpointManager,
+                };
+                ICodingAgentRunResult runResult = await _codingAgent.RunAsync(runContext, runContents,
                     cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 return new ChatRoomRoleExecutionResult(runResult.AssistantChatMessage,

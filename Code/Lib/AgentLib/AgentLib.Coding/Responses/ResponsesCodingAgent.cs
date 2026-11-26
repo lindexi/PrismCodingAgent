@@ -46,22 +46,25 @@ public sealed class ResponsesCodingAgent
             throw new ArgumentException("编程任务内容不能为空。", nameof(contents));
         }
 
-        CodingChatRunOptions runOptions = toolContext.Options;
+        var runContext = new CodingRunContext(toolContext, context.ChatClient, context.AssistantChatMessage)
+            .NormalizeWorkspacePath();
+        CodingChatRunOptions runOptions = runContext.Options;
         var input = ResponseItem.CreateUserMessageItem(contents.Select(CreateInputPart));
         var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, runOptions, cancellationToken).ConfigureAwait(false);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel)
             .GetResponsesClientAsync().ConfigureAwait(false);
-        var workspaceContext = await _codingAgent.GetRunWorkspaceContextAsync(toolContext.WorkspacePath, runOptions, cancellationToken).ConfigureAwait(false);
+        var workspaceCache = await _codingAgent.GetWorkspaceCacheAsync(runContext, cancellationToken).ConfigureAwait(false);
+        var workspaceContext = _codingAgent.CreateRunWorkspaceContext(workspaceCache, runContext);
         var runner = new ResponsesCodingAgentRunner
         {
             MessageContext = context,
             Contents = contents,
-            Conversation = toolContext.Session.ResponsesSession,
+            Conversation = runContext.Session.ResponsesSession,
             Input = input,
             Instructions = string.Join(Environment.NewLine + Environment.NewLine, prompts),
             ClientContext = clientContext,
             Workspace = workspaceContext.WithTool(
-                ExecuteCommandTool.CreateRegistration(toolContext with { WorkspacePath = workspaceContext.WorkspacePath })),
+                ExecuteCommandTool.CreateRegistration(runContext)),
             CancellationToken = cancellationToken,
             ReasoningEffort = runOptions.ReasoningEffort,
             EnableAutomaticCompression = runOptions.EnableAutomaticCompression,

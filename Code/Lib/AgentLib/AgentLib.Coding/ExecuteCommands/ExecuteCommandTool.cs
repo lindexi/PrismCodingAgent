@@ -8,12 +8,12 @@ internal sealed class ExecuteCommandTool
 {
     private readonly ICommandHandler[] _handlers;
 
-    private ExecuteCommandTool(CodingToolContext context)
+    private ExecuteCommandTool(CodingRunContext context)
     {
         _handlers = [new GitDiffCommand(context.WorkspacePath, context.Session.Logger), new WinRemoteShellCommand(context)];
     }
 
-    internal static ToolRegistration CreateRegistration(CodingToolContext context)
+    internal static ToolRegistration CreateRegistration(CodingRunContext context)
     {
         var tool = new ExecuteCommandTool(context);
         return new ToolRegistration(AIFunctionFactory.Create(tool.RunAsync, new AIFunctionFactoryOptions

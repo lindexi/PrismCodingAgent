@@ -3,7 +3,7 @@ using AgentLib.Coding.Settings;
 
 namespace AgentLib.Coding.ExecuteCommands;
 
-internal sealed class WinRemoteShellCommand(CodingToolContext context) : ICommandHandler
+internal sealed class WinRemoteShellCommand(CodingRunContext context) : ICommandHandler
 {
     private const string Topic = "winremoteshell";
     private const string Usage = """

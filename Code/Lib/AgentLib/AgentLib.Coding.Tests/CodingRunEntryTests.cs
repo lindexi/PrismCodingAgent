@@ -23,6 +23,16 @@ public sealed class CodingRunEntryTests
     }
 
     [TestMethod]
+    public void CodingRunContextWhenCreatedWithToolContextShouldKeepProvidedSnapshot()
+    {
+        var toolContext = new CodingToolContext { Session = new CopilotChatSession(CreateStorage()) };
+        var context = new CodingRunContext(toolContext, new FakeChatClient(),
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false));
+
+        Assert.AreSame(toolContext, context.ToolContext);
+    }
+
+    [TestMethod]
     public void CodingRunContextWhenSessionIsNullShouldRejectIt()
     {
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
@@ -42,8 +52,7 @@ public sealed class CodingRunEntryTests
             CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), session);
         await using var agent = new CodingAgent();
 
-        ICodingAgentRunResult run = await agent.RunAsync(context,
-            new CodingToolContext { Session = session }, [new TextContent("task")]);
+        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")]);
         await run.CompletionTask;
 
         Assert.IsNotNull(session.AgentSession);
@@ -65,8 +74,7 @@ public sealed class CodingRunEntryTests
         var context = new CodingRunContext(client,
             CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
-        ICodingAgentRunResult run = await agent.RunAsync(context,
-            new CodingToolContext { Session = context.Session }, []);
+        ICodingAgentRunResult run = await agent.RunAsync(context, []);
         await run.CompletionTask;
 
         Assert.IsFalse(requests.SelectMany(messages => messages).Any(message => message.Role == ChatRole.User));
@@ -83,8 +91,7 @@ public sealed class CodingRunEntryTests
         var context = new CodingRunContext(client,
             CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
-        ICodingAgentRunResult run = await agent.RunAsync(context,
-            new CodingToolContext { Session = context.Session }, [new TextContent("task")]);
+        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")]);
 
         Assert.AreEqual("done", await run.CompletionTask);
     }
@@ -109,8 +116,7 @@ public sealed class CodingRunEntryTests
         var message = CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
         var context = new CodingRunContext(client, message, new CopilotChatSession(CreateStorage()));
 
-        ICodingAgentRunResult run = await agent.RunAsync(context,
-            new CodingToolContext { Session = context.Session }, [new TextContent("task")]);
+        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")]);
         await run.CompletionTask;
 
         Assert.AreEqual("done", message.Content);
@@ -146,16 +152,16 @@ public sealed class CodingRunEntryTests
         {
             ModelResolver = endpointManager,
         };
-        var firstRun = await agent.RunAsync(context, new CodingToolContext
+        var firstContext = context.WithToolContext(new CodingToolContext
         {
             Session = session,
             Options = new CodingChatRunOptions { EnableAutomaticCompression = false },
-        }, [new TextContent(new string('A', 300_000))]);
+        });
+        var firstRun = await agent.RunAsync(firstContext, [new TextContent(new string('A', 300_000))]);
         await firstRun.CompletionTask;
         calls.Clear();
 
-        var run = await agent.RunAsync(context,
-            new CodingToolContext { Session = session }, [new TextContent("follow-up")]);
+        var run = await agent.RunAsync(context, [new TextContent("follow-up")]);
         await run.CompletionTask;
 
         CollectionAssert.AreEqual(new[] { "compression", "chat" }, calls);
@@ -175,21 +181,21 @@ public sealed class CodingRunEntryTests
         };
         await using var agent = new CodingAgent();
         var message = CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false);
-        var context = new CodingRunContext(client, message, new CopilotChatSession(CreateStorage()));
+        var session = new CopilotChatSession(CreateStorage());
         var toolContext = new CodingToolContext
         {
-            Session = context.Session,
+            Session = session,
             Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
         };
-        ICodingAgentRunResult first = await agent.RunAsync(context, toolContext, [new TextContent("task")]);
+        var context = new CodingRunContext(toolContext, client, message);
+        ICodingAgentRunResult first = await agent.RunAsync(context, [new TextContent("task")]);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => first.CompletionTask);
         Assert.HasCount(1, requests);
         Assert.AreEqual("A", message.Content);
-        var session = context.Session;
         var agentSession = session.AgentSession;
-        var continuationContext = new CodingRunContext(client, message, session);
+        var continuationContext = new CodingRunContext(toolContext, client, message);
 
-        ICodingAgentRunResult second = await agent.RunAsync(continuationContext, toolContext, []);
+        ICodingAgentRunResult second = await agent.RunAsync(continuationContext, []);
         Assert.AreEqual("AB", await second.CompletionTask);
         Assert.AreSame(agentSession, continuationContext.Session.AgentSession);
         Assert.AreSame(message, second.AssistantChatMessage);
@@ -217,19 +223,21 @@ public sealed class CodingRunEntryTests
         using var http = new HttpClient();
         await using var agent = new CodingAgent(new CodingAgentOptions
             { AdditionalToolSources = [new DeepSeekWebToolSource(http, null)] });
-        var context = new CodingRunContext(client,
-            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
         string workspace = Path.Combine(Path.GetTempPath(), $"web-chat-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workspace);
         Console.WriteLine(workspace);
         var options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch };
 
-        var run = await agent.RunAsync(context, new CodingToolContext
+        var toolContext = new CodingToolContext
         {
-            Session = context.Session,
+            Session = new CopilotChatSession(CreateStorage()),
             WorkspacePath = workspace,
             Options = options,
-        }, [new TextContent("task")]);
+        };
+        var context = new CodingRunContext(toolContext, client,
+            CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false));
+
+        var run = await agent.RunAsync(context, [new TextContent("task")]);
         await run.CompletionTask;
         options.EnableWebSearch = !search;
         options.EnableWebFetch = !fetch;

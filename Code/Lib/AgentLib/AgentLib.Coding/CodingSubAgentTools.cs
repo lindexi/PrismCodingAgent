@@ -9,9 +9,8 @@ internal sealed class CodingSubAgentTools
 (
     CodingAgent agent,
     CodingRunContext parentContext,
-    CodingRunWorkspaceContext workspaceContext,
-    IReadOnlyList<string> prompts,
-    CodingToolContext parentTools
+    CodingWorkspaceCache? workspaceCache,
+    IReadOnlyList<string> prompts
 )
 {
     internal ToolRegistration CreateRegistration() => new(
@@ -38,7 +37,7 @@ internal sealed class CodingSubAgentTools
         foreach (string filePath in imageFilePaths ?? [])
         {
             contents.Add(await CodingWorkspaceContentTools.LoadImageContentAsync(
-                filePath, workspaceContext.WorkspacePath, cancellationToken).ConfigureAwait(false));
+                filePath, parentContext.WorkspacePath, cancellationToken).ConfigureAwait(false));
         }
 
         var model = parentContext.ModelResolver?.ResolveModel(CodingModelPurposes.CodeWriting);
@@ -60,26 +59,24 @@ internal sealed class CodingSubAgentTools
                 new ToolCallPresentation(name, string.IsNullOrWhiteSpace(modelName) ? null : modelName)).Details = childMessage;
         }).ConfigureAwait(false);
         var submission = new GeneratedTextSubmissionTool();
-        CodingRunWorkspaceContext childTools = workspaceContext.WithTool(new ToolRegistration(
-            submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
-
         var subSession = await CodingSubAgentSessions.GetOrCreateSessionAsync(
             parentContext.Session, childClient, name, cancellationToken).ConfigureAwait(false);
 
-        var context = new CodingRunContext(childClient, childMessage, subSession)
+        var context = new CodingRunContext(parentContext.ToolContext with { Session = subSession }, childClient, childMessage)
         {
             ModelResolver = parentContext.ModelResolver,
         };
+        CodingRunWorkspaceContext childTools = agent.CreateRunWorkspaceContext(workspaceCache, context)
+            .WithTool(new ToolRegistration(submission.CreateTool("ReturnOutputToParent", "提交最终结果文本。")));
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
-        CodingToolContext toolContext = parentTools with { Session = subSession };
         ICodingAgentRunResult run = await agent.RunAsync(context, contents, childTools,
-            childPrompts, toolContext, cancellationToken).ConfigureAwait(false);
+            childPrompts, cancellationToken).ConfigureAwait(false);
         await run.CompletionTask.ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         if (!submission.HasSubmittedText)
         {
             run = await agent.RunAsync(context, [new TextContent("要求调用 ReturnOutputToParent 方法")],
-                childTools, childPrompts, toolContext, cancellationToken).ConfigureAwait(false);
+                childTools, childPrompts, cancellationToken).ConfigureAwait(false);
             await run.CompletionTask.ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
         }

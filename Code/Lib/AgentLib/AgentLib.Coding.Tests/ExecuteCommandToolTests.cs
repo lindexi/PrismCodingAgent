@@ -1,5 +1,6 @@
 using AgentLib.Coding.ExecuteCommands;
 using AgentLib.Coding.Settings;
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Logging.Sessions;
 using AgentLib.Model;
 using AgentLib.Tools;
@@ -141,7 +142,8 @@ public sealed class ExecuteCommandToolTests
     {
         string storagePath = Path.Combine(Path.GetTempPath(), $"command-tests-{Guid.NewGuid():N}");
         var session = new CopilotChatSession(new FileSessionStorage(storagePath));
-        var context = new CodingToolContext { Session = session, Settings = settings };
+        var context = new CodingRunContext(new CodingToolContext { Session = session, Settings = settings },
+            new FakeChatClient(), CopilotChatMessage.CreateAssistant(string.Empty, isPresetInfo: false));
         return (AIFunction)ExecuteCommandTool.CreateRegistration(context).Tool;
     }
 }

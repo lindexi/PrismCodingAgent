@@ -1,6 +1,7 @@
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
+using AgentLib.Tools;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
@@ -32,6 +33,20 @@ public sealed class CodingSubAgentOutputTests
 
         Assert.AreEqual(("parent done", "submitted", expectedChildCalls),
             (result, scenario.ParentResult, scenario.DedicatedModelCalls));
+    }
+
+    [TestMethod]
+    public async Task DelegationShouldRegisterWorkspaceToolsForTheChildSession()
+    {
+        var workspace = Directory.CreateDirectory(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var parentSession = new CopilotChatSession(CreateStorage());
+        var toolSource = new SessionRecordingToolSource();
+        await using var agent = new CodingAgent(new CodingAgentOptions { AdditionalToolSources = [toolSource] });
+
+        var run = await new Scenario().StartAsync(agent, session: parentSession, workspacePath: workspace.FullName);
+        await run.CompletionTask;
+
+        Assert.AreEqual(2, toolSource.Sessions.Distinct().Count());
     }
 
     [TestMethod]
@@ -294,8 +309,7 @@ public sealed class CodingSubAgentOutputTests
         await using var agent = new CodingAgent();
         var session = new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher };
         var context = new CodingRunContext(client, message, session);
-        ICodingAgentRunResult run = await agent.RunAsync(context,
-            new CodingToolContext { Session = session }, [new TextContent("task")]);
+        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("task")]);
         await run.CompletionTask;
         Assert.IsFalse(outsideDispatcher);
         Assert.AreEqual(string.Empty, message.Content);
@@ -458,6 +472,17 @@ public sealed class CodingSubAgentOutputTests
         yield break;
     }
 
+    private sealed class SessionRecordingToolSource : ICodingWorkspaceToolSource
+    {
+        public List<CopilotChatSession> Sessions { get; } = [];
+
+        public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context)
+        {
+            Sessions.Add(context.Session);
+            return [];
+        }
+    }
+
     private sealed class Scenario(bool pause = false, bool retry = false, bool fallback = false,
         int delegations = 1, RecordingDispatcher? dispatcher = null)
     {
@@ -504,17 +529,17 @@ public sealed class CodingSubAgentOutputTests
                 },
             };
             endpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(childClient));
-            var context = new CodingRunContext(client, Message,
-                session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher })
+            var toolContext = new CodingToolContext
+            {
+                Session = session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher },
+                WorkspacePath = workspacePath,
+                Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+            };
+            var context = new CodingRunContext(toolContext, client, Message)
             {
                 ModelResolver = endpointManager,
             };
-            return agent.RunAsync(context, new CodingToolContext
-            {
-                Session = context.Session,
-                WorkspacePath = workspacePath,
-                Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
-            }, [new TextContent("parent task")], cancellationToken);
+            return agent.RunAsync(context, [new TextContent("parent task")], cancellationToken);
         }
 
         private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages,

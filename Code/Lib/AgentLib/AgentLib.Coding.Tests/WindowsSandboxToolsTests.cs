@@ -16,9 +16,10 @@ public sealed class WindowsSandboxToolsTests
         string workspacePath = CreateTestDirectory();
         var toolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
 
-        var beforeUpdate = toolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions());
+        var context = ToolRegistrationTestContext.Create(workspacePath);
+        var beforeUpdate = toolSource.CreateToolRegistrations(context);
         toolSource.UpdateConfiguration(false, string.Empty, string.Empty);
-        var afterUpdate = toolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions());
+        var afterUpdate = toolSource.CreateToolRegistrations(context);
 
         Assert.HasCount(1, beforeUpdate);
         Assert.IsEmpty(afterUpdate);
@@ -31,9 +32,27 @@ public sealed class WindowsSandboxToolsTests
         var toolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
         toolSource.UpdateConfiguration(true, "UpdatedShell.exe", "127.0.0.1:12400");
 
-        var tools = toolSource.CreateToolRegistrations(workspacePath, new CodingChatRunOptions());
+        var tools = toolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(workspacePath));
 
         Assert.AreEqual("execute_in_windows_sandbox", tools.Single().Tool.Name);
+    }
+
+    [TestMethod]
+    public void EnabledToolSourceWithoutWorkspaceShouldThrow()
+    {
+        var toolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
+        var context = ToolRegistrationTestContext.Create();
+
+        Assert.ThrowsExactly<ArgumentException>(() => toolSource.CreateToolRegistrations(context));
+    }
+
+    [TestMethod]
+    public void DisabledToolSourceWithoutWorkspaceShouldReturnNoTools()
+    {
+        var toolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
+        var context = ToolRegistrationTestContext.Create();
+
+        Assert.IsEmpty(toolSource.CreateToolRegistrations(context));
     }
 
     [TestMethod(DisplayName = "沙盒工具集合只应暴露高层执行工具")]
