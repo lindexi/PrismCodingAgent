@@ -538,6 +538,7 @@ internal sealed class CodingWorkTaskController
         WorkspacePath = _workspaceController.NextRunWorkspacePath,
         Options = options,
         Settings = _settingsService?.AppliedShellSettings,
+        HttpClient = _chatManager.AgentApiEndpointManager.HttpClient,
     };
 
     private async Task RunSingleMessageAsync

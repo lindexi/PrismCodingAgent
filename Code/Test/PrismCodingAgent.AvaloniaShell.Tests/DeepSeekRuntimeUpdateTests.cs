@@ -18,16 +18,14 @@ namespace PrismCodingAgent.AvaloniaShell.Tests;
 public sealed class DeepSeekRuntimeUpdateTests
 {
     [TestMethod]
-    public async Task SavingSettingsShouldUpdateAllExistingRuntimeFunctions()
+    public async Task SavingSettingsShouldUpdateNewFunctionsAcrossExistingRuntimes()
     {
         var paths = CreatePaths();
         using var firstHttp = new HttpClient(new OfflineHandler());
         using var secondHttp = new HttpClient(new OfflineHandler());
-        var firstSource = new DeepSeekWebToolSource(firstHttp, null);
-        var secondSource = new DeepSeekWebToolSource(secondHttp, null);
         var dispatcher = new Dispatcher();
-        var first = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, deepSeekWebToolSource: firstSource);
-        var second = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, deepSeekWebToolSource: secondSource);
+        var first = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher);
+        var second = await CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher);
         var abilities = new AbilityCatalog(paths.AbilitiesDirectory);
         var firstTask = MainViewModel.CreateRuntimeTask(first, new WorkTaskRecord(Guid.NewGuid(), "First", null, null, null), abilities);
         var secondTask = MainViewModel.CreateRuntimeTask(second, new WorkTaskRecord(Guid.NewGuid(), "Second", null, null, null), abilities);
@@ -35,9 +33,10 @@ public sealed class DeepSeekRuntimeUpdateTests
             new WorkTaskStore(paths), () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher), abilities, paths);
         await main.InitializeSettingsAsync();
         var settings = main.SettingsViewModel ?? throw new InvalidOperationException();
-        var functions = new[] { Search(firstSource), Search(secondSource) };
+        AIFunction[] RegisterFunctions() => [Search(first.SettingsService, firstHttp), Search(second.SettingsService, secondHttp)];
+        var originalFunctions = RegisterFunctions();
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
-        foreach (var function in functions)
+        foreach (var function in originalFunctions)
         {
             StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
         }
@@ -46,38 +45,41 @@ public sealed class DeepSeekRuntimeUpdateTests
         settings.DeepSeekApiKey = "saved-test-key";
         await ((SimpleAsyncCommand)settings.SaveCommand).ExecuteAsync();
 
-        foreach (var function in functions)
+        foreach (var function in RegisterFunctions())
         {
             Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
         }
+        foreach (var function in originalFunctions)
+        {
+            StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
+        }
         settings.DeepSeekApiKey = null;
         await ((SimpleAsyncCommand)settings.SaveCommand).ExecuteAsync();
-        foreach (var function in functions)
+        foreach (var function in RegisterFunctions())
         {
             StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
         }
     }
 
     [TestMethod]
-    public async Task SavingServiceShouldUpdateCachedFunctionWithoutShellEvent()
+    public async Task SavingServiceShouldUpdateNewFunctionsWithoutShellEvent()
     {
         var paths = CreatePaths();
         using var http = new HttpClient(new OfflineHandler());
-        var source = new DeepSeekWebToolSource(http, null);
-        var service = new CodingChatSettingsService(paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty), source);
-        var function = Search(source);
+        var service = new CodingChatSettingsService(paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
-        StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
+        async Task<string?> SearchNewRunAsync() => Text(await Search(service, http).InvokeAsync(arguments));
+        StringAssert.Contains(await SearchNewRunAsync(), "尚未配置");
 
         await service.SaveAsync(new AgentApiManagerConfiguration(), new PrismCodingAgentShellSettings { DeepSeekApiKey = "saved-test-key", LanguageTag = Lang.Current.IetfLanguageTag });
-        Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
+        Assert.AreEqual("{\"results\":[]}", await SearchNewRunAsync());
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
             OpenAIConfigurationList = [new OpenAIProtocolLanguageModelConfiguration("https://api.deepseek.com/v1", "saved-test-key")],
         }, new PrismCodingAgentShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
-        Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
+        Assert.AreEqual("{\"results\":[]}", await SearchNewRunAsync());
         await service.SaveAsync(new AgentApiManagerConfiguration(), new PrismCodingAgentShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
-        StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
+        StringAssert.Contains(await SearchNewRunAsync(), "尚未配置");
     }
 
     private static CodingChatRoomPaths CreatePaths()
@@ -87,8 +89,9 @@ public sealed class DeepSeekRuntimeUpdateTests
         return paths;
     }
 
-    private static AIFunction Search(DeepSeekWebToolSource source) =>
-        source.CreateToolRegistrations(ToolRegistrationTestContext.Create())
+    private static AIFunction Search(CodingChatSettingsService service, HttpClient httpClient) =>
+        DeepSeekWebToolSource.CreateToolRegistrations(
+                ToolRegistrationTestContext.Create(httpClient: httpClient, settings: service.AppliedShellSettings))
             .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == "Search");
 
     private static string? Text(object? value) => Assert.IsInstanceOfType<JsonElement>(value).GetString();

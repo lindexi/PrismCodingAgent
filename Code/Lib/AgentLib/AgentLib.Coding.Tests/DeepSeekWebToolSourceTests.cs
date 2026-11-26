@@ -20,39 +20,30 @@ public sealed class DeepSeekWebToolSourceTests
     }
 
     [TestMethod]
-    [DataRow(false, null)]
-    [DataRow(false, "")]
-    [DataRow(false, " \t\r\n")]
-    [DataRow(true, null)]
-    [DataRow(true, "")]
-    [DataRow(true, " \t\r\n")]
-    public void CreateToolRegistrationsWhenApiKeyIsMissingShouldRegisterBothFunctions(bool useInterface, string? apiKey)
+    [DataRow(null)]
+    [DataRow("")]
+    [DataRow(" \t\r\n")]
+    public void CreateToolRegistrationsWhenApiKeyIsMissingShouldRegisterBothFunctions(string? apiKey)
     {
         using var httpClient = new HttpClient();
-        IReadOnlyList<AIFunction> functions = CreateFunctions(httpClient, apiKey, useInterface);
+        IReadOnlyList<AIFunction> functions = CreateFunctions(httpClient, apiKey);
 
         CollectionAssert.AreEquivalent(new[] { "Search", "Fetch" },
             functions.Select(function => function.Name).ToArray());
     }
 
     [TestMethod]
-    [DataRow(false, null, "Search", "query")]
-    [DataRow(false, "", "Search", "query")]
-    [DataRow(false, " \t\r\n", "Search", "query")]
-    [DataRow(false, null, "Fetch", "url")]
-    [DataRow(false, "", "Fetch", "url")]
-    [DataRow(false, " \t\r\n", "Fetch", "url")]
-    [DataRow(true, null, "Search", "query")]
-    [DataRow(true, "", "Search", "query")]
-    [DataRow(true, " \t\r\n", "Search", "query")]
-    [DataRow(true, null, "Fetch", "url")]
-    [DataRow(true, "", "Fetch", "url")]
-    [DataRow(true, " \t\r\n", "Fetch", "url")]
+    [DataRow(null, "Search", "query")]
+    [DataRow("", "Search", "query")]
+    [DataRow(" \t\r\n", "Search", "query")]
+    [DataRow(null, "Fetch", "url")]
+    [DataRow("", "Fetch", "url")]
+    [DataRow(" \t\r\n", "Fetch", "url")]
     public async Task InvokeAsyncWhenApiKeyIsMissingShouldReturnSettingsHintAsync(
-        bool useInterface, string? apiKey, string toolName, string parameterName)
+        string? apiKey, string toolName, string parameterName)
     {
         using var httpClient = new HttpClient();
-        AIFunction function = CreateFunctions(httpClient, apiKey, useInterface).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, apiKey).Single(tool => tool.Name == toolName);
         var arguments = new AIFunctionArguments { [parameterName] = "https://example.invalid/" };
 
         object? result = await function.InvokeAsync(arguments);
@@ -61,19 +52,15 @@ public sealed class DeepSeekWebToolSourceTests
     }
 
     [TestMethod]
-    [DataRow(false, null, "Search", "query")]
-    [DataRow(false, null, "Fetch", "url")]
-    [DataRow(true, null, "Search", "query")]
-    [DataRow(true, null, "Fetch", "url")]
-    [DataRow(false, "offline-test-key", "Search", "query")]
-    [DataRow(false, "offline-test-key", "Fetch", "url")]
-    [DataRow(true, "offline-test-key", "Search", "query")]
-    [DataRow(true, "offline-test-key", "Fetch", "url")]
+    [DataRow(null, "Search", "query")]
+    [DataRow(null, "Fetch", "url")]
+    [DataRow("offline-test-key", "Search", "query")]
+    [DataRow("offline-test-key", "Fetch", "url")]
     public async Task InvokeAsyncWhenCanceledShouldPropagateCancellationAsync(
-        bool useInterface, string? apiKey, string toolName, string parameterName)
+        string? apiKey, string toolName, string parameterName)
     {
         using var httpClient = new HttpClient();
-        AIFunction function = CreateFunctions(httpClient, apiKey, useInterface).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, apiKey).Single(tool => tool.Name == toolName);
         var arguments = new AIFunctionArguments { [parameterName] = "https://example.invalid/" };
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -85,15 +72,13 @@ public sealed class DeepSeekWebToolSourceTests
     }
 
     [TestMethod]
-    [DataRow(false, "Search", "query", "query,count,needContent,originalQuestion,localization")]
-    [DataRow(false, "Fetch", "url", "url")]
-    [DataRow(true, "Search", "query", "query,count,needContent,originalQuestion,localization")]
-    [DataRow(true, "Fetch", "url", "url")]
+    [DataRow("Search", "query", "query,count,needContent,originalQuestion,localization")]
+    [DataRow("Fetch", "url", "url")]
     public void CreateToolRegistrationsShouldGenerateSerializableParameterSchema(
-        bool useInterface, string toolName, string requiredParameter, string parameters)
+        string toolName, string requiredParameter, string parameters)
     {
         using var httpClient = new HttpClient();
-        AIFunction function = CreateFunctions(httpClient, null, useInterface).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, null).Single(tool => tool.Name == toolName);
 
         using JsonDocument schema = JsonDocument.Parse(JsonSerializer.Serialize(function.JsonSchema));
 
@@ -107,16 +92,16 @@ public sealed class DeepSeekWebToolSourceTests
     }
 
     [TestMethod]
-    public void ConstructorWhenHttpClientIsNullShouldThrow()
+    public void RunWithoutHttpClientShouldNotRegisterTools()
     {
-        Assert.Throws<ArgumentNullException>(() => new DeepSeekWebToolSource(null!, null));
+        Assert.IsEmpty(DeepSeekWebToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create()));
     }
 
     [TestMethod]
     public void CreateToolRegistrationsShouldNotChangeHttpClientConfiguration()
     {
         using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(17) };
-        CreateFunctions(httpClient, "offline-test-key", false);
+        CreateFunctions(httpClient, "offline-test-key");
 
         Assert.AreEqual(TimeSpan.FromSeconds(17), httpClient.Timeout);
     }
@@ -127,7 +112,7 @@ public sealed class DeepSeekWebToolSourceTests
     public async Task InvokeAsyncShouldUseInjectedHttpClientAsync(string toolName, string parameterName, string response)
     {
         using var httpClient = new HttpClient(new OfflineHandler(response));
-        AIFunction function = CreateFunctions(httpClient, "offline-test-key", false).Single(tool => tool.Name == toolName);
+        AIFunction function = CreateFunctions(httpClient, "offline-test-key").Single(tool => tool.Name == toolName);
 
         object? result = await function.InvokeAsync(new AIFunctionArguments { [parameterName] = "https://example.invalid/" });
 
@@ -139,7 +124,7 @@ public sealed class DeepSeekWebToolSourceTests
     {
         const string response = "{\"results\":[]}";
         using var httpClient = new HttpClient(new OfflineHandler(response));
-        AIFunction function = CreateFunctions(httpClient, "offline-test-key", false).Single(tool => tool.Name == "Search");
+        AIFunction function = CreateFunctions(httpClient, "offline-test-key").Single(tool => tool.Name == "Search");
         await function.InvokeAsync(new AIFunctionArguments { ["query"] = "offline" });
 
         string content = await httpClient.GetStringAsync("https://example.invalid/");
@@ -178,50 +163,41 @@ public sealed class DeepSeekWebToolSourceTests
     [TestMethod]
     [DataRow("Search", "query", "{\"results\":[]}")]
     [DataRow("Fetch", "url", "{\"title\":\"Offline\",\"content\":\"Body\"}")]
-    public async Task UpdatingConfigurationShouldRefreshExistingFunctionAsync(string name, string parameter, string response)
+    public async Task EachRunShouldKeepItsOwnApiKeyAsync(string name, string parameter, string response)
     {
         var handler = new RecordingHandler(response);
-        using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(17) };
-        var source = new DeepSeekWebToolSource(httpClient, null);
-        var function = source.CreateToolRegistrations(ToolRegistrationTestContext.Create())
-            .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == name);
+        using var httpClient = new HttpClient(handler);
+        var first = CreateFunctions(httpClient, " first-test-key ").Single(tool => tool.Name == name);
+        var second = CreateFunctions(httpClient, "second-test-key").Single(tool => tool.Name == name);
         var arguments = new AIFunctionArguments { [parameter] = "https://example.invalid/" };
-        object? missing = await function.InvokeAsync(arguments);
 
-        source.UpdateConfiguration(" first-test-key ");
-        Assert.AreEqual(response, Assert.IsInstanceOfType<JsonElement>(await function.InvokeAsync(arguments)).GetString());
-        source.UpdateConfiguration("second-test-key");
-        await function.InvokeAsync(arguments);
-        source.UpdateConfiguration(" \t");
+        await first.InvokeAsync(arguments);
+        await second.InvokeAsync(arguments);
+        await first.InvokeAsync(arguments);
 
-        Assert.AreEqual(Assert.IsInstanceOfType<JsonElement>(missing).GetString(),
-            Assert.IsInstanceOfType<JsonElement>(await function.InvokeAsync(arguments)).GetString());
-        CollectionAssert.AreEqual(new[] { "first-test-key", "second-test-key" }, handler.Keys.ToArray());
-        Assert.AreEqual(TimeSpan.FromSeconds(17), httpClient.Timeout);
+        CollectionAssert.AreEqual(new[] { "first-test-key", "second-test-key", "first-test-key" }, handler.Keys.ToArray());
     }
 
     [TestMethod]
-    public async Task UpdatingConfigurationDuringRequestShouldKeepInFlightSnapshotAsync()
+    public async Task RegisteringNewRunDuringRequestShouldKeepInFlightSnapshotAsync()
     {
         var started = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var httpClient = new HttpClient(new BlockingHandler(started, release));
-        var source = new DeepSeekWebToolSource(httpClient, "old-test-key");
-        var function = source.CreateToolRegistrations(ToolRegistrationTestContext.Create())
-            .Select(registration => (AIFunction)registration.Tool).Single(tool => tool.Name == "Search");
+        var function = CreateFunctions(httpClient, "old-test-key").Single(tool => tool.Name == "Search");
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
         var pending = function.InvokeAsync(arguments).AsTask();
         try
         {
             Assert.AreEqual("old-test-key", await started.Task.WaitAsync(TimeSpan.FromSeconds(10)));
-            source.UpdateConfiguration(null);
+            var next = CreateFunctions(httpClient, null).Single(tool => tool.Name == "Search");
+            StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(await next.InvokeAsync(arguments)).GetString(), "尚未配置");
         }
         finally
         {
             release.TrySetResult();
         }
         Assert.AreEqual("{\"results\":[]}", Assert.IsInstanceOfType<JsonElement>(await pending).GetString());
-        StringAssert.Contains(Assert.IsInstanceOfType<JsonElement>(await function.InvokeAsync(arguments)).GetString(), "尚未配置");
     }
 
     [TestMethod]
@@ -234,7 +210,7 @@ public sealed class DeepSeekWebToolSourceTests
             {
                 Content = new StringContent("{\"error\":\"offline failure\",\"request_id\":\"req-offline\"}")
             })));
-        var function = CreateFunctions(httpClient, "offline-secret-key", false).Single(tool => tool.Name == operation);
+        var function = CreateFunctions(httpClient, "offline-secret-key").Single(tool => tool.Name == operation);
 
         var result = Assert.IsInstanceOfType<JsonElement>(await function.InvokeAsync(
             new AIFunctionArguments { [parameter] = "https://example.invalid/target" })).GetString();
@@ -363,7 +339,7 @@ public sealed class DeepSeekWebToolSourceTests
             "timeout" => throw new TaskCanceledException("offline timeout"),
             _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") })
         }));
-        var function = CreateFunctions(httpClient, "offline-secret-key", false).Single(tool => tool.Name == operation);
+        var function = CreateFunctions(httpClient, "offline-secret-key").Single(tool => tool.Name == operation);
 
         var result = Assert.IsInstanceOfType<JsonElement>(await function.InvokeAsync(
             new AIFunctionArguments { [parameter] = "offline-target" })).GetString();
@@ -393,7 +369,7 @@ public sealed class DeepSeekWebToolSourceTests
             return new HttpResponseMessage(HttpStatusCode.OK);
         }));
         using var cancellation = new CancellationTokenSource();
-        var function = CreateFunctions(httpClient, "offline-secret-key", false).Single(tool => tool.Name == operation);
+        var function = CreateFunctions(httpClient, "offline-secret-key").Single(tool => tool.Name == operation);
         var pending = function.InvokeAsync(new AIFunctionArguments { [parameter] = "offline-target" }, cancellation.Token).AsTask();
         await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
@@ -408,7 +384,7 @@ public sealed class DeepSeekWebToolSourceTests
     public async Task ProgrammingErrorsShouldNotBecomeToolResultsAsync(string operation, string parameter)
     {
         using var httpClient = new HttpClient(new FailureHandler((_, _) => throw new InvalidOperationException("offline bug")));
-        var function = CreateFunctions(httpClient, "offline-secret-key", false).Single(tool => tool.Name == operation);
+        var function = CreateFunctions(httpClient, "offline-secret-key").Single(tool => tool.Name == operation);
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await function.InvokeAsync(
             new AIFunctionArguments { [parameter] = "offline-target" }));
@@ -457,10 +433,9 @@ public sealed class DeepSeekWebToolSourceTests
     {
         using var handler = new RecordingHandler("{}");
         using var http = new HttpClient(handler);
-        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, key);
-        var context = ToolRegistrationTestContext.Create(options:
+        var context = ToolRegistrationTestContext.Create(httpClient: http, settings: new() { DeepSeekApiKey = key }, options:
             new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false });
-        var tools = source.CreateToolRegistrations(context);
+        var tools = DeepSeekWebToolSource.CreateToolRegistrations(context);
 
         CollectionAssert.AreEquivalent(new[] { "Search", "Fetch" },
             tools.Select(tool => ((AIFunction)tool.Tool).Name).ToArray());
@@ -478,13 +453,12 @@ public sealed class DeepSeekWebToolSourceTests
     {
         using var handler = new RecordingHandler("{}");
         using var http = new HttpClient(handler);
-        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, null);
         var options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch };
-        var first = source.CreateToolRegistrations(ToolRegistrationTestContext.Create(options: options))
+        var first = DeepSeekWebToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(options: options, httpClient: http))
             .Select(tool => (AIFunction)tool.Tool).ToArray();
         options.EnableWebSearch = !search;
         options.EnableWebFetch = !fetch;
-        var second = source.CreateToolRegistrations(ToolRegistrationTestContext.Create(options: options))
+        var second = DeepSeekWebToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(options: options, httpClient: http))
             .Select(tool => (AIFunction)tool.Tool).ToArray();
         var arguments = new AIFunctionArguments { [parameter] = "https://example.com/" };
 
@@ -504,10 +478,9 @@ public sealed class DeepSeekWebToolSourceTests
     public async Task DisabledToolsShouldPreserveCancellationAsync(string name, string parameter)
     {
         using var http = new HttpClient();
-        ICodingWorkspaceToolSource source = new DeepSeekWebToolSource(http, null);
-        var context = ToolRegistrationTestContext.Create(options:
+        var context = ToolRegistrationTestContext.Create(httpClient: http, options:
             new CodingChatRunOptions { EnableWebSearch = false, EnableWebFetch = false });
-        var function = source.CreateToolRegistrations(context)
+        var function = DeepSeekWebToolSource.CreateToolRegistrations(context)
             .Select(tool => (AIFunction)tool.Tool).Single(tool => tool.Name == name);
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -555,14 +528,11 @@ public sealed class DeepSeekWebToolSourceTests
         }
     }
 
-    private static IReadOnlyList<AIFunction> CreateFunctions(HttpClient httpClient, string? apiKey, bool useInterface)
+    private static IReadOnlyList<AIFunction> CreateFunctions(HttpClient httpClient, string? apiKey)
     {
-        var source = new DeepSeekWebToolSource(httpClient, apiKey);
-        var context = ToolRegistrationTestContext.Create();
-        var registrations = useInterface
-            ? ((ICodingWorkspaceToolSource)source).CreateToolRegistrations(context)
-            : source.CreateToolRegistrations(context);
-        return registrations.Select(registration => (AIFunction)registration.Tool).ToArray();
+        var context = ToolRegistrationTestContext.Create(httpClient: httpClient, settings: new() { DeepSeekApiKey = apiKey });
+        return DeepSeekWebToolSource.CreateToolRegistrations(context)
+            .Select(registration => (AIFunction)registration.Tool).ToArray();
     }
 
     private sealed class OfflineHandler(string response) : HttpMessageHandler

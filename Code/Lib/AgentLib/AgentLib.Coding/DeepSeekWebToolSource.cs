@@ -7,39 +7,27 @@ using Microsoft.Extensions.AI;
 namespace AgentLib.Coding;
 
 /// <summary>为编程代理提供 DeepSeek 网页搜索和网页抓取工具。</summary>
-public sealed class DeepSeekWebToolSource : ICodingWorkspaceToolSource
+public static class DeepSeekWebToolSource
 {
     private const string MissingApiKeyMessage =
         "尚未配置 DeepSeek API Key，网页搜索和网页拉取工具不可用。请提醒用户前往设置填写 DeepSeek API Key，或配置 DeepSeek 官方模型服务的 API Key，或者是不调用 Search 和 Fetch 工具。";
 
-    private readonly HttpClient _httpClient;
-    private DeepSeekClient? _client;
-
-    /// <summary>创建工具源；密钥为空时保留工具，但调用时仅返回配置提示。</summary>
-    /// <param name="httpClient">由宿主管理生命周期及配置的 HTTP 客户端，工具源不会修改或释放它。</param>
-    /// <param name="apiKey">DeepSeek 官方服务的 API Key。</param>
-    public DeepSeekWebToolSource(HttpClient httpClient, string? apiKey)
+    /// <summary>使用本轮上下文创建网页工具；没有 HTTP 客户端时不注册。</summary>
+    public static IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context)
     {
-        ArgumentNullException.ThrowIfNull(httpClient);
-        _httpClient = httpClient;
-        UpdateConfiguration(apiKey);
-    }
+        ArgumentNullException.ThrowIfNull(context);
+        if (context.HttpClient is not { } httpClient)
+        {
+            return [];
+        }
 
-    /// <summary>更新后续工具调用使用的密钥，不影响进行中的调用或宿主 HTTP 客户端。</summary>
-    /// <param name="apiKey">DeepSeek 官方服务的 API Key；为空时禁用网络调用。</param>
-    public void UpdateConfiguration(string? apiKey)
-    {
-        Volatile.Write(ref _client, string.IsNullOrWhiteSpace(apiKey)
-            ? null
-            : new DeepSeekClient(_httpClient, apiKey.Trim()));
-    }
-
-    /// <inheritdoc />
-    public IReadOnlyList<ToolRegistration> CreateToolRegistrations(CodingRunContext context) =>
-        new WebToolFunctions(source: this, enableSearch: context.Options.EnableWebSearch, enableFetch: context.Options.EnableWebFetch)
+        string? apiKey = context.Settings?.DeepSeekApiKey;
+        var client = string.IsNullOrWhiteSpace(apiKey) ? null : new DeepSeekClient(httpClient, apiKey.Trim());
+        return new WebToolFunctions(client, context.Options.EnableWebSearch, context.Options.EnableWebFetch)
             .CreateToolRegistrations();
+    }
 
-    private sealed class WebToolFunctions(DeepSeekWebToolSource source, bool enableSearch, bool enableFetch)
+    private sealed class WebToolFunctions(DeepSeekClient? client, bool enableSearch, bool enableFetch)
     {
         internal IReadOnlyList<ToolRegistration> CreateToolRegistrations() =>
         [
@@ -69,7 +57,6 @@ public sealed class DeepSeekWebToolSource : ICodingWorkspaceToolSource
             {
                 return "Search 已在当前对话运行设置中禁用，无法执行网页搜索。";
             }
-            DeepSeekClient? client = Volatile.Read(ref source._client);
             if (client is null)
             {
                 return MissingApiKeyMessage;
@@ -110,7 +97,6 @@ public sealed class DeepSeekWebToolSource : ICodingWorkspaceToolSource
             {
                 return "Fetch 已在当前对话运行设置中禁用，无法执行网页抓取。";
             }
-            DeepSeekClient? client = Volatile.Read(ref source._client);
             if (client is null)
             {
                 return MissingApiKeyMessage;

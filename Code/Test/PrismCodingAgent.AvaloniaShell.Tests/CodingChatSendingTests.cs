@@ -172,6 +172,23 @@ public sealed class CodingChatSendingTests
         Assert.AreSame(settings, runner.ObservedShellSettings);
     }
 
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task SendMessageAsyncShouldPassSharedHttpClientToTools()
+    {
+        var manager = CreateManager();
+        var runner = new TestCodingChatRunner(manager);
+        var application = CodingChatApplicationTestFactory.CreateApplication(manager, new TestSessionStore(), runner);
+        await application.InitializeAsync();
+
+        Task sendTask = application.SendMessageAsync("Check HTTP client");
+        await runner.Started.Task;
+        runner.Complete("Done");
+        await sendTask;
+
+        Assert.AreSame(manager.AgentApiEndpointManager.HttpClient, runner.ObservedHttpClient);
+    }
+
     [TestMethod(DisplayName = "发送默认应启用自动压缩")]
     [Timeout(5000)]
     public async Task SendMessageAsyncShouldEnableAutomaticCompressionByDefault()
@@ -664,6 +681,7 @@ public sealed class CodingChatSendingTests
         public string? ObservedWorkspacePath { get; private set; }
 
         public CodingChatShellSettings? ObservedShellSettings { get; private set; }
+        public System.Net.Http.HttpClient? ObservedHttpClient { get; private set; }
 
         public bool ObservedAutomaticCompressionEnabled { get; private set; }
 
@@ -692,6 +710,7 @@ public sealed class CodingChatSendingTests
             ObservedContents = contents;
             ObservedWorkspacePath = toolContext.WorkspacePath;
             ObservedShellSettings = toolContext.Settings;
+            ObservedHttpClient = toolContext.HttpClient;
             ObservedAutomaticCompressionEnabled = toolContext.Options.EnableAutomaticCompression;
             ObservedDotNetRunEnabled = toolContext.Options.EnableDotNetRun;
             ObservedReasoningEffort = toolContext.Options.ReasoningEffort;

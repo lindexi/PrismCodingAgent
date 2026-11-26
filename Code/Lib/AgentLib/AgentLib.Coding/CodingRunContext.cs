@@ -36,6 +36,9 @@ public sealed class CodingRunContext
     /// <summary>本次执行使用的全局设置。</summary>
     public CodingChatShellSettings? Settings => ToolContext.Settings;
 
+    /// <summary>本次执行的工具可复用的 HTTP 客户端。</summary>
+    public HttpClient? HttpClient => ToolContext.HttpClient;
+
     internal CodingRunContext WithToolContext(CodingToolContext toolContext)
     {
         ArgumentNullException.ThrowIfNull(toolContext);

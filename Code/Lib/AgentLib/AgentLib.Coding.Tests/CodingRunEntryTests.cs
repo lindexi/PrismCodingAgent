@@ -226,8 +226,7 @@ public sealed class CodingRunEntryTests
             },
         };
         using var http = new HttpClient();
-        await using var agent = new CodingAgent(new CodingAgentOptions
-            { AdditionalToolSources = [new DeepSeekWebToolSource(http, null)] });
+        await using var agent = new CodingAgent();
         string workspace = Path.Combine(Path.GetTempPath(), $"web-chat-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workspace);
         Console.WriteLine(workspace);
@@ -237,6 +236,7 @@ public sealed class CodingRunEntryTests
         {
             Session = new CopilotChatSession(CreateStorage()),
             WorkspacePath = workspace,
+            HttpClient = http,
             Options = options,
         };
         var context = new CodingRunContext(toolContext, client,

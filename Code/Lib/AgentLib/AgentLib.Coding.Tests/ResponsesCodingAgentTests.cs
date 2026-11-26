@@ -277,8 +277,7 @@ public sealed class ResponsesCodingAgentTests
             {"PrimaryModel":"demo","OpenAIConfigurationList":[{"EndPoint":"https://example.com/v1","Key":"test-key",
             "ModelDefinitions":[{"ModelName":"demo","ModelId":"model-id","Provider":"test"}]}]}
             """));
-        await using var coding = new CodingAgent(new CodingAgentOptions
-            { AdditionalToolSources = [new DeepSeekWebToolSource(webHttp, null)] });
+        await using var coding = new CodingAgent();
         var agent = new ResponsesCodingAgent(coding);
         string workspace = Path.Combine(Path.GetTempPath(), $"web-responses-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workspace);
@@ -289,6 +288,7 @@ public sealed class ResponsesCodingAgentTests
         {
             Session = context.Session,
             WorkspacePath = workspace,
+            HttpClient = webHttp,
             Options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch },
         }, [new TextContent("task")]);
         await run.CompletionTask;

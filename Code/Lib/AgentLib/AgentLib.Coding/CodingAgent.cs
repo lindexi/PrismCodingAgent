@@ -228,9 +228,11 @@ public sealed class CodingAgent : IAsyncDisposable
             return CodingRunWorkspaceContext.Empty;
         }
 
-        IReadOnlyList<ToolRegistration> additionalToolRegistrations = _additionalToolSources
-            .SelectMany(source => source.CreateToolRegistrations(context))
-            .ToArray();
+        ToolRegistration[] additionalToolRegistrations =
+        [
+            .. DeepSeekWebToolSource.CreateToolRegistrations(context),
+            .. _additionalToolSources.SelectMany(source => source.CreateToolRegistrations(context)),
+        ];
         return workspaceCache.CreateRunContext(additionalToolRegistrations, context.Options.EnableDotNetRun);
     }
 

@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using AgentLib.Coding;
 using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -21,7 +20,6 @@ internal sealed class CodingChatSettingsService
 
     private readonly CodingChatRoomPaths _paths;
     private readonly WindowsSandboxToolSource _windowsSandboxToolSource;
-    private readonly DeepSeekWebToolSource? _deepSeekWebToolSource;
 
     internal PrismCodingAgentShellSettings AppliedShellSettings { get; private set; } = new()
     {
@@ -31,15 +29,13 @@ internal sealed class CodingChatSettingsService
     public CodingChatSettingsService
     (
         CodingChatRoomPaths paths,
-        WindowsSandboxToolSource windowsSandboxToolSource,
-        DeepSeekWebToolSource? deepSeekWebToolSource = null
+        WindowsSandboxToolSource windowsSandboxToolSource
     )
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(windowsSandboxToolSource);
         _paths = paths;
         _windowsSandboxToolSource = windowsSandboxToolSource;
-        _deepSeekWebToolSource = deepSeekWebToolSource;
     }
 
     public async Task<CodingChatSettingsSnapshot> LoadAsync(CancellationToken cancellationToken = default)
@@ -105,9 +101,10 @@ internal sealed class CodingChatSettingsService
         AgentApiManagerConfiguration modelConfiguration,
         PrismCodingAgentShellSettings shellSettings)
     {
-        _deepSeekWebToolSource?.UpdateConfiguration(
-            DeepSeekApiKeyResolver.Resolve(shellSettings.DeepSeekApiKey, modelConfiguration));
-        AppliedShellSettings = shellSettings;
+        string? apiKey = DeepSeekApiKeyResolver.Resolve(shellSettings.DeepSeekApiKey, modelConfiguration);
+        AppliedShellSettings = apiKey == shellSettings.DeepSeekApiKey
+            ? shellSettings
+            : shellSettings with { DeepSeekApiKey = apiKey };
     }
 
     internal async Task<PrismCodingAgentShellSettings> LoadInitialShellSettingsAsync(CancellationToken cancellationToken = default)

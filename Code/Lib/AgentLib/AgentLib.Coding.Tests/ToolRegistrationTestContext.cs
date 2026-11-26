@@ -6,13 +6,16 @@ namespace AgentLib.Coding.Tests;
 
 internal static class ToolRegistrationTestContext
 {
-    internal static CodingRunContext Create(string? workspacePath = null, CodingChatRunOptions? options = null)
+    internal static CodingRunContext Create(string? workspacePath = null, CodingChatRunOptions? options = null,
+        HttpClient? httpClient = null, AgentLib.Coding.Settings.CodingChatShellSettings? settings = null)
     {
         var storage = new FileSessionStorage(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         var toolContext = new CodingToolContext
         {
             Session = new CopilotChatSession(storage),
             WorkspacePath = workspacePath,
+            HttpClient = httpClient,
+            Settings = settings,
             Options = options ?? new CodingChatRunOptions(),
         };
         return new CodingRunContext(toolContext, new FakeChatClient(),

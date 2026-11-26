@@ -29,7 +29,6 @@ internal static class CodingWorkTaskRuntimeFactory
         CodingChatRoomPaths paths,
         IMainThreadDispatcher mainThreadDispatcher,
         WindowsSandboxToolSource? windowsSandboxToolSource = null,
-        DeepSeekWebToolSource? deepSeekWebToolSource = null,
         FileCopilotChatLogger? fileLogger = null,
         ISessionCopilotChatLogger? processLogger = null
     )
@@ -60,9 +59,7 @@ internal static class CodingWorkTaskRuntimeFactory
             winRemoteShellPath: string.Empty,
             serverAddress: string.Empty
         );
-        deepSeekWebToolSource ??= new DeepSeekWebToolSource(
-            endpointManager.HttpClient ?? throw new InvalidOperationException(), null);
-        var settingsService = new CodingChatSettingsService(paths, windowsSandboxToolSource, deepSeekWebToolSource);
+        var settingsService = new CodingChatSettingsService(paths, windowsSandboxToolSource);
         var shellSettings = await settingsService
             .LoadInitialShellSettingsAsync()
             .ConfigureAwait(false);
@@ -76,7 +73,6 @@ internal static class CodingWorkTaskRuntimeFactory
         endpointManager.WebProxy = CreateWebProxy(shellSettings);
         var additionalToolSources = new List<ICodingWorkspaceToolSource>
         {
-            deepSeekWebToolSource,
             new CodingImageAnalysisToolSource(chatManager),
             windowsSandboxToolSource,
         };

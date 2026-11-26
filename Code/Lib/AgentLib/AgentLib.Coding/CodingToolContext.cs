@@ -17,4 +17,7 @@ public sealed record CodingToolContext
 
     /// <summary>宿主在本轮开始时提供的生效全局设置。</summary>
     public CodingChatShellSettings? Settings { get; init; }
+
+    /// <summary>宿主管理的共享 HTTP 客户端；工具不得修改或释放它。</summary>
+    public HttpClient? HttpClient { get; init; }
 }
