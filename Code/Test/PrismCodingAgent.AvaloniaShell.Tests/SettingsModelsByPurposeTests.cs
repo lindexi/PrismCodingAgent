@@ -97,7 +97,7 @@ public sealed class SettingsModelsByPurposeTests
             new WindowsSandboxToolSource(false, string.Empty, string.Empty));
     }
 
-    private static CodingChatShellSettings ShellSettings() => new() { LanguageTag = Lang.Current.IetfLanguageTag };
+    private static PrismCodingAgentShellSettings ShellSettings() => new() { LanguageTag = Lang.Current.IetfLanguageTag };
 
     private static AgentApiManagerConfiguration Configuration(IReadOnlyDictionary<string, string>? mappings) => new()
     {

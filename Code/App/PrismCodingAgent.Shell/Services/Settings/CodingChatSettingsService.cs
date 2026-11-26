@@ -23,7 +23,7 @@ internal sealed class CodingChatSettingsService
     private readonly WindowsSandboxToolSource _windowsSandboxToolSource;
     private readonly DeepSeekWebToolSource? _deepSeekWebToolSource;
 
-    internal CodingChatShellSettings AppliedShellSettings { get; private set; } = new()
+    internal PrismCodingAgentShellSettings AppliedShellSettings { get; private set; } = new()
     {
         LanguageTag = ShellLanguage.GetDefault(),
     };
@@ -46,7 +46,7 @@ internal sealed class CodingChatSettingsService
     {
         _paths.EnsureDirectories();
 
-        CodingChatShellSettings shellSettings = await LoadInitialShellSettingsAsync(cancellationToken).ConfigureAwait(false);
+        PrismCodingAgentShellSettings shellSettings = await LoadInitialShellSettingsAsync(cancellationToken).ConfigureAwait(false);
         AgentApiManagerConfiguration? modelConfiguration = null;
         string? modelConfigurationError = null;
 
@@ -71,7 +71,7 @@ internal sealed class CodingChatSettingsService
     public async Task SaveAsync
     (
         AgentApiManagerConfiguration modelConfiguration,
-        CodingChatShellSettings shellSettings,
+        PrismCodingAgentShellSettings shellSettings,
         CancellationToken cancellationToken = default
     )
     {
@@ -103,27 +103,27 @@ internal sealed class CodingChatSettingsService
 
     internal void ApplyShellSettings(
         AgentApiManagerConfiguration modelConfiguration,
-        CodingChatShellSettings shellSettings)
+        PrismCodingAgentShellSettings shellSettings)
     {
         _deepSeekWebToolSource?.UpdateConfiguration(
             DeepSeekApiKeyResolver.Resolve(shellSettings.DeepSeekApiKey, modelConfiguration));
         AppliedShellSettings = shellSettings;
     }
 
-    internal async Task<CodingChatShellSettings> LoadInitialShellSettingsAsync(CancellationToken cancellationToken = default)
+    internal async Task<PrismCodingAgentShellSettings> LoadInitialShellSettingsAsync(CancellationToken cancellationToken = default)
     {
         _paths.ShellSettingsFile.Refresh();
         return _paths.ShellSettingsFile.Exists
             ? await LoadShellSettingsAsync(cancellationToken).ConfigureAwait(false)
-            : new CodingChatShellSettings { IsWindowsSandboxEnabled = false, LanguageTag = ShellLanguage.GetDefault() };
+            : new PrismCodingAgentShellSettings { IsWindowsSandboxEnabled = false, LanguageTag = ShellLanguage.GetDefault() };
     }
 
-    public async Task<CodingChatShellSettings> LoadShellSettingsAsync(CancellationToken cancellationToken = default)
+    public async Task<PrismCodingAgentShellSettings> LoadShellSettingsAsync(CancellationToken cancellationToken = default)
     {
         _paths.ShellSettingsFile.Refresh();
         if (!_paths.ShellSettingsFile.Exists)
         {
-            return new CodingChatShellSettings { LanguageTag = ShellLanguage.GetDefault() };
+            return new PrismCodingAgentShellSettings { LanguageTag = ShellLanguage.GetDefault() };
         }
 
         string json = await File.ReadAllTextAsync
@@ -131,8 +131,8 @@ internal sealed class CodingChatSettingsService
             _paths.ShellSettingsFile.FullName,
             cancellationToken
         ).ConfigureAwait(false);
-        var settings = JsonSerializer.Deserialize<CodingChatShellSettings>(json, s_jsonOptions)
-                       ?? new CodingChatShellSettings();
+        var settings = JsonSerializer.Deserialize<PrismCodingAgentShellSettings>(json, s_jsonOptions)
+                       ?? new PrismCodingAgentShellSettings();
         return settings with
         {
             LanguageTag = settings.LanguageTag is { } languageTag
@@ -145,7 +145,7 @@ internal sealed class CodingChatSettingsService
 internal sealed record CodingChatSettingsSnapshot
 (
     AgentApiManagerConfiguration? ModelConfiguration,
-    CodingChatShellSettings ShellSettings,
+    PrismCodingAgentShellSettings ShellSettings,
     string? ModelConfigurationError
 );
 

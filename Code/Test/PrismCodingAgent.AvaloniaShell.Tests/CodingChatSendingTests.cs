@@ -157,7 +157,7 @@ public sealed class CodingChatSendingTests
         var settingsService = new CodingChatSettingsService(
             CodingChatRoomPaths.Create(CreateTestDirectory()),
             new WindowsSandboxToolSource(false, string.Empty, string.Empty));
-        var settings = new CodingChatShellSettings { LanguageTag = "en", IsWindowsSandboxEnabled = false };
+        var settings = new PrismCodingAgentShellSettings { LanguageTag = "en", IsWindowsSandboxEnabled = false };
         settingsService.ApplyShellSettings(new AgentApiManagerConfiguration(), settings);
         var application = CodingChatApplicationTestFactory.CreateApplication(
             manager, new TestSessionStore(), runner, settingsService: settingsService);

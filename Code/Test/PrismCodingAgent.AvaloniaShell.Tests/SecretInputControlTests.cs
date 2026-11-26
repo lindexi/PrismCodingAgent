@@ -139,7 +139,7 @@ public sealed class SecretInputControlTests
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
             OpenAIConfigurationList = [new("https://api.deepseek.com", "loaded-test-key")],
-        }, new CodingChatShellSettings());
+        }, new PrismCodingAgentShellSettings());
         using var settings = new SettingsViewModel(service, static () => { });
         var view = new SettingsView { DataContext = settings };
         var window = new Window { Content = view, Width = 900, Height = 700 };

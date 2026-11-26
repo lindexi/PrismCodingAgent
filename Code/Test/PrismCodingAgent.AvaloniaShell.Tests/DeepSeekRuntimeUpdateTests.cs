@@ -69,14 +69,14 @@ public sealed class DeepSeekRuntimeUpdateTests
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
         StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
 
-        await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings { DeepSeekApiKey = "saved-test-key", LanguageTag = Lang.Current.IetfLanguageTag });
+        await service.SaveAsync(new AgentApiManagerConfiguration(), new PrismCodingAgentShellSettings { DeepSeekApiKey = "saved-test-key", LanguageTag = Lang.Current.IetfLanguageTag });
         Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
             OpenAIConfigurationList = [new OpenAIProtocolLanguageModelConfiguration("https://api.deepseek.com/v1", "saved-test-key")],
-        }, new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
+        }, new PrismCodingAgentShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         Assert.AreEqual("{\"results\":[]}", Text(await function.InvokeAsync(arguments)));
-        await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
+        await service.SaveAsync(new AgentApiManagerConfiguration(), new PrismCodingAgentShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         StringAssert.Contains(Text(await function.InvokeAsync(arguments)), "尚未配置");
     }
 

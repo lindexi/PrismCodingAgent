@@ -60,7 +60,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     private bool _isNetworkProxyEnabled;
     private string? _networkProxyAddress;
     private bool _bypassProxyOnLocal = true;
-    private CodingChatShellSettings _shellSettings = new() { LanguageTag = ShellLanguage.GetDefault() };
+    private PrismCodingAgentShellSettings _shellSettings = new() { LanguageTag = ShellLanguage.GetDefault() };
     private bool _isCopilotInstructionsEnabled;
     private string? _copilotInstructionsPath;
     private string? _statusMessage;
@@ -218,7 +218,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     }
 
     /// <summary>设置页正在编辑的 Shell 设置。</summary>
-    public CodingChatShellSettings ShellSettings
+    public PrismCodingAgentShellSettings ShellSettings
     {
         get => _shellSettings;
         private set => SetField(ref _shellSettings, value);

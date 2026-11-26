@@ -20,7 +20,7 @@ public sealed class DeepSeekSettingsTests
     public async Task WhenLoadingSettingsThenOnlyOfficialServiceCanFillMissingKey(string? savedKey, string endpoint, string? expected)
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration(endpoint), new CodingChatShellSettings { DeepSeekApiKey = savedKey, LanguageTag = Lang.Current.IetfLanguageTag });
+        await service.SaveAsync(Configuration(endpoint), new PrismCodingAgentShellSettings { DeepSeekApiKey = savedKey, LanguageTag = Lang.Current.IetfLanguageTag });
         var viewModel = new SettingsViewModel(service, static () => { });
 
         await viewModel.LoadAsync();
@@ -35,7 +35,7 @@ public sealed class DeepSeekSettingsTests
     public async Task WhenSavingKeyThenNewViewModelLoadsPersistedResolvedKey(string? input, string expected)
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
+        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new PrismCodingAgentShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         var viewModel = new SettingsViewModel(service, static () => { });
         await viewModel.LoadAsync();
         viewModel.DeepSeekApiKey = input;
@@ -77,7 +77,7 @@ public sealed class DeepSeekSettingsTests
     public async Task WhenSavingAutomaticKeyThenProviderChangesStillUpdateIt()
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new CodingChatShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
+        await service.SaveAsync(Configuration("https://api.deepseek.com/v1"), new PrismCodingAgentShellSettings { LanguageTag = Lang.Current.IetfLanguageTag });
         using var settings = new SettingsViewModel(service, static () => { });
         await settings.LoadAsync();
         await ((SimpleAsyncCommand)settings.SaveCommand).ExecuteAsync();

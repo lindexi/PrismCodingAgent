@@ -1,11 +1,8 @@
 namespace PrismCodingAgent.CodingShell.Services.Settings;
 
-/// <summary>Shell 的全局设置。</summary>
-public sealed record CodingChatShellSettings
+/// <summary>可由应用扩展的通用 Shell 设置。</summary>
+public record CodingChatShellSettings
 {
-    /// <summary>获取配置的 CPA 额度查询服务。</summary>
-    public CpaQuotaConfiguration[] CpaQuotaServices { get; init; } = [];
-
     /// <summary>获取界面语言标签；未配置时由 Shell 决定默认语言。</summary>
     public string? LanguageTag { get; init; }
 

@@ -195,7 +195,7 @@ public sealed class PurposeModelSettingsTests
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
             ModelsByPurpose = new Dictionary<string, string> { ["Reasoning"] = "Deleted/Model" },
-        }, new CodingChatShellSettings());
+        }, new PrismCodingAgentShellSettings());
         using var vm = new SettingsViewModel(service, () => { });
         await vm.LoadAsync();
         var row = vm.PurposeModels.Single(row => row.PurposeKey == "Reasoning");

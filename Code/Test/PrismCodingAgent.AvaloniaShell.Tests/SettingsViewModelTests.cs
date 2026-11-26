@@ -20,7 +20,7 @@ public sealed class SettingsViewModelTests
         var settingsService = new CodingChatSettingsService(
             CodingChatRoomPaths.Create(rootDirectory),
             new WindowsSandboxToolSource(false, string.Empty, string.Empty));
-        var shellSettings = new CodingChatShellSettings
+        var shellSettings = new PrismCodingAgentShellSettings
         {
             IsNetworkProxyEnabled = true,
             NetworkProxyAddress = "http://127.0.0.1:7890",
@@ -29,9 +29,40 @@ public sealed class SettingsViewModelTests
         };
 
         await settingsService.SaveAsync(new AgentApiManagerConfiguration(), shellSettings);
-        CodingChatShellSettings loaded = await settingsService.LoadShellSettingsAsync();
+        var loaded = await settingsService.LoadShellSettingsAsync();
 
         Assert.AreEqual(shellSettings, loaded with { CpaQuotaServices = shellSettings.CpaQuotaServices });
+    }
+
+    [TestMethod]
+    public async Task CpaQuotaSettingsShouldPersist()
+    {
+        var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        var settingsService = new CodingChatSettingsService(
+            paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var quota = new CpaQuotaConfiguration("https://example.com", "offline", "test-service", true);
+
+        await settingsService.SaveAsync(new AgentApiManagerConfiguration(),
+            new PrismCodingAgentShellSettings { CpaQuotaServices = [quota] });
+        var loaded = await settingsService.LoadShellSettingsAsync();
+
+        Assert.AreEqual(quota, loaded.CpaQuotaServices.Single());
+    }
+
+    [TestMethod]
+    public async Task LegacyShellSettingsShouldLoadCpaQuotaServices()
+    {
+        var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        paths.EnsureDirectories();
+        var settingsService = new CodingChatSettingsService(
+            paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName,
+            """{"CpaQuotaServices":[{"Address":"https://example.com","ManagementKey":"offline","Name":"legacy-service","IsPrimary":true}]}""");
+
+        var loaded = await settingsService.LoadShellSettingsAsync();
+
+        Assert.AreEqual(new CpaQuotaConfiguration("https://example.com", "offline", "legacy-service", true),
+            loaded.CpaQuotaServices.Single());
     }
 
     [TestMethod(DisplayName = "启用网络代理时应创建对应 WebProxy")]
@@ -71,7 +102,7 @@ public sealed class SettingsViewModelTests
             CodingChatRoomPaths.Create(rootDirectory),
             sandboxToolSource);
         var modelConfiguration = new AgentApiManagerConfiguration();
-        var shellSettings = new CodingChatShellSettings
+        var shellSettings = new PrismCodingAgentShellSettings
         {
             IsWindowsSandboxEnabled = false,
             WindowsSandboxToolPath = string.Empty,
@@ -96,7 +127,7 @@ public sealed class SettingsViewModelTests
         _ = new CodingChatSettingsService(
             CodingChatRoomPaths.Create(rootDirectory),
             sandboxToolSource);
-        var shellSettings = new CodingChatShellSettings
+        var shellSettings = new PrismCodingAgentShellSettings
         {
             IsWindowsSandboxEnabled = false,
             WindowsSandboxToolPath = string.Empty,

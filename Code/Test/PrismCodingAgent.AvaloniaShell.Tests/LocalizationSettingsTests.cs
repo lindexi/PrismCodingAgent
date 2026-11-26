@@ -86,7 +86,7 @@ public sealed class LocalizationSettingsTests
             string root = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
             var service = new CodingChatSettingsService(CodingChatRoomPaths.Create(root),
                 new WindowsSandboxToolSource(false, string.Empty, string.Empty));
-            await service.SaveAsync(new AgentApiManagerConfiguration(), new CodingChatShellSettings { LanguageTag = savedLanguage });
+            await service.SaveAsync(new AgentApiManagerConfiguration(), new PrismCodingAgentShellSettings { LanguageTag = savedLanguage });
 
             var settings = await service.LoadInitialShellSettingsAsync();
 

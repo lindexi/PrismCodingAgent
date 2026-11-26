@@ -62,7 +62,7 @@ internal static class CodingWorkTaskRuntimeFactory
         deepSeekWebToolSource ??= new DeepSeekWebToolSource(
             endpointManager.HttpClient ?? throw new InvalidOperationException(), null);
         var settingsService = new CodingChatSettingsService(paths, windowsSandboxToolSource, deepSeekWebToolSource);
-        CodingChatShellSettings shellSettings = await settingsService
+        var shellSettings = await settingsService
             .LoadInitialShellSettingsAsync()
             .ConfigureAwait(false);
         windowsSandboxToolSource.UpdateConfiguration
