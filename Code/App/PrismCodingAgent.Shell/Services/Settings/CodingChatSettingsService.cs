@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Localizations;
@@ -19,23 +18,16 @@ internal sealed class CodingChatSettingsService
     };
 
     private readonly CodingChatRoomPaths _paths;
-    private readonly WindowsSandboxToolSource _windowsSandboxToolSource;
 
     internal PrismCodingAgentShellSettings AppliedShellSettings { get; private set; } = new()
     {
         LanguageTag = ShellLanguage.GetDefault(),
     };
 
-    public CodingChatSettingsService
-    (
-        CodingChatRoomPaths paths,
-        WindowsSandboxToolSource windowsSandboxToolSource
-    )
+    public CodingChatSettingsService(CodingChatRoomPaths paths)
     {
         ArgumentNullException.ThrowIfNull(paths);
-        ArgumentNullException.ThrowIfNull(windowsSandboxToolSource);
         _paths = paths;
-        _windowsSandboxToolSource = windowsSandboxToolSource;
     }
 
     public async Task<CodingChatSettingsSnapshot> LoadAsync(CancellationToken cancellationToken = default)
@@ -89,12 +81,6 @@ internal sealed class CodingChatSettingsService
         ).ConfigureAwait(false);
 
         ApplyShellSettings(modelConfiguration, shellSettings);
-        _windowsSandboxToolSource.UpdateConfiguration
-        (
-            shellSettings.IsWindowsSandboxEnabled,
-            shellSettings.WindowsSandboxToolPath,
-            shellSettings.WindowsSandboxServerAddress
-        );
     }
 
     internal void ApplyShellSettings(

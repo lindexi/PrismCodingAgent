@@ -8,9 +8,8 @@ internal static class CodingChatTestHost
         CodingRunContext context, string prompt, string? workspacePath,
         bool enableAutomaticCompression = true, bool enableDotNetRun = false,
         CancellationToken cancellationToken = default) =>
-        agent.RunAsync(context.WithToolContext(new CodingToolContext
+        agent.RunAsync(context.WithToolContext(context.ToolContext with
         {
-            Session = context.Session,
             WorkspacePath = workspacePath,
             Options = new CodingChatRunOptions
             {

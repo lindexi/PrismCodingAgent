@@ -1,7 +1,6 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Coding.Settings;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
@@ -155,9 +154,7 @@ public sealed class CodingChatSendingTests
     {
         var manager = CreateManager();
         var runner = new TestCodingChatRunner(manager);
-        var settingsService = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(CreateTestDirectory()),
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var settingsService = new CodingChatSettingsService(CodingChatRoomPaths.Create(CreateTestDirectory()));
         var settings = new PrismCodingAgentShellSettings { LanguageTag = "en", IsWindowsSandboxEnabled = false };
         settingsService.ApplyShellSettings(new AgentApiManagerConfiguration(), settings);
         var application = CodingChatApplicationTestFactory.CreateApplication(

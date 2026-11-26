@@ -10,49 +10,38 @@ namespace AgentLib.Coding.Tests;
 [TestClass]
 public sealed class WindowsSandboxToolsTests
 {
-    [TestMethod(DisplayName = "禁用沙盒后下一次工具装配应不再包含执行工具")]
-    public void ToolSourceWhenDisabledShouldReturnNoTools()
+    [TestMethod]
+    public void CreateRegistrationsWithEnabledSandboxShouldReturnExecutionTool()
     {
-        string workspacePath = CreateTestDirectory();
-        var toolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
+        var context = ToolRegistrationTestContext.Create(CreateTestDirectory(), settings: new());
 
-        var context = ToolRegistrationTestContext.Create(workspacePath);
-        var beforeUpdate = toolSource.CreateToolRegistrations(context);
-        toolSource.UpdateConfiguration(false, string.Empty, string.Empty);
-        var afterUpdate = toolSource.CreateToolRegistrations(context);
-
-        Assert.HasCount(1, beforeUpdate);
-        Assert.IsEmpty(afterUpdate);
-    }
-
-    [TestMethod(DisplayName = "重新启用沙盒后下一次工具装配应恢复执行工具")]
-    public void ToolSourceWhenReenabledShouldReturnTool()
-    {
-        string workspacePath = CreateTestDirectory();
-        var toolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
-        toolSource.UpdateConfiguration(true, "UpdatedShell.exe", "127.0.0.1:12400");
-
-        var tools = toolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(workspacePath));
+        var tools = WindowsSandboxTools.CreateRegistrations(context);
 
         Assert.AreEqual("execute_in_windows_sandbox", tools.Single().Tool.Name);
     }
 
     [TestMethod]
-    public void EnabledToolSourceWithoutWorkspaceShouldThrow()
+    public void CreateRegistrationsWithoutWorkspaceShouldReturnNoTools()
     {
-        var toolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
-        var context = ToolRegistrationTestContext.Create();
+        var context = ToolRegistrationTestContext.Create(settings: new());
 
-        Assert.ThrowsExactly<ArgumentException>(() => toolSource.CreateToolRegistrations(context));
+        Assert.IsEmpty(WindowsSandboxTools.CreateRegistrations(context));
     }
 
     [TestMethod]
-    public void DisabledToolSourceWithoutWorkspaceShouldReturnNoTools()
+    [DataRow(false, "WinRemoteShell.exe", "127.0.0.1:12399")]
+    [DataRow(true, " ", "127.0.0.1:12399")]
+    [DataRow(true, "WinRemoteShell.exe", " ")]
+    public void CreateRegistrationsWithUnavailableSandboxShouldReturnNoTools(bool enabled, string path, string address)
     {
-        var toolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
-        var context = ToolRegistrationTestContext.Create();
+        var context = ToolRegistrationTestContext.Create(CreateTestDirectory(), settings: new()
+        {
+            IsWindowsSandboxEnabled = enabled,
+            WindowsSandboxToolPath = path,
+            WindowsSandboxServerAddress = address,
+        });
 
-        Assert.IsEmpty(toolSource.CreateToolRegistrations(context));
+        Assert.IsEmpty(WindowsSandboxTools.CreateRegistrations(context));
     }
 
     [TestMethod(DisplayName = "沙盒工具集合只应暴露高层执行工具")]

@@ -1,4 +1,3 @@
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -93,8 +92,7 @@ public sealed class SettingsModelsByPurposeTests
     {
         string root = Path.Join(Path.GetTempPath(), "PrismPurposeMappingTests", Guid.NewGuid().ToString("N"));
         TestContext.WriteLine(root);
-        return new CodingChatSettingsService(CodingChatRoomPaths.Create(root),
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        return new CodingChatSettingsService(CodingChatRoomPaths.Create(root));
     }
 
     private static PrismCodingAgentShellSettings ShellSettings() => new() { LanguageTag = Lang.Current.IetfLanguageTag };

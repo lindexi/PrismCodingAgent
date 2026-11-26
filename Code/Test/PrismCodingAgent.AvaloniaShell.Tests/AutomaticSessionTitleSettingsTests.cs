@@ -1,4 +1,3 @@
-using AgentLib.Coding.Sandboxes;
 using Avalonia.Controls;
 using PrismCodingAgent.CodingShell.Views;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -14,15 +13,14 @@ public sealed class AutomaticSessionTitleSettingsTests
     public async Task WhenSavingDisabledThenNewSettingsRestoreIt()
     {
         var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
-        var sandbox = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
-        var service = new CodingChatSettingsService(paths, sandbox);
+        var service = new CodingChatSettingsService(paths);
         using var settings = new SettingsViewModel(service, IgnoreNavigation);
         await settings.LoadAsync();
         settings.ShellSettings.IsAutomaticSessionTitleEnabled = false;
         Assert.IsTrue(service.AppliedShellSettings.IsAutomaticSessionTitleEnabled);
         await ((SimpleAsyncCommand)settings.SaveCommand).ExecuteAsync();
 
-        using var restored = new SettingsViewModel(new CodingChatSettingsService(paths, sandbox), IgnoreNavigation);
+        using var restored = new SettingsViewModel(new CodingChatSettingsService(paths), IgnoreNavigation);
         await restored.LoadAsync();
 
         Assert.IsFalse(restored.ShellSettings.IsAutomaticSessionTitleEnabled);
@@ -50,7 +48,7 @@ public sealed class AutomaticSessionTitleSettingsTests
         var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         paths.EnsureDirectories();
         await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName, "{}");
-        var service = new CodingChatSettingsService(paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var service = new CodingChatSettingsService(paths);
 
         var settings = await service.LoadInitialShellSettingsAsync();
 

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Coding.Images;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Coding.Settings;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
@@ -28,7 +27,6 @@ internal static class CodingWorkTaskRuntimeFactory
     (
         CodingChatRoomPaths paths,
         IMainThreadDispatcher mainThreadDispatcher,
-        WindowsSandboxToolSource? windowsSandboxToolSource = null,
         FileCopilotChatLogger? fileLogger = null,
         ISessionCopilotChatLogger? processLogger = null
     )
@@ -53,28 +51,15 @@ internal static class CodingWorkTaskRuntimeFactory
             AgentApiEndpointManager = endpointManager,
             MainThreadDispatcher = mainThreadDispatcher,
         };
-        windowsSandboxToolSource ??= new WindowsSandboxToolSource
-        (
-            isEnabled: false,
-            winRemoteShellPath: string.Empty,
-            serverAddress: string.Empty
-        );
-        var settingsService = new CodingChatSettingsService(paths, windowsSandboxToolSource);
+        var settingsService = new CodingChatSettingsService(paths);
         var shellSettings = await settingsService
             .LoadInitialShellSettingsAsync()
             .ConfigureAwait(false);
-        windowsSandboxToolSource.UpdateConfiguration
-        (
-            shellSettings.IsWindowsSandboxEnabled,
-            shellSettings.WindowsSandboxToolPath,
-            shellSettings.WindowsSandboxServerAddress
-        );
         settingsService.ApplyShellSettings(configuration, shellSettings);
         endpointManager.WebProxy = CreateWebProxy(shellSettings);
         var additionalToolSources = new List<ICodingWorkspaceToolSource>
         {
             new CodingImageAnalysisToolSource(chatManager),
-            windowsSandboxToolSource,
         };
 
         var codingAgent = new CodingAgent

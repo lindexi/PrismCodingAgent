@@ -1,5 +1,4 @@
 using AgentLib.Coding;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -204,6 +203,5 @@ public sealed class PurposeModelSettingsTests
     }
 
     private static CodingChatSettingsService CreateService() => new(
-        CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))),
-        new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
 }

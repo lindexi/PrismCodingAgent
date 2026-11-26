@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using AgentLib;
 using AgentLib.Coding;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Abilities;
@@ -66,7 +65,7 @@ public sealed class DeepSeekRuntimeUpdateTests
     {
         var paths = CreatePaths();
         using var http = new HttpClient(new OfflineHandler());
-        var service = new CodingChatSettingsService(paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var service = new CodingChatSettingsService(paths);
         var arguments = new AIFunctionArguments { ["query"] = "offline" };
         async Task<string?> SearchNewRunAsync() => Text(await Search(service, http).InvokeAsync(arguments));
         StringAssert.Contains(await SearchNewRunAsync(), "尚未配置");

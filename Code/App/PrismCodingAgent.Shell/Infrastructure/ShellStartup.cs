@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Logging;
-using AgentLib.Coding.Sandboxes;
 using PrismCodingAgent.CodingShell.Abilities;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.Services.WorkTasks;
@@ -25,8 +24,7 @@ internal static class ShellStartup
             paths.EnsureDirectories();
             fileLogger ??= new FileCopilotChatLogger(paths.LogDirectory);
             await processLogger.TryLogDiagnosticAsync("[App][Startup]", $"Main ProcessId={Environment.ProcessId}");
-            var windowsSandboxToolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
-            var languageSettingsService = new Services.Settings.CodingChatSettingsService(paths, windowsSandboxToolSource);
+            var languageSettingsService = new Services.Settings.CodingChatSettingsService(paths);
             var shellSettings = await languageSettingsService.LoadInitialShellSettingsAsync().ConfigureAwait(true);
             Lang.SetCurrent(ShellLanguage.Normalize(shellSettings.LanguageTag));
             await DefaultAbilityInstaller.InstallOnceAsync(paths.AbilitiesDirectory).ConfigureAwait(true);
@@ -40,7 +38,7 @@ internal static class ShellStartup
             if (activeRecords.Length == 0)
             {
                 CodingWorkTaskRuntime runtime = await CodingWorkTaskRuntimeFactory
-                    .InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger).ConfigureAwait(true);
+                    .InitializeAsync(paths, dispatcher, fileLogger, processLogger).ConfigureAwait(true);
                 runtimes.Add(runtime);
                 tasks.Add(MainViewModel.CreateRuntimeTask(runtime,
                     new WorkTaskRecord(Guid.NewGuid(), $"{Lang.Current.WorkTaskText} 1", null,
@@ -51,7 +49,7 @@ internal static class ShellStartup
                 foreach (WorkTaskRecord record in activeRecords)
                 {
                     CodingWorkTaskRuntime runtime = await CodingWorkTaskRuntimeFactory
-                        .InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger).ConfigureAwait(true);
+                        .InitializeAsync(paths, dispatcher, fileLogger, processLogger).ConfigureAwait(true);
                     runtimes.Add(runtime);
                     WorkTaskItemViewModel task = MainViewModel.CreateRuntimeTask(runtime, record, abilityCatalog);
                     tasks.Add(task);
@@ -60,7 +58,7 @@ internal static class ShellStartup
             }
 
             mainViewModel = MainViewModel.Create(tasks, archivedRecords, runtimes[0].SettingsService, workTaskStore,
-                () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, windowsSandboxToolSource, fileLogger: fileLogger, processLogger: processLogger),
+                () => CodingWorkTaskRuntimeFactory.InitializeAsync(paths, dispatcher, fileLogger, processLogger),
                 abilityCatalog, paths, FormatWorkTaskRecoveryMessage(workTaskStore.LastRecoveryInfo));
             if (activeRecords.Length == 0)
             {

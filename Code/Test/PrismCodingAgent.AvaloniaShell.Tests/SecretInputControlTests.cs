@@ -7,7 +7,6 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Localizations;
@@ -134,8 +133,7 @@ public sealed class SecretInputControlTests
     {
         string root = System.IO.Path.Join(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         var service = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(root),
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+            CodingChatRoomPaths.Create(root));
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
             OpenAIConfigurationList = [new("https://api.deepseek.com", "loaded-test-key")],

@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using AgentLib.Coding;
-using AgentLib.Coding.Sandboxes;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.Services.Settings;
@@ -113,8 +112,7 @@ public sealed class PurposeLocalizationTests
         try
         {
             var service = new CodingChatSettingsService(
-                CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))),
-                new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+                CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
             using var vm = new SettingsViewModel(service, () => { });
             vm.Providers[0].Models.Add(new() { Provider = "Provider", ModelName = "Model" });
             vm.AddPurposeModelCommand.Execute(null);

@@ -368,7 +368,7 @@ public sealed class CodingAgentTests
             $"tool_{Path.GetFileName(secondPath)}");
     }
 
-    [TestMethod(DisplayName = "更新沙盒配置后下一轮应重新装配附加工具")]
+    [TestMethod(DisplayName = "下一轮应按生效配置重新装配沙盒工具")]
     [Timeout(10000)]
     public async Task SandboxConfigurationUpdateShouldApplyToNextRun()
     {
@@ -391,24 +391,30 @@ public sealed class CodingAgentTests
                 cancellationToken),
         };
         var session = new CopilotChatSession(CreateStorage());
-        var sandboxToolSource = new WindowsSandboxToolSource("WinRemoteShell.exe", "127.0.0.1:12399");
+        var context = CreateContext(client, session);
+        var enabledContext = context.WithToolContext(context.ToolContext with
+        {
+            Settings = new AgentLib.Coding.Settings.CodingChatShellSettings { IsWindowsSandboxEnabled = true },
+        });
         await using var agent = new CodingAgent(new CodingAgentOptions
         {
             LanguageServerCommand = $"missing-roslyn-{Guid.NewGuid():N}",
-            AdditionalToolSources = [sandboxToolSource],
         });
 
         ICodingAgentRunResult firstRun = await agent.RunAsync(
-            CreateContext(client, session),
+            enabledContext,
             "第一轮",
             workspacePath);
         await firstRunStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
-        sandboxToolSource.UpdateConfiguration(false, string.Empty, string.Empty);
         Assert.IsTrue(firstRunTools!.Any(tool => tool.Name == "execute_in_windows_sandbox"));
         releaseFirstRun.TrySetResult();
         Assert.AreEqual("完成", await firstRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));
+        var nextContext = CreateContext(client, session);
         ICodingAgentRunResult secondRun = await agent.RunAsync(
-            CreateContext(client, session),
+            nextContext.WithToolContext(nextContext.ToolContext with
+            {
+                Settings = new AgentLib.Coding.Settings.CodingChatShellSettings { IsWindowsSandboxEnabled = false },
+            }),
             "第二轮",
             workspacePath);
         Assert.AreEqual("完成", await secondRun.CompletionTask.WaitAsync(TimeSpan.FromSeconds(2)));

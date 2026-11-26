@@ -1,5 +1,4 @@
 using System.Globalization;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Services.Settings;
@@ -27,8 +26,7 @@ public sealed class LocalizationSettingsTests
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
 
             string root = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-            var service = new CodingChatSettingsService(CodingChatRoomPaths.Create(root),
-                new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+            var service = new CodingChatSettingsService(CodingChatRoomPaths.Create(root));
 
             var settings = await service.LoadInitialShellSettingsAsync();
 
@@ -61,8 +59,7 @@ public sealed class LocalizationSettingsTests
             var paths = CodingChatRoomPaths.Create(root);
             paths.EnsureDirectories();
             await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName, "{}");
-            var service = new CodingChatSettingsService(paths,
-                new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+            var service = new CodingChatSettingsService(paths);
 
             var settings = await service.LoadInitialShellSettingsAsync();
 
@@ -84,8 +81,7 @@ public sealed class LocalizationSettingsTests
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
             string root = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-            var service = new CodingChatSettingsService(CodingChatRoomPaths.Create(root),
-                new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+            var service = new CodingChatSettingsService(CodingChatRoomPaths.Create(root));
             await service.SaveAsync(new AgentApiManagerConfiguration(), new PrismCodingAgentShellSettings { LanguageTag = savedLanguage });
 
             var settings = await service.LoadInitialShellSettingsAsync();

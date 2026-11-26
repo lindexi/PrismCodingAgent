@@ -1,5 +1,4 @@
 using AgentLib.Coding;
-using AgentLib.Coding.Sandboxes;
 using AgentLib.Coding.Settings;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -18,9 +17,7 @@ public sealed class SettingsViewModelTests
     public async Task NetworkProxySettingsShouldPersist()
     {
         string rootDirectory = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        var settingsService = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(rootDirectory),
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var settingsService = new CodingChatSettingsService(CodingChatRoomPaths.Create(rootDirectory));
         var shellSettings = new PrismCodingAgentShellSettings
         {
             IsNetworkProxyEnabled = true,
@@ -39,8 +36,7 @@ public sealed class SettingsViewModelTests
     public async Task CpaQuotaSettingsShouldPersist()
     {
         var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
-        var settingsService = new CodingChatSettingsService(
-            paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var settingsService = new CodingChatSettingsService(paths);
         var quota = new CpaQuotaConfiguration("https://example.com", "offline", "test-service", true);
 
         await settingsService.SaveAsync(new AgentApiManagerConfiguration(),
@@ -55,8 +51,7 @@ public sealed class SettingsViewModelTests
     {
         var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         paths.EnsureDirectories();
-        var settingsService = new CodingChatSettingsService(
-            paths, new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var settingsService = new CodingChatSettingsService(paths);
         await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName,
             """{"CpaQuotaServices":[{"Address":"https://example.com","ManagementKey":"offline","Name":"legacy-service","IsPrimary":true}]}""");
 
@@ -92,52 +87,23 @@ public sealed class SettingsViewModelTests
         Assert.IsNull(CodingWorkTaskRuntimeFactory.CreateWebProxy(settings));
     }
 
-    [TestMethod(DisplayName = "保存设置后应立即更新下一轮使用的沙盒工具配置")]
-    public async Task SaveSettingsShouldUpdateRuntimeSandboxToolSource()
+    [TestMethod(DisplayName = "保存设置后下一轮应读取最新沙盒配置")]
+    public async Task SaveSettingsShouldUpdateAppliedSandboxSettings()
     {
         string rootDirectory = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        string workspacePath = Path.Join(rootDirectory, "workspace");
-        Directory.CreateDirectory(workspacePath);
-        var sandboxToolSource = new WindowsSandboxToolSource("OldShell.exe", "127.0.0.1:12399");
-        var settingsService = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(rootDirectory),
-            sandboxToolSource);
-        var modelConfiguration = new AgentApiManagerConfiguration();
+        var settingsService = new CodingChatSettingsService(CodingChatRoomPaths.Create(rootDirectory));
         var shellSettings = new PrismCodingAgentShellSettings
         {
             IsWindowsSandboxEnabled = false,
-            WindowsSandboxToolPath = string.Empty,
-            WindowsSandboxServerAddress = string.Empty,
+            WindowsSandboxToolPath = "UpdatedShell.exe",
+            WindowsSandboxServerAddress = "127.0.0.1:12400",
         };
 
-        await settingsService.SaveAsync(modelConfiguration, shellSettings);
+        await settingsService.SaveAsync(new AgentApiManagerConfiguration(), shellSettings);
 
-        Assert.IsEmpty(sandboxToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(workspacePath)));
-    }
-
-    [TestMethod(DisplayName = "任一工作任务保存设置后所有任务应使用最新沙箱配置")]
-    public async Task SaveSettingsShouldUpdateSandboxConfigurationSharedByAllWorkTasks()
-    {
-        string rootDirectory = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        string workspacePath = Path.Join(rootDirectory, "workspace");
-        Directory.CreateDirectory(workspacePath);
-        var sandboxToolSource = new WindowsSandboxToolSource("OldShell.exe", "127.0.0.1:12399");
-        var firstTaskSettingsService = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(rootDirectory),
-            sandboxToolSource);
-        _ = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(rootDirectory),
-            sandboxToolSource);
-        var shellSettings = new PrismCodingAgentShellSettings
-        {
-            IsWindowsSandboxEnabled = false,
-            WindowsSandboxToolPath = string.Empty,
-            WindowsSandboxServerAddress = string.Empty,
-        };
-
-        await firstTaskSettingsService.SaveAsync(new AgentApiManagerConfiguration(), shellSettings);
-
-        Assert.IsEmpty(sandboxToolSource.CreateToolRegistrations(ToolRegistrationTestContext.Create(workspacePath)));
+        var applied = settingsService.AppliedShellSettings;
+        Assert.AreEqual((false, "UpdatedShell.exe", "127.0.0.1:12400"),
+            (applied.IsWindowsSandboxEnabled, applied.WindowsSandboxToolPath, applied.WindowsSandboxServerAddress));
     }
 
     [TestMethod(DisplayName = "模型配置损坏时应清空上次加载的模型并显示错误")]
@@ -165,9 +131,7 @@ public sealed class SettingsViewModelTests
             ],
         };
         await configuration.SaveToFileAsync(paths.ConfigurationFile);
-        var settingsService = new CodingChatSettingsService(
-            paths,
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var settingsService = new CodingChatSettingsService(paths);
         var viewModel = new SettingsViewModel(settingsService, static () => { });
         await viewModel.LoadAsync();
         await File.WriteAllTextAsync(paths.ConfigurationFile.FullName, "{ invalid json");
@@ -245,10 +209,7 @@ public sealed class SettingsViewModelTests
     private static SettingsViewModel CreateViewModel(IWindowsSandboxConnectionTester tester)
     {
         string rootDirectory = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        var sandboxToolSource = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
-        var settingsService = new CodingChatSettingsService(
-            CodingChatRoomPaths.Create(rootDirectory),
-            sandboxToolSource);
+        var settingsService = new CodingChatSettingsService(CodingChatRoomPaths.Create(rootDirectory));
         return new SettingsViewModel(settingsService, tester, static () => { });
     }
 

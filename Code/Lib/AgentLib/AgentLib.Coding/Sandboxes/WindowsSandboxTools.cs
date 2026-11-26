@@ -23,6 +23,21 @@ internal sealed class WindowsSandboxTools
         _runner = runner;
     }
 
+    internal static IReadOnlyList<ToolRegistration> CreateRegistrations(CodingRunContext context)
+    {
+        if (context.WorkspacePath is not { } workspacePath
+            || context.Settings is not { IsWindowsSandboxEnabled: true } settings
+            || string.IsNullOrWhiteSpace(settings.WindowsSandboxToolPath)
+            || string.IsNullOrWhiteSpace(settings.WindowsSandboxServerAddress))
+        {
+            return [];
+        }
+
+        var runner = new WinRemoteShellProcessRunner(settings.WindowsSandboxToolPath.Trim(),
+            settings.WindowsSandboxServerAddress.Trim());
+        return new WindowsSandboxTools(workspacePath, runner).AsToolRegistrations();
+    }
+
     internal IReadOnlyList<AITool> AsAITools() =>
         AsToolRegistrations().Select(registration => registration.Tool).ToArray();
 

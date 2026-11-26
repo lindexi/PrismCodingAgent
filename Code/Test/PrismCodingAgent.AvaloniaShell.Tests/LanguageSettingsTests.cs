@@ -1,5 +1,4 @@
 using PrismCodingAgent.CodingShell.Infrastructure;
-using AgentLib.Coding.Sandboxes;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.ViewModels;
@@ -26,16 +25,15 @@ public sealed class LanguageSettingsTests
         try
         {
             var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
-            var source = new WindowsSandboxToolSource(false, string.Empty, string.Empty);
-            using var vm = new SettingsViewModel(new CodingChatSettingsService(paths, source), () => { });
+            using var vm = new SettingsViewModel(new CodingChatSettingsService(paths), () => { });
             vm.LanguageTag = language;
             await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
             using var saved = System.Text.Json.JsonDocument.Parse(await File.ReadAllTextAsync(paths.ShellSettingsFile.FullName));
             Assert.AreEqual(language, saved.RootElement.GetProperty("LanguageTag").GetString());
             Assert.AreEqual(language, Lang.Current.IetfLanguageTag);
-            var startupSettings = await new CodingChatSettingsService(paths, source).LoadInitialShellSettingsAsync();
+            var startupSettings = await new CodingChatSettingsService(paths).LoadInitialShellSettingsAsync();
             Assert.AreEqual(language, startupSettings.LanguageTag);
-            using var restored = new SettingsViewModel(new CodingChatSettingsService(paths, source), () => { });
+            using var restored = new SettingsViewModel(new CodingChatSettingsService(paths), () => { });
             await restored.LoadAsync();
             Assert.AreEqual(language, restored.LanguageTag);
         }
@@ -57,12 +55,10 @@ public sealed class LanguageSettingsTests
         paths.EnsureDirectories();
         await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName,
             System.Text.Json.JsonSerializer.Serialize(new { LanguageTag = language }));
-        using var vm = new SettingsViewModel(new CodingChatSettingsService(paths,
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty)), () => { });
+        using var vm = new SettingsViewModel(new CodingChatSettingsService(paths), () => { });
         await vm.LoadAsync();
         Assert.AreEqual("zh-Hans", vm.LanguageTag);
-        var startupSettings = await new CodingChatSettingsService(paths,
-            new WindowsSandboxToolSource(false, string.Empty, string.Empty)).LoadInitialShellSettingsAsync();
+        var startupSettings = await new CodingChatSettingsService(paths).LoadInitialShellSettingsAsync();
         Assert.AreEqual("zh-Hans", startupSettings.LanguageTag);
     }
 
