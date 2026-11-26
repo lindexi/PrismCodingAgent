@@ -136,11 +136,32 @@ public sealed class ExecuteCommandToolTests
     }
 
     [TestMethod]
-    public async Task DotNetTopicAppearsInHelpIndex()
+    [DataRow(false, false)]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    public async Task HelpIndexShowsTopicSummariesAndHowToGetDetails(bool includeArgv, bool explicitHelp)
     {
-        var result = await InvokeAsync(CreateTool(), "help");
+        var arguments = new AIFunctionArguments();
+        if (includeArgv) arguments["argv"] = explicitHelp ? new[] { "help" } : Array.Empty<string>();
 
-        CollectionAssert.Contains(Assert.IsInstanceOfType<string>(result).Split(Environment.NewLine), "dotnet");
+        var result = await CreateTool().InvokeAsync(arguments);
+
+        CollectionAssert.AreEqual(new[]
+        {
+            "<MetaData>", "状态: 成功", "命令: help", "</MetaData>",
+            "在 `help` 后加上主题名查看详细用法。",
+            "git：查看工作区的 Git 改动。",
+            "winremoteshell：访问已启用的 Windows 沙盒。",
+            "dotnet：搜索 NuGet 包和版本，查看已安装的 .NET SDK。",
+        }, Assert.IsInstanceOfType<string>(result).Split(Environment.NewLine));
+    }
+
+    [TestMethod]
+    public async Task GitHelpDescribesHowToViewStagedChanges()
+    {
+        var result = await InvokeAsync(CreateTool(), "help", "git");
+
+        StringAssert.Contains(Assert.IsInstanceOfType<string>(result), "--cached");
     }
 
     [TestMethod]

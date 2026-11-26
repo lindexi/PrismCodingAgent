@@ -24,20 +24,20 @@ internal sealed class ExecuteCommandTool
         return new ToolRegistration(AIFunctionFactory.Create(tool.RunAsync, new AIFunctionFactoryOptions
         {
             Name = "ExecuteCommand",
-            Description = "调用内建命令。传入 [\"help\"] 查看目录；在 help 后追加主题查看具体用法。",
+            Description = "执行命令。输入 `help` 查询用法。",
             MarshalResult = static (result, _, _) => ValueTask.FromResult(result),
         }));
     }
 
     private Task<string> RunAsync(
-        [Description("命令和参数按顺序逐项传入，含空格的参数仍是一个元素。")]
-        string[] argv,
-        CancellationToken cancellationToken)
+        [Description("命令、子命令和参数逐项传入，含空格的参数不拆分。")]
+        string[]? argv = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (argv is null || argv.Length == 0)
         {
-            return Task.FromResult(CommandResult.Format("参数错误", detail: "argv 必须包含命令。"));
+            return Task.FromResult(GetHelp([]));
         }
 
         if (argv[0] == "help")
@@ -60,9 +60,9 @@ internal sealed class ExecuteCommandTool
     {
         if (topics.IsEmpty)
         {
-            var names = new string[_handlers.Length];
-            for (int i = 0; i < _handlers.Length; i++) names[i] = _handlers[i].Topic;
-            return CommandResult.Format("成功", "help", detail: string.Join(Environment.NewLine, names));
+            var summaries = _handlers.Select(handler => $"{handler.Topic}：{handler.Summary}");
+            return CommandResult.Format("成功", "help", detail: string.Join(Environment.NewLine,
+                summaries.Prepend("在 `help` 后加上主题名查看详细用法。")));
         }
 
         if (topics is [string topic])

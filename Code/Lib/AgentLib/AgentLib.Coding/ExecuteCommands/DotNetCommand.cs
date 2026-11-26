@@ -18,6 +18,7 @@ internal sealed class DotNetCommand(string? workspacePath, ISessionCopilotChatLo
         """;
 
     string ICommandHandler.Topic => Topic;
+    string ICommandHandler.Summary => "搜索 NuGet 包和版本，查看已安装的 .NET SDK。";
     string ICommandHandler.Usage => Usage;
 
     bool ICommandHandler.CanHandle(ReadOnlySpan<string> argv) => GetCommandName(argv) is not null;

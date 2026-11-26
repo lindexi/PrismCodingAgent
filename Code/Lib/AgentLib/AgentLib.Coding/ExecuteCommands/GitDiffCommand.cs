@@ -8,7 +8,12 @@ internal sealed class GitDiffCommand(string? workspacePath, ISessionCopilotChatL
     private static readonly string[] ControlledOptions = ["--output", "--ext-diff", "--textconv"];
 
     string ICommandHandler.Topic => "git";
-    string ICommandHandler.Usage => "git diff [参数]：查看当前工作区的 Git 改动。";
+    string ICommandHandler.Summary => "查看工作区的 Git 改动。";
+    string ICommandHandler.Usage => """
+        git diff [参数]：查看尚未暂存的改动；使用 --cached 查看已暂存的改动，使用 --stat 查看摘要。
+        只查看指定文件： ["git", "diff", "--", "路径"]。
+        需要选择工作区；不支持输出到文件或启用外部差异工具。
+        """;
 
     bool ICommandHandler.CanHandle(ReadOnlySpan<string> argv) => argv is ["git", "diff", ..];
 

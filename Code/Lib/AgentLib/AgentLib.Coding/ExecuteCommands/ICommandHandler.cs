@@ -3,6 +3,7 @@ namespace AgentLib.Coding.ExecuteCommands;
 internal interface ICommandHandler
 {
     string Topic { get; }
+    string Summary { get; }
     string Usage { get; }
     bool CanHandle(ReadOnlySpan<string> argv);
 

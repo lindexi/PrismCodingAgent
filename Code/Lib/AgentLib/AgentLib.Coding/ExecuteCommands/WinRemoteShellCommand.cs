@@ -14,6 +14,7 @@ internal sealed class WinRemoteShellCommand(CodingRunContext context) : ICommand
         """;
 
     string ICommandHandler.Topic => Topic;
+    string ICommandHandler.Summary => "访问已启用的 Windows 沙盒。";
     string ICommandHandler.Usage => Usage;
 
     bool ICommandHandler.CanHandle(ReadOnlySpan<string> argv) => argv is [Topic, ..];
