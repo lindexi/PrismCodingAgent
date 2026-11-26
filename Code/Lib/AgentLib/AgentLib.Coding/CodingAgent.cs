@@ -1,4 +1,6 @@
 using AgentLib.Core;
+using AgentLib.Coding.ExecuteCommands;
+using AgentLib.Logging;
 using AgentLib.Model;
 using AgentLib.Reducers;
 using AgentLib.Tools;
@@ -116,6 +118,7 @@ public sealed class CodingAgent : IAsyncDisposable
             );
             CancellationToken runCancellationToken = runCancellationTokenSource.Token;
             runCancellationToken.ThrowIfCancellationRequested();
+            workspaceContext = AddRunCommandTool(workspaceContext, context.Session.Logger);
             var options = new ChatClientAgentOptions();
             {
                 options.ChatOptions ??= new ChatOptions();
@@ -193,6 +196,10 @@ public sealed class CodingAgent : IAsyncDisposable
     /// <returns>存在活动 Language Server 并已停止时返回 <see langword="true"/>。</returns>
     public Task<bool> StopLanguageServerAsync() =>
         _workspaceCache?.StopLanguageServerAsync() ?? Task.FromResult(false);
+
+    internal CodingRunWorkspaceContext AddRunCommandTool(CodingRunWorkspaceContext workspaceContext,
+        ISessionCopilotChatLogger logger) =>
+        workspaceContext.WithTool(ExecuteCommandTool.CreateRegistration(workspaceContext.WorkspacePath, logger));
 
     internal async Task<CodingRunWorkspaceContext> GetRunWorkspaceContextAsync
     (

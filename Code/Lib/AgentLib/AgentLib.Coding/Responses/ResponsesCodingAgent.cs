@@ -58,7 +58,7 @@ public sealed class ResponsesCodingAgent
             Input = input,
             Instructions = string.Join(Environment.NewLine + Environment.NewLine, prompts),
             ClientContext = clientContext,
-            Workspace = workspaceContext,
+            Workspace = _codingAgent.AddRunCommandTool(workspaceContext, context.Logger),
             CancellationToken = cancellationToken,
             ReasoningEffort = runOptions.ReasoningEffort,
             EnableAutomaticCompression = runOptions.EnableAutomaticCompression,
