@@ -47,11 +47,6 @@ public sealed class CodingAgent : IAsyncDisposable
         _copilotInstructionsPath = options.CopilotInstructionsPath;
     }
 
-    /// <summary>
-    /// 获取当前缓存的代码工作区路径。
-    /// </summary>
-    public string? WorkspacePath => _workspaceCache?.WorkspacePath;
-
     /// <summary>使用本轮工具上下文运行编程对话。</summary>
     public async Task<ICodingAgentRunResult> RunAsync(CodingRunContext context, CodingToolContext toolContext,
         IReadOnlyList<AIContent> contents, CancellationToken cancellationToken = default)
