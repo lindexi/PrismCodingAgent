@@ -8,6 +8,15 @@ internal static class CodingChatTestHost
         CodingRunContext context, string prompt, string? workspacePath,
         bool enableAutomaticCompression = true, bool enableDotNetRun = false,
         CancellationToken cancellationToken = default) =>
-        agent.RunAsync(context, [new TextContent(prompt)], workspacePath,
-            new CodingChatRunOptions { EnableAutomaticCompression = enableAutomaticCompression, EnableDotNetRun = enableDotNetRun, LanguageTag = "en" }, cancellationToken);
+        agent.RunAsync(context, new CodingToolContext
+        {
+            Session = context.Session,
+            WorkspacePath = workspacePath,
+            Options = new CodingChatRunOptions
+            {
+                EnableAutomaticCompression = enableAutomaticCompression,
+                EnableDotNetRun = enableDotNetRun,
+                LanguageTag = "en",
+            },
+        }, [new TextContent(prompt)], cancellationToken);
 }

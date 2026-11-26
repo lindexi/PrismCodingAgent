@@ -12,8 +12,7 @@ internal interface ICodingChatRunner
     Task<ICodingAgentRunResult> RunAsync
     (
         IReadOnlyList<AIContent> contents,
-        string? workspacePath,
-        CodingChatRunOptions options,
+        CodingToolContext toolContext,
         CancellationToken cancellationToken
     );
 

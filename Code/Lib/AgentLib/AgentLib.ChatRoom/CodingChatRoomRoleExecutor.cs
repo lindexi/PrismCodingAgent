@@ -53,9 +53,9 @@ internal sealed class CodingChatRoomRoleExecutor : IChatRoomRoleExecutor
             IDisposable chatting = chatManager.StartChatting();
             try
             {
-                ICodingAgentRunResult runResult = await _codingAgent.RunAsync(
-                    runContext, runContents, _workspacePath, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                var toolContext = new CodingToolContext { Session = session, WorkspacePath = _workspacePath };
+                ICodingAgentRunResult runResult = await _codingAgent.RunAsync(runContext, toolContext, runContents,
+                    cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 return new ChatRoomRoleExecutionResult(runResult.AssistantChatMessage,
                     CompleteAsync(runResult.CompletionTask, chatting, cancellationToken,

@@ -37,9 +37,12 @@ public sealed class ResponsesCodingAgentTests
         await using var runtime = new CodingAgent(new CodingAgentOptions());
         var agent = new ResponsesCodingAgent(runtime);
 
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("describe the image"), image], manager.SelectedSession.ResponsesSession, null,
-            new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" });
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var run = await agent.RunAsync(context, new CodingToolContext
+        {
+            Session = context.Session,
+            Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+        }, [new TextContent("describe the image"), image]);
         await run.CompletionTask;
 
         using var request = JsonDocument.Parse(handler.Requests.Single());
@@ -87,10 +90,14 @@ public sealed class ResponsesCodingAgentTests
         var agent = new ResponsesCodingAgent(coding);
         var context = await manager.CreateManualSendMessageContextAsync();
 
-        var run = await agent.RunAsync(context, [new TextContent("calculate")],
-            manager.SelectedSession.ResponsesSession, workspace, new CodingChatRunOptions { LanguageTag = "en" });
+        var run = await agent.RunAsync(context, new CodingToolContext
+        {
+            Session = context.Session,
+            WorkspacePath = workspace,
+            Options = new CodingChatRunOptions { LanguageTag = "en" },
+        }, [new TextContent("calculate")]);
         await run.CompletionTask;
-        await agent.TryCompactConversationAsync(context.LanguageModel, manager.SelectedSession.ResponsesSession);
+        await agent.TryCompactConversationAsync(context.LanguageModel, context.Session.ResponsesSession);
 
         var actualIds = handler.Requests.Concat(handler.CompactRequests).Select(json =>
         {
@@ -116,12 +123,21 @@ public sealed class ResponsesCodingAgentTests
             """));
         await using var runtime = new CodingAgent();
         var agent = new ResponsesCodingAgent(runtime);
-        var state = manager.SelectedSession.ResponsesSession;
-        var first = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new Microsoft.Extensions.AI.TextContent("first")], state, null, new CodingChatRunOptions { EnableAutomaticCompression = false, ReasoningEffort = ReasoningEffort.High, LanguageTag = "en" });
+        var firstContext = await manager.CreateManualSendMessageContextAsync();
+        var first = await agent.RunAsync(firstContext, new CodingToolContext
+        {
+            Session = firstContext.Session,
+            Options = new CodingChatRunOptions
+            {
+                EnableAutomaticCompression = false,
+                ReasoningEffort = ReasoningEffort.High,
+                LanguageTag = "en",
+            },
+        }, [new TextContent("first")]);
         await first.CompletionTask;
-        var second = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new Microsoft.Extensions.AI.TextContent("second")], state, null);
+        var secondContext = await manager.CreateManualSendMessageContextAsync(session: firstContext.Session);
+        var second = await agent.RunAsync(secondContext,
+            new CodingToolContext { Session = secondContext.Session }, [new TextContent("second")]);
         await second.CompletionTask;
 
         using var request = JsonDocument.Parse(handler.Requests[1]);
@@ -158,9 +174,13 @@ public sealed class ResponsesCodingAgentTests
         });
         var agent = new ResponsesCodingAgent(runtime);
 
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("calculate")], manager.SelectedSession.ResponsesSession, path,
-            new CodingChatRunOptions { EnableAutomaticCompression = automaticCompression, LanguageTag = "en" });
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var run = await agent.RunAsync(context, new CodingToolContext
+        {
+            Session = context.Session,
+            WorkspacePath = path,
+            Options = new CodingChatRunOptions { EnableAutomaticCompression = automaticCompression, LanguageTag = "en" },
+        }, [new TextContent("calculate")]);
         await run.CompletionTask;
 
         Assert.HasCount(expectedCompactions, handler.CompactRequests);
@@ -193,8 +213,9 @@ public sealed class ResponsesCodingAgentTests
         });
         var agent = new ResponsesCodingAgent(runtime);
 
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("calculate")], manager.SelectedSession.ResponsesSession, path);
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var run = await agent.RunAsync(context,
+            new CodingToolContext { Session = context.Session, WorkspacePath = path }, [new TextContent("calculate")]);
         await run.CompletionTask;
 
         using var request = JsonDocument.Parse(handler.Requests[1]);
@@ -224,8 +245,9 @@ public sealed class ResponsesCodingAgentTests
             """));
         await using var coding = new CodingAgent(new CodingAgentOptions { AdditionalToolSources = [new TestToolSource()] });
         var agent = new ResponsesCodingAgent(coding);
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("initial")], manager.SelectedSession.ResponsesSession, path);
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var run = await agent.RunAsync(context,
+            new CodingToolContext { Session = context.Session, WorkspacePath = path }, [new TextContent("initial")]);
         await handler.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await run.InjectMessageAsync([new TextContent("interrupt-one")]);
         await run.InjectMessageAsync([new TextContent("interrupt-two")]);
@@ -262,9 +284,13 @@ public sealed class ResponsesCodingAgentTests
         Directory.CreateDirectory(workspace);
         Console.WriteLine(workspace);
 
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("task")], manager.SelectedSession.ResponsesSession, workspace,
-            new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch });
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var run = await agent.RunAsync(context, new CodingToolContext
+        {
+            Session = context.Session,
+            WorkspacePath = workspace,
+            Options = new CodingChatRunOptions { EnableWebSearch = search, EnableWebFetch = fetch },
+        }, [new TextContent("task")]);
         await run.CompletionTask;
 
         using var request = JsonDocument.Parse(handler.Requests[1]);
@@ -289,10 +315,15 @@ public sealed class ResponsesCodingAgentTests
         string workspace = Path.Combine(Path.GetTempPath(), $"responses-cancel-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workspace);
         Console.WriteLine(workspace);
-        var session = manager.SelectedSession.ResponsesSession;
-        var options = new CodingChatRunOptions { EnableAutomaticCompression = false };
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("task")], session, workspace, options, cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var session = context.Session.ResponsesSession;
+        var toolContext = new CodingToolContext
+        {
+            Session = context.Session,
+            WorkspacePath = workspace,
+            Options = new CodingChatRunOptions { EnableAutomaticCompression = false },
+        };
+        var run = await agent.RunAsync(context, toolContext, [new TextContent("task")], cancellation.Token);
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => run.CompletionTask);
 
@@ -309,8 +340,8 @@ public sealed class ResponsesCodingAgentTests
             }).ToArray());
         var retained = session.Items.ToArray();
         int executions = tools.Executions;
-        var next = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("continue")], session, workspace, options);
+        var nextContext = await manager.CreateManualSendMessageContextAsync(session: context.Session);
+        var next = await agent.RunAsync(nextContext, toolContext, [new TextContent("continue")]);
         await next.CompletionTask;
 
         Assert.AreEqual(executions, tools.Executions);
@@ -328,7 +359,8 @@ public sealed class ResponsesCodingAgentTests
         using var handler = new StreamingHandler();
         using var http = new HttpClient(handler);
         var manager = CreateHistoryTestManager(http);
-        var session = manager.SelectedSession.ResponsesSession;
+        var context = await manager.CreateManualSendMessageContextAsync();
+        var session = context.Session.ResponsesSession;
         var user = OpenAI.Responses.ResponseItem.CreateUserMessageItem("old input");
         var reasoning = OpenAI.Responses.ResponseItem.CreateReasoningItem("reasoning");
         session.AppendItem(user);
@@ -338,9 +370,11 @@ public sealed class ResponsesCodingAgentTests
         await using var runtime = new CodingAgent(new CodingAgentOptions());
         var agent = new ResponsesCodingAgent(runtime);
 
-        var run = await agent.RunAsync(await manager.CreateManualSendMessageContextAsync(),
-            [new TextContent("continue")], session, null,
-            new CodingChatRunOptions { EnableAutomaticCompression = false });
+        var run = await agent.RunAsync(context, new CodingToolContext
+        {
+            Session = context.Session,
+            Options = new CodingChatRunOptions { EnableAutomaticCompression = false },
+        }, [new TextContent("continue")]);
         await run.CompletionTask;
 
         using var request = JsonDocument.Parse(handler.Requests.Single());

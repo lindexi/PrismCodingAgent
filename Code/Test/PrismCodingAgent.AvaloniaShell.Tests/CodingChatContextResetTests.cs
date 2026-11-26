@@ -22,6 +22,28 @@ public sealed class CodingChatContextResetTests
     [DataRow(false)]
     [DataRow(true)]
     [Timeout(30000)]
+    public async Task RunnerShouldWriteToSessionCapturedInToolContext(bool responses)
+    {
+        await using var fixture = await Fixture.CreateAsync(responses);
+        var session = fixture.Manager.SelectedSession;
+        var toolContext = new CodingToolContext
+        {
+            Session = session,
+            Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+        };
+        var otherSession = fixture.Manager.AddSession(new CopilotChatSession(session.AdditionalInfo.Storage), select: true);
+
+        var run = await fixture.Runner.RunAsync([new TextContent("target-user")], toolContext, CancellationToken.None);
+        await run.CompletionTask;
+
+        Assert.AreSame(run.AssistantChatMessage, session.ChatMessages.Last());
+        Assert.HasCount(0, otherSession.ChatMessages);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    [Timeout(30000)]
     public async Task ResetShouldRemovePreviousContextFromNextRealRequest(bool responses)
     {
         await using var fixture = await Fixture.CreateAsync(responses);
@@ -272,9 +294,12 @@ public sealed class CodingChatContextResetTests
 
         internal async Task RunAsync(string text)
         {
-            var result = await Runner.RunAsync([new TextContent(text)], null,
-                new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
-                CancellationToken.None);
+            var toolContext = new CodingToolContext
+            {
+                Session = Manager.SelectedSession,
+                Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+            };
+            var result = await Runner.RunAsync([new TextContent(text)], toolContext, CancellationToken.None);
             await result.CompletionTask;
         }
 

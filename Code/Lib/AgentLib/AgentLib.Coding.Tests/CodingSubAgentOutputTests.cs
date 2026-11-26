@@ -292,8 +292,10 @@ public sealed class CodingSubAgentOutputTests
         message.MessageItems.CollectionChanged += (_, _) => outsideDispatcher |= !dispatcher.CheckAccess();
         var client = new FakeChatClient { OnGetStreamingResponseAsync = (_, _, _) => EmptyAsync() };
         await using var agent = new CodingAgent();
-        ICodingAgentRunResult run = await agent.RunAsync(new CodingRunContext(client, message,
-            new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher }), [new TextContent("task")], null);
+        var session = new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher };
+        var context = new CodingRunContext(client, message, session);
+        ICodingAgentRunResult run = await agent.RunAsync(context,
+            new CodingToolContext { Session = session }, [new TextContent("task")]);
         await run.CompletionTask;
         Assert.IsFalse(outsideDispatcher);
         Assert.AreEqual(string.Empty, message.Content);
@@ -507,8 +509,12 @@ public sealed class CodingSubAgentOutputTests
             {
                 ModelResolver = endpointManager,
             };
-            return agent.RunAsync(context, [new TextContent("parent task")], workspacePath,
-                new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" }, cancellationToken);
+            return agent.RunAsync(context, new CodingToolContext
+            {
+                Session = context.Session,
+                WorkspacePath = workspacePath,
+                Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+            }, [new TextContent("parent task")], cancellationToken);
         }
 
         private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages,

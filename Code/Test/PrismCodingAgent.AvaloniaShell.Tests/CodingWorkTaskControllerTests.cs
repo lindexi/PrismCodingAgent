@@ -743,8 +743,8 @@ public sealed class CodingWorkTaskControllerTests
     {
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, string? workspacePath,
-            CodingChatRunOptions options, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, CodingToolContext toolContext,
+            CancellationToken cancellationToken) => throw new NotSupportedException();
         public async Task<bool> TryCompactConversationAsync(CopilotChatSession session, string? instructions,
             CancellationToken cancellationToken)
         {
@@ -1154,8 +1154,8 @@ public sealed class CodingWorkTaskControllerTests
         public Func<CancellationToken, Task<string?>>? Completion { get; init; }
         public Func<CancellationToken, Task<bool>>? Compact { get; init; }
 
-        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, string? workspacePath,
-            CodingChatRunOptions options, CancellationToken cancellationToken)
+        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, CodingToolContext toolContext,
+            CancellationToken cancellationToken)
         {
             Attempts++;
             OnRun?.Invoke();
@@ -1182,8 +1182,7 @@ public sealed class CodingWorkTaskControllerTests
 
         public Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken)
         {
             Assert.IsTrue(agentSession.TryGetInMemoryChatHistory(out List<ChatMessage>? history));
@@ -1215,8 +1214,7 @@ public sealed class CodingWorkTaskControllerTests
 
         public Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken)
         {
             Started.TrySetResult();

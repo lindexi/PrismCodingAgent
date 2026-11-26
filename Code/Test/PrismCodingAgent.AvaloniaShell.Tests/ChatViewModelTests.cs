@@ -1168,8 +1168,9 @@ public sealed class ChatViewModelTests
         public Action<int>? AfterRun { get; set; }
 
         public async Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents,
-            string? workspacePath, CodingChatRunOptions options, CancellationToken cancellationToken)
+            CodingToolContext toolContext, CancellationToken cancellationToken)
         {
+            var options = toolContext.Options;
             Options.Add(options);
             Values.Add((options.EnableAutomaticCompression, options.EnableDotNetRun, options.ReasoningEffort));
             await manager.AppendMessageAsync(CopilotChatMessage.CreateUser(contents), cancellationToken);
@@ -1190,8 +1191,7 @@ public sealed class ChatViewModelTests
 
         public async Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken)
         {
             RunCount++;
@@ -1208,8 +1208,7 @@ public sealed class ChatViewModelTests
     {
         public Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken) =>
             Task.FromException<ICodingAgentRunResult>(exception);
     }
@@ -1230,14 +1229,13 @@ public sealed class ChatViewModelTests
 
         public async Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken)
         {
             RunCount++;
             CancellationToken = cancellationToken;
             ObservedContents = contents;
-            ObservedAutomaticCompressionEnabled = options.EnableAutomaticCompression;
+            ObservedAutomaticCompressionEnabled = toolContext.Options.EnableAutomaticCompression;
             await manager.AppendMessageAsync(CopilotChatMessage.CreateUser(contents), cancellationToken);
             var assistantMessage = CopilotChatMessage.CreateAssistant(CopilotChatMessage.PlaceholderContent, isPresetInfo: false);
             await manager.SelectedSession.AddMessageAsync(assistantMessage);
@@ -1264,8 +1262,7 @@ public sealed class ChatViewModelTests
 
         public async Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken)
         {
             CancellationToken = cancellationToken;

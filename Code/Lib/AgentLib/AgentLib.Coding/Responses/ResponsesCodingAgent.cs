@@ -29,38 +29,39 @@ public sealed class ResponsesCodingAgent
         _copilotInstructionsPath = copilotInstructionsPath;
     }
 
-    /// <summary>
-    /// 启动流式运行，使用调用方持有的对话历史；不迁移 Chat 协议状态。
-    /// </summary>
-    public async Task<ICodingAgentRunResult> RunAsync(IManualSendMessageContext context,
-        IReadOnlyList<AIContent> contents, CopilotResponsesSession conversation,
-        string? workspacePath, CodingChatRunOptions? options = null,
-        CancellationToken cancellationToken = default)
+    /// <summary>使用同一会话的工具上下文和 Responses 历史启动运行。</summary>
+    public async Task<ICodingAgentRunResult> RunAsync(IManualSendMessageContext context, CodingToolContext toolContext,
+        IReadOnlyList<AIContent> contents, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(toolContext);
+        if (!ReferenceEquals(context.Session, toolContext.Session))
+        {
+            throw new ArgumentException("编程运行与工具上下文必须使用同一会话。", nameof(toolContext));
+        }
+
         ArgumentNullException.ThrowIfNull(contents);
-        ArgumentNullException.ThrowIfNull(conversation);
         if (contents.Count == 0)
         {
             throw new ArgumentException("编程任务内容不能为空。", nameof(contents));
         }
 
-        CodingChatRunOptions runOptions = options ?? CodingChatRunOptions.Default;
+        CodingChatRunOptions runOptions = toolContext.Options;
         var input = ResponseItem.CreateUserMessageItem(contents.Select(CreateInputPart));
         var prompts = await CodingPromptProvider.BuildAsync(_copilotInstructionsPath, runOptions, cancellationToken).ConfigureAwait(false);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel)
             .GetResponsesClientAsync().ConfigureAwait(false);
-        var workspaceContext = await _codingAgent.GetRunWorkspaceContextAsync(workspacePath, runOptions, cancellationToken).ConfigureAwait(false);
+        var workspaceContext = await _codingAgent.GetRunWorkspaceContextAsync(toolContext.WorkspacePath, runOptions, cancellationToken).ConfigureAwait(false);
         var runner = new ResponsesCodingAgentRunner
         {
             MessageContext = context,
             Contents = contents,
-            Conversation = conversation,
+            Conversation = toolContext.Session.ResponsesSession,
             Input = input,
             Instructions = string.Join(Environment.NewLine + Environment.NewLine, prompts),
             ClientContext = clientContext,
             Workspace = workspaceContext.WithTool(
-                ExecuteCommandTool.CreateRegistration(workspaceContext.WorkspacePath, context.Logger)),
+                ExecuteCommandTool.CreateRegistration(toolContext with { WorkspacePath = workspaceContext.WorkspacePath })),
             CancellationToken = cancellationToken,
             ReasoningEffort = runOptions.ReasoningEffort,
             EnableAutomaticCompression = runOptions.EnableAutomaticCompression,

@@ -225,8 +225,8 @@ public sealed class MainWindowClosingTests
     private sealed class WaitingRunner(TaskCompletionSource entered, TaskCompletionSource cancelled,
         TaskCompletionSource release) : ICodingChatRunner
     {
-        public async Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, string? workspacePath,
-            CodingChatRunOptions options, CancellationToken cancellationToken)
+        public async Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, CodingToolContext toolContext,
+            CancellationToken cancellationToken)
         {
             using var registration = cancellationToken.Register(() => cancelled.TrySetResult());
             entered.TrySetResult();

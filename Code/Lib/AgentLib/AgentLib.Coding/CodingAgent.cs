@@ -52,42 +52,35 @@ public sealed class CodingAgent : IAsyncDisposable
     /// </summary>
     public string? WorkspacePath => _workspaceCache?.WorkspacePath;
 
-    /// <summary>
-    /// 使用有序多模态内容和运行选项执行编程对话。
-    /// </summary>
-    /// <param name="context">本次编程执行的模型会话和输出上下文。</param>
-    /// <param name="contents">保持原始顺序的用户输入内容；空集合表示不添加用户消息，使用现有会话历史运行。</param>
-    /// <param name="workspacePath">本次运行期望使用的工作区路径。</param>
-    /// <param name="options">运行选项；未指定时使用默认选项。</param>
-    /// <param name="cancellationToken">取消令牌。</param>
-    /// <returns>流式消息和完整生命周期任务。</returns>
-    public async Task<ICodingAgentRunResult> RunAsync
-    (
-        CodingRunContext context,
-        IReadOnlyList<AIContent> contents,
-        string? workspacePath,
-        CodingChatRunOptions? options = null,
-        CancellationToken cancellationToken = default
-    )
+    /// <summary>使用本轮工具上下文运行编程对话。</summary>
+    public async Task<ICodingAgentRunResult> RunAsync(CodingRunContext context, CodingToolContext toolContext,
+        IReadOnlyList<AIContent> contents, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(toolContext);
         ArgumentNullException.ThrowIfNull(contents);
+        if (!ReferenceEquals(context.Session, toolContext.Session))
+        {
+            throw new ArgumentException("编程运行与工具上下文必须使用同一会话。", nameof(toolContext));
+        }
+
         AIContent[] runContents = [.. contents];
         ThrowIfDisposed();
-        CodingChatRunOptions runOptions = options ?? CodingChatRunOptions.Default;
+        CodingChatRunOptions runOptions = toolContext.Options;
         CodingRunWorkspaceContext workspaceContext = await GetRunWorkspaceContextAsync
         (
-            workspacePath, runOptions, cancellationToken
+            toolContext.WorkspacePath, runOptions, cancellationToken
         ).ConfigureAwait(false);
+        toolContext = toolContext with { WorkspacePath = workspaceContext.WorkspacePath };
         IReadOnlyList<string> prompts = await CodingPromptProvider.BuildAsync
         (
             _copilotInstructionsPath, runOptions, cancellationToken
         ).ConfigureAwait(false);
-        var delegation = new CodingSubAgentTools(this, context, workspaceContext, prompts, runOptions);
+        var delegation = new CodingSubAgentTools(this, context, workspaceContext, prompts, toolContext);
         return await RunAsync
         (
             context, runContents, workspaceContext.WithTool(delegation.CreateRegistration()),
-            prompts, runOptions, cancellationToken
+            prompts, toolContext, cancellationToken
         ).ConfigureAwait(false);
     }
 
@@ -97,12 +90,13 @@ public sealed class CodingAgent : IAsyncDisposable
         IReadOnlyList<AIContent> contents,
         CodingRunWorkspaceContext workspaceContext,
         IReadOnlyList<string> systemPrompts,
-        CodingChatRunOptions runOptions,
+        CodingToolContext toolContext,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(contents);
+        CodingChatRunOptions runOptions = toolContext.Options;
         AIContent[] runContents = [.. contents];
 
         CancellationTokenSource? runCancellationTokenSource = null;
@@ -118,7 +112,7 @@ public sealed class CodingAgent : IAsyncDisposable
             CancellationToken runCancellationToken = runCancellationTokenSource.Token;
             runCancellationToken.ThrowIfCancellationRequested();
             CodingRunWorkspaceContext runTools = workspaceContext.WithTool(
-                ExecuteCommandTool.CreateRegistration(workspaceContext.WorkspacePath, context.Session.Logger));
+                ExecuteCommandTool.CreateRegistration(toolContext));
             var options = new ChatClientAgentOptions();
             {
                 options.ChatOptions ??= new ChatOptions();

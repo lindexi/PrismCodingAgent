@@ -103,7 +103,8 @@ internal static class CodingWorkTaskRuntimeFactory
             chatRunner,
             workspaceController,
             codingAgent,
-            processLogger: processLogger
+            processLogger: processLogger,
+            settingsService: settingsService
         );
 
         return new CodingWorkTaskRuntime

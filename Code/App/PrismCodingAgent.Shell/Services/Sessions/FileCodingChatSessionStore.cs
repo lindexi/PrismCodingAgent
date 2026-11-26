@@ -132,7 +132,7 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
 
     private async Task RestoreAgentSessionAsync(CopilotChatSession session, JsonElement state, CancellationToken cancellationToken)
     {
-        IManualSendMessageContext context = await _chatManager.CreateManualSendMessageContextAsync(cancellationToken).ConfigureAwait(false);
+        IManualSendMessageContext context = await _chatManager.CreateManualSendMessageContextAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         ChatClientAgent agent = await context.GetChatClientAgentAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         session.SetAgentSession(await agent.DeserializeSessionAsync(state, cancellationToken: cancellationToken).ConfigureAwait(false));
     }
@@ -144,7 +144,7 @@ internal sealed class FileCodingChatSessionStore : ICodingChatSessionStore
         if (session.AgentSession is AgentSession agentSession)
         {
             IManualSendMessageContext context = await _chatManager
-                .CreateManualSendMessageContextAsync(cancellationToken)
+                .CreateManualSendMessageContextAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
             ChatClientAgent agent = await context
                 .GetChatClientAgentAsync(cancellationToken: cancellationToken)

@@ -49,9 +49,9 @@ public sealed class CodingAgentTests
 
         ICodingAgentRunResult result = await agent.RunAsync(
             context,
+            new CodingToolContext { Session = context.Session, WorkspacePath = "coding-workspace" },
             contents,
-            "coding-workspace",
-            cancellationToken: CancellationToken.None);
+            CancellationToken.None);
         await streamStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
         Assert.AreSame(context.AssistantChatMessage, result.AssistantChatMessage);
@@ -281,8 +281,8 @@ public sealed class CodingAgentTests
         CodingRunContext failingContext = CreateContext(client, session);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => agent.RunAsync(
             failingContext,
-            new ThrowingReadOnlyList(),
-            "workspace"));
+            new CodingToolContext { Session = session, WorkspacePath = "workspace" },
+            new ThrowingReadOnlyList()));
 
         ICodingAgentRunResult nextRun = await agent.RunAsync(
             CreateContext(client, session),
@@ -304,7 +304,8 @@ public sealed class CodingAgentTests
         var context = new CodingRunContext(client, CopilotChatMessage.CreateAssistant(
             CopilotChatMessage.PlaceholderContent, isPresetInfo: false), new CopilotChatSession(CreateStorage()));
 
-        ICodingAgentRunResult run = await agent.RunAsync(context, [new TextContent("任务")], null);
+        ICodingAgentRunResult run = await agent.RunAsync(context,
+            new CodingToolContext { Session = context.Session }, [new TextContent("任务")]);
         InvalidOperationException exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             async () => await run.CompletionTask);
 

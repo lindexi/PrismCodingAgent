@@ -27,7 +27,7 @@ public sealed class MiniMaxResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         string code = Guid.NewGuid().ToString("N");
@@ -44,7 +44,7 @@ public sealed class MiniMaxResponsesLiveApiTests
         using var run = context.StartChatting();
         var first = (await client.CreateResponseAsync(firstRequest, cancellation.Token)).Value;
         context.AssistantChatMessage.ResponseInfo.AppendResponse(first);
-        var nextContext = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var nextContext = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         nextContext.UserChatMessage.AppendText("What label did I assign to the fictional planet in my previous message?");
         await nextContext.AppendMessagesToSessionAsync();
         var continuation = new CreateResponseOptions
@@ -80,7 +80,7 @@ public sealed class MiniMaxResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         string code = Guid.NewGuid().ToString("N");
@@ -161,7 +161,7 @@ public sealed class MiniMaxResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token, endpoint);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         var request = new CreateResponseOptions
@@ -219,7 +219,7 @@ public sealed class MiniMaxResponsesLiveApiTests
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
         manager.WorkspacePath = workspace;
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var function = context.DefaultTools.OfType<AIFunction>().Single(tool => tool.Name == "ReadFileLines");
         var functions = new Dictionary<string, AIFunction> { [function.Name] = function };
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();

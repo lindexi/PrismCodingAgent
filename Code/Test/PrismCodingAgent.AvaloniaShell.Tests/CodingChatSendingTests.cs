@@ -1,6 +1,7 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Logging;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Services.Chat;
 using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.Services.Workspace;
 using PrismCodingAgent.CodingShell.Services.WorkTasks;
 using PrismCodingAgent.CodingShell.ViewModels;
@@ -144,6 +146,29 @@ public sealed class CodingChatSendingTests
         Assert.AreEqual(Path.GetFullPath(workspacePath), runner.ObservedWorkspacePath);
         runner.Complete("完成");
         await sendTask;
+    }
+
+    [TestMethod]
+    [Timeout(5000)]
+    public async Task SendMessageAsyncShouldUseAppliedShellSettings()
+    {
+        var manager = CreateManager();
+        var runner = new TestCodingChatRunner(manager);
+        var settingsService = new CodingChatSettingsService(
+            CodingChatRoomPaths.Create(CreateTestDirectory()),
+            new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+        var settings = new CodingChatShellSettings { LanguageTag = "en", IsWindowsSandboxEnabled = false };
+        settingsService.ApplyShellSettings(new AgentApiManagerConfiguration(), settings);
+        var application = CodingChatApplicationTestFactory.CreateApplication(
+            manager, new TestSessionStore(), runner, settingsService: settingsService);
+        await application.InitializeAsync();
+
+        Task sendTask = application.SendMessageAsync("Check settings");
+        await runner.Started.Task;
+        runner.Complete("Done");
+        await sendTask;
+
+        Assert.AreSame(settings, runner.ObservedShellSettings);
     }
 
     [TestMethod(DisplayName = "发送默认应启用自动压缩")]
@@ -371,7 +396,8 @@ public sealed class CodingChatSendingTests
         await using var agent = new CodingAgent();
         var runner = new ResponsesCodingChatRunner(manager, new ResponsesCodingAgent(agent));
         var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
-        var run = await runner.RunAsync([new TextContent("start")], null, options, CancellationToken.None);
+        var toolContext = new CodingToolContext { Session = manager.SelectedSession, Options = options };
+        var run = await runner.RunAsync([new TextContent("start")], toolContext, CancellationToken.None);
         await handler.WaitingForCancellation.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         try
@@ -636,6 +662,8 @@ public sealed class CodingChatSendingTests
 
         public string? ObservedWorkspacePath { get; private set; }
 
+        public CodingChatShellSettings? ObservedShellSettings { get; private set; }
+
         public bool ObservedAutomaticCompressionEnabled { get; private set; }
 
         public bool ObservedDotNetRunEnabled { get; private set; }
@@ -650,8 +678,7 @@ public sealed class CodingChatSendingTests
 
         public async Task<ICodingAgentRunResult> RunAsync(
             IReadOnlyList<AIContent> contents,
-            string? workspacePath,
-            CodingChatRunOptions options,
+            CodingToolContext toolContext,
             CancellationToken cancellationToken)
         {
             RunCount++;
@@ -662,14 +689,18 @@ public sealed class CodingChatSendingTests
             }
 
             ObservedContents = contents;
-            ObservedWorkspacePath = workspacePath;
-            ObservedAutomaticCompressionEnabled = options.EnableAutomaticCompression;
-            ObservedDotNetRunEnabled = options.EnableDotNetRun;
-            ObservedReasoningEffort = options.ReasoningEffort;
+            ObservedWorkspacePath = toolContext.WorkspacePath;
+            ObservedShellSettings = toolContext.Settings;
+            ObservedAutomaticCompressionEnabled = toolContext.Options.EnableAutomaticCompression;
+            ObservedDotNetRunEnabled = toolContext.Options.EnableDotNetRun;
+            ObservedReasoningEffort = toolContext.Options.ReasoningEffort;
             ObservedCancellationToken = cancellationToken;
+            cancellationToken.ThrowIfCancellationRequested();
+            var session = toolContext.Session;
             var userMessage = CopilotChatMessage.CreateUser(contents);
-            await manager.AppendMessageAsync(userMessage, cancellationToken);
-            await manager.SelectedSession.AddMessageAsync(AssistantMessage);
+            await session.AddMessageAsync(userMessage);
+            await manager.ChatLogger.LogMessageAsync(session.SessionId, userMessage);
+            await session.AddMessageAsync(AssistantMessage);
             Started.TrySetResult();
             if (RunCount == 2)
             {
@@ -737,8 +768,8 @@ public sealed class CodingChatSendingTests
 
     private sealed class SuccessfulCompressionRunner : ICodingChatRunner
     {
-        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, string? workspacePath,
-            CodingChatRunOptions options, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents, CodingToolContext toolContext,
+            CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> TryCompactConversationAsync(CopilotChatSession session, string? instructions,
             CancellationToken cancellationToken) => Task.FromResult(true);
     }

@@ -25,6 +25,7 @@ public sealed class SettingsViewModelTests
             IsNetworkProxyEnabled = true,
             NetworkProxyAddress = "http://127.0.0.1:7890",
             BypassProxyOnLocal = false,
+            LanguageTag = "en",
         };
 
         await settingsService.SaveAsync(new AgentApiManagerConfiguration(), shellSettings);

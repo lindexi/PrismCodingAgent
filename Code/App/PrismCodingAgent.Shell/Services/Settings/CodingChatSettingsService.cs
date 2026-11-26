@@ -7,6 +7,7 @@ using AgentLib.Coding;
 using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
+using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.CodingShell.Services.Settings;
 
@@ -22,7 +23,10 @@ internal sealed class CodingChatSettingsService
     private readonly WindowsSandboxToolSource _windowsSandboxToolSource;
     private readonly DeepSeekWebToolSource? _deepSeekWebToolSource;
 
-    internal CodingChatShellSettings AppliedShellSettings { get; private set; } = new();
+    internal CodingChatShellSettings AppliedShellSettings { get; private set; } = new()
+    {
+        LanguageTag = ShellLanguage.GetDefault(),
+    };
 
     public CodingChatSettingsService
     (
@@ -79,7 +83,7 @@ internal sealed class CodingChatSettingsService
 
         await modelConfiguration.SaveToFileAsync(_paths.ConfigurationFile).ConfigureAwait(false);
 
-        shellSettings = shellSettings with { LanguageTag = Localizations.ShellLanguage.Normalize(shellSettings.LanguageTag) };
+        shellSettings = shellSettings with { LanguageTag = ShellLanguage.Normalize(shellSettings.LanguageTag) };
         string shellJson = JsonSerializer.Serialize(shellSettings, s_jsonOptions);
         await File.WriteAllTextAsync
         (
@@ -111,7 +115,7 @@ internal sealed class CodingChatSettingsService
         _paths.ShellSettingsFile.Refresh();
         return _paths.ShellSettingsFile.Exists
             ? await LoadShellSettingsAsync(cancellationToken).ConfigureAwait(false)
-            : new CodingChatShellSettings { IsWindowsSandboxEnabled = false };
+            : new CodingChatShellSettings { IsWindowsSandboxEnabled = false, LanguageTag = ShellLanguage.GetDefault() };
     }
 
     public async Task<CodingChatShellSettings> LoadShellSettingsAsync(CancellationToken cancellationToken = default)
@@ -119,7 +123,7 @@ internal sealed class CodingChatSettingsService
         _paths.ShellSettingsFile.Refresh();
         if (!_paths.ShellSettingsFile.Exists)
         {
-            return new CodingChatShellSettings();
+            return new CodingChatShellSettings { LanguageTag = ShellLanguage.GetDefault() };
         }
 
         string json = await File.ReadAllTextAsync
@@ -129,7 +133,12 @@ internal sealed class CodingChatSettingsService
         ).ConfigureAwait(false);
         var settings = JsonSerializer.Deserialize<CodingChatShellSettings>(json, s_jsonOptions)
                        ?? new CodingChatShellSettings();
-        return settings with { LanguageTag = Localizations.ShellLanguage.Normalize(settings.LanguageTag) };
+        return settings with
+        {
+            LanguageTag = settings.LanguageTag is { } languageTag
+                ? ShellLanguage.Normalize(languageTag)
+                : ShellLanguage.GetDefault(),
+        };
     }
 }
 

@@ -31,14 +31,14 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
     public async Task<ICodingAgentRunResult> RunAsync
     (
         IReadOnlyList<AIContent> contents,
-        string? workspacePath,
-        CodingChatRunOptions options,
+        CodingToolContext toolContext,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(contents);
+        ArgumentNullException.ThrowIfNull(toolContext);
         FailedAssistantMessage = null;
-        CopilotChatSession session = _chatManager.SelectedSession;
+        CopilotChatSession session = toolContext.Session;
         AIContent[] runContents = System.Linq.Enumerable.ToArray(contents);
         var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
             .ConfigureAwait(false);
@@ -50,7 +50,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         try
         {
             ICodingAgentRunResult run = await _codingAgent.RunAsync(
-                context, runContents, workspacePath, options, cancellationToken).ConfigureAwait(false);
+                context, toolContext, runContents, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             await session.AddMessageAsync(userMessage).ConfigureAwait(false);
             await _chatManager.ChatLogger.LogMessageAsync(session.SessionId, userMessage).ConfigureAwait(false);
@@ -69,15 +69,14 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
     /// <summary>在原会话和原助手消息上继续已结束的运行，不新增时间线消息。</summary>
     public async Task<ICodingAgentRunResult> ContinueAsync
     (
-        CopilotChatSession session,
+        CodingToolContext toolContext,
         CopilotChatMessage assistantMessage,
-        string? workspacePath,
-        CodingChatRunOptions options,
         CancellationToken cancellationToken
     )
     {
-        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(toolContext);
         ArgumentNullException.ThrowIfNull(assistantMessage);
+        CopilotChatSession session = toolContext.Session;
         ArgumentNullException.ThrowIfNull(session.AgentSession);
         FailedAssistantMessage = null;
         var client = await _chatManager.AgentApiEndpointManager.PrimaryModel.GetChatClientAsync()
@@ -87,7 +86,7 @@ internal sealed class CodingAgentChatRunner : ICodingChatRunner
         try
         {
             ICodingAgentRunResult run = await _codingAgent.RunAsync(
-                context, [], workspacePath, options, cancellationToken).ConfigureAwait(false);
+                context, toolContext, [], cancellationToken).ConfigureAwait(false);
             _activeRun = run;
             return new CompletedCodingAgentRunResult(run.AssistantChatMessage,
                 CompleteAndClearActiveRunAsync(run, session.SessionId, chatting));

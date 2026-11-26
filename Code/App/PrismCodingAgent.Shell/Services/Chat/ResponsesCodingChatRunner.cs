@@ -11,10 +11,10 @@ namespace PrismCodingAgent.CodingShell.Services.Chat;
 
 internal sealed class ResponsesCodingChatRunner(CopilotChatManager chatManager, ResponsesCodingAgent agent) : ICodingChatRunner
 {
-    public async Task<bool> TryCompactConversationAsync(AgentLib.Model.CopilotChatSession session,
+    public async Task<bool> TryCompactConversationAsync(CopilotChatSession session,
         string? instructions, CancellationToken cancellationToken)
     {
-        var context = await chatManager.CreateManualSendMessageContextAsync(cancellationToken).ConfigureAwait(false);
+        var context = await chatManager.CreateManualSendMessageContextAsync(session, cancellationToken).ConfigureAwait(false);
         return await agent.TryCompactConversationAsync(context.LanguageModel, session.ResponsesSession,
             instructions, cancellationToken).ConfigureAwait(false);
     }
@@ -29,16 +29,14 @@ internal sealed class ResponsesCodingChatRunner(CopilotChatManager chatManager, 
     }
 
     public async Task<ICodingAgentRunResult> RunAsync(IReadOnlyList<AIContent> contents,
-        string? workspacePath, CodingChatRunOptions options, CancellationToken cancellationToken)
+        CodingToolContext toolContext, CancellationToken cancellationToken)
     {
-        var session = chatManager.SelectedSession;
-        Guid sessionId = session.SessionId;
-        var conversation = session.ResponsesSession;
-        var context = await chatManager.CreateManualSendMessageContextAsync(cancellationToken).ConfigureAwait(false);
-        var run = await agent.RunAsync(context, contents, conversation, workspacePath,
-            options, cancellationToken).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(toolContext);
+        var session = toolContext.Session;
+        var context = await chatManager.CreateManualSendMessageContextAsync(session, cancellationToken).ConfigureAwait(false);
+        var run = await agent.RunAsync(context, toolContext, contents, cancellationToken).ConfigureAwait(false);
         _activeRun = run;
-        return new CompletedCodingAgentRunResult(run.AssistantChatMessage, CompleteAsync(run, sessionId));
+        return new CompletedCodingAgentRunResult(run.AssistantChatMessage, CompleteAsync(run, session.SessionId));
     }
 
     private async Task<string?> CompleteAsync(ICodingAgentRunResult run, Guid sessionId)

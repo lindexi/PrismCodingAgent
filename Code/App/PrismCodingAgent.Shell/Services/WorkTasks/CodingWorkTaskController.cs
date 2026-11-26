@@ -13,6 +13,7 @@ using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.Services.Chat;
 using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.Services.Workspace;
 
 namespace PrismCodingAgent.CodingShell.Services.WorkTasks;
@@ -57,6 +58,7 @@ internal sealed class CodingWorkTaskController
     private readonly CodingAgent _codingAgent;
     private readonly TimeProvider _timeProvider;
     private readonly ISessionCopilotChatLogger? _processLogger;
+    private readonly CodingChatSettingsService? _settingsService;
     private Guid? _workTaskId;
     private string? _workTaskName;
     private CancellationTokenSource? _activeOperationCancellationTokenSource;
@@ -64,11 +66,10 @@ internal sealed class CodingWorkTaskController
     private TaskCompletionSource? _operationCompletion;
     private FailedChatRun? _failedChatRun;
 
-    private sealed record FailedChatRun(CopilotChatNotice Notice, CopilotChatSession Session,
-        CodingAgentChatRunner Runner, CopilotChatMessage Assistant, string? WorkspacePath,
-        CodingChatRunOptions Options);
+    private sealed record FailedChatRun(CopilotChatNotice Notice, CodingToolContext ToolContext,
+        CodingAgentChatRunner Runner, CopilotChatMessage Assistant);
 
-    public CodingWorkTaskController
+    internal CodingWorkTaskController
     (
         CopilotChatManager chatManager,
         ICodingChatSessionStore sessionStore,
@@ -76,7 +77,8 @@ internal sealed class CodingWorkTaskController
         CodingWorkspaceController workspaceController,
         CodingAgent codingAgent,
         TimeProvider? timeProvider = null,
-        ISessionCopilotChatLogger? processLogger = null
+        ISessionCopilotChatLogger? processLogger = null,
+        CodingChatSettingsService? settingsService = null
     )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
@@ -91,6 +93,7 @@ internal sealed class CodingWorkTaskController
         _codingAgent = codingAgent;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _processLogger = processLogger;
+        _settingsService = settingsService;
         AddOrUpdateSummary(_chatManager.SelectedSession, insertAtTop: true);
     }
 
@@ -432,6 +435,7 @@ internal sealed class CodingWorkTaskController
             throw new InvalidOperationException("当前任务已有活动操作。");
         }
 
+        var toolContext = CaptureToolContext(options ?? CodingChatRunOptions.Default);
         using CancellationTokenSource operationCancellationTokenSource =
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _activeOperationCancellationTokenSource = operationCancellationTokenSource;
@@ -442,7 +446,7 @@ internal sealed class CodingWorkTaskController
             (
                 chatRunner,
                 runContents,
-                options ?? CodingChatRunOptions.Default,
+                toolContext,
                 operationCancellationTokenSource.Token
             );
         }
@@ -482,7 +486,7 @@ internal sealed class CodingWorkTaskController
 
     internal bool HasChatContinuation(CopilotChatNotice notice)
         => _failedChatRun is { } failed && ReferenceEquals(failed.Notice, notice)
-            && ReferenceEquals(failed.Session, _chatManager.SelectedSession);
+            && ReferenceEquals(failed.ToolContext.Session, _chatManager.SelectedSession);
 
     internal bool CanContinueChat(CopilotChatNotice notice)
         => !HasActiveOperation && HasChatContinuation(notice);
@@ -496,7 +500,7 @@ internal sealed class CodingWorkTaskController
         UpdateOperationState(CodingWorkTaskOperationState.Running);
         try
         {
-            await RunSingleMessageAsync(failed.Runner, [], failed.Options, cancellation.Token, failed);
+            await RunSingleMessageAsync(failed.Runner, [], failed.ToolContext, cancellation.Token, failed);
         }
         finally
         {
@@ -528,19 +532,28 @@ internal sealed class CodingWorkTaskController
 
     internal Task SaveSessionAsync(CopilotChatSession session) => _sessionStore.SaveSessionAsync(session, CancellationToken.None);
 
+    private CodingToolContext CaptureToolContext(CodingChatRunOptions options) => new()
+    {
+        Session = _chatManager.SelectedSession,
+        WorkspacePath = _workspaceController.NextRunWorkspacePath,
+        Options = options,
+        Settings = _settingsService?.AppliedShellSettings,
+    };
+
     private async Task RunSingleMessageAsync
     (
         ICodingChatRunner chatRunner,
         IReadOnlyList<AIContent> runContents,
-        CodingChatRunOptions options,
+        CodingToolContext toolContext,
         CancellationToken cancellationToken,
         FailedChatRun? continuation = null
     )
     {
         AdvanceOperationState(CodingWorkTaskOperationState.Running);
         _failedChatRun = null;
-        CopilotChatSession session = continuation?.Session ?? _chatManager.SelectedSession;
-        session.WorkspacePath = continuation is null ? _workspaceController.NextRunWorkspacePath : continuation.WorkspacePath;
+        CopilotChatSession session = toolContext.Session;
+        session.WorkspacePath = toolContext.WorkspacePath;
+        CodingChatRunOptions options = toolContext.Options;
         ApplyWorkTaskMetadata(session);
         await _chatManager.ChatLogger.LogDiagnosticAsync
         (
@@ -553,9 +566,8 @@ internal sealed class CodingWorkTaskController
         try
         {
             ICodingAgentRunResult runResult = continuation is null
-                ? await chatRunner.RunAsync(runContents, session.WorkspacePath, options, cancellationToken)
-                : await continuation.Runner.ContinueAsync(session, continuation.Assistant,
-                    session.WorkspacePath, options, cancellationToken);
+                ? await chatRunner.RunAsync(runContents, toolContext, cancellationToken)
+                : await continuation.Runner.ContinueAsync(toolContext, continuation.Assistant, cancellationToken);
             assistantMessage = runResult.AssistantChatMessage;
             await runResult.CompletionTask;
             await _chatManager.ChatLogger.LogDiagnosticAsync(session.SessionId, "运行", "运行正常完成。");
@@ -576,8 +588,7 @@ internal sealed class CodingWorkTaskController
                 && chatRunner is CodingAgentChatRunner { FailedAssistantMessage: { } assistant } codingRunner
                 && assistant.HasContent && session.AgentSession is not null)
             {
-                _failedChatRun = new FailedChatRun(notice, session, codingRunner, assistant,
-                    session.WorkspacePath, options);
+                _failedChatRun = new FailedChatRun(notice, toolContext, codingRunner, assistant);
             }
             await session.AddEntryAsync(notice);
             await LogOperationFailureAsync
@@ -670,7 +681,8 @@ internal sealed class CodingWorkTaskController
                 attempts++;
                 try
                 {
-                    await RunSingleMessageAsync(chatRunner, [new TextContent(prompt)], options,
+                    var toolContext = CaptureToolContext(options);
+                    await RunSingleMessageAsync(chatRunner, [new TextContent(prompt)], toolContext,
                         operationCancellationTokenSource.Token);
                 }
                 catch (OperationCanceledException) when (operationCancellationTokenSource.IsCancellationRequested)

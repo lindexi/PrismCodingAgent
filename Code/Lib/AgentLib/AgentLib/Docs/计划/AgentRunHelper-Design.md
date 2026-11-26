@@ -92,7 +92,7 @@ finally
 
 ```csharp
 var manualContext = await _copilotChatManager
-    .CreateManualSendMessageContextAsync(externalCancellationToken)
+    .CreateManualSendMessageContextAsync(cancellationToken: externalCancellationToken)
     .ConfigureAwait(false);
 
 manualContext.UserChatMessage.AppendText(userMessage);

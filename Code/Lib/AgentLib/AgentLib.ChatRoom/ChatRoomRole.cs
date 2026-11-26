@@ -212,7 +212,7 @@ public sealed class ChatRoomRole : NotifyBase, IAsyncDisposable
         }
 
         IManualSendMessageContext manualContext = await ChatManager
-            .CreateManualSendMessageContextAsync(cancellationToken)
+            .CreateManualSendMessageContextAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         ChatClientAgent chatClientAgent = await manualContext
             .GetChatClientAgentAsync(cancellationToken: cancellationToken)
@@ -233,7 +233,7 @@ public sealed class ChatRoomRole : NotifyBase, IAsyncDisposable
         }
 
         IManualSendMessageContext manualContext = await ChatManager
-            .CreateManualSendMessageContextAsync(cancellationToken)
+            .CreateManualSendMessageContextAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
         ChatClientAgent chatClientAgent = await manualContext
             .GetChatClientAgentAsync(cancellationToken: cancellationToken)

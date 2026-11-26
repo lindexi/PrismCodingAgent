@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using AgentLib.Coding.Sandboxes;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
@@ -20,14 +19,18 @@ public sealed class LocalizationSettingsTests
     [DataRow("pt-BR", "pt-BR")]
     [DataRow("zh-TW", "zh-Hant")]
     [DataRow("ar-SA", "zh-Hans")]
-    public void WhenLanguageIsNotConfiguredThenDefaultMatchesSupportedSystemLanguage(string cultureName, string expectedLanguage)
+    public async Task WhenSettingsFileIsMissingThenDefaultMatchesSupportedSystemLanguage(string cultureName, string expectedLanguage)
     {
         var originalCulture = CultureInfo.CurrentUICulture;
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
 
-            var settings = new CodingChatShellSettings();
+            string root = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var service = new CodingChatSettingsService(CodingChatRoomPaths.Create(root),
+                new WindowsSandboxToolSource(false, string.Empty, string.Empty));
+
+            var settings = await service.LoadInitialShellSettingsAsync();
 
             Assert.AreEqual(expectedLanguage, settings.LanguageTag);
         }
@@ -47,16 +50,23 @@ public sealed class LocalizationSettingsTests
     [DataRow("pt-BR", "pt-BR")]
     [DataRow("zh-TW", "zh-Hant")]
     [DataRow("ar-SA", "zh-Hans")]
-    public void WhenSavedSettingsOmitLanguageThenDefaultMatchesSupportedSystemLanguage(string cultureName, string expectedLanguage)
+    public async Task WhenSavedSettingsOmitLanguageThenDefaultMatchesSupportedSystemLanguage(string cultureName, string expectedLanguage)
     {
         var originalCulture = CultureInfo.CurrentUICulture;
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
 
-            var settings = JsonSerializer.Deserialize<CodingChatShellSettings>("{}");
+            string root = Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var paths = CodingChatRoomPaths.Create(root);
+            paths.EnsureDirectories();
+            await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName, "{}");
+            var service = new CodingChatSettingsService(paths,
+                new WindowsSandboxToolSource(false, string.Empty, string.Empty));
 
-            Assert.AreEqual(expectedLanguage, settings?.LanguageTag);
+            var settings = await service.LoadInitialShellSettingsAsync();
+
+            Assert.AreEqual(expectedLanguage, settings.LanguageTag);
         }
         finally
         {
@@ -65,9 +75,9 @@ public sealed class LocalizationSettingsTests
     }
 
     [TestMethod]
-    [DataRow("zh-CN", "en")]
-    [DataRow("en-US", "zh-Hans")]
-    public async Task WhenSavingLanguageThenItCanBeLoadedAgain(string cultureName, string savedLanguage)
+    [DataRow("zh-CN", "EN", "en")]
+    [DataRow("en-US", "zh-hans", "zh-Hans")]
+    public async Task WhenSavingLanguageThenItCanBeLoadedAgain(string cultureName, string savedLanguage, string expectedLanguage)
     {
         var originalCulture = CultureInfo.CurrentUICulture;
         try
@@ -80,7 +90,7 @@ public sealed class LocalizationSettingsTests
 
             var settings = await service.LoadInitialShellSettingsAsync();
 
-            Assert.AreEqual(savedLanguage, settings.LanguageTag);
+            Assert.AreEqual(expectedLanguage, settings.LanguageTag);
         }
         finally
         {

@@ -633,11 +633,13 @@ public class CopilotChatManager : NotifyBase
     /// 以及两个空壳 <see cref="CopilotChatMessage"/> 供调用方填充和流式追加。
     /// <see cref="ChatClientAgent"/> 和 <see cref="AgentSession"/> 延迟创建，首次调用对应异步方法时才初始化。
     /// </summary>
+    /// <param name="session">本轮已确定的会话；省略时使用调用开始时选中的会话。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>手动发送消息的上下文。</returns>
     public async Task<IManualSendMessageContext> CreateManualSendMessageContextAsync
-        (CancellationToken cancellationToken = default)
+        (CopilotChatSession? session = null, CancellationToken cancellationToken = default)
     {
+        session ??= SelectedSession;
         // 默认工具不经过 HumanApprovalTool 包装，调用方自行决定是否包装
         IReadOnlyList<AITool> defaultTools = _toolManager.CreateDefaultTools(chatContext: null);
 
@@ -652,7 +654,7 @@ public class CopilotChatManager : NotifyBase
         {
             ChatManager = this,
             AIContextProviders = AIContextProviders,
-            Session = SelectedSession,
+            Session = session,
             DefaultTools = defaultTools,
             ChatClient = chatClient,
             LanguageModel = languageModel,

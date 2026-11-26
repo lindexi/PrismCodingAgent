@@ -26,7 +26,7 @@ public sealed class LindexiResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         var options = new CreateResponseOptions
@@ -55,7 +55,7 @@ public sealed class LindexiResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         var request = new CreateResponseOptions
@@ -81,7 +81,7 @@ public sealed class LindexiResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         string label = Guid.NewGuid().ToString("N");
@@ -98,7 +98,7 @@ public sealed class LindexiResponsesLiveApiTests
         using var run = context.StartChatting();
         var first = (await client.CreateResponseAsync(firstRequest, cancellation.Token)).Value;
         context.AssistantChatMessage.ResponseInfo.AppendResponse(first);
-        var nextContext = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var nextContext = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         nextContext.UserChatMessage.AppendText("What was the fictional planet's label from my previous message?");
         await nextContext.AppendMessagesToSessionAsync();
         var continuation = new CreateResponseOptions
@@ -135,7 +135,7 @@ public sealed class LindexiResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         string label = Guid.NewGuid().ToString("N");
@@ -175,7 +175,7 @@ public sealed class LindexiResponsesLiveApiTests
         using var recorder = new RequestRecorder();
         using var httpClient = new HttpClient(recorder);
         var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         // 足够长且本次实验唯一的前缀，减少最低缓存长度和历史实验命中的干扰。
@@ -248,7 +248,7 @@ public sealed class LindexiResponsesLiveApiTests
         try
         {
             var manager = await CreateManagerAsync(httpClient, cancellation.Token);
-            var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+            var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
             var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
             var client = clientContext.Client;
             context.UserChatMessage.AppendText("请实际使用内置 WebSearchTool 搜索 OpenAI 的最新新闻，包括最新发布的模型。优先查阅 OpenAI 官方公告，列出新闻标题、发布日期、模型名称、简要说明和来源链接。区分正式发布、预览和传闻，不要仅凭训练知识回答；明确说明检索时点。");

@@ -27,7 +27,7 @@ public sealed class ResponsesLiveApiTests
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         var manager = await CreateManagerAsync(cancellation.Token);
         using var httpClient = manager.AgentApiEndpointManager.HttpClient;
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         context.UserChatMessage.AppendText("Reply with the verification code specified in your instructions.");
@@ -61,7 +61,7 @@ public sealed class ResponsesLiveApiTests
         using var recorder = new ContinuationRequestHandler();
         using var httpClient = new HttpClient(recorder);
         manager.AgentApiEndpointManager.HttpClient = httpClient;
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         var invocations = new List<string>();

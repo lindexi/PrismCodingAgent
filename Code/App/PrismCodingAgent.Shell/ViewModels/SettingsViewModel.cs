@@ -35,7 +35,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     private readonly SimpleAsyncCommand _testWindowsSandboxConnectionCommand;
     private CancellationTokenSource? _sandboxConnectionTestCancellationTokenSource;
     private string? _primaryModel;
-    private string _languageTag = Lang.Current.IetfLanguageTag;
+    private string _languageTag = ShellLanguage.Normalize(Lang.Current.IetfLanguageTag);
 
     /// <summary>获取可选择的界面语言标签。</summary>
     public string[] LanguageTags { get; } = Lang.SupportedLanguageTags.ToArray();
@@ -60,7 +60,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
     private bool _isNetworkProxyEnabled;
     private string? _networkProxyAddress;
     private bool _bypassProxyOnLocal = true;
-    private CodingChatShellSettings _shellSettings = new();
+    private CodingChatShellSettings _shellSettings = new() { LanguageTag = ShellLanguage.GetDefault() };
     private bool _isCopilotInstructionsEnabled;
     private string? _copilotInstructionsPath;
     private string? _statusMessage;
@@ -290,7 +290,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
         _isLoading = true;
         Quotas.Load(snapshot.ShellSettings.CpaQuotaServices);
         DeepSeekApiKey = snapshot.ShellSettings.DeepSeekApiKey;
-        LanguageTag = snapshot.ShellSettings.LanguageTag;
+        LanguageTag = snapshot.ShellSettings.LanguageTag ?? ShellLanguage.GetDefault();
         IsWindowsSandboxEnabled = snapshot.ShellSettings.IsWindowsSandboxEnabled;
         WindowsSandboxToolPath = snapshot.ShellSettings.WindowsSandboxToolPath;
         WindowsSandboxServerAddress = snapshot.ShellSettings.WindowsSandboxServerAddress;

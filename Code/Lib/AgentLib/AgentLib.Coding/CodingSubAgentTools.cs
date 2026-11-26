@@ -11,7 +11,7 @@ internal sealed class CodingSubAgentTools
     CodingRunContext parentContext,
     CodingRunWorkspaceContext workspaceContext,
     IReadOnlyList<string> prompts,
-    CodingChatRunOptions options
+    CodingToolContext parentTools
 )
 {
     internal ToolRegistration CreateRegistration() => new(
@@ -71,14 +71,15 @@ internal sealed class CodingSubAgentTools
             ModelResolver = parentContext.ModelResolver,
         };
         IReadOnlyList<string> childPrompts = [.. prompts, "最终结果必须通过 `ReturnOutputToParent` 提交"];
+        CodingToolContext toolContext = parentTools with { Session = subSession };
         ICodingAgentRunResult run = await agent.RunAsync(context, contents, childTools,
-            childPrompts, options, cancellationToken).ConfigureAwait(false);
+            childPrompts, toolContext, cancellationToken).ConfigureAwait(false);
         await run.CompletionTask.ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         if (!submission.HasSubmittedText)
         {
             run = await agent.RunAsync(context, [new TextContent("要求调用 ReturnOutputToParent 方法")],
-                childTools, childPrompts, options, cancellationToken).ConfigureAwait(false);
+                childTools, childPrompts, toolContext, cancellationToken).ConfigureAwait(false);
             await run.CompletionTask.ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
         }

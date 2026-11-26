@@ -9,6 +9,7 @@ using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
 using PrismCodingAgent.CodingShell.Services.Chat;
 using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Workspace;
 using PrismCodingAgent.CodingShell.ViewModels;
 
 namespace PrismCodingAgent.AvaloniaShell.Tests;
@@ -44,7 +45,8 @@ public sealed class CodingChatContinuationTests
         var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
         var store = new FileCopilotChatSessionStore(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
         var session = manager.SelectedSession;
-        var run = await runner.RunAsync([new TextContent("start")], null, options, CancellationToken.None);
+        var toolContext = new CodingToolContext { Session = session, Options = options };
+        var run = await runner.RunAsync([new TextContent("start")], toolContext, CancellationToken.None);
         byte[] image = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aU5sAAAAASUVORK5CYII=");
 
         try
@@ -103,9 +105,10 @@ public sealed class CodingChatContinuationTests
         var options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" };
         var session = manager.SelectedSession;
         int initialEntryCount = session.Entries.Count;
+        var toolContext = new CodingToolContext { Session = session, Options = options };
 
-        ICodingAgentRunResult first = await runner.RunAsync([new TextContent("original user")], null,
-            options, CancellationToken.None);
+        ICodingAgentRunResult first = await runner.RunAsync([new TextContent("original user")], toolContext,
+            CancellationToken.None);
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => first.CompletionTask);
         Assert.HasCount(1, requests);
         Assert.AreEqual("A", first.AssistantChatMessage.Content);
@@ -114,8 +117,8 @@ public sealed class CodingChatContinuationTests
         var originalEntries = session.Entries.ToArray();
         Assert.HasCount(initialEntryCount + 2, originalEntries);
 
-        ICodingAgentRunResult second = await runner.ContinueAsync(session, first.AssistantChatMessage, null,
-            options, CancellationToken.None);
+        ICodingAgentRunResult second = await runner.ContinueAsync(toolContext, first.AssistantChatMessage,
+            CancellationToken.None);
         Assert.AreEqual("AB", await second.CompletionTask);
 
         Assert.HasCount(2, requests);
@@ -155,8 +158,11 @@ public sealed class CodingChatContinuationTests
         await using var agent = new CodingAgent();
         var runner = new CodingAgentChatRunner(manager, agent);
         var store = new SessionStore();
+        var workspace = new CodingWorkspaceController(new CodingWorkTaskControllerTestFactory.ImmediateMainThreadDispatcher());
+        string originalWorkspacePath = Directory.CreateTempSubdirectory().FullName;
+        await workspace.ChangeWorkspaceAsync(originalWorkspacePath);
         var controller = CodingWorkTaskControllerTestFactory.CreateApplication(manager, store, runner,
-            codingAgent: agent);
+            workspaceController: workspace, codingAgent: agent);
         using var viewModel = new ChatViewModel(manager, controller, "test");
         var session = manager.SelectedSession;
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => controller.SendMessageAsync(
@@ -169,6 +175,7 @@ public sealed class CodingChatContinuationTests
         Assert.IsTrue(notice.HasContinuation);
         Assert.IsNotNull(notice.RetryCommand);
         Assert.IsTrue(notice.RetryCommand.CanExecute(notice.Notice));
+        await workspace.ChangeWorkspaceAsync(null);
 
         Task retry = ((SimpleAsyncCommand<CopilotChatNotice>)notice.RetryCommand).ExecuteAsync(notice.Notice);
         Assert.IsFalse(notice.RetryCommand.CanExecute(notice.Notice));
@@ -176,6 +183,7 @@ public sealed class CodingChatContinuationTests
         continueCompletion.SetResult();
         await retry;
 
+        Assert.AreEqual(originalWorkspacePath, session.WorkspacePath);
         Assert.AreEqual("AB", assistant.Content);
         Assert.AreSame(originalSession, session.AgentSession);
         CollectionAssert.AreEqual(originalEntries, session.Entries.Take(originalEntries.Length).ToArray());

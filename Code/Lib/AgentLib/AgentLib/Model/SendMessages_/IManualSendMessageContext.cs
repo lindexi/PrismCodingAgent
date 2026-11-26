@@ -16,6 +16,9 @@ namespace AgentLib.Model;
 /// </summary>
 public interface IManualSendMessageContext
 {
+    /// <summary>创建上下文时绑定的会话。</summary>
+    CopilotChatSession Session { get; }
+
     /// <summary>
     /// 用户消息对象。创建时为空内容，由调用方自行填充。
     /// </summary>

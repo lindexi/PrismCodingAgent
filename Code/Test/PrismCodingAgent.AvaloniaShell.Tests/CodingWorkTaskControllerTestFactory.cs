@@ -2,6 +2,7 @@ using AgentLib;
 using AgentLib.Coding;
 using PrismCodingAgent.CodingShell.Services.Chat;
 using PrismCodingAgent.CodingShell.Services.Sessions;
+using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.Services.Workspace;
 using PrismCodingAgent.CodingShell.Services.WorkTasks;
 
@@ -16,7 +17,8 @@ internal static class CodingWorkTaskControllerTestFactory
         ICodingChatRunner? chatRunner = null,
         CodingWorkspaceController? workspaceController = null,
         CodingAgent? codingAgent = null,
-        TimeProvider? timeProvider = null
+        TimeProvider? timeProvider = null,
+        CodingChatSettingsService? settingsService = null
     )
     {
         ArgumentNullException.ThrowIfNull(chatManager);
@@ -31,11 +33,12 @@ internal static class CodingWorkTaskControllerTestFactory
             chatRunner,
             workspaceController,
             codingAgent,
-            timeProvider
+            timeProvider,
+            settingsService: settingsService
         );
     }
 
-    private sealed class ImmediateMainThreadDispatcher : IMainThreadDispatcher
+    internal sealed class ImmediateMainThreadDispatcher : IMainThreadDispatcher
     {
         public Task InvokeAsync(Func<Task> action) => action();
 

@@ -39,7 +39,7 @@ public sealed class ResponsesImageToolLiveTests
                     ModelDefinitions = new[] { new { Provider = "minimax", ModelName = "MiniMax-M3", ModelId = "MiniMax-M3" } } }
             }
         })));
-        var context = await manager.CreateManualSendMessageContextAsync(cancellation.Token);
+        var context = await manager.CreateManualSendMessageContextAsync(cancellationToken: cancellation.Token);
         var clientContext = await ((IResponsesClientProvider)context.LanguageModel).GetResponsesClientAsync();
         var client = clientContext.Client;
         int invocationCount = 0;

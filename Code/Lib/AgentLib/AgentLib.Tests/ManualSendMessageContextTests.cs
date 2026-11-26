@@ -31,11 +31,24 @@ public sealed class ManualSendMessageContextTests
     }
 
     [TestMethod]
+    public async Task CreateManualSendMessageContextAsync_UsesSpecifiedSession()
+    {
+        var setup = CopilotChatManagerTestContext.Create(new FakeChatClient());
+        var session = setup.ChatManager.SelectedSession;
+        await setup.ChatManager.AddConversationAsync("User message", "Assistant message");
+        setup.ChatManager.CreateNewSession();
+
+        var context = await setup.ChatManager.CreateManualSendMessageContextAsync(session, CancellationToken.None);
+
+        Assert.AreSame(session, context.Session);
+    }
+
+    [TestMethod]
     public async Task CreateManualSendMessageContextAsync_CancelingCreationTokenDoesNotCancelAgentInitialization()
     {
         var setup = CopilotChatManagerTestContext.Create(new FakeChatClient());
         using var source = new CancellationTokenSource();
-        var context = await setup.ChatManager.CreateManualSendMessageContextAsync(source.Token);
+        var context = await setup.ChatManager.CreateManualSendMessageContextAsync(cancellationToken: source.Token);
         source.Cancel();
 
         var agent = await context.GetChatClientAgentAsync();
