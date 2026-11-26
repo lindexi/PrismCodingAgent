@@ -63,7 +63,18 @@ internal sealed class CodingSubAgentTools
         var subSession = await CodingSubAgentSessions.GetOrCreateSessionAsync(
             parentContext.Session, childClient, name, cancellationToken).ConfigureAwait(false);
 
-        var context = new CodingRunContext(parentContext.ToolContext with { Session = subSession }, childClient, childMessage)
+        var option = parentContext.Options with { };
+        if (model is not null)
+        {
+            option.ReasoningEffort = null;
+        }
+
+        CodingToolContext childToolContext = parentContext.ToolContext with
+        {
+            Session = subSession,
+            Options = option,
+        };
+        var context = new CodingRunContext(childToolContext, childClient, childMessage)
         {
             ModelResolver = parentContext.ModelResolver,
         };

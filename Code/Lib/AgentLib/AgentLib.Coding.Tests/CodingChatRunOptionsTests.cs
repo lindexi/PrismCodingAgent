@@ -45,6 +45,17 @@ public sealed class CodingChatRunOptionsTests
     }
 
     [TestMethod]
+    public void ClearingCopiedReasoningEffortShouldNotChangeOriginal()
+    {
+        var original = new CodingChatRunOptions { ReasoningEffort = ReasoningEffort.High };
+
+        var copy = original with { };
+        copy.ReasoningEffort = null;
+
+        Assert.AreEqual(ReasoningEffort.High, original.ReasoningEffort);
+    }
+
+    [TestMethod]
     public void ReasoningEffortShouldNotifyOnlyWhenChanged()
     {
         var options = CodingChatRunOptions.Default;

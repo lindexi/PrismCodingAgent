@@ -1,3 +1,5 @@
+using AgentLib.Coding.SubAgents;
+using AgentLib.Coding.Tools;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Model;
@@ -33,6 +35,23 @@ public sealed class CodingSubAgentOutputTests
 
         Assert.AreEqual(("parent done", "submitted", expectedChildCalls),
             (result, scenario.ParentResult, scenario.DedicatedModelCalls));
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task DelegationShouldInheritReasoningEffortOnlyWhenUsingTheParentModel(bool configureChildModel)
+    {
+        var scenario = new Scenario();
+        await using var agent = new CodingAgent();
+
+        var run = await scenario.StartAsync(agent, configureChildModel: configureChildModel,
+            reasoningEffort: ReasoningEffort.High);
+        await run.CompletionTask;
+
+        ReasoningEffort? expectedChildEffort = configureChildModel ? null : ReasoningEffort.High;
+        Assert.AreEqual(("submitted", expectedChildEffort, (ReasoningEffort?)ReasoningEffort.High),
+            (scenario.ParentResult, scenario.ChildReasoningEffort, scenario.ParentReasoningEffort));
     }
 
     [TestMethod]
@@ -495,6 +514,8 @@ public sealed class CodingSubAgentOutputTests
         public bool RetryContainsFirstRound { get; private set; }
         public string? ParentResult { get; private set; }
         public ChatMessage? FirstChildUserMessage { get; private set; }
+        public ReasoningEffort? ChildReasoningEffort { get; private set; }
+        public ReasoningEffort? ParentReasoningEffort { get; private set; }
         private int _parentCalls;
 
         private string? _childName = "worker";
@@ -502,7 +523,8 @@ public sealed class CodingSubAgentOutputTests
 
         public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default,
             CopilotChatSession? session = null, string? childName = "worker", string? workspacePath = null,
-            string[]? imageFilePaths = null, bool configureChildModel = false, string? parentModelId = null)
+            string[]? imageFilePaths = null, bool configureChildModel = false, string? parentModelId = null,
+            ReasoningEffort? reasoningEffort = null)
         {
             _childName = childName;
             _imageFilePaths = imageFilePaths;
@@ -512,21 +534,21 @@ public sealed class CodingSubAgentOutputTests
                 OnGetService = (type, _) => type == typeof(ChatClientMetadata) && parentModelId is not null
                     ? new ChatClientMetadata(defaultModelId: parentModelId)
                     : null,
-                OnGetStreamingResponseAsync = (messages, _, ct) =>
+                OnGetStreamingResponseAsync = (messages, options, ct) =>
                 {
                     if (configureChildModel && _parentCalls == 0)
                     {
                         endpointManager.SetModelForPurpose(CodingModelPurposes.CodeWriting, "Fake");
                     }
-                    return RespondAsync(messages.ToArray(), ct);
+                    return RespondAsync(messages.ToArray(), options, ct);
                 },
             };
             var childClient = new FakeChatClient
             {
-                OnGetStreamingResponseAsync = (messages, _, ct) =>
+                OnGetStreamingResponseAsync = (messages, options, ct) =>
                 {
                     DedicatedModelCalls++;
-                    return RespondAsync(messages.ToArray(), ct);
+                    return RespondAsync(messages.ToArray(), options, ct);
                 },
             };
             endpointManager.RegisterLanguageModelProvider(new FakeLanguageModelProvider(childClient));
@@ -534,7 +556,12 @@ public sealed class CodingSubAgentOutputTests
             {
                 Session = session ?? new CopilotChatSession(CreateStorage()) { MainThreadDispatcher = dispatcher },
                 WorkspacePath = workspacePath,
-                Options = new CodingChatRunOptions { EnableAutomaticCompression = false, LanguageTag = "en" },
+                Options = new CodingChatRunOptions
+                {
+                    EnableAutomaticCompression = false,
+                    LanguageTag = "en",
+                    ReasoningEffort = reasoningEffort,
+                },
             };
             var context = new CodingRunContext(toolContext, client, Message)
             {
@@ -543,13 +570,14 @@ public sealed class CodingSubAgentOutputTests
             return agent.RunAsync(context, [new TextContent("parent task")], cancellationToken);
         }
 
-        private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages,
+        private async IAsyncEnumerable<ChatResponseUpdate> RespondAsync(ChatMessage[] messages, ChatOptions? options,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             bool child = messages.Any(message => message.Role == ChatRole.System
                 && message.Text.Contains("最终结果必须通过 `ReturnOutputToParent` 提交", StringComparison.Ordinal));
             if (!child)
             {
+                ParentReasoningEffort = options?.Reasoning?.Effort;
                 ParentResult = messages.SelectMany(message => message.Contents).OfType<FunctionResultContent>().LastOrDefault()?.Result?.ToString();
                 if (_parentCalls++ < delegations)
                 {
@@ -569,6 +597,7 @@ public sealed class CodingSubAgentOutputTests
                 yield break;
             }
 
+            ChildReasoningEffort = options?.Reasoning?.Effort;
             if (messages.Last().Role == ChatRole.Tool)
             {
                 yield return new ChatResponseUpdate(ChatRole.Assistant, "child done");

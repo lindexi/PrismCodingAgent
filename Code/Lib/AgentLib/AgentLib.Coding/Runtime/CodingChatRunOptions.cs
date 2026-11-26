@@ -6,7 +6,7 @@ namespace AgentLib.Coding;
 /// <summary>
 /// 定义可绑定的编程任务运行设置，不承载执行引擎选择或协议历史。
 /// </summary>
-public sealed class CodingChatRunOptions : NotifyBase
+public sealed record CodingChatRunOptions : RecordNotifyBase
 {
     private bool _enableAutomaticCompression = true;
     private bool _enableDotNetRun;
@@ -59,5 +59,4 @@ public sealed class CodingChatRunOptions : NotifyBase
 
     /// <summary>获取一份独立的默认运行设置。</summary>
     public static CodingChatRunOptions Default => new();
-
 }
