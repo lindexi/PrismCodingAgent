@@ -99,7 +99,8 @@ public sealed class WpfMessageCopyTests
             var menu = text.ContextMenu!;
             await screenshots.CaptureSurfaceAsync(menu, "framework-copy-menu");
             var copy = menu.Items.OfType<MenuItem>().Single(item => item.Command == System.Windows.Input.ApplicationCommands.Copy);
-            await WpfInput.ClickAsync(copy);
+            Assert.IsTrue(copy.Focus(), "Could not focus the framework Copy menu item.");
+            WpfInput.Key(0x0D);
             await WpfInput.WaitAsync(() => !menu.IsOpen, "Copy menu did not close.");
             Assert.AreEqual(body, WpfInput.ReadClipboard(TestContext), "Context menu did not copy; no retry performed.");
         }
