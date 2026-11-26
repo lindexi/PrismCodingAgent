@@ -1,3 +1,4 @@
+using System.Globalization;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.Services.Settings;
@@ -43,23 +44,36 @@ public sealed class LanguageSettingsTests
         }
     }
 
-    [DataTestMethod]
-    [DataRow(null)]
-    [DataRow("")]
-    [DataRow(" \t ")]
-    [DataRow("legacy-invalid")]
-    [DataRow("ar")]
-    public async Task WhenLoadingLegacyUnsupportedLanguageThenChineseIsUsed(string? language)
+    [TestMethod]
+    [DataRow(null, "en-US", "en")]
+    [DataRow(null, "fr-FR", "fr")]
+    [DataRow(null, "ar-SA", "zh-Hans")]
+    [DataRow("", "en-US", "zh-Hans")]
+    [DataRow(" \t ", "en-US", "zh-Hans")]
+    [DataRow("legacy-invalid", "en-US", "zh-Hans")]
+    [DataRow("ar", "en-US", "zh-Hans")]
+    public async Task WhenLoadingLegacyLanguageThenExpectedFallbackIsUsed(string? language, string cultureName, string expected)
     {
-        var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
-        paths.EnsureDirectories();
-        await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName,
-            System.Text.Json.JsonSerializer.Serialize(new { LanguageTag = language }));
-        using var vm = new SettingsViewModel(new CodingChatSettingsService(paths), () => { });
-        await vm.LoadAsync();
-        Assert.AreEqual("zh-Hans", vm.LanguageTag);
-        var startupSettings = await new CodingChatSettingsService(paths).LoadInitialShellSettingsAsync();
-        Assert.AreEqual("zh-Hans", startupSettings.LanguageTag);
+        var originalCulture = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
+            var paths = CodingChatRoomPaths.Create(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+            paths.EnsureDirectories();
+            await File.WriteAllTextAsync(paths.ShellSettingsFile.FullName,
+                System.Text.Json.JsonSerializer.Serialize(new { LanguageTag = language }));
+            var service = new CodingChatSettingsService(paths);
+            using var vm = new SettingsViewModel(service, () => { });
+
+            await vm.LoadAsync();
+            var startupSettings = await service.LoadInitialShellSettingsAsync();
+
+            Assert.AreEqual((expected, expected), (vm.LanguageTag, startupSettings.LanguageTag));
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = originalCulture;
+        }
     }
 
     [DataTestMethod]
