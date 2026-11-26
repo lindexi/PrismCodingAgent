@@ -626,6 +626,11 @@ public class CopilotChatManager : NotifyBase
     {
     }
 
+    /// <inheritdoc cref="CreateManualSendMessageContextAsync(CopilotChatSession,CancellationToken)"/>
+    public Task<IManualSendMessageContext> CreateManualSendMessageContextAsync
+        (CancellationToken cancellationToken = default) =>
+        CreateManualSendMessageContextAsync(SelectedSession, cancellationToken);
+
     /// <summary>
     /// 创建手动发送消息的上下文。不修改 <see cref="IsChatting"/> 状态，不追加消息到会话，不创建 CTS。
     /// 调用方完全自行控制 AgentFramework 的调用流程。
@@ -633,11 +638,11 @@ public class CopilotChatManager : NotifyBase
     /// 以及两个空壳 <see cref="CopilotChatMessage"/> 供调用方填充和流式追加。
     /// <see cref="ChatClientAgent"/> 和 <see cref="AgentSession"/> 延迟创建，首次调用对应异步方法时才初始化。
     /// </summary>
-    /// <param name="session">本轮已确定的会话；省略时使用调用开始时选中的会话。</param>
+    /// <param name="session">本轮已确定的会话；为 <see langword="null"/> 时使用当前选中的会话。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>手动发送消息的上下文。</returns>
     public async Task<IManualSendMessageContext> CreateManualSendMessageContextAsync
-        (CopilotChatSession? session = null, CancellationToken cancellationToken = default)
+        (CopilotChatSession? session, CancellationToken cancellationToken = default)
     {
         session ??= SelectedSession;
         // 默认工具不经过 HumanApprovalTool 包装，调用方自行决定是否包装
