@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 internal sealed class RoslynLspClient : IAsyncDisposable
 {

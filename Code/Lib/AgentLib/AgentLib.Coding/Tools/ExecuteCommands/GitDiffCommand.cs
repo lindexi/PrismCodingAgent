@@ -1,6 +1,6 @@
 using AgentLib.Logging;
 
-namespace AgentLib.Coding.ExecuteCommands;
+namespace AgentLib.Coding.Tools.ExecuteCommands;
 
 internal sealed class GitDiffCommand(string? workspacePath, ISessionCopilotChatLogger logger) : ICommandHandler
 {

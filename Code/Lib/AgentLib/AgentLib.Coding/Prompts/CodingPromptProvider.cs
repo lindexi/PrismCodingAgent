@@ -1,4 +1,4 @@
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Prompts;
 
 internal static class CodingPromptProvider
 {

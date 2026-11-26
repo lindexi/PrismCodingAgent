@@ -1,15 +1,14 @@
-using System.ClientModel.Primitives;
-using AgentLib.Coding.ExecuteCommands;
+using AgentLib.Coding.Prompts;
+using AgentLib.Coding.Tools;
+using AgentLib.Coding.Tools.ExecuteCommands;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Model;
-
 using Microsoft.Extensions.AI;
-
 using OpenAI.Responses;
 
 #pragma warning disable OPENAI001
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Responses;
 
 /// <summary>
 /// 使用原生 Responses 流式协议和共享工作区工具执行编程任务。

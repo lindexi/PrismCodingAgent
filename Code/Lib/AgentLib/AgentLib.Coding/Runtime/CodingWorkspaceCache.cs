@@ -1,3 +1,4 @@
+using AgentLib.Coding.Tools;
 using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;

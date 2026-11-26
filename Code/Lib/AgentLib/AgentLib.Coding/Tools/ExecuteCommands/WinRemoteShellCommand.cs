@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using AgentLib.Coding.Settings;
 
-namespace AgentLib.Coding.ExecuteCommands;
+namespace AgentLib.Coding.Tools.ExecuteCommands;
 
 internal sealed class WinRemoteShellCommand(CodingRunContext context) : ICommandHandler
 {

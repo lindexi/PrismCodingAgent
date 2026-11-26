@@ -1,4 +1,4 @@
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.SubAgents;
 
 /// <summary>
 /// 编程任务的模型用途标识。

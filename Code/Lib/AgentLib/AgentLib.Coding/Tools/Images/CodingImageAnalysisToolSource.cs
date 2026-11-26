@@ -1,6 +1,6 @@
 using AgentLib.Tools;
 
-namespace AgentLib.Coding.Images;
+namespace AgentLib.Coding.Tools;
 
 /// <summary>
 /// 为 Coding Agent 提供独立的图片分析子智能体工具。

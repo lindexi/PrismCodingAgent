@@ -1,7 +1,7 @@
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Responses;
 
 internal sealed class ResponsesCodingAgentRunResult : ICodingAgentRunResult
 {

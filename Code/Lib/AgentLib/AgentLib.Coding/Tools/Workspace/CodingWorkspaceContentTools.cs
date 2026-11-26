@@ -1,11 +1,8 @@
 using System.ComponentModel;
-
-using AgentLib.Model;
 using AgentLib.Tools;
-
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 internal sealed class CodingWorkspaceContentTools
 {

@@ -3,8 +3,6 @@ using System.Runtime.CompilerServices;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
-using AgentLib.Coding.Images;
-
 using Microsoft.Extensions.AI;
 
 namespace AgentLib.Coding.Tests;

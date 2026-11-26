@@ -1,4 +1,6 @@
-using AgentLib.Coding.ExecuteCommands;
+using AgentLib.Coding.Prompts;
+using AgentLib.Coding.Tools;
+using AgentLib.Coding.Tools.ExecuteCommands;
 using AgentLib.Core;
 using AgentLib.Model;
 using AgentLib.Reducers;
@@ -231,7 +233,7 @@ public sealed class CodingAgent : IAsyncDisposable
         ToolRegistration[] additionalToolRegistrations =
         [
             .. DeepSeekWebToolSource.CreateToolRegistrations(context),
-            .. Sandboxes.WindowsSandboxTools.CreateRegistrations(context),
+            .. WindowsSandboxTools.CreateRegistrations(context),
             .. _additionalToolSources.SelectMany(source => source.CreateToolRegistrations(context)),
         ];
         return workspaceCache.CreateRunContext(additionalToolRegistrations, context.Options.EnableDotNetRun);

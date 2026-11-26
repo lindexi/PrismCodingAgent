@@ -4,7 +4,7 @@ using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding.Sandboxes;
+namespace AgentLib.Coding.Tools;
 
 internal sealed class WindowsSandboxTools
 {

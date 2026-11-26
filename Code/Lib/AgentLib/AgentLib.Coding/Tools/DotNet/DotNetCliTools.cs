@@ -6,7 +6,7 @@ using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 /// <summary>
 /// 提供 .NET 构建与测试工具。

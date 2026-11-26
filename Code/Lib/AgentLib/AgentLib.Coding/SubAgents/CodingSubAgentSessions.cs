@@ -4,7 +4,7 @@ using AgentLib.Model;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.SubAgents;
 
 internal sealed class CodingSubAgentSessions : ISessionAdditionalInfo
 {

@@ -2,7 +2,7 @@ using System.ComponentModel;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding.ExecuteCommands;
+namespace AgentLib.Coding.Tools.ExecuteCommands;
 
 internal sealed class ExecuteCommandTool
 {

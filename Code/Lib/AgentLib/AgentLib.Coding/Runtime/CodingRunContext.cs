@@ -1,5 +1,6 @@
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Coding.Settings;
+using AgentLib.Coding.Tools;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 

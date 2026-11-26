@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
-namespace AgentLib.Coding.Sandboxes;
+namespace AgentLib.Coding.Tools;
 
 internal sealed class WinRemoteShellProcessRunner : IWinRemoteShellRunner
 {

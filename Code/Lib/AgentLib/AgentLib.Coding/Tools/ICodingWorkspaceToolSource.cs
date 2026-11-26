@@ -1,6 +1,6 @@
 using AgentLib.Tools;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 /// <summary>
 /// 为一次编程运行创建一组附加工具。

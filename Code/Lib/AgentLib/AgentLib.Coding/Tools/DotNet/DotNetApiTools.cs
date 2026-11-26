@@ -5,11 +5,10 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Xml.Linq;
-using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 internal sealed class DotNetApiTools
 {

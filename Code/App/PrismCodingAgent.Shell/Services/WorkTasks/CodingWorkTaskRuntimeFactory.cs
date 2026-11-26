@@ -5,7 +5,6 @@ using System.Net;
 using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding;
-using AgentLib.Coding.Images;
 using AgentLib.Coding.Settings;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;

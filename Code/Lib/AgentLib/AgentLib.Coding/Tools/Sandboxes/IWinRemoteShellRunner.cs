@@ -1,4 +1,4 @@
-namespace AgentLib.Coding.Sandboxes;
+namespace AgentLib.Coding.Tools;
 
 internal interface IWinRemoteShellRunner
 {

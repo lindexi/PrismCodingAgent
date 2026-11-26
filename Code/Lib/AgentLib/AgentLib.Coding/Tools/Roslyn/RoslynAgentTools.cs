@@ -5,7 +5,7 @@ using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 /// <summary>
 /// 提供基于 Roslyn Language Server 的解决方案目录与代码符号查询工具。

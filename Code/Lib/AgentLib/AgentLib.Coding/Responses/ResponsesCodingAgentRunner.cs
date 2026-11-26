@@ -6,7 +6,7 @@ using OpenAI.Responses;
 
 #pragma warning disable OPENAI001
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Responses;
 
 internal sealed class ResponsesCodingAgentRunner
 {

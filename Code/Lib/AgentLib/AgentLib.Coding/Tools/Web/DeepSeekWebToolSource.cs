@@ -4,7 +4,7 @@ using AgentLib.Tools;
 using DeepSeekSDK;
 using Microsoft.Extensions.AI;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 /// <summary>为编程代理提供 DeepSeek 网页搜索和网页抓取工具。</summary>
 public static class DeepSeekWebToolSource

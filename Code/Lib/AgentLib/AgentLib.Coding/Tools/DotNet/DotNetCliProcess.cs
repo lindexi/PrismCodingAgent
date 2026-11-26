@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 internal static class DotNetCliProcess
 {

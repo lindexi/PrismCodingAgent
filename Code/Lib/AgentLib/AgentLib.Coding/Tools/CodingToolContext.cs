@@ -1,7 +1,7 @@
 using AgentLib.Coding.Settings;
 using AgentLib.Model;
 
-namespace AgentLib.Coding;
+namespace AgentLib.Coding.Tools;
 
 /// <summary>提供本轮编程工具使用的会话、工作区与生效设置。</summary>
 public sealed record CodingToolContext

@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using AgentLib.Logging;
 
-namespace AgentLib.Coding.ExecuteCommands;
+namespace AgentLib.Coding.Tools.ExecuteCommands;
 
 internal sealed class DotNetCommand(string? workspacePath, ISessionCopilotChatLogger logger) : ICommandHandler
 {
