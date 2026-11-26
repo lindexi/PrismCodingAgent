@@ -1,10 +1,10 @@
-using AgentLib.Coding.Commands;
+using AgentLib.Coding.ExecuteCommands;
+using AgentLib.Coding.Settings;
 using AgentLib.Logging.Sessions;
 using AgentLib.Model;
 using AgentLib.Tools;
 using Microsoft.Extensions.AI;
 using OpenAI.Responses;
-using PrismCodingAgent.CodingShell.Services.Settings;
 
 #pragma warning disable OPENAI001
 

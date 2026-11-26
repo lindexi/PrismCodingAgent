@@ -1,4 +1,4 @@
-namespace PrismCodingAgent.CodingShell.Services.Settings;
+namespace AgentLib.Coding.Settings;
 
 /// <summary>可由应用扩展的通用 Shell 设置。</summary>
 public record CodingChatShellSettings

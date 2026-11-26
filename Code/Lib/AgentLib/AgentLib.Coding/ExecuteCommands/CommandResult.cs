@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace AgentLib.Coding.Commands;
+namespace AgentLib.Coding.ExecuteCommands;
 
 internal static class CommandResult
 {

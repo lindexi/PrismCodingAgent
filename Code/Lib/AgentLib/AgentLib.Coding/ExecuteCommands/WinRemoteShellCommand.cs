@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using PrismCodingAgent.CodingShell.Services.Settings;
+using AgentLib.Coding.Settings;
 
-namespace AgentLib.Coding.Commands;
+namespace AgentLib.Coding.ExecuteCommands;
 
 internal sealed class WinRemoteShellCommand(CodingToolContext context) : ICommandHandler
 {

@@ -1,5 +1,5 @@
+using AgentLib.Coding.Settings;
 using AgentLib.Model;
-using PrismCodingAgent.CodingShell.Services.Settings;
 
 namespace AgentLib.Coding;
 

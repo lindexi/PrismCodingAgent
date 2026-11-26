@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using AgentLib.Logging;
 
-namespace AgentLib.Coding.Commands;
+namespace AgentLib.Coding.ExecuteCommands;
 
 internal static class CommandProcess
 {

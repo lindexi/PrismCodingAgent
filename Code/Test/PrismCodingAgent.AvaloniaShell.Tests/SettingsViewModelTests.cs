@@ -1,5 +1,6 @@
 using AgentLib.Coding;
 using AgentLib.Coding.Sandboxes;
+using AgentLib.Coding.Settings;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Services.Integrations.WindowsSandbox;

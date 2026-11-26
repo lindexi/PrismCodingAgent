@@ -7,6 +7,7 @@ using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Coding.Images;
 using AgentLib.Coding.Sandboxes;
+using AgentLib.Coding.Settings;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Logging;

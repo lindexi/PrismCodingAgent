@@ -1,4 +1,4 @@
-namespace AgentLib.Coding.Commands;
+namespace AgentLib.Coding.ExecuteCommands;
 
 internal interface ICommandHandler
 {

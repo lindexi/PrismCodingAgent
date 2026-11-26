@@ -1,3 +1,5 @@
+using AgentLib.Coding.Settings;
+
 namespace PrismCodingAgent.CodingShell.Services.Settings;
 
 /// <summary>PrismCodingAgent 应用的 Shell 设置。</summary>
