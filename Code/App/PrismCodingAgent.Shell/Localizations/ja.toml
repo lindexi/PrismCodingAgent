@@ -1,5 +1,4 @@
 PurposeModelsTitle = "用途別モデル"
-PurposeModelsHelp = "設定は保存のみ行われ、対応する機能への組み込み後に使用されます。"
 PurposeAdd = "＋ カスタム用途を追加"
 PurposeRemove = "削除"
 PurposeKeyLabel = "用途名"

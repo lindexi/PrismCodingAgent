@@ -24,7 +24,7 @@ internal static class SpeakPlainlyChat
         messageContext.UserChatMessage.AppendText(Prompt); // 先加入一条，免得看起来界面等待
 
         await messageContext.AppendMessagesToSessionAsync();
-        var model = resolver.ResolveModel(ModelPurposes.UserCommunication) ?? resolver.PrimaryModel;
+        var model = resolver.ResolveModel(ModelPurposes.UserCommunication, out var effort) ?? resolver.PrimaryModel;
 
         // 更新一下，让界面能看到是调用哪个模型
         messageContext.UserChatMessage.ClearMessageItems();
@@ -35,6 +35,9 @@ internal static class SpeakPlainlyChat
         using var client = await model.GetChatClientAsync();
         var agent = client.AsAIAgent(new ChatClientAgentOptions
         {
+            ChatOptions = effort is { } configuredEffort
+                ? new ChatOptions { Reasoning = new ReasoningOptions { Effort = configuredEffort } }
+                : null,
             ChatHistoryProvider = new InMemoryChatHistoryProvider(),
             RequirePerServiceCallChatHistoryPersistence = true,
         });

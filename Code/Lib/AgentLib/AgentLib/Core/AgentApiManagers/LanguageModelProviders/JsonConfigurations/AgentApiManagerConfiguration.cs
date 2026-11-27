@@ -15,11 +15,8 @@ public record AgentApiManagerConfiguration
     /// </summary>
     public string? PrimaryModel { get; init; }
 
-    /// <summary>
-    /// 按用途指定的模型标识。用途区分大小写；模型标识支持模型名称、ID 或 Provider/ModelName。
-    /// 未配置的用途由调用方决定是否回退到当前首选模型。
-    /// </summary>
-    public IReadOnlyDictionary<string, string>? ModelsByPurpose { get; init; }
+    /// <summary>按用途保存模型和思考强度；用途键区分大小写。</summary>
+    public IReadOnlyDictionary<string, PurposeModelConfiguration>? ModelsByPurpose { get; init; }
 
     /// <summary>
     /// OpenAI 协议语言模型配置列表。

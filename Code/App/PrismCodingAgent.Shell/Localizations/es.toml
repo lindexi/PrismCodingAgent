@@ -1,5 +1,4 @@
 PurposeModelsTitle = "Modelos por finalidad"
-PurposeModelsHelp = "La configuración solo se guarda; se utilizará cuando se integre la función correspondiente."
 PurposeAdd = "＋ Añadir finalidad personalizada"
 PurposeRemove = "Eliminar"
 PurposeKeyLabel = "Nombre de la finalidad"

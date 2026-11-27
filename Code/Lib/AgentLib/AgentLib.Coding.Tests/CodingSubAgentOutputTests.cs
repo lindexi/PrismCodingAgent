@@ -38,18 +38,19 @@ public sealed class CodingSubAgentOutputTests
     }
 
     [TestMethod]
-    [DataRow(true)]
-    [DataRow(false)]
-    public async Task DelegationShouldInheritReasoningEffortOnlyWhenUsingTheParentModel(bool configureChildModel)
+    [DataRow(true, null)]
+    [DataRow(true, ReasoningEffort.Low)]
+    [DataRow(false, null)]
+    public async Task DelegationShouldUseConfiguredEffortOrInheritOnlyWhenUsingTheParentModel(bool configureChildModel, ReasoningEffort? childEffort)
     {
         var scenario = new Scenario();
         await using var agent = new CodingAgent();
 
         var run = await scenario.StartAsync(agent, configureChildModel: configureChildModel,
-            reasoningEffort: ReasoningEffort.High);
+            reasoningEffort: ReasoningEffort.High, childEffort: childEffort);
         await run.CompletionTask;
 
-        ReasoningEffort? expectedChildEffort = configureChildModel ? null : ReasoningEffort.High;
+        ReasoningEffort? expectedChildEffort = configureChildModel ? childEffort : ReasoningEffort.High;
         Assert.AreEqual(("submitted", expectedChildEffort, (ReasoningEffort?)ReasoningEffort.High),
             (scenario.ParentResult, scenario.ChildReasoningEffort, scenario.ParentReasoningEffort));
     }
@@ -524,7 +525,7 @@ public sealed class CodingSubAgentOutputTests
         public Task<ICodingAgentRunResult> StartAsync(CodingAgent agent, CancellationToken cancellationToken = default,
             CopilotChatSession? session = null, string? childName = "worker", string? workspacePath = null,
             string[]? imageFilePaths = null, bool configureChildModel = false, string? parentModelId = null,
-            ReasoningEffort? reasoningEffort = null)
+            ReasoningEffort? reasoningEffort = null, ReasoningEffort? childEffort = null)
         {
             _childName = childName;
             _imageFilePaths = imageFilePaths;
@@ -538,7 +539,7 @@ public sealed class CodingSubAgentOutputTests
                 {
                     if (configureChildModel && _parentCalls == 0)
                     {
-                        endpointManager.SetModelForPurpose(CodingModelPurposes.CodeWriting, "Fake");
+                        endpointManager.SetModelForPurpose(CodingModelPurposes.CodeWriting, "Fake", childEffort);
                     }
                     return RespondAsync(messages.ToArray(), options, ct);
                 },

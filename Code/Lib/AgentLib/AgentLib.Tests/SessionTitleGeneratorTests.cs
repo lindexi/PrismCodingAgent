@@ -82,12 +82,12 @@ public class SessionTitleGeneratorTests
     [TestMethod]
     public async Task PreviewShouldUseCurrentPurposeMappingOnEveryCall()
     {
-        var calls = new List<string>();
+        var calls = new List<(string Model, ReasoningEffort? Effort)>();
         FakeChatClient Client(string name) => new()
         {
-            OnGetResponseAsync = (_, _, _) =>
+            OnGetResponseAsync = (_, options, _) =>
             {
-                calls.Add(name);
+                calls.Add((name, options?.Reasoning?.Effort));
                 return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "unused")));
             }
         };
@@ -98,12 +98,12 @@ public class SessionTitleGeneratorTests
         await session.AddMessageAsync(new CopilotChatMessage(ChatRole.User, "task"));
 
         await generator.GenerateTitlePreviewAsync(session);
-        manager.SetModelForPurpose(AgentLib.Core.ModelPurposes.SessionTitle, "flash-model");
+        manager.SetModelForPurpose(AgentLib.Core.ModelPurposes.SessionTitle, "flash-model", ReasoningEffort.Low);
         await generator.GenerateTitlePreviewAsync(session);
         manager.SetModelForPurpose(AgentLib.Core.ModelPurposes.SessionTitle, "primary-model");
         await generator.GenerateTitlePreviewAsync(session);
 
-        CollectionAssert.AreEqual(new[] { "primary", "flash", "primary" }, calls);
+        CollectionAssert.AreEqual(new (string, ReasoningEffort?)[] { ("primary", null), ("flash", ReasoningEffort.Low), ("primary", null) }, calls);
     }
 
     [TestMethod]

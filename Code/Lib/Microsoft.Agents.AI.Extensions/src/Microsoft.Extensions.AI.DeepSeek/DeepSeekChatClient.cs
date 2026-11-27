@@ -312,8 +312,9 @@ public sealed partial class DeepSeekChatClient : IChatClient
             request["stop"] = stop;
         }
 
+        var effort = options?.Reasoning?.Effort;
         var enableThinkingMode = _enableThinkingMode;
-        if (options?.Reasoning?.Effort is ReasoningEffort.None)
+        if (effort is ReasoningEffort.None)
         {
             // 不要思考的状态
             enableThinkingMode = false;
@@ -326,6 +327,12 @@ public sealed partial class DeepSeekChatClient : IChatClient
                 ["type"] = "enabled",
                 ["budget_tokens"] = _reasoningBudgetTokens,
             };
+
+            // DeepSeek 将中、高及超高（xhigh）归为 high。
+            if (effort is ReasoningEffort.Low)
+                request["reasoning_effort"] = "low";
+            else if (effort is ReasoningEffort.Medium or ReasoningEffort.High or ReasoningEffort.ExtraHigh)
+                request["reasoning_effort"] = "high";
         }
         else
         {

@@ -1,4 +1,5 @@
 using AgentLib.Core;
+using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Model;
 
 using Microsoft.Extensions.AI;
@@ -24,7 +25,7 @@ public class SessionTitleGenerator
         _endpointManager = endpointManager;
     }
 
-    private readonly AgentApiEndpointManager _endpointManager;
+    private readonly ILanguageModelResolver _endpointManager;
 
     /// <summary>
     /// 为尚未生成或手动设置标题的会话生成并应用标题。取消或网络失败时保留原标题。
@@ -77,8 +78,7 @@ public class SessionTitleGenerator
             return "已收到标题。";
         }
 
-        var languageModel = _endpointManager.ResolveModel(ModelPurposes.SessionTitle) ?? _endpointManager.PrimaryModel;
-        using IChatClient chatClient = await languageModel.GetChatClientAsync().ConfigureAwait(false);
+        using IChatClient chatClient = await _endpointManager.GetChatClientAsync(ModelPurposes.SessionTitle).ConfigureAwait(false);
         messages.Insert(0, new ChatMessage(ChatRole.System, systemPrompt ?? SystemPrompt));
         var options = new ChatOptions
         {

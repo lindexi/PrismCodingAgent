@@ -445,13 +445,8 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
     private void RebuildReasoningEfforts()
     {
         AvailableReasoningEfforts.Clear();
-        AvailableReasoningEfforts.Add(new ReasoningEffortOptionViewModel(Lang.Current.ReasoningDefault, null));
-        AvailableReasoningEfforts.Add
-            (new ReasoningEffortOptionViewModel(Lang.Current.ReasoningLow, ReasoningEffort.Low));
-        AvailableReasoningEfforts.Add
-            (new ReasoningEffortOptionViewModel(Lang.Current.ReasoningMedium, ReasoningEffort.Medium));
-        AvailableReasoningEfforts.Add
-            (new ReasoningEffortOptionViewModel(Lang.Current.ReasoningHigh, ReasoningEffort.High));
+        foreach (var option in ReasoningEffortOptionViewModel.CreateOptions())
+            AvailableReasoningEfforts.Add(option);
         OnPropertyChanged(nameof(SelectedReasoningEffort));
     }
 
@@ -849,13 +844,7 @@ public sealed class ChatViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(WorkspaceStatusText));
         foreach (ReasoningEffortOptionViewModel option in AvailableReasoningEfforts)
         {
-            option.DisplayName = option.Value switch
-            {
-                ReasoningEffort.Low => Lang.Current.ReasoningLow,
-                ReasoningEffort.Medium => Lang.Current.ReasoningMedium,
-                ReasoningEffort.High => Lang.Current.ReasoningHigh,
-                _ => Lang.Current.ReasoningDefault,
-            };
+            option.RefreshDisplayName();
         }
 
         foreach (AbilityOptionViewModel option in AvailableAbilities)

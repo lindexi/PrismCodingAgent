@@ -549,20 +549,31 @@
                                                                    Style="{StaticResource PurposeErrorText}" />
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="2">
-                                                        <ComboBox ItemsSource="{Binding ModelOptions}"
-                                                                  SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
-                                                                  HorizontalAlignment="Stretch"
-                                                                  HorizontalContentAlignment="Stretch" MinWidth="0"
-                                                                  Height="36"
-                                                                  AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static l:Lang.Current}}">
-                                                            <ComboBox.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <TextBlock Text="{Binding DisplayName}"
-                                                                               TextTrimming="CharacterEllipsis"
-                                                                               ToolTip="{Binding DisplayName}" />
-                                                                </DataTemplate>
-                                                            </ComboBox.ItemTemplate>
-                                                        </ComboBox>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="8" />
+                                                                <ColumnDefinition Width="88" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <ComboBox x:Name="PurposeModelSelector" ItemsSource="{Binding ModelOptions}"
+                                                                      SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                                                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MinWidth="0"
+                                                                      Height="36" ToolTip="{Binding SelectedModel.DisplayName}"
+                                                                      AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static l:Lang.Current}}">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding DisplayName}"
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding DisplayName}" />
+                                                                    </DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                            <ComboBox x:Name="PurposeReasoningEffortSelector" Grid.Column="2" Height="36" MinWidth="0"
+                                                                      ItemsSource="{Binding ReasoningEffortOptions}" SelectedItem="{Binding SelectedReasoningEffort, Mode=TwoWay}"
+                                                                      DisplayMemberPath="DisplayName"
+                                                                      AutomationProperties.Name="{Binding ReasoningEffortText, Source={x:Static l:Lang.Current}}"
+                                                                      ToolTip="{Binding ReasoningEffortToolTip, Source={x:Static l:Lang.Current}}" />
+                                                        </Grid>
                                                         <TextBlock Text="{Binding ModelError}"
                                                                    Style="{StaticResource PurposeErrorText}" />
                                                     </StackPanel>

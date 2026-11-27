@@ -31,20 +31,23 @@ public sealed class PurposeModelControlTests
             expander.IsExpanded = true;
             Layout();
             var list = view.FindControl<ItemsControl>("PurposeModelsList")!;
-            var selectors = list.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            var selectors = list.GetVisualDescendants().OfType<ComboBox>().Where(control => control.Name == "PurposeModelSelector").ToArray();
             var positions = selectors.Select(selector => selector.TranslatePoint(default, list)!.Value).ToArray();
             Assert.AreEqual(columns, positions.Count(position => Math.Abs(position.Y - positions[0].Y) < 1));
             for (int i = 0; i < selectors.Length; i++)
             {
-                var fields = (Grid)selectors[i].Parent!;
+                var modelFields = (Grid)selectors[i].Parent!;
+                var fields = (Grid)modelFields.Parent!;
                 var label = (TextBlock)fields.Children[0];
+                var effortSelector = modelFields.Children.OfType<ComboBox>().Single(control => control.Name == "PurposeReasoningEffortSelector");
                 var labelPosition = label.TranslatePoint(default, list)!.Value;
                 Assert.AreEqual(8, positions[i].X - labelPosition.X - label.Bounds.Width, 1);
                 Assert.AreEqual(positions[i % columns].X, positions[i].X, 1);
                 Assert.AreEqual(labelPosition.Y + label.Bounds.Height / 2, positions[i].Y + 18, 1);
                 Assert.AreEqual(36, selectors[i].Bounds.Height, 1);
                 Assert.IsTrue(label.TextLayout.Width <= 64);
-                Assert.IsTrue(positions[i].X + selectors[i].Bounds.Width <= list.Bounds.Width + 1);
+                Assert.AreEqual(positions[i].Y, effortSelector.TranslatePoint(default, list)!.Value.Y, 1);
+                Assert.IsTrue(effortSelector.TranslatePoint(default, list)!.Value.X + effortSelector.Bounds.Width <= list.Bounds.Width + 1);
             }
             Assert.AreEqual(8, positions[columns].Y - positions[0].Y - 36, 1);
             model.AddPurposeModelCommand.Execute(null);
@@ -63,7 +66,7 @@ public sealed class PurposeModelControlTests
             {
                 var fields = (Grid)border.Child!;
                 var input = (TextBox)fields.Children[1];
-                var selector = (ComboBox)fields.Children[2];
+                var selector = (Grid)fields.Children[2];
                 var remove = (Button)fields.Children[5];
                 Assert.AreEqual("用途名称", input.PlaceholderText);
                 Assert.AreEqual(new Thickness(0), border.BorderThickness);
@@ -154,7 +157,7 @@ public sealed class PurposeModelControlTests
     {
         WithCustomRow((view, model, row) =>
         {
-            var selector = view.GetVisualDescendants().OfType<ComboBox>().Single(control => control.DataContext == row);
+            var selector = FindSelector(view, row, "PurposeModelSelector");
             var option = new PurposeModelOptionViewModel("test/model", "Test model", true);
             row.ModelOptions.Add(option);
             selector.SelectedItem = option;
@@ -180,10 +183,27 @@ public sealed class PurposeModelControlTests
     {
         WithCustomRow((view, model, row) =>
         {
-            var selector = view.GetVisualDescendants().OfType<ComboBox>().Single(control => control.DataContext == row);
+            var selector = FindSelector(view, row, "PurposeModelSelector");
             Assert.IsTrue(selector.Bounds.Width > 100 && selector.Bounds.Right <= ((Grid)selector.Parent!).Bounds.Width);
         });
     }
+
+    [TestMethod]
+    public void WhenModelIsUnspecifiedThenReasoningEffortCanBeEdited()
+    {
+        WithCustomRow((view, _, row) =>
+        {
+            var effort = FindSelector(view, row, "PurposeReasoningEffortSelector");
+            Assert.IsTrue(effort.IsEnabled);
+
+            effort.SelectedItem = row.ReasoningEffortOptions.Last();
+
+            Assert.AreSame(effort.SelectedItem, row.SelectedReasoningEffort);
+        });
+    }
+
+    private static ComboBox FindSelector(SettingsView view, PurposeModelSettingsViewModel row, string name) =>
+        view.GetVisualDescendants().OfType<ComboBox>().Single(control => control.DataContext == row && control.Name == name);
 
     private static void WithCustomRow(Action<SettingsView, SettingsViewModel, PurposeModelSettingsViewModel> verify)
     {

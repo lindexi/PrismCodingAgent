@@ -1,5 +1,4 @@
 PurposeModelsTitle = "Modèles par usage"
-PurposeModelsHelp = "La configuration est uniquement enregistrée ; elle sera utilisée après intégration de la fonction correspondante."
 PurposeAdd = "＋ Ajouter un usage personnalisé"
 PurposeRemove = "Supprimer"
 PurposeKeyLabel = "Nom de l’usage"

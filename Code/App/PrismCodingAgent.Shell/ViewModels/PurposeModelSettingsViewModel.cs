@@ -4,11 +4,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using AgentLib.Coding.SubAgents;
 using AgentLib.Core;
+using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.CodingShell.ViewModels;
 
-/// <summary>用途模型下拉选项；空引用表示不保存用途映射。</summary>
+/// <summary>用途模型下拉选项；空引用表示未指定模型。</summary>
 public sealed record PurposeModelOptionViewModel(string? ModelReference, string DisplayName, bool IsAvailable);
 
 /// <summary>WPF 和 Avalonia 共用的用途模型草稿行。</summary>
@@ -16,14 +17,16 @@ public sealed class PurposeModelSettingsViewModel : ViewModelBase
 {
     private string _purposeKey;
     private PurposeModelOptionViewModel? _selectedModel;
+    private ReasoningEffortOptionViewModel _selectedReasoningEffort;
     private string? _purposeError;
     private string? _modelError;
     private ObservableCollection<PurposeModelOptionViewModel> _modelOptions = [];
 
-    internal PurposeModelSettingsViewModel(string purposeKey, bool isBuiltIn)
+    internal PurposeModelSettingsViewModel(string purposeKey, bool isBuiltIn, ReasoningEffort? effort = null)
     {
         _purposeKey = purposeKey;
         IsBuiltIn = isBuiltIn;
+        _selectedReasoningEffort = ReasoningEffortOptions.FirstOrDefault(option => option.Value == effort) ?? ReasoningEffortOptions[0];
     }
 
     /// <summary>获取或编辑自定义用途键。内置键不可修改。</summary>
@@ -65,11 +68,29 @@ public sealed class PurposeModelSettingsViewModel : ViewModelBase
     /// <summary>获取模型选项，包含未指定项及当前失效的旧引用。</summary>
     public ObservableCollection<PurposeModelOptionViewModel> ModelOptions => _modelOptions;
 
-    /// <summary>获取或设置草稿选择；未指定项不写入映射。</summary>
+    /// <summary>获取或设置该用途选中的模型。</summary>
     public PurposeModelOptionViewModel? SelectedModel
     {
         get => _selectedModel;
-        set => SetField(ref _selectedModel, value);
+        set
+        {
+            if (value is not null)
+                SetField(ref _selectedModel, value);
+        }
+    }
+
+    /// <summary>获取该用途的思考强度选项。</summary>
+    public IReadOnlyList<ReasoningEffortOptionViewModel> ReasoningEffortOptions { get; } = ReasoningEffortOptionViewModel.CreateOptions();
+
+    /// <summary>获取或设置该用途选中的思考强度。</summary>
+    public ReasoningEffortOptionViewModel SelectedReasoningEffort
+    {
+        get => _selectedReasoningEffort;
+        set
+        {
+            if (value is not null)
+                SetField(ref _selectedReasoningEffort, value);
+        }
     }
 
     /// <summary>获取用途键的就地校验消息。</summary>

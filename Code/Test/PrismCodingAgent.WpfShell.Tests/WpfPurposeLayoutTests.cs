@@ -53,13 +53,13 @@ public sealed class WpfPurposeLayoutTests
         Assert.IsNotNull(row.PurposeError);
         name.Text = "ArchitectureReview";
         Assert.IsNull(row.PurposeError);
-        var selector = Descendants(list).OfType<ComboBox>().Single(input => ReferenceEquals(input.DataContext, row));
+        var selector = Descendants(list).OfType<ComboBox>().Single(input => ReferenceEquals(input.DataContext, row) && input.Name == "PurposeModelSelector");
         var unavailable = new PurposeModelOptionViewModel("missing/model", "missing/model", false);
         row.ModelOptions.Add(unavailable);
         selector.SelectedItem = unavailable;
         window.UpdateLayout();
         Assert.IsNotNull(row.ModelError);
-        Assert.AreEqual(list.ActualWidth < 632 ? 1 : 0, Grid.GetRow((UIElement)VisualTreeHelper.GetParent(selector)));
+        Assert.AreEqual(list.ActualWidth < 632 ? 1 : 0, Grid.GetRow((UIElement)VisualTreeHelper.GetParent(VisualTreeHelper.GetParent(selector))));
         expander.BringIntoView();
         await window.Dispatcher.InvokeAsync(window.UpdateLayout, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         await screenshots.CaptureAsync($"purpose-{width}-error");
@@ -91,7 +91,8 @@ public sealed class WpfPurposeLayoutTests
             var rows = Descendants(list).OfType<Border>().Where(border => border.Name == "PurposeRow").ToArray();
             var expectedRows = model.PurposeModels.ToArray();
             CollectionAssert.AreEquivalent(expectedRows, rows.Select(row => row.DataContext).ToArray());
-            CollectionAssert.AreEquivalent(expectedRows, selectors.Select(selector => selector.DataContext).ToArray());
+            CollectionAssert.AreEquivalent(expectedRows, selectors.Where(selector => selector.Name == "PurposeModelSelector").Select(selector => selector.DataContext).ToArray());
+            CollectionAssert.AreEquivalent(expectedRows, selectors.Where(selector => selector.Name == "PurposeReasoningEffortSelector").Select(selector => selector.DataContext).ToArray());
             var positions = rows.Select(row => row.TranslatePoint(default, list)).ToArray();
             Assert.AreEqual(columns, positions.Count(position => Math.Abs(position.Y - positions[0].Y) < 1));
             Assert.IsTrue(selectors.All(selector => selector.TranslatePoint(default, list).X + selector.ActualWidth <= list.ActualWidth + 1));
@@ -104,6 +105,41 @@ public sealed class WpfPurposeLayoutTests
         {
             window.Close();
         }
+    });
+
+    [TestMethod]
+    public Task WhenModelIsClearedThenReasoningEffortRemainsEditableAndKeepsItsValue() => WpfTestClassAttribute.RunUiAsync(() =>
+    {
+        using var model = new SettingsViewModel();
+        var provider = model.Providers[0];
+        provider.Models.Add(new() { Provider = "test", ModelName = "first" });
+        var view = new SettingsView { DataContext = model };
+        var window = new Window { Content = view, Width = 720, Height = 1000 };
+        try
+        {
+            window.Show();
+            ((Expander)view.FindName("PurposeModelsExpander")).IsExpanded = true;
+            window.UpdateLayout();
+            var row = model.PurposeModels[0];
+            var selectors = Descendants(view).OfType<ComboBox>().Where(selector => ReferenceEquals(selector.DataContext, row)).ToArray();
+            var modelSelector = selectors.Single(selector => selector.Name == "PurposeModelSelector");
+            var effortSelector = selectors.Single(selector => selector.Name == "PurposeReasoningEffortSelector");
+            Assert.IsTrue(effortSelector.IsEnabled);
+            var effort = row.ReasoningEffortOptions.Last();
+            effortSelector.SelectedItem = effort;
+            modelSelector.SelectedItem = row.ModelOptions.Last();
+
+            modelSelector.SelectedItem = row.ModelOptions.First();
+            window.UpdateLayout();
+
+            Assert.AreSame(effort, row.SelectedReasoningEffort);
+            Assert.AreSame(effort, effortSelector.SelectedItem);
+        }
+        finally
+        {
+            window.Close();
+        }
+        return Task.CompletedTask;
     });
 
     private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)

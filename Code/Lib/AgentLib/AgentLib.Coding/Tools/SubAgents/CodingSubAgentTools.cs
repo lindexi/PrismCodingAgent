@@ -41,7 +41,8 @@ internal sealed class CodingSubAgentTools
                 filePath, parentContext.WorkspacePath, cancellationToken).ConfigureAwait(false));
         }
 
-        var model = parentContext.ModelResolver?.ResolveModel(CodingModelPurposes.CodeWriting);
+        ReasoningEffort? effort = null;
+        var model = parentContext.ModelResolver?.ResolveModel(CodingModelPurposes.CodeWriting, out effort);
         IChatClient childClient = model is not null
             ? await model.GetChatClientAsync().ConfigureAwait(false)
             : parentContext.ChatClient;
@@ -66,7 +67,7 @@ internal sealed class CodingSubAgentTools
         var option = parentContext.Options with { };
         if (model is not null)
         {
-            option.ReasoningEffort = null;
+            option.ReasoningEffort = effort;
         }
 
         CodingToolContext childToolContext = parentContext.ToolContext with

@@ -81,9 +81,13 @@ public sealed class PurposeLocalizationTests
             var changes = new List<string?>();
             builtIn.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
 
+            var effort = builtIn.ReasoningEffortOptions.Last();
+            builtIn.SelectedReasoningEffort = effort;
             Lang.SetCurrent(language);
 
             var resources = ReadResources(language);
+            Assert.AreSame(effort, builtIn.SelectedReasoningEffort);
+            Assert.AreEqual(resources["ReasoningHigh"], effort.DisplayName);
             CollectionAssert.AreEqual(new[]
             {
                 resources["PurposeDocumentGeneration"], resources["PurposeUnspecified"],

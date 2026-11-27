@@ -1,5 +1,6 @@
 using AgentLib.Coding;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.ViewModels;
@@ -50,7 +51,7 @@ public sealed class PurposeModelSettingsTests
         vm.AddPurposeModelCommand.Execute(null);
         vm.PurposeModels[0].SelectedModel = vm.PurposeModels[0].ModelOptions.First();
         await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
-        Assert.AreEqual("Provider/Model", (await service.LoadAsync()).ModelConfiguration!.ModelsByPurpose!["DocumentGeneration"]);
+        Assert.AreEqual("Provider/Model", (await service.LoadAsync()).ModelConfiguration!.ModelsByPurpose!["DocumentGeneration"].ModelSpecifier);
     }
 
     [TestMethod]
@@ -143,7 +144,7 @@ public sealed class PurposeModelSettingsTests
         row.SelectedModel = row.ModelOptions.Last();
         await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
         row.SelectedModel = row.ModelOptions.First();
-        Assert.AreEqual("Provider/Model", (await service.LoadAsync()).ModelConfiguration!.ModelsByPurpose!["DocumentGeneration"]);
+        Assert.AreEqual("Provider/Model", (await service.LoadAsync()).ModelConfiguration!.ModelsByPurpose!["DocumentGeneration"].ModelSpecifier);
     }
 
     [TestMethod]
@@ -156,7 +157,7 @@ public sealed class PurposeModelSettingsTests
         await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
         vm.Providers.Clear();
         await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
-        Assert.AreEqual("Provider/Model", (await service.LoadAsync()).ModelConfiguration!.ModelsByPurpose!["DocumentGeneration"]);
+        Assert.AreEqual("Provider/Model", (await service.LoadAsync()).ModelConfiguration!.ModelsByPurpose!["DocumentGeneration"].ModelSpecifier);
     }
 
     [TestMethod]
@@ -172,6 +173,45 @@ public sealed class PurposeModelSettingsTests
         using var reloaded = new SettingsViewModel(service, () => { });
         await reloaded.LoadAsync();
         Assert.AreEqual("Provider/Model", reloaded.PurposeModels.Single(row => row.PurposeKey == "CustomAnalysis").SelectedModel!.ModelReference);
+    }
+
+    [TestMethod]
+    public async Task PurposeReasoningEffortShouldReloadIndependentlyForTheSameModel()
+    {
+        var service = CreateService();
+        using var vm = new SettingsViewModel(service, () => { });
+        vm.Providers[0].Models.Add(new() { Provider = "Provider", ModelName = "Model" });
+        var first = vm.PurposeModels[0];
+        var second = vm.PurposeModels[1];
+        first.SelectedModel = first.ModelOptions.Last();
+        second.SelectedModel = second.ModelOptions.Last();
+        first.SelectedReasoningEffort = first.ReasoningEffortOptions.Single(option => option.Value == ReasoningEffort.High);
+        await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
+        using var reloaded = new SettingsViewModel(service, () => { });
+
+        await reloaded.LoadAsync();
+
+        Assert.AreEqual(((ReasoningEffort?)ReasoningEffort.High, (ReasoningEffort?)null),
+            (reloaded.PurposeModels[0].SelectedReasoningEffort.Value, reloaded.PurposeModels[1].SelectedReasoningEffort.Value));
+    }
+
+    [TestMethod]
+    public async Task CustomPurposeWithoutModelShouldReloadReasoningEffort()
+    {
+        var service = CreateService();
+        using var vm = new SettingsViewModel(service, () => { });
+        vm.AddPurposeModelCommand.Execute(null);
+        var row = vm.PurposeModels.Last();
+        row.PurposeKey = "CustomAnalysis";
+        row.SelectedReasoningEffort = row.ReasoningEffortOptions.Last();
+        await ((SimpleAsyncCommand)vm.SaveCommand).ExecuteAsync();
+        using var reloaded = new SettingsViewModel(service, () => { });
+
+        await reloaded.LoadAsync();
+
+        var restored = reloaded.PurposeModels.Single(item => item.PurposeKey == "CustomAnalysis");
+        Assert.AreEqual(((string?)null, (ReasoningEffort?)ReasoningEffort.High),
+            (restored.SelectedModel?.ModelReference, restored.SelectedReasoningEffort.Value));
     }
 
     [DataTestMethod]
@@ -193,7 +233,7 @@ public sealed class PurposeModelSettingsTests
         var service = CreateService();
         await service.SaveAsync(new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = new Dictionary<string, string> { ["Reasoning"] = "Deleted/Model" },
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration> { ["Reasoning"] = new("Deleted/Model") },
         }, new PrismCodingAgentShellSettings());
         using var vm = new SettingsViewModel(service, () => { });
         await vm.LoadAsync();

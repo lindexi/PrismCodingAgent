@@ -1,5 +1,4 @@
 PurposeModelsTitle = "Purpose models"
-PurposeModelsHelp = "The configuration is only saved; it will be used after the corresponding feature is integrated."
 PurposeAdd = "＋ Add custom purpose"
 PurposeRemove = "Delete"
 PurposeKeyLabel = "Purpose name"

@@ -1,5 +1,4 @@
 PurposeModelsTitle = "용도별 모델"
-PurposeModelsHelp = "설정은 저장만 되며 해당 기능에 연동된 후 사용됩니다."
 PurposeAdd = "＋ 사용자 지정 용도 추가"
 PurposeRemove = "삭제"
 PurposeKeyLabel = "용도 이름"

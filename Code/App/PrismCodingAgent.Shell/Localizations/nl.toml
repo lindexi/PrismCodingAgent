@@ -1,5 +1,4 @@
 PurposeModelsTitle = "Modellen per doel"
-PurposeModelsHelp = "De configuratie wordt alleen opgeslagen en pas gebruikt nadat de bijbehorende functie is aangesloten."
 PurposeAdd = "＋ Aangepast doel toevoegen"
 PurposeRemove = "Verwijderen"
 PurposeKeyLabel = "Doelnaam"

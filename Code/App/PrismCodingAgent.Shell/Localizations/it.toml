@@ -1,5 +1,4 @@
 PurposeModelsTitle = "Modelli per finalità"
-PurposeModelsHelp = "La configurazione viene solo salvata; sarà utilizzata dopo l’integrazione della funzione corrispondente."
 PurposeAdd = "＋ Aggiungi finalità personalizzata"
 PurposeRemove = "Elimina"
 PurposeKeyLabel = "Nome della finalità"

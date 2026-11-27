@@ -1,5 +1,4 @@
 PurposeModelsTitle = "Modelle nach Verwendungszweck"
-PurposeModelsHelp = "Die Konfiguration wird nur gespeichert und erst nach Anbindung der jeweiligen Funktion verwendet."
 PurposeAdd = "＋ Eigenen Verwendungszweck hinzufügen"
 PurposeRemove = "Löschen"
 PurposeKeyLabel = "Name des Verwendungszwecks"

@@ -76,8 +76,8 @@ internal static class Program
             var rows = Descendants(list).OfType<Border>().Where(row => row.Name == "PurposeRow").ToArray();
             var selectors = Descendants(list).OfType<ComboBox>().ToArray();
             var originalRows = model.PurposeModels.ToArray();
-            Check(rows.Select(row => row.DataContext).SequenceEqual(originalRows)
-                && selectors.Select(selector => selector.DataContext).SequenceEqual(originalRows), "PurposeRowsAndSelectorsMatchModel", result);
+            Check(rows.Length == originalRows.Length && rows.All(row => row.DataContext is PurposeModelSettingsViewModel purpose && originalRows.Contains(purpose))
+                && rows.All(row => selectors.Count(selector => ReferenceEquals(selector.DataContext, row.DataContext)) == 2), "PurposeRowsAndSelectorsMatchModel", result);
             result.ListWidth = list.ActualWidth;
             result.Columns = rows.Count(row => Math.Abs(row.TranslatePoint(default, list).Y - rows[0].TranslatePoint(default, list).Y) < 1);
             Check(result.Columns == (result.Width == 1120 ? 2 : 1), "ExpectedColumns", result);
@@ -92,13 +92,13 @@ internal static class Program
             Check(draft.PurposeError is not null, "DuplicatePurposeError", result);
             name.Text = "ArchitectureReview";
             Check(draft.PurposeError is null, "ValidPurposeClearsError", result);
-            var selector = Descendants(list).OfType<ComboBox>().Single(input => ReferenceEquals(input.DataContext, draft));
+            var selector = Descendants(list).OfType<ComboBox>().Single(input => ReferenceEquals(input.DataContext, draft) && input.Name == "PurposeModelSelector");
             var unavailable = new PurposeModelOptionViewModel("missing/model", "missing/model", false);
             draft.ModelOptions.Add(unavailable);
             selector.SelectedItem = unavailable;
             Pump(window);
             Check(draft.ModelError is not null && name.Text == "ArchitectureReview", "UnavailableModelPreservesDraft", result);
-            Check(Grid.GetRow((UIElement)VisualTreeHelper.GetParent(selector)) == (list.ActualWidth < 632 ? 1 : 0), "ResponsiveCustomRow", result);
+            Check(Grid.GetRow((UIElement)VisualTreeHelper.GetParent(VisualTreeHelper.GetParent(selector))) == (list.ActualWidth < 632 ? 1 : 0), "ResponsiveCustomRow", result);
             result.PurposeError = draft.PurposeError;
             result.ModelError = draft.ModelError;
             Capture(expander, $"{result.Language}-{result.Width}-error.png", output, result);

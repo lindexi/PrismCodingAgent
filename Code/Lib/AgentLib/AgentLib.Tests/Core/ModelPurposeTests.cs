@@ -4,6 +4,7 @@ using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
+using Microsoft.Extensions.AI;
 
 namespace AgentLib.Tests.Core;
 
@@ -32,7 +33,7 @@ public class ModelPurposeTests
 
         manager.LoadConfiguration(CreateConfiguration("review", specifier));
 
-        Assert.AreEqual(specifier, manager.ModelsByPurpose["review"]);
+        Assert.AreEqual(specifier, manager.ModelsByPurpose["review"].ModelSpecifier);
     }
 
     [DataTestMethod]
@@ -45,7 +46,7 @@ public class ModelPurposeTests
 
         manager.SetModelForPurpose("review", specifier);
 
-        Assert.AreEqual(specifier, manager.ModelsByPurpose["review"]);
+        Assert.AreEqual(specifier, manager.ModelsByPurpose["review"].ModelSpecifier);
     }
 
     [DataTestMethod]
@@ -60,7 +61,7 @@ public class ModelPurposeTests
         manager.ReplaceModelsByPurpose(CreateConfiguration("review", specifier).ModelsByPurpose);
 
         CollectionAssert.AreEqual(new[] { "review", specifier },
-            manager.ModelsByPurpose.SelectMany(pair => new[] { pair.Key, pair.Value }).ToArray());
+            manager.ModelsByPurpose.SelectMany(pair => new[] { pair.Key, pair.Value.ModelSpecifier }).ToArray());
     }
 
     [DataTestMethod]
@@ -123,10 +124,10 @@ public class ModelPurposeTests
         var (manager, _, _) = CreateManager();
         manager.ReplaceConfiguration(CreateReplacementConfiguration() with
         {
-            ModelsByPurpose = new Dictionary<string, string> { ["review"] = "future/shared" },
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration> { ["review"] = new("future/shared") },
         });
 
-        Assert.AreEqual("future/shared", manager.ModelsByPurpose["review"]);
+        Assert.AreEqual("future/shared", manager.ModelsByPurpose["review"].ModelSpecifier);
         Assert.IsNull(manager.ResolveModel("review"));
 
         var expected = CreateModel("future", "shared", "future-id");
@@ -178,10 +179,10 @@ public class ModelPurposeTests
         var (manager, primary, secondary) = CreateManager();
         manager.LoadConfiguration(new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = new Dictionary<string, string>(StringComparer.Ordinal)
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>(StringComparer.Ordinal)
             {
-                ["review"] = "primary",
-                ["Review"] = "secondary",
+                ["review"] = new("primary"),
+                ["Review"] = new("secondary"),
             },
         });
 
@@ -196,9 +197,9 @@ public class ModelPurposeTests
         var (manager, _, _) = CreateManager();
         manager.LoadConfiguration(new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>(StringComparer.OrdinalIgnoreCase)
             {
-                ["review"] = "secondary",
+                ["review"] = new("secondary"),
             },
         });
 
@@ -247,14 +248,13 @@ public class ModelPurposeTests
     [DataRow("", "secondary")]
     [DataRow(" ", "secondary")]
     [DataRow("\t\r\n", "secondary")]
-    [DataRow("review", null)]
     [DataRow("review", "")]
     [DataRow("review", " ")]
     [DataRow("review", "\t\r\n")]
-    public void LoadConfiguration_WhenPurposeMappingIsInvalid_ThrowsArgumentException(string purpose, string? modelSpecifier)
+    public void LoadConfiguration_WhenPurposeMappingIsInvalid_ThrowsArgumentException(string purpose, string modelSpecifier)
     {
         var (manager, _, _) = CreateManager();
-        var configuration = CreateConfiguration(purpose, modelSpecifier!);
+        var configuration = CreateConfiguration(purpose, modelSpecifier);
 
         Assert.Throws<ArgumentException>(() => manager.LoadConfiguration(configuration));
     }
@@ -282,7 +282,7 @@ public class ModelPurposeTests
 
         manager.LoadConfiguration(new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = useNull ? null : new Dictionary<string, string>(),
+            ModelsByPurpose = useNull ? null : new Dictionary<string, PurposeModelConfiguration>(),
         });
 
         Assert.IsNull(manager.ResolveModel("review"));
@@ -295,10 +295,10 @@ public class ModelPurposeTests
         manager.LoadConfiguration(CreateConfiguration("old", "secondary"));
         var configuration = new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = new Dictionary<string, string>
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>
             {
-                ["new"] = "primary",
-                ["invalid"] = " ",
+                ["new"] = new("primary"),
+                ["invalid"] = new(" "),
             },
         };
         Assert.Throws<ArgumentException>(() => manager.LoadConfiguration(configuration));
@@ -364,7 +364,7 @@ public class ModelPurposeTests
         var configuration = CreateReplacementConfiguration() with
         {
             PrimaryModel = primaryModel,
-            ModelsByPurpose = new Dictionary<string, string> { [purpose] = modelSpecifier },
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration> { [purpose] = new(modelSpecifier) },
         };
         Assert.Throws<ArgumentException>(() => manager.ReplaceConfiguration(configuration));
 
@@ -393,11 +393,11 @@ public class ModelPurposeTests
         manager.PrimaryModel = retained;
         manager.LoadConfiguration(new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = new Dictionary<string, string>
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>
             {
-                ["removed-name"] = "removed/shared",
-                ["removed-id"] = "removed-id",
-                ["retained"] = "retained/shared",
+                ["removed-name"] = new("removed/shared"),
+                ["removed-id"] = new("removed-id"),
+                ["retained"] = new("retained/shared"),
             },
         });
 
@@ -416,10 +416,10 @@ public class ModelPurposeTests
         var configuration = new AgentApiManagerConfiguration
         {
             PrimaryModel = "test/primary",
-            ModelsByPurpose = new Dictionary<string, string>(StringComparer.Ordinal)
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>(StringComparer.Ordinal)
             {
-                ["review"] = "test/secondary",
-                ["Review"] = "primary-id",
+                ["review"] = new("test/secondary"),
+                ["Review"] = new("primary-id"),
             },
         };
 #if NET6_0
@@ -472,7 +472,7 @@ public class ModelPurposeTests
         var (manager, _, _) = CreateManager();
         manager.SetModelForPurpose("review", "test/secondary");
 
-        Assert.AreEqual("test/secondary", manager.ModelsByPurpose["review"]);
+        Assert.AreEqual("test/secondary", manager.ModelsByPurpose["review"].ModelSpecifier);
     }
 
     [TestMethod]
@@ -541,7 +541,7 @@ public class ModelPurposeTests
     {
         var (manager, _, _) = CreateManager();
         manager.SetModelForPurpose("old", "secondary");
-        manager.ReplaceModelsByPurpose(new Dictionary<string, string> { ["new"] = "primary" });
+        manager.ReplaceModelsByPurpose(new Dictionary<string, PurposeModelConfiguration> { ["new"] = new("primary") });
 
         CollectionAssert.AreEqual(new[] { "new" }, manager.ModelsByPurpose.Keys.ToArray());
     }
@@ -553,7 +553,7 @@ public class ModelPurposeTests
     {
         var (manager, _, _) = CreateManager();
         manager.SetModelForPurpose("review", "secondary");
-        manager.ReplaceModelsByPurpose(useNull ? null : new Dictionary<string, string>());
+        manager.ReplaceModelsByPurpose(useNull ? null : new Dictionary<string, PurposeModelConfiguration>());
 
         Assert.IsEmpty(manager.ModelsByPurpose);
     }
@@ -561,16 +561,15 @@ public class ModelPurposeTests
     [DataTestMethod]
     [DataRow("", "primary")]
     [DataRow(" ", "primary")]
-    [DataRow("invalid", null)]
     [DataRow("invalid", "")]
     [DataRow("invalid", " ")]
     [DataRow("\t\r\n", "primary")]
     [DataRow("invalid", "\t\r\n")]
-    public void ReplaceModelsByPurpose_WhenInvalid_PreservesAllMappings(string purpose, string? specifier)
+    public void ReplaceModelsByPurpose_WhenInvalid_PreservesAllMappings(string purpose, string specifier)
     {
         var (manager, _, _) = CreateManager();
         manager.SetModelForPurpose("old", "secondary");
-        var replacement = new Dictionary<string, string> { ["new"] = "primary", [purpose] = specifier! };
+        var replacement = new Dictionary<string, PurposeModelConfiguration> { ["new"] = new("primary"), [purpose] = new(specifier) };
         Assert.Throws<ArgumentException>(() => manager.ReplaceModelsByPurpose(replacement));
 
         CollectionAssert.AreEqual(new[] { "old" }, manager.ModelsByPurpose.Keys.ToArray());
@@ -581,9 +580,9 @@ public class ModelPurposeTests
     {
         var (manager, _, _) = CreateManager();
         manager.SetModelForPurpose("review", "secondary");
-        var snapshot = (IDictionary<string, string>) manager.ModelsByPurpose;
+        var snapshot = (IDictionary<string, PurposeModelConfiguration>) manager.ModelsByPurpose;
 
-        Assert.Throws<NotSupportedException>(() => snapshot["review"] = "primary");
+        Assert.Throws<NotSupportedException>(() => snapshot["review"] = new("primary"));
     }
 
     [TestMethod]
@@ -594,18 +593,18 @@ public class ModelPurposeTests
         var snapshot = manager.ModelsByPurpose;
         manager.SetModelForPurpose("review", "primary");
 
-        Assert.AreEqual("secondary", snapshot["review"]);
+        Assert.AreEqual("secondary", snapshot["review"].ModelSpecifier);
     }
 
     [TestMethod]
     public void ReplaceModelsByPurpose_WhenSourceChanges_DoesNotChangeMapping()
     {
         var (manager, _, _) = CreateManager();
-        var source = new Dictionary<string, string> { ["review"] = "secondary" };
+        var source = new Dictionary<string, PurposeModelConfiguration> { ["review"] = new("secondary") };
         manager.ReplaceModelsByPurpose(source);
-        source["review"] = "primary";
+        source["review"] = new("primary");
 
-        Assert.AreEqual("secondary", manager.ModelsByPurpose["review"]);
+        Assert.AreEqual("secondary", manager.ModelsByPurpose["review"].ModelSpecifier);
     }
 
     [TestMethod]
@@ -713,6 +712,66 @@ public class ModelPurposeTests
         Assert.AreSame(primary, manager.ResolveModel("primary"));
     }
 
+    [TestMethod]
+    public async Task PurposeEffortShouldRoundTripThroughConfigurationFile()
+    {
+        var file = new FileInfo(Path.Combine(Path.GetTempPath(), $"purpose-models-{Guid.NewGuid():N}.json"));
+        var configuration = new AgentApiManagerConfiguration
+        {
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>
+            {
+                ["review"] = new("test/model", ReasoningEffort.High),
+                ["unassigned"] = new(null, ReasoningEffort.Low),
+            },
+        };
+        await configuration.SaveToFileAsync(file);
+
+        var loaded = await AgentApiManagerConfiguration.FromJsonFileAsync(file);
+
+        CollectionAssert.AreEquivalent(configuration.ModelsByPurpose!.ToArray(), loaded.ModelsByPurpose!.ToArray());
+    }
+
+    [TestMethod]
+    [DataRow("review", ReasoningEffort.High)]
+    [DataRow("title", ReasoningEffort.Low)]
+    [DataRow("test/model", null)]
+    [DataRow("missing", null)]
+    [DataRow("unassigned", null)]
+    public async Task ChatClientShouldApplyOnlyTheResolvedPurposeEffort(string specifier, ReasoningEffort? expected)
+    {
+        ReasoningEffort? actual = null;
+        var client = new FakeChatClient
+        {
+            OnGetResponseAsync = (_, options, _) =>
+            {
+                actual = options?.Reasoning?.Effort;
+                return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "done")));
+            },
+        };
+        var model = new FakeLanguageModel(client)
+        {
+            ModelDefinition = new ModelDefinition { Provider = "test", ModelName = "model" },
+        };
+        var manager = new AgentApiEndpointManager();
+        manager.RegisterLanguageModelProvider(new FakeLanguageModelProvider([model]));
+        ILanguageModelResolver resolver = manager;
+        manager.LoadConfiguration(new AgentApiManagerConfiguration
+        {
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>
+            {
+                ["review"] = new("test/model", ReasoningEffort.High),
+                ["title"] = new("test/model", ReasoningEffort.Low),
+                ["missing"] = new("test/missing", ReasoningEffort.High),
+                ["unassigned"] = new(null, ReasoningEffort.High),
+            },
+        });
+
+        using var resolvedClient = await resolver.GetChatClientAsync(specifier);
+        await resolvedClient.GetResponseAsync([new ChatMessage(ChatRole.User, "test")]);
+
+        Assert.AreEqual(expected, actual);
+    }
+
     private static FakeLanguageModel CreateModel(string provider, string name, string id)
     {
         return new FakeLanguageModel(new FakeChatClient())
@@ -725,7 +784,7 @@ public class ModelPurposeTests
     {
         return new AgentApiManagerConfiguration
         {
-            ModelsByPurpose = new Dictionary<string, string>(StringComparer.Ordinal) { [purpose] = modelSpecifier },
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration>(StringComparer.Ordinal) { [purpose] = new(modelSpecifier) },
         };
     }
 
@@ -734,7 +793,7 @@ public class ModelPurposeTests
         return new AgentApiManagerConfiguration
         {
             PrimaryModel = "replacement/new",
-            ModelsByPurpose = new Dictionary<string, string> { ["new-purpose"] = "replacement/new" },
+            ModelsByPurpose = new Dictionary<string, PurposeModelConfiguration> { ["new-purpose"] = new("replacement/new") },
             OpenAIConfigurationList =
             [
                 new OpenAIProtocolLanguageModelConfiguration("https://example.invalid", "test-key")

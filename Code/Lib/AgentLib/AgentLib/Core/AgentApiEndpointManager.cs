@@ -2,6 +2,7 @@ using System.Net;
 
 using AgentLib.Core.AgentApiManagers;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using Microsoft.Extensions.AI;
 
 namespace AgentLib.Core;
 
@@ -11,14 +12,12 @@ namespace AgentLib.Core;
 public class AgentApiEndpointManager : IHttpClientProvider, ILanguageModelResolver
 {
     private readonly DynamicWebProxy _dynamicWebProxy = new();
-    private Dictionary<string, string> _modelsByPurpose = new(StringComparer.Ordinal);
+    private Dictionary<string, PurposeModelConfiguration> _modelsByPurpose = new(StringComparer.Ordinal);
 
-    /// <summary>
-    /// 获取用途到模型标识的只读快照；用途区分大小写。
-    /// </summary>
-    public IReadOnlyDictionary<string, string> ModelsByPurpose
-        => new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(
-            new Dictionary<string, string>(_modelsByPurpose, StringComparer.Ordinal));
+    /// <summary>获取用途模型配置的只读快照；用途区分大小写。</summary>
+    public IReadOnlyDictionary<string, PurposeModelConfiguration> ModelsByPurpose
+        => new System.Collections.ObjectModel.ReadOnlyDictionary<string, PurposeModelConfiguration>(
+            new Dictionary<string, PurposeModelConfiguration>(_modelsByPurpose, StringComparer.Ordinal));
 
     /// <summary>
     /// 创建 API 终结点管理器。
@@ -153,11 +152,14 @@ public class AgentApiEndpointManager : IHttpClientProvider, ILanguageModelResolv
     /// <summary>
     /// 设置指定用途的模型标识；模型在查询时解析，无需预先注册。
     /// </summary>
-    public void SetModelForPurpose(string purpose, string modelSpecifier)
+    public void SetModelForPurpose(string purpose, string modelSpecifier) => SetModelForPurpose(purpose, modelSpecifier, null);
+
+    /// <summary>设置指定用途的模型标识及思考强度；空强度使用模型默认行为。</summary>
+    public void SetModelForPurpose(string purpose, string modelSpecifier, ReasoningEffort? effort)
     {
         ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
         ArgumentHelper.ThrowIfNullOrWhiteSpace(modelSpecifier);
-        _modelsByPurpose[purpose] = modelSpecifier;
+        _modelsByPurpose[purpose] = new(modelSpecifier, effort);
     }
 
     /// <summary>
@@ -172,16 +174,18 @@ public class AgentApiEndpointManager : IHttpClientProvider, ILanguageModelResolv
     /// <summary>
     /// 整体替换用途映射；空值清空映射，参数验证失败时保留原映射。模型无需预先注册。
     /// </summary>
-    public void ReplaceModelsByPurpose(IReadOnlyDictionary<string, string>? modelsByPurpose)
+    public void ReplaceModelsByPurpose(IReadOnlyDictionary<string, PurposeModelConfiguration>? modelsByPurpose)
     {
-        var replacement = new Dictionary<string, string>(StringComparer.Ordinal);
+        var replacement = new Dictionary<string, PurposeModelConfiguration>(StringComparer.Ordinal);
         if (modelsByPurpose is not null)
         {
-            foreach (var (purpose, modelSpecifier) in modelsByPurpose)
+            foreach (var (purpose, mapping) in modelsByPurpose)
             {
                 ArgumentHelper.ThrowIfNullOrWhiteSpace(purpose);
-                ArgumentHelper.ThrowIfNullOrWhiteSpace(modelSpecifier);
-                replacement.Add(purpose, modelSpecifier);
+                ArgumentNullException.ThrowIfNull(mapping, $"ModelsByPurpose[{purpose}]");
+                if (mapping.ModelSpecifier is { } modelSpecifier)
+                    ArgumentHelper.ThrowIfNullOrWhiteSpace(modelSpecifier, $"ModelsByPurpose[{purpose}].ModelSpecifier");
+                replacement.Add(purpose, mapping);
             }
         }
 
@@ -220,17 +224,30 @@ public class AgentApiEndpointManager : IHttpClientProvider, ILanguageModelResolv
     /// </summary>
     /// <param name="modelSpecifier">用途或模型标识字符串。</param>
     /// <returns>匹配的模型；未找到时返回 <see langword="null"/>。</returns>
-    public ILanguageModel? ResolveModel(string modelSpecifier)
+    public ILanguageModel? ResolveModel(string modelSpecifier) => ResolveModel(modelSpecifier, out _);
+
+    /// <inheritdoc />
+    public ILanguageModel? ResolveModel(string modelSpecifier, out ReasoningEffort? effort)
     {
+        effort = null;
         if (string.IsNullOrEmpty(modelSpecifier))
         {
             return null;
         }
 
-        if (_modelsByPurpose.TryGetValue(modelSpecifier, out var mappedModelSpecifier))
+        if (_modelsByPurpose.TryGetValue(modelSpecifier, out var mapping) && mapping.ModelSpecifier is { } configuredModel)
         {
-            modelSpecifier = mappedModelSpecifier;
+            var model = FindModel(configuredModel);
+            if (model is not null)
+                effort = mapping.ReasoningEffort;
+            return model;
         }
+
+        return FindModel(modelSpecifier);
+    }
+
+    private ILanguageModel? FindModel(string modelSpecifier)
+    {
 
         // 支持 "Provider/ModelName" 或 "Provider\ModelName" 格式
         var separatorIndex = modelSpecifier.IndexOfAny(new[] { '/', '\\' });

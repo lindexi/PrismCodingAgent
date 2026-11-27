@@ -1,5 +1,6 @@
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
+using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Infrastructure;
 using PrismCodingAgent.CodingShell.Services.Settings;
 using PrismCodingAgent.CodingShell.ViewModels;
@@ -16,10 +17,10 @@ public sealed class SettingsModelsByPurposeTests
     public async Task WhenSavingOtherSettingsThenLoadedPurposeMappingsPersistAsync()
     {
         var service = CreateService();
-        var mappings = new Dictionary<string, string>
+        var mappings = new Dictionary<string, PurposeModelConfiguration>
         {
-            ["summary"] = "test/model-a",
-            ["custom-purpose"] = "other/model-b",
+            ["summary"] = new("test/model-a", ReasoningEffort.Low),
+            ["custom-purpose"] = new("other/model-b"),
         };
         await service.SaveAsync(Configuration(mappings), ShellSettings());
         using var viewModel = new SettingsViewModel(service, static () => { });
@@ -42,7 +43,7 @@ public sealed class SettingsModelsByPurposeTests
     public async Task WhenSavingEmptyPurposeMappingsThenEmptyDictionaryPersistsAsync()
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration(new Dictionary<string, string>()), ShellSettings());
+        await service.SaveAsync(Configuration(new Dictionary<string, PurposeModelConfiguration>()), ShellSettings());
         using var viewModel = new SettingsViewModel(service, static () => { });
         await viewModel.LoadAsync();
 
@@ -72,12 +73,12 @@ public sealed class SettingsModelsByPurposeTests
     public async Task WhenReloadingConfigurationThenLatestPurposeMappingsReplacePreviousMappingsAsync(string? model)
     {
         var service = CreateService();
-        await service.SaveAsync(Configuration(new Dictionary<string, string> { ["summary"] = "test/old-model" }), ShellSettings());
+        await service.SaveAsync(Configuration(new Dictionary<string, PurposeModelConfiguration> { ["summary"] = new("test/old-model") }), ShellSettings());
         using var viewModel = new SettingsViewModel(service, static () => { });
         await viewModel.LoadAsync();
-        IReadOnlyDictionary<string, string>? mappings = model is null
+        IReadOnlyDictionary<string, PurposeModelConfiguration>? mappings = model is null
             ? null
-            : new Dictionary<string, string> { ["summary"] = model };
+            : new Dictionary<string, PurposeModelConfiguration> { ["summary"] = new(model) };
         await service.SaveAsync(Configuration(mappings), ShellSettings());
         await viewModel.LoadAsync();
 
@@ -97,7 +98,7 @@ public sealed class SettingsModelsByPurposeTests
 
     private static PrismCodingAgentShellSettings ShellSettings() => new() { LanguageTag = Lang.Current.IetfLanguageTag };
 
-    private static AgentApiManagerConfiguration Configuration(IReadOnlyDictionary<string, string>? mappings) => new()
+    private static AgentApiManagerConfiguration Configuration(IReadOnlyDictionary<string, PurposeModelConfiguration>? mappings) => new()
     {
         PrimaryModel = "test/model-a",
         ModelsByPurpose = mappings,

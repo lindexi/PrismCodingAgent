@@ -316,7 +316,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable, IAsy
             Providers.Add(CreateEmptyProvider());
         }
 
-        LoadPurposeModels(snapshot.ModelConfiguration?.ModelsByPurpose);
+        LoadPurposeModels(snapshot.ModelConfiguration);
         _isLoading = false;
         RefreshDeepSeekApiKey();
 

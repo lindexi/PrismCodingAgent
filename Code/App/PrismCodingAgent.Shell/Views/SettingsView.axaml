@@ -379,7 +379,6 @@
                                 <TextBlock x:Name="PurposeModelsHeading" FontWeight="SemiBold" Text="{Binding PurposeModelsTitle, Source={x:Static localizations:Lang.Current}}" />
                             </Expander.Header>
                             <StackPanel Spacing="8">
-                                <TextBlock Text="{Binding PurposeModelsHelp, Source={x:Static localizations:Lang.Current}}" Classes="SettingsHint" TextWrapping="Wrap" MaxWidth="792" HorizontalAlignment="Left" />
                                 <ItemsControl x:Name="PurposeModelsList" DataContextChanged="OnPurposeListDataContextChanged" Width="{Binding $parent[StackPanel].Bounds.Width}" MaxWidth="776" HorizontalAlignment="Left" SizeChanged="OnPurposeListSizeChanged">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate><WrapPanel ItemSpacing="32" LineSpacing="8" /></ItemsPanelTemplate>
@@ -393,15 +392,28 @@
                                                              Text="{Binding PurposeKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                              PlaceholderText="{Binding PurposeKeyHint, Source={x:Static localizations:Lang.Current}}"
                                                              AutomationProperties.Name="{Binding PurposeKeyLabel, Source={x:Static localizations:Lang.Current}}" />
-                                                    <ComboBox Grid.Column="2" Classes="PurposeSelector" Classes.PurposeError="{Binding ModelError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="{Binding SelectedModel.DisplayName}" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
-                                                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MinWidth="0" MaxWidth="300"
-                                                              AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static localizations:Lang.Current}}">
-                                                        <ComboBox.ItemTemplate>
-                                                            <DataTemplate x:DataType="vm:PurposeModelOptionViewModel">
-                                                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
-                                                            </DataTemplate>
-                                                        </ComboBox.ItemTemplate>
-                                                    </ComboBox>
+                                                    <Grid Grid.Column="2" ColumnDefinitions="*,8,88">
+                                                        <ComboBox x:Name="PurposeModelSelector" Classes="PurposeSelector" Classes.PurposeError="{Binding ModelError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="{Binding SelectedModel.DisplayName}" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                                                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" MinWidth="0"
+                                                                  AutomationProperties.Name="{Binding PurposeModelLabel, Source={x:Static localizations:Lang.Current}}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:PurposeModelOptionViewModel">
+                                                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DisplayName}" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                        <ComboBox x:Name="PurposeReasoningEffortSelector" Grid.Column="2" Classes="PurposeSelector"
+                                                                  HorizontalAlignment="Stretch" MinWidth="0" Padding="8,0"
+                                                                  ItemsSource="{Binding ReasoningEffortOptions}" SelectedItem="{Binding SelectedReasoningEffort, Mode=TwoWay}"
+                                                                  AutomationProperties.Name="{Binding ReasoningEffortText, Source={x:Static localizations:Lang.Current}}"
+                                                                  ToolTip.Tip="{Binding ReasoningEffortToolTip, Source={x:Static localizations:Lang.Current}}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:ReasoningEffortOptionViewModel">
+                                                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                    </Grid>
                                                     <TextBlock Grid.Row="1" Text="{Binding PurposeError}" IsVisible="{Binding PurposeError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
                                                     <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding ModelError}" IsVisible="{Binding ModelError, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" />
                                                     <Button Grid.Column="3" HorizontalAlignment="Left" Classes="PurposeAction" Foreground="{StaticResource ErrorBrush}" VerticalAlignment="Center" Margin="8,0,0,0" Padding="4" IsVisible="{Binding CanRemove}"

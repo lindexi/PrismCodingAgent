@@ -1,5 +1,4 @@
 PurposeModelsTitle = "用途模型"
-PurposeModelsHelp = "設定僅儲存；具體功能接入後使用。"
 PurposeAdd = "＋ 新增自訂用途"
 PurposeRemove = "刪除"
 PurposeKeyLabel = "用途名稱"
