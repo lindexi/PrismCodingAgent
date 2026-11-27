@@ -60,9 +60,8 @@ internal static class SpeakPlainlyChat
             history.AddRange(savedHistory);
         }
 
-        history.Add(new ChatMessage(ChatRole.System, ClosingPrompt));
         agentSession.SetInMemoryChatHistory(history);
-        await foreach (var update in agent.RunWithHistoryCompletionAsync([], agentSession, session.Logger))
+        await foreach (var update in agent.RunWithHistoryCompletionAsync([new ChatMessage(ChatRole.User, ClosingPrompt)], agentSession, session.Logger))
         {
             messageContext.AppendResponseUpdate(update);
         }
