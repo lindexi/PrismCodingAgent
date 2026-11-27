@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Responses;
+using AgentLib.Coding.Tools;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;

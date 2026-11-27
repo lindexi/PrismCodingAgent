@@ -1,6 +1,7 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Tools;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;

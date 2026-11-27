@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Tools;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using Microsoft.Extensions.AI;
 using PrismCodingAgent.CodingShell.Abilities;

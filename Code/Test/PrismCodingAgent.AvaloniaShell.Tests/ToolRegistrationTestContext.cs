@@ -1,4 +1,5 @@
 using AgentLib.Coding;
+using AgentLib.Coding.Tools;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
 using AgentLib.Logging.Sessions;
 using AgentLib.Model;

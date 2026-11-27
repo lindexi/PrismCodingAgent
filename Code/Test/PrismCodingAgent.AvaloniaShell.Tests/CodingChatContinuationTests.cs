@@ -1,6 +1,7 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Tools;
 using AgentLib.Logging;
 using AgentLib.Model;
 using AgentLib.Core.AgentApiManagers.Contexts;

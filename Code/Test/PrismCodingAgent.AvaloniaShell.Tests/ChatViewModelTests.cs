@@ -1,6 +1,7 @@
 using AgentLib.Logging.Sessions;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Tools;
 using AgentLib.Core.AgentApiManagers.Contexts;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders.Fakes;
