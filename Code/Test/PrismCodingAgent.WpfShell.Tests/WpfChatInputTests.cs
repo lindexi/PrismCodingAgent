@@ -84,14 +84,14 @@ public sealed class WpfChatInputTests
             Assert.IsTrue(entry.IsVisible && entry.ActualWidth > 0 && entry.ActualHeight > 0, name);
             Assert.IsLessThan(cardTop, entry.TranslatePoint(new Point(0, entry.ActualHeight), content).Y, name);
         }
-        foreach (string name in new[] { "AbilitySelector", "AddImageButton", "SendButton" })
+        foreach (string name in new[] { "AbilitySelector", "AddImageButton", "LoopIterationCheckBox", "SendButton" })
         {
             var entry = (FrameworkElement)chat.FindName(name);
             Assert.IsTrue(entry.IsVisible && entry.ActualWidth > 0 && entry.ActualHeight > 0, name);
             double top = entry.TranslatePoint(new Point(), card).Y;
             Assert.IsTrue(top >= 0 && top + entry.ActualHeight <= card.ActualHeight, name);
         }
-        foreach (string name in new[] { "LoopIterationCheckBox", "CompressConversationButton", "NewSessionButton" })
+        foreach (string name in new[] { "CompressConversationButton", "NewSessionButton" })
         {
             var entry = (FrameworkElement)chat.FindName(name);
             Assert.IsTrue(entry.IsVisible && entry.ActualWidth > 0 && entry.ActualHeight > 0, name);
@@ -137,11 +137,10 @@ public sealed class WpfChatInputTests
             await screenshots.CaptureAsync($"{name}-open-anchor");
             var selectorPopup = (System.Windows.Controls.Primitives.Popup)selector.Template.FindName("PART_Popup", selector);
             await screenshots.CaptureSurfaceAsync((FrameworkElement)selectorPopup.Child, $"{name}-focus");
-            var last = (ComboBoxItem)selector.ItemContainerGenerator.ContainerFromIndex(selector.Items.Count - 1);
-            await WpfInput.HoverAsync(last);
-            Assert.IsTrue(last.IsMouseOver);
-            await screenshots.CaptureSurfaceAsync((FrameworkElement)selectorPopup.Child, $"{name}-hover");
             WpfInput.Key(0x23);
+            var last = (ComboBoxItem)selector.ItemContainerGenerator.ContainerFromIndex(selector.Items.Count - 1);
+            await WpfInput.WaitAsync(() => last.IsHighlighted, $"{name} did not highlight its last item.");
+            await screenshots.CaptureSurfaceAsync((FrameworkElement)selectorPopup.Child, $"{name}-last-item-highlighted");
             WpfInput.Key(0x0D);
             await WpfInput.WaitAsync(() => !selector.IsDropDownOpen, name);
             Assert.AreEqual(selector.Items.Count - 1, selector.SelectedIndex);

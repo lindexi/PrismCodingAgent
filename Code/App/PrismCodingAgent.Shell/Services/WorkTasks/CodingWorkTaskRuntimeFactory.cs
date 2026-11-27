@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding;
 using AgentLib.Coding.Settings;
+using AgentLib.Coding.Tools;
 using AgentLib.Core;
 using AgentLib.Core.AgentApiManagers.LanguageModelProviders;
 using AgentLib.Logging;

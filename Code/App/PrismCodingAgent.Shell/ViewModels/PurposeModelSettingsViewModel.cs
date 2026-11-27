@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using AgentLib.Coding.SubAgents;
 using AgentLib.Core;
-using AgentLib.Coding;
 using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.CodingShell.ViewModels;

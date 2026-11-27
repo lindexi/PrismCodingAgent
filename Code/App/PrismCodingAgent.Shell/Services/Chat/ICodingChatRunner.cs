@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AgentLib.Coding;
+using AgentLib.Coding.Tools;
 using Microsoft.Extensions.AI;
 
 namespace PrismCodingAgent.CodingShell.Services.Chat;

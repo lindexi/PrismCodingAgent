@@ -5,8 +5,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
+using AgentLib.Coding.SubAgents;
 using AgentLib.Core;
-using AgentLib.Coding;
 using PrismCodingAgent.CodingShell.Localizations;
 
 namespace PrismCodingAgent.CodingShell.ViewModels;

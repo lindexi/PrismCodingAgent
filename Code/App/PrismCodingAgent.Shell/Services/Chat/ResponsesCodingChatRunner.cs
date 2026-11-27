@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AgentLib;
 using AgentLib.Coding;
+using AgentLib.Coding.Responses;
+using AgentLib.Coding.Tools;
 using AgentLib.Model;
 using Microsoft.Extensions.AI;
 
