@@ -291,6 +291,17 @@ public sealed class WpfChatInputTests
             await WpfInput.ClickAsync(Descendants(composer).OfType<Button>().Single(button => button.Name == "RemoveImageButton"));
             await WpfInput.WaitAsync(() => !model.ChatViewModel.HasPendingImages, "Image removal failed.");
             Assert.AreEqual(draft, input.Text);
+            string imagePath = Path.Combine(root, "copied-image.png");
+            await File.WriteAllBytesAsync(imagePath, attachment);
+            var files = new System.Collections.Specialized.StringCollection { imagePath };
+            Clipboard.SetFileDropList(files);
+            await WpfInput.ClickAsync(input);
+            WpfInput.ControlKey(0x56);
+            await WpfInput.WaitAsync(() => model.ChatViewModel.PendingImages.Count == 1, "Clipboard image file was not attached.");
+            Assert.AreEqual("copied-image.png", model.ChatViewModel.PendingImages.Single().FileName);
+            Assert.AreEqual(draft, input.Text);
+            await WpfInput.ClickAsync(Descendants(composer).OfType<Button>().Single(button => button.Name == "RemoveImageButton"));
+            await WpfInput.WaitAsync(() => !model.ChatViewModel.HasPendingImages, "Clipboard image file removal failed.");
             Clipboard.SetText(" plain clipboard text");
             await WpfInput.ClickAsync(input);
             WpfInput.Key(0x23);

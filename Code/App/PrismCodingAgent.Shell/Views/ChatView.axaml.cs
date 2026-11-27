@@ -234,34 +234,39 @@ public partial class ChatView : UserControl
         }
         foreach (IStorageFile file in files)
         {
-            string? notice = null;
-            var level = CopilotChatNoticeLevel.Error;
-            try
-            {
-                await using Stream stream = await file.OpenReadAsync();
-                using var buffer = new MemoryStream();
-                await stream.CopyToAsync(buffer);
-                byte[] data = buffer.ToArray();
-                using var validationStream = new MemoryStream(data, writable: false);
-                using var bitmap = new Bitmap(validationStream);
-                if (!viewModel.TryAddImageAttachment(file.Name, data))
-                {
-                    notice = Localizations.Lang.Format(Lang.Current.ImageUnsupported, file.Name);
-                    level = CopilotChatNoticeLevel.Warning;
-                }
-            }
-            catch (Exception exception) when (exception is IOException
-                                              or UnauthorizedAccessException
-                                              or InvalidOperationException
-                                              or ArgumentException)
-            {
-                notice = Localizations.Lang.Format(Lang.Current.ImageAttachFailed, file.Name, exception.Message);
-            }
+            await AddImageFileAsync(viewModel, session, file);
+        }
+    }
 
-            if (notice is not null)
+    private static async Task AddImageFileAsync(ChatViewModel viewModel, CopilotChatSession? session, IStorageFile file)
+    {
+        string? notice = null;
+        var level = CopilotChatNoticeLevel.Error;
+        try
+        {
+            await using Stream stream = await file.OpenReadAsync();
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            byte[] data = buffer.ToArray();
+            using var validationStream = new MemoryStream(data, writable: false);
+            using var bitmap = new Bitmap(validationStream);
+            if (!viewModel.TryAddImageAttachment(file.Name, data))
             {
-                await viewModel.AddSystemNoticeAsync(session, notice, level);
+                notice = Localizations.Lang.Format(Lang.Current.ImageUnsupported, file.Name);
+                level = CopilotChatNoticeLevel.Warning;
             }
+        }
+        catch (Exception exception) when (exception is IOException
+                                          or UnauthorizedAccessException
+                                          or InvalidOperationException
+                                          or ArgumentException)
+        {
+            notice = Localizations.Lang.Format(Lang.Current.ImageAttachFailed, file.Name, exception.Message);
+        }
+
+        if (notice is not null)
+        {
+            await viewModel.AddSystemNoticeAsync(session, notice, level);
         }
     }
 
@@ -333,14 +338,24 @@ public partial class ChatView : UserControl
         {
             object? clipboardData = await dataTransfer.TryGetValueAsync(DataFormat.Bitmap);
             byte[]? imageData = await GetClipboardImageBytesAsync(clipboardData);
-            if (imageData is null)
+            if (imageData is not null)
             {
-                return false;
+                using var validationStream = new MemoryStream(imageData, writable: false);
+                using var bitmap = new Bitmap(validationStream);
+                return viewModel.TryAddImageAttachment($"clipboard-{DateTime.Now:yyyyMMdd-HHmmss}.png", imageData);
             }
 
-            using var validationStream = new MemoryStream(imageData, writable: false);
-            using var bitmap = new Bitmap(validationStream);
-            return viewModel.TryAddImageAttachment($"clipboard-{DateTime.Now:yyyyMMdd-HHmmss}.png", imageData);
+            bool handled = false;
+            foreach (IStorageItem item in await dataTransfer.TryGetFilesAsync() ?? [])
+            {
+                if (item is IStorageFile file && ImageAttachmentViewModel.IsSupportedImageFileName(file.Name))
+                {
+                    handled = true;
+                    await AddImageFileAsync(viewModel, session, file);
+                }
+            }
+
+            return handled;
         }
         catch (Exception exception) when (exception is IOException
                                           or InvalidOperationException

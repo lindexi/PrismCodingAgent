@@ -21,6 +21,9 @@ public sealed class ImageAttachmentViewModel
             [".bmp"] = "image/bmp",
         };
 
+    internal static bool IsSupportedImageFileName(string fileName)
+        => SupportedMimeTypes.ContainsKey(Path.GetExtension(fileName));
+
     private ImageAttachmentViewModel(string fileName, string mimeType, BinaryData data)
     {
         FileName = fileName;

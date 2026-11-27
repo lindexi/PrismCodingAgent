@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using AgentLib.Model;
 using Microsoft.Win32;
 using PrismCodingAgent.CodingShell.Localizations;
 using PrismCodingAgent.CodingShell.ViewModels;
@@ -57,6 +58,17 @@ public partial class ChatView : UserControl
                     using var stream = new MemoryStream();
                     encoder.Save(stream);
                     pasteModel.TryAddImageAttachment($"clipboard-{DateTime.Now:yyyyMMdd-HHmmss}.png", stream.ToArray());
+                }
+                else if (Clipboard.ContainsFileDropList())
+                {
+                    foreach (string? file in Clipboard.GetFileDropList())
+                    {
+                        if (file is not null && ImageAttachmentViewModel.IsSupportedImageFileName(file) && !Directory.Exists(file))
+                        {
+                            e.Handled = true;
+                            await AddImageFileAsync(pasteModel, session, file);
+                        }
+                    }
                 }
             }
             catch (Exception exception) when (exception is IOException or InvalidOperationException or ArgumentException or ExternalException)
@@ -113,21 +125,26 @@ public partial class ChatView : UserControl
 
         foreach (string file in picker.FileNames)
         {
-            string name = Path.GetFileName(file);
-            try
+            await AddImageFileAsync(model, session, file);
+        }
+    }
+
+    private static async Task AddImageFileAsync(ChatViewModel model, CopilotChatSession? session, string file)
+    {
+        string name = Path.GetFileName(file);
+        try
+        {
+            byte[] bytes = await File.ReadAllBytesAsync(file);
+            using var stream = new MemoryStream(bytes, writable: false);
+            _ = BitmapDecoder.Create(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            if (!model.TryAddImageAttachment(name, bytes))
             {
-                byte[] bytes = await File.ReadAllBytesAsync(file);
-                using var stream = new MemoryStream(bytes, writable: false);
-                _ = BitmapDecoder.Create(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                if (!model.TryAddImageAttachment(name, bytes))
-                {
-                    await model.AddSystemNoticeAsync(session, Lang.Format(Lang.Current.ImageUnsupported, name), AgentLib.Model.CopilotChatNoticeLevel.Warning);
-                }
+                await model.AddSystemNoticeAsync(session, Lang.Format(Lang.Current.ImageUnsupported, name), CopilotChatNoticeLevel.Warning);
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or NotSupportedException)
-            {
-                await model.AddSystemNoticeAsync(session, Lang.Format(Lang.Current.ImageAttachFailed, name, exception.Message));
-            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or NotSupportedException)
+        {
+            await model.AddSystemNoticeAsync(session, Lang.Format(Lang.Current.ImageAttachFailed, name, exception.Message));
         }
     }
 }
