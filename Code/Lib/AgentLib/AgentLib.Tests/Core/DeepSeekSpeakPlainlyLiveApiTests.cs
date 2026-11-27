@@ -10,6 +10,14 @@ namespace AgentLib.Tests.Core;
 [DoNotParallelize]
 public sealed class DeepSeekSpeakPlainlyLiveApiTests
 {
+    /// <summary>
+    /// 在真实 DeepSeek V4 Pro 上验证「说人话」的两种发送方式，使用相同的合成 Chat 历史和提示。
+    /// </summary>
+    /// <remarks>
+    /// 历史包含已完成的工具调用，但没有 <c>reasoning_content</c>。实测将提示作为新用户消息发送时能正常返回；
+    /// 将同一提示作为系统消息追加到历史末尾、再以空输入运行时，服务端返回要求回传 <c>reasoning_content</c> 的 HTTP 400。
+    /// 这个对照表明，在该场景中无需更改历史或补写推理内容；如果服务端接受旧请求，则视为未复现。
+    /// </remarks>
     [TestMethod]
     public async Task SpeakPlainlyWithTrailingSystemMessageCanFailWhereUserInputSucceedsAsync()
     {
